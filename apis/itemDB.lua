@@ -1,7 +1,7 @@
 local Util    = require('util')
 local TableDB = require('tableDB')
 
-local itemDB = TableDB({ fileName = 'usr/etc/items.db' })
+local itemDB = TableDB({ fileName = 'usr/config/items.db' })
 
 function itemDB:get(key)
 

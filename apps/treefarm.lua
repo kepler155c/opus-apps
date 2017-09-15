@@ -76,7 +76,7 @@ local state = Util.readTable('usr/config/treefarm') or {
 }
 
 local clock = os.clock()
-local recipes = Util.readTable('sys/etc/recipes.db') or { }
+local recipes = Util.readTable('usr/etc/recipes.db') or { }
 
 Craft.setRecipes(recipes)
 

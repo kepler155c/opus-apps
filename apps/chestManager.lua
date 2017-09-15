@@ -34,8 +34,8 @@ end
 local chestAdapter = ChestAdapter({ direction = 'west', wrapSide = 'back' })
 local turtleChestAdapter = ChestAdapter({ direction = 'up', wrapSide = 'bottom' })
 
-local RESOURCE_FILE = 'usr/etc/resources.db'
-local RECIPES_FILE = 'sys/etc/recipes.db'
+local RESOURCE_FILE = 'usr/config/resources.db'
+local RECIPES_FILE = 'usr/etc/recipes.db'
 
 local jobListGrid
 local craftingPaused = false
