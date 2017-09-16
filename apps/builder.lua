@@ -3,7 +3,6 @@ if not turtle and not commands then
 end
 
 requireInjector(getfenv(1))
-package.path = package.path .. ':/' .. fs.getDir(shell.getRunningProgram()) .. '/apis'
 
 local Blocks    = require('blocks')
 local class     = require('class')

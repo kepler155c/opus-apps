@@ -42,8 +42,7 @@ local blockDB = TableDB()
 
 function blockDB:load()
 
-  local dir = fs.getDir(shell.getRunningProgram())
-  local blocks = JSON.decodeFromFile(fs.combine(dir, 'etc/blocks.json'))
+  local blocks = JSON.decodeFromFile('usr/etc/blocks.json'))
 
   if not blocks then
     error('Unable to read blocks.json')
