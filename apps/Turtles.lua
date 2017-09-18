@@ -140,18 +140,22 @@ function page:enable(turtle)
 end
 
 function page:runFunction(script, nowrap)
-  if not socket then
-    socket = Socket.connect(self.turtle.id, 161)
+  for i = 1, 2 do
     if not socket then
-      self.notification:error('Unable to connect')
-      return
+      socket = Socket.connect(self.turtle.id, 161)
     end
-  end
 
-  if not nowrap then
-    script = 'turtle.run(' .. script .. ')'
+    if socket then
+      if not nowrap then
+        script = 'turtle.run(' .. script .. ')'
+      end
+      if socket:write({ type = 'script', args = script }) then
+        return true
+      end
+    end
+    socket = nil
   end
-  socket:write({ type = 'script', args = script })
+  self.notification:error('Unable to connect')
 end
 
 function page:runScript(scriptName)
@@ -270,6 +274,7 @@ end
 function page.tabs.turtles:eventHandler(event)
   if event.type == 'grid_select' then
     page.turtle = event.selected
+    multishell.setTitle(multishell.getCurrent(), page.turtle.label)
     if socket then
       socket:close()
       socket = nil

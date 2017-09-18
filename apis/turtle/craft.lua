@@ -3,11 +3,11 @@ local Util   = require('util')
 
 local Craft = { }
 
-local function clearGrid(chestAdapter)
+local function clearGrid(inventoryAdapter)
   for i = 1, 16 do
     local count = turtle.getItemCount(i)
     if count > 0 then
-      chestAdapter:insert(i, count)
+      inventoryAdapter:insert(i, count)
       if turtle.getItemCount(i) ~= 0 then
         return false
       end
@@ -19,7 +19,7 @@ end
 local function splitKey(key)
   local t = Util.split(key, '(.-):')
   local item = { }
-  if #t[#t] > 2 then
+  if #t[#t] > 8 then
     item.nbtHash = table.remove(t)
   end
   item.damage = tonumber(table.remove(t))
@@ -39,13 +39,13 @@ local function getItemCount(items, key)
   return 0
 end
 
-local function turtleCraft(recipe, qty, chestAdapter)
+local function turtleCraft(recipe, qty, inventoryAdapter)
 
-  clearGrid(chestAdapter)
+  clearGrid(inventoryAdapter)
 
   for k,v in pairs(recipe.ingredients) do
     local item = splitKey(v)
-    chestAdapter:provide(item, qty, k)
+    inventoryAdapter:provide(item, qty, k)
     if turtle.getItemCount(k) == 0 then -- ~= qty then
                                         -- FIX: ingredients cannot be stacked
       return false
@@ -55,9 +55,9 @@ local function turtleCraft(recipe, qty, chestAdapter)
   return turtle.craft()
 end
 
-function Craft.craftRecipe(recipe, count, chestAdapter)
+function Craft.craftRecipe(recipe, count, inventoryAdapter)
 
-  local items = chestAdapter:listItems()
+  local items = inventoryAdapter:listItems()
 
   local function sumItems(items)
     -- produces { ['minecraft:planks:0'] = 8 }
@@ -78,10 +78,10 @@ function Craft.craftRecipe(recipe, count, chestAdapter)
     if itemCount < icount * count then
       local irecipe = Craft.recipes[key]
       if irecipe then
-Util.print('Crafting %d %s', icount * count - itemCount, key)
+--Util.print('Crafting %d %s', icount * count - itemCount, key)
         if not Craft.craftRecipe(irecipe,
                                  icount * count - itemCount,
-                                 chestAdapter) then
+                                 inventoryAdapter) then
           turtle.select(1)
           return
         end
@@ -89,7 +89,7 @@ Util.print('Crafting %d %s', icount * count - itemCount, key)
     end
   end
   repeat
-    if not turtleCraft(recipe, math.min(count, maxCount), chestAdapter) then
+    if not turtleCraft(recipe, math.min(count, maxCount), inventoryAdapter) then
       turtle.select(1)
       return false
     end
@@ -101,7 +101,7 @@ Util.print('Crafting %d %s', icount * count - itemCount, key)
 end
 
 -- given a certain quantity, return how many of those can be crafted
-function Craft.getCraftableAmount(recipe, count, items)
+function Craft.getCraftableAmount(recipe, count, items, missing)
 
   local function sumItems(recipe, items, summedItems, count)
 
@@ -116,6 +116,9 @@ function Craft.getCraftableAmount(recipe, count, items)
           summedItem = summedItem + sumItems(irecipe, items, summedItems, 1)
         end
         if summedItem <= 0 then
+          if missing then
+            missing.name = item
+          end
           return canCraft
         end
         summedItems[item] = summedItem - 1
@@ -126,7 +129,7 @@ function Craft.getCraftableAmount(recipe, count, items)
     return canCraft
   end
 
-  return sumItems(recipe, items, { }, math.ceil(count / recipe.count))
+  return sumItems(recipe, items, { }, math.ceil(count / recipe.count), missing)
 end
 
 function Craft.canCraft(item, count, items)

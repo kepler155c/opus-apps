@@ -27,7 +27,7 @@ function RefinedAdapter:init(args)
     Util.merge(self, controller)
   end
 end
- 
+
 function RefinedAdapter:isValid()
   return not not self.listAvailableItems
 end

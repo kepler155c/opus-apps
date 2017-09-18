@@ -18,11 +18,12 @@ local mainPage = UI.Page({
   menu = UI.Menu({
     centered = true,
     y = 2,
+    height = 8,
     menuItems = {
       { prompt = 'Pickup', event = 'pickup', help = 'Pickup items from this location' },
       { prompt = 'Charge cell', event = 'charge', help = 'Recharge this cell' },
       { prompt = 'Refill', event = 'refill', help = 'Recharge this cell' },
-      { prompt = 'Set pickup location', event = 'setPickup', help = 'Recharge this cell' },
+      { prompt = 'Set drop off location', event = 'setPickup', help = 'Recharge this cell' },
       { prompt = 'Set recharge location', event = 'setRecharge', help = 'Recharge this cell' },
       { prompt = 'Clear', event = 'clear', help = 'Remove this location' },
     },
@@ -89,7 +90,7 @@ local function sendCommand(cmd)
 end
 
 local function getPoint()
-  local gpt = GPS.getPoint()
+  local gpt = GPS.getPoint(2)
   if not gpt then
     mainPage.statusBar:timedStatus('Unable to get location', 3)
   end

@@ -3,6 +3,20 @@ local TableDB = require('tableDB')
 
 local itemDB = TableDB({ fileName = 'usr/config/items.db' })
 
+local function splitKey(key, item)
+
+  item = item or { }
+
+  local t = Util.split(key, '(.-):')
+  if #t[#t] > 8 then
+    item.nbtHash = table.remove(t)
+  end
+  item.damage = tonumber(table.remove(t))
+  item.name = table.concat(t, ':')
+
+  return item
+end
+
 function itemDB:get(key)
 
   local item = TableDB.get(self, key)
@@ -32,6 +46,54 @@ end
 
 function itemDB:makeKey(item)
   return { item.name, item.damage, item.nbtHash }
+end
+
+-- Accepts: "minecraft:stick:0" or { name = 'minecraft:stick', damage = 0 }
+function itemDB:getName(item)
+
+  if type(item) == 'string' then
+    item = splitKey(item)
+  end
+
+  local detail = self:get(self:makeKey(item))
+  if detail then
+    return detail.displayName
+  end
+  return item.name .. ':' .. item.damage
+end
+
+function itemDB:load()
+
+  TableDB.load(self)
+
+  for key,item in pairs(self.data) do
+    splitKey(key, item)
+    item.maxDamage = item.maxDamage or 0
+    item.maxCount = item.maxCount or 64
+  end
+end
+
+function itemDB:flush()
+  if self.dirty then
+
+    local t = { }
+    for k,v in pairs(self.data) do
+      v = Util.shallowCopy(v)
+      v.name = nil
+      v.damage = nil
+      v.nbtHash = nil
+      if v.maxDamage == 0 then
+        v.maxDamage = nil
+      end
+      if v.maxCount == 64 then
+        v.maxCount = nil
+      end
+      t[k] = v
+    end
+
+    Util.writeTable(self.fileName, t)
+    self.dirty = false
+  end
 end
 
 itemDB:load()

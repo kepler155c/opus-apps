@@ -31,8 +31,8 @@ if not controller:isValid() then
   controller = nil
 end
 
-local chestAdapter = ChestAdapter({ direction = 'west', wrapSide = 'back' })
-local turtleChestAdapter = ChestAdapter({ direction = 'up', wrapSide = 'bottom' })
+local chestAdapter = ChestAdapter({ direction = 'north', wrapSide = 'colossalchests:colossalChest_0' })
+local turtleChestAdapter = ChestAdapter({ direction = 'down', wrapSide = 'top' })
 
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE = 'usr/etc/recipes.db'
@@ -40,26 +40,9 @@ local RECIPES_FILE = 'usr/etc/recipes.db'
 local jobListGrid
 local craftingPaused = false
 local recipes = Util.readTable(RECIPES_FILE) or { }
-local resources = Util.readTable(RESOURCE_FILE) or { }
+local resources
 
 Craft.setRecipes(recipes)
-
-for _,r in pairs(resources) do
-  r.maxDamage = nil
-  r.displayName = nil
-  r.count = nil
-  r.lname = nil
-  r.has_recipe = nil
-
-  if not r.ignoreDamage then
-    r.ignoreDamage = nil
-  end
-
-  if not r.auto then
-    r.auto = nil
-  end
-end
-Util.writeTable(RESOURCE_FILE, resources)
 
 local function getItem(items, inItem, ignoreDamage)
   for _,item in pairs(items) do
@@ -76,7 +59,7 @@ end
 local function splitKey(key)
   local t = Util.split(key, '(.-):')
   local item = { }
-  if #t[#t] > 2 then
+  if #t[#t] > 8 then
     item.nbtHash = table.remove(t)
   end
   item.damage = tonumber(table.remove(t))
@@ -108,14 +91,6 @@ local function uniqueKey(item)
   return table.concat({ item.name, item.damage, item.nbtHash }, ':')
 end
 
-local function getName(item)
-  local detail = itemDB:get(itemDB:makeKey(item))
-  if detail then
-    return detail.displayName
-  end
-  return item.name .. ':' .. item.damage
-end
-
 local function mergeResources(t)
   for _,v in pairs(resources) do
     local item = getItem(t, v)
@@ -141,7 +116,7 @@ local function mergeResources(t)
 
   for _,v in pairs(t) do
     if not v.displayName then
-      v.displayName = getName(v)
+      v.displayName = itemDB:getName(v)
     end
     v.lname = v.displayName:lower()
   end
@@ -209,7 +184,7 @@ local function addCraftingRequest(item, craftList, count)
   local request = craftList[key]
   if not craftList[key] then
     request = { name = item.name, damage = item.damage, nbtHash = nbtHash, count = 0 }
-    request.displayName = getName(request)
+    request.displayName = itemDB:getName(request)
     craftList[key] = request
   end
   request.count = request.count + count
@@ -221,7 +196,13 @@ local function craftItem(recipe, items, originalItem, craftList, count)
     return
   end
 
-  local toCraft = Craft.getCraftableAmount(recipe, count, items)
+  local missing = { }
+  local toCraft = Craft.getCraftableAmount(recipe, count, items, missing)
+
+  if missing.name then
+    originalItem.status = string.format('%s missing', itemDB:getName(missing.name))
+    originalItem.statusCode = 'missing'
+  end
 
   if toCraft > 0 then
     Craft.craftRecipe(recipe, toCraft, chestAdapter)
@@ -265,7 +246,6 @@ local function craftItems(craftList, allItems)
         if controller:isCrafting(item) then
           item.status = '(crafting)'
         else
-
           local count = item.count
           while count >= 1 do -- try to request smaller quantities until successful
             local s, m = pcall(function()
@@ -311,6 +291,20 @@ local function jobMonitor(jobList)
       { heading = 'Status',   key = 'status',      width = mon.width - 10     },
     },
   })
+
+  function jobListGrid:getRowTextColor(row, selected)
+
+    if row.status == '(no recipe)'then
+      return colors.red
+    elseif row.statusCode == 'missing' then
+      return colors.yellow
+    end
+
+    return UI.Grid:getRowTextColor(row, selected)
+  end
+
+  jobListGrid:draw()
+  jobListGrid:sync()
 end
 
 local function getAutocraftItems()
@@ -331,21 +325,17 @@ local function getItemWithQty(items, res, ignoreDamage)
 
   local item = getItem(items, res, ignoreDamage)
 
-  if item then
+  if item and ignoreDamage then
+    local count = 0
 
-    if ignoreDamage then
-      local count = 0
-
-      for _,v in pairs(items) do
-        if item.name == v.name and item.nbtHash == v.nbtHash then
-          if item.maxDamage > 0 or item.damage == v.damage then
-            count = count + v.count
-          end
+    for _,v in pairs(items) do
+      if item.name == v.name and item.nbtHash == v.nbtHash then
+        if item.maxDamage > 0 or item.damage == v.damage then
+          count = count + v.count
         end
       end
-
-      item.count = count
     end
+    item.count = count
   end
 
   return item
@@ -362,13 +352,17 @@ local function watchResources(items)
         damage = res.damage,
         nbtHash = res.nbtHash,
         name = res.name,
-        displayName = getName(res),
+        displayName = itemDB:getName(res),
         count = 0
       }
     end
 
     if res.limit and item.count > res.limit then
-      chestAdapter:provide(res, item.count - res.limit, nil, config.trashDirection)
+      chestAdapter:provide(
+        { name = item.name, damage = item.damage }, 
+        item.count - res.limit,
+        nil,
+        config.trashDirection)
 
     elseif res.low and item.count < res.low then
       if res.ignoreDamage then
@@ -396,6 +390,27 @@ local function watchResources(items)
   return craftList
 end
 
+local function loadResources()
+  resources = Util.readTable(RESOURCE_FILE) or { }
+  for k,v in pairs(resources) do
+    Util.merge(v, splitKey(k))
+  end
+end
+
+local function saveResources()
+  local t = { }
+
+  for k,v in pairs(resources) do
+    v = Util.shallowCopy(v)
+    v.name = nil
+    v.damage = nil
+    v.nbtHash = nil
+    t[k] = v
+  end
+
+  Util.writeTable(RESOURCE_FILE, t)
+end
+
 local itemPage = UI.Page {
   backgroundColor = colors.lightGray,
   titleBar = UI.TitleBar {
@@ -404,11 +419,9 @@ local itemPage = UI.Page {
     event = 'form_cancel',
     backgroundColor = colors.green
   },
-  displayName = UI.Window {
-    x = 2, y = 2, width = UI.term.width - 4, height = 3,
-  },
   form = UI.Form {
-    x = 4, y = 5, height = 8, rex = -4,
+    x = 2, y = 3, height = 8, rex = -4,
+    margin = 1,
     [1] = UI.TextEntry {
       width = 7,
       backgroundColor = colors.gray,
@@ -433,7 +446,7 @@ local itemPage = UI.Page {
     },
     [4] = UI.Chooser {
       width = 7,
-      formLabel = 'Ignore Dmg', formKey = 'ignore_dmg',
+      formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
       nochoice = 'No',
       choices = {
         { name = 'Yes', value = true },
@@ -475,21 +488,11 @@ local itemPage = UI.Page {
   statusBar = UI.StatusBar { }
 }
 
-function itemPage.displayName:draw()
-  local item = self.parent.item
-  local str = string.format('Name:   %s\nDamage: %d', item.displayName, item.damage)
-  if item.nbtHash then
-    str = str .. string.format('\n%s', item.nbtHash)
-  end
-  self:setCursorPos(1, 1)
-  self:print(str)
-end
-
 function itemPage:enable(item)
   self.item = item
 
   self.form:setValues(item)
-  self.titleBar.title = item.name
+  self.titleBar.title = item.displayName or item.name
 
   local devices = self.form[6].choices
   Util.clear(devices)
@@ -518,7 +521,7 @@ function itemPage:eventHandler(event)
   elseif event.type == 'form_complete' then
     local values = self.form.values
     local keys = { 'name', 'auto', 'low', 'limit', 'damage',
-                   'nbtHash', 'ignoreDamage',
+                   'nbtHash',
                    'rsControl', 'rsDevice', 'rsSide', }
 
     local filtered = { }
@@ -544,10 +547,11 @@ function itemPage:eventHandler(event)
 
     if values.ignoreDamage == true then
       filtered.damage = 0
+      filtered.ignoreDamage = true
     end
 
     resources[uniqueKey(filtered)] = filtered
-    Util.writeTable(RESOURCE_FILE, resources)
+    saveResources()
 
     UI:setPreviousPage()
 
@@ -778,7 +782,7 @@ local function learnRecipe(page)
 
         Util.writeTable(RECIPES_FILE, recipes)
 
-        local displayName = getName(recipe[1])
+        local displayName = itemDB:getName(recipe[1])
 
         listingPage.statusBar.filter:setValue(displayName)
         listingPage.statusBar:timedStatus('Learned: ' .. displayName, 3)
@@ -896,6 +900,9 @@ function craftPage:eventHandler(event)
   return true
 end
 
+loadResources()
+clearGrid()
+
 UI:setPages({
   listing = listingPage,
   item = itemPage,
@@ -906,10 +913,7 @@ UI:setPages({
 UI:setPage(listingPage)
 listingPage:setFocus(listingPage.statusBar.filter)
 
-clearGrid()
 jobMonitor()
-jobListGrid:draw()
-jobListGrid:sync()
 
 Event.onInterval(5, function()
 
@@ -922,10 +926,8 @@ Event.onInterval(5, function()
 
     else
       local craftList = watchResources(items)
-      jobListGrid:setValues(craftList)
-      --jobListGrid:draw()
-      --jobListGrid:sync()
       craftItems(craftList, items)
+      jobListGrid:setValues(craftList)
       jobListGrid:update()
       jobListGrid:draw()
       jobListGrid:sync()

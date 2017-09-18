@@ -1447,7 +1447,7 @@ substitutionPage = UI.Page {
       { heading = 'Name', key = 'display_name', width = UI.term.width-9 },
       { heading = 'Qty',  key = 'fQty', width = 5               },
     },
-    sortColumn = 'name',
+    sortColumn = 'display_name',
     height = UI.term.height-7,
     y = 7,
   },

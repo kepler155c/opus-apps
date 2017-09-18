@@ -42,7 +42,7 @@ local blockDB = TableDB()
 
 function blockDB:load()
 
-  local blocks = JSON.decodeFromFile('usr/etc/blocks.json'))
+  local blocks = JSON.decodeFromFile('usr/etc/blocks.json')
 
   if not blocks then
     error('Unable to read blocks.json')

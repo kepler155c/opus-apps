@@ -1,38 +1,34 @@
 requireInjector(getfenv(1))
 
-local Event = require('event')
-local GPS = require('gps')
-local Logger = require('logger')
-local MEProvider = require('meProvider')
-local Point = require('point')
-local Socket = require('socket')
-local Util  = require('util')
+local Event        = require('event')
+local GPS          = require('gps')
+local ChestAdapter = require('chestAdapter18')
+local Point        = require('point')
+local Socket       = require('socket')
+local Util         = require('util')
 
 if not device.wireless_modem then
   error('Modem is required')
 end
-
-Logger.setWirelessLogging()
 
 if not turtle then
   error('Can only be run on a turtle')
 end
 
 local blocks = { }
-local meProvider = MEProvider()
 local items = { }
 
-local pickups = Util.readTable('pickup.tbl') or { }
-local cells = Util.readTable('cells.tbl') or { }
-local refills = Util.readTable('refills.tbl') or { }
-local fluids = Util.readTable('fluids.tbl') or { }
-local chestPt = turtle.loadLocation('chest')
-local chargePt = turtle.loadLocation('charge')
+local locations = Util.readTable('/usr/config/pickup') or {
+  pickups = { },
+  cells = { },
+  refills = { },
+  fluids = { },
+}
 
 local fuel = {
   item = {
-    id = 'minecraft:coal',
-    dmg = 0,
+    name = 'minecraft:coal',
+    damage = 0,
   },
   qty = 64
 }
@@ -51,14 +47,18 @@ turtle.setMoveCallback(function(action, pt)
 end)
 
 function refuel()
-  if turtle.getFuelLevel() < 5000 then
+  if turtle.getFuelLevel() < 5000 and locations.dropPt then
     print('refueling')
     turtle.status = 'refueling'
-    gotoPoint(chestPt, true)
-    dropOff(chestPt)
+    gotoPoint(locations.dropPt, true)
+    dropOff(locations.dropPt)
+    local chestAdapter = ChestAdapter({
+        wrapSide = 'bottom',
+        direction = 'up',
+      })
     while turtle.getFuelLevel() < 5000 do
       turtle.select(1)
-      meProvider:provide(fuel.item, fuel.qty, 1)
+      chestAdapter:provide(fuel.item, fuel.qty, 1)
       turtle.refuel(64)
       print(turtle.getFuelLevel())
       os.sleep(1)
@@ -71,7 +71,7 @@ function pickUp(pt)
   gotoPoint(pt, true)
   while true do
     if not turtle.selectOpenSlot() then
-      dropOff(chestPt)
+      dropOff(locations.dropPt)
       gotoPoint(pt, true)
     end
     turtle.select(1)
@@ -85,16 +85,17 @@ function dropOff(pt)
   if turtle.selectSlotWithItems() then
     gotoPoint(pt, true)
     turtle.emptyInventory(turtle.dropDown)
-    if pt == chestPt then
+    if pt == locations.dropPt then
       print('refreshing items')
-      items = meProvider:refresh()
+      chestAdapter = ChestAdapter()
+      items = chestAdapter:refresh()
     end
   end
 end
 
 function gotoPoint(pt, doDetect)
   slots = turtle.getInventory()
-  while not turtle.pathfind(pt, blocks) do
+  while not turtle.pathfind(pt, { blocks = blocks }) do
     if turtle.abort then
       error('aborted')
     end
@@ -110,7 +111,7 @@ end
 
 function checkCell(pt)
   if not turtle.selectOpenSlot() then
-    dropOff(chestPt)
+    dropOff(locations.dropPt)
   end
 
   print('checking cell')
@@ -123,7 +124,7 @@ function checkCell(pt)
     print('charging cell')
     turtle.selectOpenSlot()
     turtle.digDown()
-    gotoPoint(chargePt, true)
+    gotoPoint(locations.chargePt, true)
     turtle.dropDown()
     os.sleep(energy / 20000)
     turtle.suckDown()
@@ -152,12 +153,13 @@ function fluid(points)
 end
 
 function refill(entry)
-  dropOff(chestPt)
+  dropOff(locations.dropPt)
 
   turtle.status = 'refilling'
-  gotoPoint(chestPt)
+  gotoPoint(locations.dropPt)
+  local chestAdapter = ChestAdapter()
   for _,item in pairs(entry.items) do
-    meProvider:provide(item, tonumber(item.qty), turtle.selectOpenSlot())
+    chestAdapter:provide(item, tonumber(item.qty), turtle.selectOpenSlot())
   end
 
   if turtle.selectSlotWithItems() then
@@ -179,7 +181,7 @@ function oldRefill(points)
     end
   end
   dropOff(points.source)
-  dropOff(chestPt)
+  dropOff(locations.dropPt)
 end
 
 local function makeKey(pt)
@@ -199,8 +201,8 @@ local function pickupHost(socket)
     
     if data.type == 'pickup' then
       local key = makeKey(data.point)
-      pickups[key] = data.point
-      Util.writeTable('pickup.tbl', pickups)
+      locations.pickups[key] = data.point
+      Util.writeTable('/usr/config/pickup', locations)
       socket:write( { type = "response", response = 'added' })
 
     elseif data.type == 'items' then
@@ -208,41 +210,36 @@ local function pickupHost(socket)
     
     elseif data.type == 'refill' then
       local key = makeKey(data.entry.point)
-      refills[key] = data.entry
-      Util.writeTable('refills.tbl', refills)
+      locations.refills[key] = data.entry
+      Util.writeTable('/usr/config/pickup', locations)
       socket:write( { type = "response", response = 'added' })
 
     elseif data.type == 'setPickup' then
-      chestPt = data.point
--- fix
-      turtle.storeLocation('chest', chestPt)
+      locations.dropPt = data.point
+      Util.writeTable('/usr/config/pickup', locations)
       socket:write( { type = "response", response = 'Location set' })
 
     elseif data.type == 'setRecharge' then
-      chargePt = data.point
--- fix
-      turtle.storeLocation('charge', chargePt)
+      locations.chargePt = data.point
+      Util.writeTable('/usr/config/pickup', locations)
       socket:write( { type = "response", response = 'Location set' })
     
     elseif data.type == 'charge' then
       local key = makeKey(data.point)
-      cells[key] = data.point
-      Util.writeTable('cells.tbl', cells)
+      locations.cells[key] = data.point
+      Util.writeTable('/usr/config/pickup', locations)
       socket:write( { type = "response", response = 'added' })
     
     elseif data.type == 'fluid' then
 
     elseif data.type == 'clear' then
       local key = makeKey(data.point)
-      refills[key] = nil
-      cells[key] = nil
-      fluids[key] = nil
-      pickups[key] = nil
+      locations.refills[key] = nil
+      locations.cells[key] = nil
+      locations.fluids[key] = nil
+      locations.pickups[key] = nil
 
-      Util.writeTable('refills.tbl', refills)
-      Util.writeTable('cells.tbl', cells)
-      Util.writeTable('fluids.tbl', fluids)
-      Util.writeTable('pickup.tbl', pickups)
+      Util.writeTable('/usr/config/pickup', locations)
     
       socket:write( { type = "response", response = 'cleared' })
     else
@@ -303,15 +300,22 @@ end
 
 Event.addRoutine(function()
 
+  if not turtle.enableGPS() then
+    error('turtle: No GPS found')
+  end
+
+  refuel()
+
   while true do
-    if chestPt then
-      eachClosestEntry(pickups, pickUp)
-      eachEntry(refills, refill)
+    if locations.dropPt then
+      eachClosestEntry(locations.pickups, pickUp)
+      eachEntry(locations.refills, refill)
       refuel()
     end
-    eachEntry(fluids, fluid)
-    if chargePt then
-      eachEntry(cells, checkCell)
+    dropOff(locations.dropPt)
+    eachEntry(locations.fluids, fluid)
+    if locations.chargePt then
+      eachEntry(locations.cells, checkCell)
     end
     print('sleeping')
     turtle.status = 'sleeping'
@@ -327,11 +331,6 @@ end)
 
 turtle.run(function()
 
-  if not turtle.enableGPS() then
-    error('turtle: No GPS found')
-  end
-
-  refuel()
   Event.pullEvents()
 
 end)

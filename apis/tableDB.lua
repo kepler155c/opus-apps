@@ -7,17 +7,15 @@ function TableDB:init(args)
     fileName = '',
     dirty = false,
     data = { },
-    tabledef = { },
   }
   Util.merge(defaults, args)
   Util.merge(self, defaults)
 end
  
 function TableDB:load()
-  local table = Util.readTable(self.fileName)
-  if table then
-    self.data = table.data
-    self.tabledef = table.tabledef
+  local t = Util.readTable(self.fileName)
+  if t then
+    self.data = t.data or t
   end
 end
  
@@ -43,10 +41,7 @@ end
  
 function TableDB:flush()
   if self.dirty then
-    Util.writeTable(self.fileName, {
-      -- tabledef = self.tabledef,
-      data = self.data,
-    })
+    Util.writeTable(self.fileName, self.data)
     self.dirty = false
   end
 end

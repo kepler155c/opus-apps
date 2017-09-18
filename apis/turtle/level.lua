@@ -2,8 +2,8 @@ local Point = require('point')
 local Util  = require('util')
 
 local checkedNodes = { }
-local nodes = { }
-local box = { }
+local nodes        = { }
+local box          = { }
 local oldCallback
 
 local function toKey(pt)
@@ -149,7 +149,7 @@ return function(startPt, endPt, firstPt, verbose)
       print(string.format('%d nodes remaining', Util.size(nodes)))
     end
 
-    if Util.size(nodes) == 0 then
+    if not next(nodes) then
       break
     end
 
