@@ -1,5 +1,6 @@
 requireInjector(getfenv(1))
 
+local Config   = require('config')
 local Event    = require('event')
 local itemDB   = require('itemDB')
 local Socket   = require('socket')
@@ -11,10 +12,13 @@ multishell.setTitle(multishell.getCurrent(), 'Turtles')
 UI.Button.defaults.focusIndicator = ' '
 UI:configure('Turtles', ...)
 
+local config = { }
+Config.load('Turtles', config)
+
 local options = {
-  turtle      = { arg = 'i', type = 'number', value = -1,
+  turtle      = { arg = 'i', type = 'number', value = config.id or -1,
                  desc = 'Turtle ID' },
-  tab         = { arg = 's', type = 'string', value = 'turtles',
+  tab         = { arg = 's', type = 'string', value = config.tab or 'Sel',
                  desc = 'Selected tab to display' },
   help        = { arg = 'h', type = 'flag',   value = false,
                  desc = 'Displays the options' },
@@ -204,12 +208,13 @@ function page.tabs.inventory:draw()
           v.selected = true
         end
         if v.id then
-          local item = itemDB:get({ v.id, v.dmg })
-          if item then
-            v.id = item.displayName
-          else
-            v.id = v.id:gsub('.*:(.*)', '%1')
-          end
+--          local item = itemDB:get({ v.id, v.dmg })
+--          if item then
+--            v.id = item.displayName
+--          else
+--            v.id = v.id:gsub('.*:(.*)', '%1')
+--          end
+          v.id = itemDB:getName(v)
         end
       end
     end
@@ -274,6 +279,8 @@ end
 function page.tabs.turtles:eventHandler(event)
   if event.type == 'grid_select' then
     page.turtle = event.selected
+    config.id = event.selected.id
+    Config.update('Turtles', config)
     multishell.setTitle(multishell.getCurrent(), page.turtle.label)
     if socket then
       socket:close()
@@ -292,6 +299,14 @@ function page.statusBar:draw()
     self:setStatus(status, true)
   end
   UI.StatusBar.draw(self)
+end
+
+function page.tabs.tabBar:selectTab(tabTitle)
+  if tabTitle then
+    config.tab = tabTitle
+    Config.update('Turtles', config)
+    return UI.TabBar.selectTab(self, tab)
+  end
 end
 
 function page:eventHandler(event)
@@ -333,12 +348,24 @@ Event.onInterval(1, function()
     local t = _G.network[page.turtle.id]
     page.turtle = t
     page:draw()
+debug('sync')
     page:sync()
+debug('sync done')
   end
 end)
 
 UI:setPage(page)
 
-page.tabs:activateTab(page.tabs[options.tab.value])
+local lookup = {
+  Run = page.tabs.scripts,
+  Sel = page.tabs.turtles,
+  Inv = page.tabs.inventory,
+  Mod = page.tabs.policy,
+  Act = page.tabs.action,
+}
+
+if lookup[options.tab.value] then
+  page.tabs:activateTab(lookup[options.tab.value])
+end
 
 UI:pullEvents()

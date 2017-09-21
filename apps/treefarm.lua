@@ -610,7 +610,7 @@ local function findGround()
       error('lost')
     end
 
-    if b == TORCH or b == FURNACE then
+    if b == TORCH or DIG_BLACKLIST[block.name] then
       turtle.forward()
     else
       turtle.digDown()

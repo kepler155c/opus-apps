@@ -14,16 +14,9 @@ if not turtle then
   error('This program can only be run on a turtle')
 end
 
-if not device.monitor then
-  error('Monitor must be attached (3 wide x 1 tall')
-end
+UI:configure('Music', ...)
 
-local monitor = UI.Device({
-  deviceType = 'monitor',
-  textScale = 0.5,
-})
-
-UI:setDefaultDevice(monitor)
+local monitor = UI.term
 
 local page = UI.Page({
   volume = 15,

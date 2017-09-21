@@ -31,7 +31,8 @@ if not controller:isValid() then
   controller = nil
 end
 
-local chestAdapter = ChestAdapter({ direction = 'north', wrapSide = 'colossalchests:colossalChest_0' })
+---------------------------------------------------------------------- FIX ME
+local chestAdapter = ChestAdapter({ direction = 'north', wrapSide = 'colossalchests:colossalChest' })
 local turtleChestAdapter = ChestAdapter({ direction = 'down', wrapSide = 'top' })
 
 local RESOURCE_FILE = 'usr/config/resources.db'
@@ -239,7 +240,7 @@ local function craftItems(craftList, allItems)
 
   for key,item in pairs(craftList) do
 
-    if not recipes[key] then
+    if not recipes[key] and not item.rsControl then
       if not controller then
         item.status = '(no recipe)'
       else
@@ -715,23 +716,6 @@ function listingPage:applyFilter()
   self.grid:setValues(t)
 end
 
--- without duck antenna
-local function getTurtleInventoryOld()
-  local inventory = { }
-  for i = 1,16 do
-    if turtle.getItemCount(i) > 0 then
-      turtle.select(i)
-      local item = turtle.getItemDetail()
-      inventory[i] = {
-        name = item.name,
-        damage = item.damage,
-        count = item.count,
-      }
-    end
-  end
-  return inventory
-end
-
 local function getTurtleInventory()
   local inventory = { }
   for i = 1,16 do
@@ -741,6 +725,8 @@ local function getTurtleInventory()
       local items = turtleChestAdapter:listItems()
       _, inventory[i] = next(items)
       turtleChestAdapter:extract(1, qty, i)
+debug(inventory[i])
+read()
     end
   end
   return inventory

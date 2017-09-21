@@ -1,5 +1,6 @@
-local Util    = require('util')
+local nameDB  = require('nameDB')
 local TableDB = require('tableDB')
+local Util    = require('util')
 
 local itemDB = TableDB({ fileName = 'usr/config/items.db' })
 
@@ -59,7 +60,9 @@ function itemDB:getName(item)
   if detail then
     return detail.displayName
   end
-  return item.name .. ':' .. item.damage
+
+  -- fallback to nameDB
+  return nameDB:getName(item.name .. ':' .. item.damage)
 end
 
 function itemDB:load()
