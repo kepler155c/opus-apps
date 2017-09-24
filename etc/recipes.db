@@ -1036,6 +1036,13 @@
       [ 7 ] = "minecraft:redstone:0",
     },
   },
+  [ "minecraft:sticky_piston:0" ] = {
+    count = 1,
+    ingredients = {
+      "minecraft:slime_ball:0",
+      [ 5 ] = "minecraft:piston:0",
+    },
+  },
   [ "minecraft:wool:5" ] = {
     count = 1,
     ingredients = {

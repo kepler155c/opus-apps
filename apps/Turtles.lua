@@ -348,9 +348,7 @@ Event.onInterval(1, function()
     local t = _G.network[page.turtle.id]
     page.turtle = t
     page:draw()
-debug('sync')
     page:sync()
-debug('sync done')
   end
 end)
 

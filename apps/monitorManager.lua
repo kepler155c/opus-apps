@@ -1,10 +1,7 @@
+requireInjector = requireInjector or load(http.get('https://raw.githubusercontent.com/kepler155c/opus/develop/sys/apis/injector.lua').readAll())()
 requireInjector(getfenv(1))
 
 local Util = require('util')
-
-local args = { ... }
-local processes = { }
-local parentTerm = term.current()
 
 local function syntax()
   printError('Syntax:')
@@ -17,46 +14,34 @@ local function syntax()
   error()
 end
 
-local option = table.remove(args, 1)
-
-if option == 'run' then
-  local run = table.remove(args, 1)
-  if not run then
-    syntax()
-  end
-  os.queueEvent('monitor_client', { run = run, args = args })
-  return
-end
-
-if option ~= 'start' then
-  syntax()
-end
-
+local args = { ... }
+local UID = 0
+local processes = { }
+local parentTerm = term.current()
 local configFile = args[1] or syntax()
 local monitor = peripheral.find(args[2] or 'monitor') or syntax()
+local defaultEnv = Util.shallowCopy(getfenv(1))
+
 monitor.setTextScale(.5)
 monitor.clear()
 
-local monDim = { }
+local monDim, termDim = { }, { }
 monDim.width, monDim.height = monitor.getSize()
-
-if fs.exists(configFile) then
-  local config = Util.readTable(configFile)
-  if config then
-    for _,v in pairs(config) do
-      os.queueEvent('monitor_client', v)
-    end
-  end
-end
+termDim.width, termDim.height = parentTerm.getSize()
 
 local function saveConfig()
   local t = { }
   for _,process in pairs(processes) do
-    process.args.x = process.x
-    process.args.y = process.y
-    process.args.width = process.width - 2
-    process.args.height = process.height - 3
-    table.insert(t, process.args)
+    if process.path and not process.isShell then
+      table.insert(t, {
+        x = process.x,
+        y = process.y,
+        width = process.width - 2,
+        height = process.height - 3,
+        path = process.path,
+        args = process.args,
+      })
+    end
   end
   Util.writeTable(configFile, t)
 end
@@ -68,10 +53,26 @@ end
 
 local function redraw()
   monitor.clear()
-  for k,process in pairs(processes) do
+  for k,process in ipairs(processes) do
     process.container.redraw()
     process:focus(k == #processes)
   end
+end
+
+local function focusProcess(process)
+  if #processes > 0 then
+    processes[#processes]:focus(false)
+  end
+
+  for k,v in pairs(processes) do
+    if v == self then
+      table.remove(processes, k)
+      break
+    end
+  end
+
+  table.insert(processes, process)
+  process:focus(true)
 end
 
 local Process = { }
@@ -84,11 +85,8 @@ function Process:focus(focused)
   end
   self.titleBar.clear()
   self.titleBar.setTextColor(colors.black)
-  self.titleBar.setCursorPos(2, 1)
-  self.titleBar.write(self.title or 'Terminal')
-
-  self.titleBar.setCursorPos(self.width - 3, 1)
-  self.titleBar.write('*')
+  write(self.titleBar, 2, 1, self.title)
+  write(self.titleBar, self.width - 3, 1, '*')
 
   if focused then
     self.window.restoreCursor()
@@ -125,15 +123,20 @@ function Process:drawSizers()
 end
 
 function Process:new(args)
-  self.args = args
+  args.env = args.env or Util.shallowCopy(defaultEnv)
+  args.width = args.width or termDim.width
+  args.height = args.height or termDim.height
 
-  args.width = args.width or 42
-  args.height = args.height or 18
+  UID = UID + 1
+  self.uid = UID
 
   self.x = args.x or 1
   self.y = args.y or 1
   self.width = args.width + 2
   self.height = args.height + 3
+  self.path = args.path
+  self.args = args.args  or { }
+  self.title = args.title or 'shell'
 
   self:adjustDimensions()
 
@@ -145,12 +148,16 @@ function Process:new(args)
 
   self.co = coroutine.create(function()
 
-    local result, err = shell.run('shell', args.run)
+    local result, err
 
-Util.print({ result, err })
+    if args.fn then
+      result, err = Util.runFunction(args.env, args.fn, table.unpack(self.args))
+    elseif args.path then
+      result, err = os.run(args.env, args.path, table.unpack(self.args))
+    end
+
     if not result and err ~= 'Terminated' then
       if err then
-Util.print(tostring(err))
         printError(tostring(err))
         os.sleep(3)
       end
@@ -161,15 +168,13 @@ Util.print(tostring(err))
         break
       end
     end
-Util.print('dead')
-      read()
     --saveConfig()
     redraw()
   end)
 
-  self:focus(true)
+  local previousTerm = term.current()
   self:resume()
-  self.title = multishell.getTab(multishell.getCurrent()).title
+  term.redirect(previousTerm)
 
   return tab
 end
@@ -247,6 +252,135 @@ function getProcessAt(x, y)
   end
 end
 
+defaultEnv.multishell = { }
+
+function defaultEnv.multishell.getFocus()
+  return processes[#processes].uid
+end
+
+function defaultEnv.multishell.setFocus(uid)
+  local process, key = Util.find(processes, 'uid', uid)
+
+  if process then
+    if processes[#processes] ~= process then
+      focusProcess(process)
+    end
+    return true
+  end
+  return false
+end
+
+function defaultEnv.multishell.getTitle(uid)
+  local process = Util.find(processes, 'uid', uid)
+  if process then
+    return process.title
+  end
+end
+
+function defaultEnv.multishell.setTitle(uid, title)
+  local process = Util.find(processes, 'uid', uid)
+  if process then
+    process.title = title or ''
+    process:focus(processs == processes[#processes])
+  end
+end
+
+function defaultEnv.multishell.getCurrent()
+  return processes[#processes].uid
+end
+
+function defaultEnv.multishell.getCount()
+  return Util.size(processes)
+end
+
+function defaultEnv.multishell.launch(env, file, ...)
+  return defaultEnv.multishell.openTab({
+    path  = file,
+    env   = env,
+    title = 'shell',
+    args  = { ... },
+  })
+end
+
+function defaultEnv.multishell.openTab(tabInfo)
+  local process = setmetatable({ }, { __index = Process })
+
+  table.insert(processes, process)
+  process:new(tabInfo)
+  focusProcess(process)
+  saveConfig()
+
+  return process.uid
+end
+
+if fs.exists(configFile) then
+  local config = Util.readTable(configFile)
+  if config then
+    for _,v in pairs(config) do
+      local process = setmetatable({ }, { __index = Process })
+      table.insert(processes, process)
+      process:new(v)
+      process:focus(false)
+    end
+  end
+end
+
+local function addShell()
+
+  UID = UID + 1
+
+  local process = setmetatable({
+    x = monDim.width - 8,
+    y = monDim.height,
+    width = 9,
+    height = 1,
+    isShell = true,
+    uid = UID,
+  }, { __index = Process })
+
+  table.insert(processes, 1, process)
+
+  function process:focus(focused)
+    self.window.setVisible(focused)
+    if focused then
+      self.window.restoreCursor()
+      self.container.setTextColor(colors.green)
+      self.container.setBackgroundColor(colors.black)
+    else
+      parentTerm.clear()
+      parentTerm.setCursorBlink(false)
+      self.container.setTextColor(colors.lightGray)
+      self.container.setBackgroundColor(colors.black)
+    end
+    write(self.container, 1, 1, '[ shell ]')
+  end
+
+  function process:resizeClick()
+  end
+
+  function process:drawSizers()
+  end
+
+  process.container = window.create(monitor, process.x, process.y, process.width, process.height, true)
+  process.window    = window.create(parentTerm, 1, 1, termDim.width, termDim.height, true)
+  process.terminal  = process.window
+
+  process.co = coroutine.create(function()
+    while true do
+      os.run(defaultEnv, shell.resolveProgram('shell'))
+    end
+  end)
+
+  process:focus(false)
+  local previousTerm = term.current()
+  process:resume()
+  term.redirect(previousTerm)
+end
+
+addShell()
+
+processes[#processes]:focus(true)
+
 while true do
 
   local event = { os.pullEventRaw() }
@@ -255,30 +389,13 @@ while true do
     term.redirect(parentTerm)
     break
 
-  elseif event[1] == 'monitor_client' then
-    local process = { }
-    setmetatable(process, { __index = Process })
-
-    local focused = processes[#processes]
-    if focused then
-      focused:focus(false)
-    end
-
-    table.insert(processes, process)
-    process:new(event[2])
-    saveConfig()
-
   elseif event[1] == "monitor_touch" then
     local x, y = event[3], event[4]
 
     local key, process = getProcessAt(x, y)
     if process then
       if key ~= #processes then
-        local focused = processes[#processes]
-        focused:focus(false)
-        process:focus(true)
-        table.remove(processes, key)
-        table.insert(processes, process)
+        focusProcess(process)
       end
 
       x = x - process.x + 1
@@ -314,10 +431,10 @@ while true do
       end
     end
 
-  elseif event == "char" or
-         event == "key" or
-         event == "key_up" or
-         event == "paste" then
+  elseif event[1] == "char" or
+         event[1] == "key" or
+         event[1] == "key_up" or
+         event[1] == "paste" then
 
     local focused = processes[#processes]
     if focused then

@@ -6,11 +6,14 @@ local Socket = require('socket')
 
 Logger.setScreenLogging()
 
+local mon = term.current()
 local args = { ... }
-local mon = device[args[1] or 'monitor']
+if args[1] then
+  mon = device[args[1]]
+end
 
 if not mon then
-  error('Monitor not attached')
+  error('Invalid monitor')
 end
 
 mon.setBackgroundColor(colors.black)
