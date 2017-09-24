@@ -65,13 +65,7 @@ local function focusProcess(process)
     lastFocused:focus(false)
   end
 
-  for k,v in pairs(processes) do
-    if v == process then
-      table.remove(processes, k)
-      break
-    end
-  end
-
+  Util.removeByValue(processes, process)
   table.insert(processes, process)
   process:focus(true)
 end
@@ -132,12 +126,7 @@ function Process:new(args)
         os.sleep(3)
       end
     end
-    for k,v in pairs(processes) do
-      if v == self then
-        table.remove(processes, k)
-        break
-      end
-    end
+    Util.removeByValue(processes, self)
     saveConfig()
     redraw()
   end)
@@ -243,7 +232,7 @@ function Process:resizeClick(x, y)
   end
   self:reposition()
   self:resume('term_resize')
-  self:drawSizers()
+  self:drawSizers(true)
   saveConfig()
 end
 
@@ -307,7 +296,7 @@ function defaultEnv.multishell.getCurrent()
 end
 
 function defaultEnv.multishell.getCount()
-  return Util.size(processes)
+  return #processes
 end
 
 function defaultEnv.multishell.launch(env, file, ...)
@@ -328,12 +317,12 @@ end
 local function addShell()
 
   local process = setmetatable({
-    x = monDim.width - 8,
-    y = monDim.height,
-    width = 9,
-    height = 1,
+    x       = monDim.width - 8,
+    y       = monDim.height,
+    width   = 9,
+    height  = 1,
     isShell = true,
-    uid = nextUID(),
+    uid     = nextUID(),
   }, { __index = Process })
 
   function process:focus(focused)

@@ -345,6 +345,7 @@ end
 local function watchResources(items)
 
   local craftList = { }
+  local outputs   = { }
 
   for k, res in pairs(resources) do
     local item = getItemWithQty(items, res, res.ignoreDamage)
@@ -382,8 +383,19 @@ local function watchResources(items)
     end
 
     if res.rsControl and res.rsDevice and res.rsSide then
-      pcall(function() 
-        device[res.rsDevice].setOutput(res.rsSide, item.count < res.low)
+      local enable = item.count < res.low
+      if not outputs[res.rsDevice] then
+        outputs[res.rsDevice] = { }
+      end
+      outputs[res.rsDevice][res.rsSide] = outputs[res.rsDevice][res.rsSide] or enable
+    end
+  end
+
+  for rsDevice, sides in pairs(outputs) do
+    for side, enable in pairs(sides) do
+      pcall(function()
+        debug({ rsDevice, side, enable })
+        device[rsDevice].setOutput(side, enable)
       end)
     end
   end
