@@ -725,8 +725,6 @@ local function getTurtleInventory()
       local items = turtleChestAdapter:listItems()
       _, inventory[i] = next(items)
       turtleChestAdapter:extract(1, qty, i)
-debug(inventory[i])
-read()
     end
   end
   return inventory

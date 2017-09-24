@@ -5,12 +5,7 @@ local Util = require('util')
 
 local function syntax()
   printError('Syntax:')
-  printError('Start a new session')
-  print('monitorManager start [configFile] [monitor]')
-  print()
-  printError('Run programs in session')
-  print('monitorManager run [program] [arguments]')
-  print()
+  print('monitorManager [session file] [monitor]')
   error()
 end
 
@@ -281,7 +276,7 @@ function defaultEnv.multishell.setTitle(uid, title)
   local process = Util.find(processes, 'uid', uid)
   if process then
     process.title = title or ''
-    process:focus(processs == processes[#processes])
+    process:focus(process == processes[#processes])
   end
 end
 
@@ -367,7 +362,7 @@ local function addShell()
 
   process.co = coroutine.create(function()
     while true do
-      os.run(defaultEnv, shell.resolveProgram('shell'))
+      os.run(Util.shallowCopy(defaultEnv), shell.resolveProgram('shell'))
     end
   end)
 
