@@ -1159,6 +1159,15 @@
       [ 7 ] = "minecraft:iron_ingot:0",
     },
   },
+  [ "minecraft:stone:2" ] = {
+    count = 4,
+    ingredients = {
+      "minecraft:stone:1",
+      "minecraft:stone:1",
+      [ 5 ] = "minecraft:stone:1",
+      [ 6 ] = "minecraft:stone:1",
+    },
+  },
   [ "minecraft:gold_block:0" ] = {
     count = 63,
     ingredients = {

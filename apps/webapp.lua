@@ -1,5 +1,5 @@
 local args = { ... }
-local GIT_REPO = 'kepler155c/opus/develop'
+local GIT_REPO = 'kepler155c/opus/master'
 local BASE = 'https://raw.githubusercontent.com/' .. GIT_REPO
 
 local function dourl(env, url)
@@ -32,7 +32,7 @@ local s, m = pcall(function()
 
   -- install filesystem
   fs.mount('',    'gitfs', GIT_REPO)
-  fs.mount('usr', 'gitfs', 'kepler155c/opus-apps/develop')
+  fs.mount('usr', 'gitfs', 'kepler155c/opus-apps/master')
 
   -- start program
   local file = table.remove(args, 1)

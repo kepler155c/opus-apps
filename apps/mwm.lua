@@ -5,7 +5,7 @@ local Util = require('util')
 
 local function syntax()
   printError('Syntax:')
-  print('monitorManager [session file] [monitor]')
+  print('mwm sessionName [monitor]')
   error()
 end
 
@@ -14,8 +14,14 @@ local UID        = 0
 local processes  = { }
 local parentTerm = term.current()
 local configFile = args[1] or syntax()
-local monitor    = peripheral.find(args[2] or 'monitor') or syntax()
 local defaultEnv = Util.shallowCopy(getfenv(1))
+local monitor
+
+if args[2] then
+  monitor = peripheral.wrap(args[2]) or syntax()
+else
+  monitor = peripheral.find('monitor') or syntax()
+end
 
 monitor.setTextScale(.5)
 monitor.clear()
