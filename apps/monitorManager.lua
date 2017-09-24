@@ -9,12 +9,12 @@ local function syntax()
   error()
 end
 
-local args = { ... }
-local UID = 0
-local processes = { }
+local args       = { ... }
+local UID        = 0
+local processes  = { }
 local parentTerm = term.current()
 local configFile = args[1] or syntax()
-local monitor = peripheral.find(args[2] or 'monitor') or syntax()
+local monitor    = peripheral.find(args[2] or 'monitor') or syntax()
 local defaultEnv = Util.shallowCopy(getfenv(1))
 
 monitor.setTextScale(.5)
@@ -23,6 +23,11 @@ monitor.clear()
 local monDim, termDim = { }, { }
 monDim.width, monDim.height = monitor.getSize()
 termDim.width, termDim.height = parentTerm.getSize()
+
+local function nextUID()
+  UID = UID + 1
+  return UID
+end
 
 local function saveConfig()
   local t = { }
@@ -56,11 +61,12 @@ end
 
 local function focusProcess(process)
   if #processes > 0 then
-    processes[#processes]:focus(false)
+    local lastFocused = processes[#processes]
+    lastFocused:focus(false)
   end
 
   for k,v in pairs(processes) do
-    if v == self then
+    if v == process then
       table.remove(processes, k)
       break
     end
@@ -70,68 +76,37 @@ local function focusProcess(process)
   process:focus(true)
 end
 
+local function getProcessAt(x, y)
+  for k = #processes, 1, -1 do
+    local process = processes[k]
+    if x >= process.x and 
+       y >= process.y and
+       x <= process.x + process.width - 1 and
+       y <= process.y + process.height - 1 then
+      return k, process
+    end
+  end
+end
+
+--[[ A runnable process ]]--
 local Process = { }
 
-function Process:focus(focused)
-  if focused then
-    self.titleBar.setBackgroundColor(colors.green)
-  else
-    self.titleBar.setBackgroundColor(colors.gray)
-  end
-  self.titleBar.clear()
-  self.titleBar.setTextColor(colors.black)
-  write(self.titleBar, 2, 1, self.title)
-  write(self.titleBar, self.width - 3, 1, '*')
-
-  if focused then
-    self.window.restoreCursor()
-  end
-end
-
-function Process:drawSizers()
-  self.container.setBackgroundColor(colors.black)
-  self.container.setTextColor(colors.white)
-
-  if self.showSizers then
-    write(self.container, 1, 1, '\135')
-    write(self.container, self.width, 1, '\139')
-    write(self.container, 1, self.height, '\141')
-    write(self.container, self.width, self.height, '\142')
-
-    self.container.setTextColor(colors.yellow)
-    write(self.container, 1, 3, '+')
-    write(self.container, 1, 5, '-')
-    write(self.container, 3, 1, '+')
-    write(self.container, 5, 1, '-')
-
-    local str = string.format('%d x %d', self.width - 2, self.height - 3)
-    write(self.container, (self.width - #str) / 2, 1, str)
-
-  else
-    write(self.container, 1, 1, string.rep(' ', self.width))
-    write(self.container, self.width, 1, ' ')
-    write(self.container, 1, self.height, ' ')
-    write(self.container, self.width, self.height, ' ')
-    write(self.container, 1, 3, ' ')
-    write(self.container, 1, 5, ' ')
-  end
-end
-
 function Process:new(args)
+
   args.env = args.env or Util.shallowCopy(defaultEnv)
   args.width = args.width or termDim.width
   args.height = args.height or termDim.height
 
-  UID = UID + 1
-  self.uid = UID
-
-  self.x = args.x or 1
-  self.y = args.y or 1
-  self.width = args.width + 2
-  self.height = args.height + 3
-  self.path = args.path
-  self.args = args.args  or { }
-  self.title = args.title or 'shell'
+  local self = setmetatable({
+    uid = nextUID(),
+    x = args.x or 1,
+    y = args.y or 1,
+    width = args.width + 2,
+    height = args.height + 3,
+    path = args.path,
+    args = args.args  or { },
+    title = args.title or 'shell',
+  }, { __index = Process })
 
   self:adjustDimensions()
 
@@ -163,15 +138,71 @@ function Process:new(args)
         break
       end
     end
-    --saveConfig()
+    saveConfig()
     redraw()
   end)
+
+  if #processes > 0 then
+    processes[#processes]:focus(false)
+  end
+  table.insert(processes, self)
+  self:focus(true)
 
   local previousTerm = term.current()
   self:resume()
   term.redirect(previousTerm)
 
-  return tab
+  return self
+end
+
+function Process:focus(focused)
+  if focused then
+    self.titleBar.setBackgroundColor(colors.green)
+  else
+    self.titleBar.setBackgroundColor(colors.gray)
+  end
+  self.titleBar.clear()
+  self.titleBar.setTextColor(colors.black)
+  write(self.titleBar, 2, 1, self.title)
+  write(self.titleBar, self.width - 3, 1, '*')
+
+  if focused then
+    self.window.restoreCursor()
+  elseif self.showSizers then
+    self:drawSizers(false)
+  end
+end
+
+function Process:drawSizers(showSizers)
+
+  self.showSizers = showSizers
+
+  self.container.setBackgroundColor(colors.black)
+  self.container.setTextColor(colors.white)
+
+  if self.showSizers then
+    write(self.container, 1, 1, '\135')
+    write(self.container, self.width, 1, '\139')
+    write(self.container, 1, self.height, '\141')
+    write(self.container, self.width, self.height, '\142')
+
+    self.container.setTextColor(colors.yellow)
+    write(self.container, 1, 3, '+')
+    write(self.container, 1, 5, '-')
+    write(self.container, 3, 1, '+')
+    write(self.container, 5, 1, '-')
+
+    local str = string.format('%d x %d', self.width - 2, self.height - 3)
+    write(self.container, (self.width - #str) / 2, 1, str)
+
+  else
+    write(self.container, 1, 1, string.rep(' ', self.width))
+    write(self.container, self.width, 1, ' ')
+    write(self.container, 1, self.height, ' ')
+    write(self.container, self.width, self.height, ' ')
+    write(self.container, 1, 3, ' ')
+    write(self.container, 1, 5, ' ')
+  end
 end
 
 function Process:adjustDimensions()
@@ -235,18 +266,7 @@ function Process:resume(event, ...)
   end
 end
 
-function getProcessAt(x, y)
-  for k = #processes, 1, -1 do
-    local process = processes[k]
-    if x >= process.x and 
-       y >= process.y and
-       x <= process.x + process.width - 1 and
-       y <= process.y + process.height - 1 then
-      return k, process
-    end
-  end
-end
-
+--[[ Install a multishell manager for the monitor ]]--
 defaultEnv.multishell = { }
 
 function defaultEnv.multishell.getFocus()
@@ -281,7 +301,9 @@ function defaultEnv.multishell.setTitle(uid, title)
 end
 
 function defaultEnv.multishell.getCurrent()
-  return processes[#processes].uid
+  if #processes > 0 then
+    return processes[#processes].uid
+  end
 end
 
 function defaultEnv.multishell.getCount()
@@ -298,31 +320,12 @@ function defaultEnv.multishell.launch(env, file, ...)
 end
 
 function defaultEnv.multishell.openTab(tabInfo)
-  local process = setmetatable({ }, { __index = Process })
-
-  table.insert(processes, process)
-  process:new(tabInfo)
-  focusProcess(process)
+  local process = Process:new(tabInfo)
   saveConfig()
-
   return process.uid
 end
 
-if fs.exists(configFile) then
-  local config = Util.readTable(configFile)
-  if config then
-    for _,v in pairs(config) do
-      local process = setmetatable({ }, { __index = Process })
-      table.insert(processes, process)
-      process:new(v)
-      process:focus(false)
-    end
-  end
-end
-
 local function addShell()
-
-  UID = UID + 1
 
   local process = setmetatable({
     x = monDim.width - 8,
@@ -330,10 +333,8 @@ local function addShell()
     width = 9,
     height = 1,
     isShell = true,
-    uid = UID,
+    uid = nextUID(),
   }, { __index = Process })
-
-  table.insert(processes, 1, process)
 
   function process:focus(focused)
     self.window.setVisible(focused)
@@ -366,7 +367,9 @@ local function addShell()
     end
   end)
 
-  process:focus(false)
+  table.insert(processes, process)
+
+  process:focus(true)
   local previousTerm = term.current()
   process:resume()
   term.redirect(previousTerm)
@@ -374,7 +377,14 @@ end
 
 addShell()
 
-processes[#processes]:focus(true)
+if fs.exists(configFile) then
+  local config = Util.readTable(configFile)
+  if config then
+    for _,v in pairs(config) do
+      Process:new(v)
+    end
+  end
+end
 
 while true do
 
@@ -400,8 +410,7 @@ while true do
         if x == process.width - 2 then
           process:resume('terminate')
         else
-          process.showSizers = not process.showSizers
-          process:drawSizers()
+          process:drawSizers(not process.showSizers)
         end
 
       elseif x == 1 or y == 1 then -- sizers
@@ -409,8 +418,7 @@ while true do
 
       elseif x > 1 and x < process.width then
         if process.showSizers then
-          process.showSizers = false
-          process:drawSizers()
+          process:drawSizers(false)
         end
         process:resume('mouse_click', 1, x - 1, y - 2)
         process:resume('mouse_up',    1, x - 1, y - 2)
@@ -421,7 +429,7 @@ while true do
         process.x = math.floor(x - (process.width) / 2)
         process.y = y
         process:reposition()
-        process:drawSizers()
+        process:drawSizers(true)
         saveConfig()
       end
     end
@@ -445,3 +453,6 @@ while true do
     end
   end
 end
+
+parentTerm.clear()
+parentTerm.setCursorPos(1, 1)
