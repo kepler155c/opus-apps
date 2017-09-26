@@ -19,11 +19,12 @@ multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 -- adjust directions in that file if needed
 
 local config = {
-  trashDirection = 'up',    -- trash /chest in relation to chest
-  turtleDirection = 'down',    -- turtle in relation to chest
+  trashDirection     = 'up',    -- trash /chest in relation to chest
+  inventoryDirection = { direction = 'north', wrapSide = 'back' },
+  chestDirection     = { direction = 'down', wrapSide = 'top' },
 }
 
-Config.load('resourceManager', config)
+Config.load('chestManager', config)
 
 local controller = RefinedAdapter()
 if not controller:isValid() then
@@ -32,8 +33,8 @@ if not controller:isValid() then
 end
 
 ---------------------------------------------------------------------- FIX ME
-local chestAdapter = ChestAdapter({ direction = 'north', wrapSide = 'back' })
-local turtleChestAdapter = ChestAdapter({ direction = 'down', wrapSide = 'top' })
+local inventoryAdapter = ChestAdapter(config.inventoryDirection)
+local turtleChestAdapter = ChestAdapter(config.chestDirection)
 
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE = 'usr/etc/recipes.db'
@@ -171,7 +172,7 @@ local function clearGrid()
   for i = 1, 16 do
     local count = turtle.getItemCount(i)
     if count > 0 then
-      chestAdapter:insert(i, count)
+      inventoryAdapter:insert(i, count)
       if turtle.getItemCount(i) ~= 0 then
         return false
       end
@@ -206,9 +207,9 @@ local function craftItem(recipe, items, originalItem, craftList, count)
   end
 
   if toCraft > 0 then
-    Craft.craftRecipe(recipe, toCraft, chestAdapter)
+    Craft.craftRecipe(recipe, toCraft, inventoryAdapter)
     clearGrid()
-    items = chestAdapter:listItems()
+    items = inventoryAdapter:listItems()
   end
 
   count = count - toCraft
@@ -232,7 +233,7 @@ local function craftItems(craftList, allItems)
     local recipe = recipes[key]
     if recipe then
       craftItem(recipe, allItems, item, craftList, item.count)
-      allItems = chestAdapter:listItems() -- refresh counts
+      allItems = inventoryAdapter:listItems() -- refresh counts
     elseif item.rsControl then
       item.status = 'Activated'
     end
@@ -360,7 +361,7 @@ local function watchResources(items)
     end
 
     if res.limit and item.count > res.limit then
-      chestAdapter:provide(
+      inventoryAdapter:provide(
         { name = item.name, damage = item.damage }, 
         item.count - res.limit,
         nil,
@@ -717,7 +718,7 @@ function listingPage:enable()
 end
 
 function listingPage:refresh()
-  self.allItems = chestAdapter:listItems()
+  self.allItems = inventoryAdapter:listItems()
   mergeResources(self.allItems)
   self:applyFilter()
 end
@@ -913,9 +914,7 @@ jobMonitor()
 Event.onInterval(5, function()
 
   if not craftingPaused then
-    local items = chestAdapter:listItems()
-_G._adapter = chestAdapter
-_G._items = items
+    local items = inventoryAdapter:listItems()
     if Util.size(items) == 0 then
       jobListGrid.parent:clear()
       jobListGrid.parent:centeredWrite(math.ceil(jobListGrid.parent.height/2), 'No items in system')
