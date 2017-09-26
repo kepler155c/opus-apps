@@ -32,7 +32,7 @@ if not controller:isValid() then
 end
 
 ---------------------------------------------------------------------- FIX ME
-local chestAdapter = ChestAdapter({ direction = 'north', wrapSide = 'colossalchests:colossalChest' })
+local chestAdapter = ChestAdapter({ direction = 'north', wrapSide = 'back' })
 local turtleChestAdapter = ChestAdapter({ direction = 'down', wrapSide = 'top' })
 
 local RESOURCE_FILE = 'usr/config/resources.db'
@@ -620,9 +620,9 @@ function listingPage.grid:getRowTextColor(row, selected)
   end
   if row.has_recipe then
     if selected then
-      return colors.blue
+      return colors.cyan
     end
-    return colors.lightBlue
+    return colors.cyan
   end
   return UI.Grid:getRowTextColor(row, selected)
 end
@@ -914,6 +914,8 @@ Event.onInterval(5, function()
 
   if not craftingPaused then
     local items = chestAdapter:listItems()
+_G._adapter = chestAdapter
+_G._items = items
     if Util.size(items) == 0 then
       jobListGrid.parent:clear()
       jobListGrid.parent:centeredWrite(math.ceil(jobListGrid.parent.height/2), 'No items in system')

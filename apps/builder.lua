@@ -20,11 +20,6 @@ if Util.getVersion() == 1.8 then
   ChestAdapter  = require('chestAdapter18')
 end
 
-if not _G.device then
-  local Opus     = require('opus')
-  Opus.loadExtensions()
-end
-
 local BUILDER_DIR = 'usr/builder'
 
 local schematic = Schematic()

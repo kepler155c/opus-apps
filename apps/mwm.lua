@@ -153,7 +153,7 @@ end
 
 function Process:focus(focused)
   if focused then
-    self.titleBar.setBackgroundColor(colors.green)
+    self.titleBar.setBackgroundColor(colors.yellow)
   else
     self.titleBar.setBackgroundColor(colors.gray)
   end
@@ -337,7 +337,7 @@ local function addShell()
     self.window.setVisible(focused)
     if focused then
       self.window.restoreCursor()
-      self.container.setTextColor(colors.green)
+      self.container.setTextColor(colors.yellow)
       self.container.setBackgroundColor(colors.black)
     else
       parentTerm.clear()
