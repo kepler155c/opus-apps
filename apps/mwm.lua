@@ -16,6 +16,7 @@ local parentTerm = term.current()
 local configFile = args[1] or syntax()
 local defaultEnv = Util.shallowCopy(getfenv(1))
 local monitor
+local exitSession
 
 if args[2] then
   monitor = peripheral.wrap(args[2]) or syntax()
@@ -35,7 +36,7 @@ local function nextUID()
   return UID
 end
 
-local function saveConfig()
+local function saveSession()
   local t = { }
   for _,process in pairs(processes) do
     if process.path and not process.isShell then
@@ -133,7 +134,7 @@ function Process:new(args)
       end
     end
     Util.removeByValue(processes, self)
-    saveConfig()
+    saveSession()
     redraw()
   end)
 
@@ -239,7 +240,7 @@ function Process:resizeClick(x, y)
   self:reposition()
   self:resume('term_resize')
   self:drawSizers(true)
-  saveConfig()
+  saveSession()
 end
 
 function Process:resume(event, ...)
@@ -316,10 +317,11 @@ end
 
 function defaultEnv.multishell.openTab(tabInfo)
   local process = Process:new(tabInfo)
-  saveConfig()
+  saveSession()
   return process.uid
 end
 
+--[[ Special shell process for launching programs ]]--
 local function addShell()
 
   local process = setmetatable({
@@ -357,9 +359,11 @@ local function addShell()
   process.terminal  = process.window
 
   process.co = coroutine.create(function()
-    while true do
-      os.run(Util.shallowCopy(defaultEnv), shell.resolveProgram('shell'))
-    end
+    print('To run a program on the monitor, type "fg <program>"')
+    print('To quit, type "exit"')
+    print('Press the [ shell ] button on the monitor to return to this shell')
+    os.run(Util.shallowCopy(defaultEnv), shell.resolveProgram('shell'))
+    exitSession = true
   end)
 
   table.insert(processes, process)
@@ -370,23 +374,25 @@ local function addShell()
   term.redirect(previousTerm)
 end
 
-addShell()
-
-if fs.exists(configFile) then
-  local config = Util.readTable(configFile)
-  if config then
-    for _,v in pairs(config) do
-      Process:new(v)
+local function loadSession()
+  if fs.exists(configFile) then
+    local config = Util.readTable(configFile)
+    if config then
+      for _,v in pairs(config) do
+        Process:new(v)
+      end
     end
   end
 end
 
-while true do
+addShell()
+loadSession()
+
+while not exitSession do
 
   local event = { os.pullEventRaw() }
 
   if event[1] == 'terminate' then
-    term.redirect(parentTerm)
     break
 
   elseif event[1] == "monitor_touch" then
@@ -425,7 +431,7 @@ while true do
         process.y = y
         process:reposition()
         process:drawSizers(true)
-        saveConfig()
+        saveSession()
       end
     end
 
@@ -449,5 +455,6 @@ while true do
   end
 end
 
+term.redirect(parentTerm)
 parentTerm.clear()
 parentTerm.setCursorPos(1, 1)

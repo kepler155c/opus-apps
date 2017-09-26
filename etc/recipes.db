@@ -502,6 +502,15 @@
       [ 6 ] = "minecraft:iron_ingot:0",
     },
   },
+  [ "minecraft:brewing_stand:0" ] = {
+    count = 1,
+    ingredients = {
+      [ 7 ] = "minecraft:cobblestone:0",
+      [ 2 ] = "minecraft:blaze_rod:0",
+      [ 5 ] = "minecraft:cobblestone:0",
+      [ 6 ] = "minecraft:cobblestone:0",
+    },
+  },
   [ "minecraft:stained_glass:0" ] = {
     count = 8,
     ingredients = {
@@ -1756,6 +1765,17 @@
       [ 5 ] = "minecraft:stained_glass:9",
       [ 6 ] = "minecraft:stained_glass:9",
       [ 7 ] = "minecraft:stained_glass:9",
+    },
+  },
+  [ "minecraft:iron_door:0" ] = {
+    count = 3,
+    ingredients = {
+      "minecraft:iron_ingot:0",
+      "minecraft:iron_ingot:0",
+      [ 9 ] = "minecraft:iron_ingot:0",
+      [ 10 ] = "minecraft:iron_ingot:0",
+      [ 5 ] = "minecraft:iron_ingot:0",
+      [ 6 ] = "minecraft:iron_ingot:0",
     },
   },
   [ "minecraft:stained_glass_pane:12" ] = {

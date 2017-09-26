@@ -394,7 +394,6 @@ local function watchResources(items)
   for rsDevice, sides in pairs(outputs) do
     for side, enable in pairs(sides) do
       pcall(function()
-        debug({ rsDevice, side, enable })
         device[rsDevice].setOutput(side, enable)
       end)
     end
