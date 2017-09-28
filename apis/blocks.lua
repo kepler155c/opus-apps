@@ -570,22 +570,9 @@ function Blocks:init(args)
   self.nameDB = nameDB
 
   blockDB:load()
---  standardBlockDB:load()
   blockTypeDB:load()
   nameDB:load(self.dir, blockDB)
---  placementDB:load(standardBlockDB, blockTypeDB)
   placementDB:load2(blockDB, blockTypeDB)
-
---  _G._b = blockDB
---  _G._s = standardBlockDB
---  _G._bt = blockTypeDB
---  _G._p = placementDB
-
---  Util.writeTable('pb1.lua', placementDB.data)
-
---  placementDB.data = { }
-
---  Util.writeTable('pb2.lua', placementDB.data)
 end
 
 -- for an ID / dmg (with placement info) - return the correct block (without the placment info embedded in the dmg)

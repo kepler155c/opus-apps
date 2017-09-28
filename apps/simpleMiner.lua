@@ -28,15 +28,18 @@ local options = {
 
 local fortuneBlocks = {
   [ 'minecraft:redstone_ore' ] = true,
-  [ 'minecraft:lapis_ore' ] = true,
-  [ 'minecraft:coal_ore' ] = true,
-  [ 'minecraft:diamond_ore' ] = true,
-  [ 'minecraft:emerald_ore' ] = true,
+  [ 'minecraft:lapis_ore'    ] = true,
+  [ 'minecraft:coal_ore'     ] = true,
+  [ 'minecraft:diamond_ore'  ] = true,
+  [ 'minecraft:emerald_ore'  ] = true,
 }
 
 local MIN_FUEL = 7500
 local LOW_FUEL = 1500
 local MAX_FUEL = 100000
+
+local PROGRESS_FILE = 'usr/config/mining.progress'
+local TRASH_FILE    = 'usr/config/mining.trash'
 
 if not term.isColor() then
   MAX_FUEL = 20000
@@ -159,7 +162,7 @@ function nextChunk()
   mining.x = nc.x
   mining.z = nc.z
 
-  Util.writeTable('mining.progress', mining)
+  Util.writeTable(PROGRESS_FILE, mining)
 
   return true
 end
@@ -177,7 +180,7 @@ function addTrash()
   end
 
   trash['minecraft:bucket:0'] = nil
-  Util.writeTable('mining.trash', trash)
+  Util.writeTable(TRASH_FILE, trash)
 end
 
 function log(text)
@@ -195,7 +198,7 @@ function refuel()
     local oldStatus = turtle.status
     status('refueling')
 
-    if turtle.select'minecraft:coal:0') then
+    if turtle.select('minecraft:coal:0') then
       local qty = turtle.getItemCount()
       print('refueling ' .. qty)
       turtle.refuel(qty)
@@ -236,7 +239,7 @@ end
 
 function safeGoto(x, z, y, h)
   local oldStatus = turtle.status
-  while not turtle.pathfind({ x = x, z = z, y = y, heading = h }) do
+  while not turtle.pathfind({ x = x, z = z, y = y or turtle.point.y, heading = h }) do
     --status('stuck')
     if turtle.abort then
       return false
@@ -300,6 +303,7 @@ function normalChestUnload()
       end
     end
   end
+  turtle.condense()
   turtle.select(1)
   safeGoto(pt.x, pt.z, 0, pt.heading)
 
@@ -315,6 +319,10 @@ function ejectTrash()
 
   turtle.eachFilledSlot(function(slot)
     if slot.iddmg == 'minecraft:cobblestone:0' then
+      if cobbleSlotCount == 0 and slot.count > 36 then
+        turtle.select(slot.index)
+        turtle.dropDown(32)
+      end
       cobbleSlotCount = cobbleSlotCount + 1
     end
 
@@ -565,17 +573,18 @@ unload = normalChestUnload
 mining.x = 0
 mining.z = 0
 mining.locations = getBoreLocations(0, 0)
-trash = Util.readTable('mining.trash')
+trash = Util.readTable(TRASH_FILE)
 
 if options.resume.value then
-  mining = Util.readTable('mining.progress')
-elseif fs.exists('mining.progress') then
-  print('use -r to resume')
+  mining = Util.readTable(PROGRESS_FILE)
+elseif fs.exists(PROGRESS_FILE) then
+  print('Use -r to resume')
+  print('Teminate or enter to continue')
   read()
 end
 
 if not trash or options.setTrash.value then
-  print('Add trash blocks, press enter when ready')
+  print('Add blocks to ignore, press enter when ready')
   read()
   addTrash()
 end
@@ -599,8 +608,6 @@ if options.fortunePick.value then
   trash['cctweaks:toolHost:0'] = nil
 end
 
-_G._p = trash
-
 local function main()
   repeat
     while #mining.locations > 0 do
@@ -608,7 +615,7 @@ local function main()
       if not boreCommand() then
         return
       end
-      Util.writeTable('mining.progress', mining)
+      Util.writeTable(PROGRESS_FILE, mining)
     end
   until not nextChunk()
 end
@@ -626,6 +633,7 @@ turtle.run(function()
     printError(m)
   end
 
+  turtle.abort = false
   safeGotoY(0)
   safeGoto(0, 0, 0, 0)
   unload()

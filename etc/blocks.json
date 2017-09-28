@@ -1300,26 +1300,391 @@
       "Structure Block (Data)"],
     "id": 255
   },
-  "string": {
-    "name": "String", 
-    "id": 287
+  "iron_shovel": {
+    "id": 256,
+    "name": "Iron Shovel"
+  },
+  "iron_pickaxe": {
+    "id": 257,
+    "name": "Iron Pickaxe"
+  },
+  "iron_axe": {
+    "id": 258,
+    "name": "Iron Axe"
+  },
+  "flint_and_steel": {
+    "id": 259,
+    "name": "Flint and Steel"
+  },
+  "apple": {
+    "id": 260,
+    "name": "Apple"
+  },
+  "bow": {
+    "id": 261,
+    "name": "Bow"
+  },
+  "arrow": {
+    "id": 262,
+    "name": "Arrow"
   },
   "coal": {
     "name": ["Coal", 
       "Charcoal"],
     "id": 263
   },
+  "diamond": {
+    "id": 264,
+    "name": "Diamond"
+  },
+  "iron_ingot": {
+    "id": 265,
+    "name": "Iron Ingot"
+  },
+  "gold_ingot": {
+    "id": 266,
+    "name": "Gold Ingot"
+  },
+  "iron_sword": {
+    "id": 267,
+    "name": "Iron Sword"
+  },
+  "wooden_sword": {
+    "id": 268,
+    "name": "Wooden Sword"
+  },
+  "wooden_shovel": {
+    "id": 269,
+    "name": "Wooden Shovel"
+  },
+  "wooden_pickaxe": {
+    "id": 270,
+    "name": "Wooden Pickaxe"
+  },
+  "wooden_axe": {
+    "id": 271,
+    "name": "Wooden Axe"
+  },
+  "stone_sword": {
+    "id": 272,
+    "name": "Stone Sword"
+  },
+  "stone_shovel": {
+    "id": 273,
+    "name": "Stone Shovel"
+  },
+  "stone_pickaxe": {
+    "id": 274,
+    "name": "Stone Pickaxe"
+  },
+  "stone_axe": {
+    "id": 275,
+    "name": "Stone Axe"
+  },
+  "diamond_sword": {
+    "id": 276,
+    "name": "Diamond Sword"
+  },
+  "diamond_shovel": {
+    "id": 277,
+    "name": "Diamond Shovel"
+  },
+  "diamond_pickaxe": {
+    "id": 278,
+    "name": "Diamond Pickaxe"
+  },
+  "diamond_axe": {
+    "id": 279,
+    "name": "Diamond Axe"
+  },
+  "stick": {
+    "id": 280,
+    "name": "Stick"
+  },
+  "bowl": {
+    "id": 281,
+    "name": "Bowl"
+  },
+  "mushroom_stew": {
+    "id": 282,
+    "name": "Mushroom Stew"
+  },
+  "golden_sword": {
+    "id": 283,
+    "name": "Golden Sword"
+  },
+  "golden_shovel": {
+    "id": 284,
+    "name": "Golden Shovel"
+  },
+  "golden_pickaxe": {
+    "id": 285,
+    "name": "Golden Pickaxe"
+  },
+  "golden_axe": {
+    "id": 286,
+    "name": "Golden Axe"
+  },
+  "string": {
+    "id": 287,
+    "name": "String"
+  },
+  "feather": {
+    "id": 288,
+    "name": "Feather"
+  },
+  "gunpowder": {
+    "id": 289,
+    "name": "Gunpowder"
+  },
+  "wooden_hoe": {
+    "id": 290,
+    "name": "Wooden Hoe"
+  },
+  "stone_hoe": {
+    "id": 291,
+    "name": "Stone Hoe"
+  },
+  "iron_hoe": {
+    "id": 292,
+    "name": "Iron Hoe"
+  },
+  "diamond_hoe": {
+    "id": 293,
+    "name": "Diamond Hoe"
+  },
+  "golden_hoe": {
+    "id": 294,
+    "name": "Golden Hoe"
+  },
   "wheat_seeds": {
     "id": 295,
     "name": "Wheat Seeds",
+  },
+  "wheat": {
+    "id": 296,
+    "name": "Wheat"
+  },
+  "bread": {
+    "id": 297,
+    "name": "Bread"
+  },
+  "leather_helmet": {
+    "id": 298,
+    "name": "Leather Helmet"
+  },
+  "leather_chestplate": {
+    "id": 299,
+    "name": "Leather Tunic"
+  },
+  "leather_leggings": {
+    "id": 300,
+    "name": "Leather Pants"
+  },
+  "leather_boots": {
+    "id": 301,
+    "name": "Leather Boots"
+  },
+  "chainmail_helmet": {
+    "id": 302,
+    "name": "Chainmail Helmet"
+  },
+  "chainmail_chestplate": {
+    "id": 303,
+    "name": "Chainmail Chestplate"
+  },
+  "chainmail_leggings": {
+    "id": 304,
+    "name": "Chainmail Leggings"
+  },
+  "chainmail_boots": {
+    "id": 305,
+    "name": "Chainmail Boots"
+  },
+  "iron_helmet": {
+    "id": 306,
+    "name": "Iron Helmet"
+  },
+  "iron_chestplate": {
+    "id": 307,
+    "name": "Iron Chestplate"
+  },
+  "iron_leggings": {
+    "id": 308,
+    "name": "Iron Leggings"
+  },
+  "iron_boots": {
+    "id": 309,
+    "name": "Iron Boots"
+  },
+  "diamond_helmet": {
+    "id": 310,
+    "name": "Diamond Helmet"
+  },
+  "diamond_chestplate": {
+    "id": 311,
+    "name": "Diamond Chestplate"
+  },
+  "diamond_leggings": {
+    "id": 312,
+    "name": "Diamond Leggings"
+  },
+  "diamond_boots": {
+    "id": 313,
+    "name": "Diamond Boots"
+  },
+  "golden_helmet": {
+    "id": 314,
+    "name": "Golden Helmet"
+  },
+  "golden_chestplate": {
+    "id": 315,
+    "name": "Golden Chestplate"
+  },
+  "golden_leggings": {
+    "id": 316,
+    "name": "Golden Leggings"
+  },
+  "golden_boots": {
+    "id": 317,
+    "name": "Golden Boots"
+  },
+  "flint": {
+    "id": 318,
+    "name": "Flint"
+  },
+  "porkchop": {
+    "id": 319,
+    "name": "Raw Porkchop"
+  },
+  "cooked_porkchop": {
+    "id": 320,
+    "name": "Cooked Porkchop"
+  },
+  "painting": {
+    "id": 321,
+    "name": "Painting"
+  },
+  "golden_apple": {
+    "id": 322,
+    "name": ["Enchanted Golden Apple",
+      "Enchanted Golden Apple" ]
   },
   "sign": {
     "id": 323,
     "name": "Sign",
   },
+  "wooden_door": {
+    "id": 324,
+    "name": "Oak Door"
+  },
+  "bucket": {
+    "id": 325,
+    "name": "Bucket"
+  },
+  "water_bucket": {
+    "id": 326,
+    "name": "Water Bucket"
+  },
+  "lava_bucket": {
+    "id": 327,
+    "name": "Lava Bucket"
+  },
+  "minecart": {
+    "id": 328,
+    "name": "Minecart"
+  },
+  "saddle": {
+    "id": 329,
+    "name": "Saddle"
+  },
+  "iron_door": {
+    "id": 330,
+    "name": "Iron Door"
+  },
   "redstone": {
     "id": 331,
     "name": "Redstone Dust",
+  },
+  "snowball": {
+    "id": 332,
+    "name": "Snowball"
+  },
+  "boat": {
+    "id": 333,
+    "name": "Oak Boat"
+  },
+  "leather": {
+    "id": 334,
+    "name": "Leather"
+  },
+  "milk_bucket": {
+    "id": 335,
+    "name": "Milk Bucket"
+  },
+  "brick": {
+    "id": 336,
+    "name": "Brick"
+  },
+  "clay_ball": {
+    "id": 337,
+    "name": "Clay"
+  },
+  "reeds": {
+    "id": 338,
+    "name": "Sugar Canes"
+  },
+  "paper": {
+    "id": 339,
+    "name": "Paper"
+  },
+  "book": {
+    "id": 340,
+    "name": "Book"
+  },
+  "slime_ball": {
+    "id": 341,
+    "name": "Slimeball"
+  },
+  "chest_minecart": {
+    "id": 342,
+    "name": "Minecart with Chest"
+  },
+  "furnace_minecart": {
+    "id": 343,
+    "name": "Minecart with Furnace"
+  },
+  "egg": {
+    "id": 344,
+    "name": "Egg"
+  },
+  "compass": {
+    "id": 345,
+    "name": "Compass"
+  },
+  "fishing_rod": {
+    "id": 346,
+    "name": "Fishing Rod"
+  },
+  "clock": {
+    "id": 347,
+    "name": "Clock"
+  },
+  "glowstone_dust": {
+    "id": 348,
+    "name": "Glowstone Dust"
+  },
+  "fish": {
+    "id": 349,
+    "name": ["Raw Fish",
+      "Raw Salmon",
+      "Clownfish",
+      "Pufferfish"]
+  },
+  "cooked_fish": {
+    "id": 350,
+    "name": ["Cooked Fish",
+      "Cooked Salmon"]
   },
   "dye": {
     "id": 351,
@@ -1340,6 +1705,18 @@
       "Orange Dye",
       "Bone Meal"]
   },
+  "bone": {
+    "id": 352,
+    "name": "Bone"
+  },
+  "sugar": {
+    "id": 353,
+    "name": "Sugar"
+  },
+  "cake": {
+    "id": 354,
+    "name": "Cake"
+  },
   "bed-block": {
     "id": 355,
     "name": "Bed",
@@ -1350,6 +1727,142 @@
     "name": "Redstone Repeater",
     "place": "repeater",
   },
+  "cookie": {
+    "id": 357,
+    "name": "Cookie"
+  },
+  "filled_map": {
+    "id": 358,
+    "name": "Map"
+  },
+  "shears": {
+    "id": 359,
+    "name": "Shears"
+  },
+  "melon": {
+    "id": 360,
+    "name": "Melon"
+  },
+  "pumpkin_seeds": {
+    "id": 361,
+    "name": "Pumpkin Seeds"
+  },
+  "melon_seeds": {
+    "id": 362,
+    "name": "Melon Seeds"
+  },
+  "beef": {
+    "id": 363,
+    "name": "Raw Beef"
+  },
+  "cooked_beef": {
+    "id": 364,
+    "name": "Steak"
+  },
+  "chicken": {
+    "id": 365,
+    "name": "Raw Chicken"
+  },
+  "cooked_chicken": {
+    "id": 366,
+    "name": "Cooked Chicken"
+  },
+  "rotten_flesh": {
+    "id": 367,
+    "name": "Rotten Flesh"
+  },
+  "ender_pearl": {
+    "id": 368,
+    "name": "Ender Pearl"
+  },
+  "blaze_rod": {
+    "id": 369,
+    "name": "Blaze Rod"
+  },
+  "ghast_tear": {
+    "id": 370,
+    "name": "Ghast Tear"
+  },
+  "gold_nugget": {
+    "id": 371,
+    "name": "Gold Nugget"
+  },
+  "nether_wart": {
+    "id": 372,
+    "name": "Nether Wart"
+  },
+  "potion": {
+    "id": 373,
+    "name": "Potion"
+  },
+  "glass_bottle": {
+    "id": 374,
+    "name": "Glass Bottle"
+  },
+  "spider_eye": {
+    "id": 375,
+    "name": "Spider Eye"
+  },
+  "fermented_spider_eye": {
+    "id": 376,
+    "name": "Fermented Spider Eye"
+  },
+  "blaze_powder": {
+    "id": 377,
+    "name": "Blaze Powder"
+  },
+  "magma_cream": {
+    "id": 378,
+    "name": "Magma Cream"
+  },
+  "brewing_stand": {
+    "id": 379,
+    "name": "Brewing Stand"
+  },
+  "cauldron": {
+    "id": 380,
+    "name": "Cauldron"
+  },
+  "ender_eye": {
+    "id": 381,
+    "name": "Eye of Ender"
+  },
+  "speckled_melon": {
+    "id": 382,
+    "name": "Glistering Melon"
+  },
+  "spawn_egg": {
+    "id": 383,
+    "name": "Spawn Egg"
+  },
+  "experience_bottle": {
+    "id": 384,
+    "name": "Bottle o' Enchanting"
+  },
+  "fire_charge": {
+    "id": 385,
+    "name": "Fire Charge"
+  },
+  "writable_book": {
+    "id": 386,
+    "name": "Book and Quill"
+  },
+  "written_book": {
+    "id": 387,
+    "name": "Written Book"
+  },
+  "emerald": {
+    "id": 388,
+    "name": "Emerald"
+  },
+  "item_frame": {
+    "id": 389,
+    "name": "Item Frame"
+  },
+  "flower_pot": {
+    "id": 390,
+    "name": "Flower Pot"
+  },
   "carrot": {
     "id": 391,
     "name": "Carrot",
@@ -1358,13 +1871,290 @@
     "id": 392,
     "name": "Potato",
   },
+  "baked_potato": {
+    "id": 393,
+    "name": "Baked Potato"
+  },
+  "poisonous_potato": {
+    "id": 394,
+    "name": "Poisonous Potato"
+  },
+  "map": {
+    "id": 395,
+    "name": "Empty Map"
+  },
+  "golden_carrot": {
+    "id": 396,
+    "name": "Golden Carrot"
+  },
+  "skull": {
+    "id": 397,
+    "name": ["Skeleton Skull",
+      "Wither Skeleton Skull",
+      "Zombie Head",
+      "Human Head",
+      "Creeper Head",
+      "Dragon Head"]
+  },
+  "carrot_on_a_stick": {
+    "id": 398,
+    "name": "Carrot on a Stick"
+  },
+  "nether_star": {
+    "id": 399,
+    "name": "Nether Star"
+  },
+  "pumpkin_pie": {
+    "id": 400,
+    "name": "Pumpkin Pie"
+  },
+  "fireworks": {
+    "id": 401,
+    "name": "Firework Rocket"
+  },
+  "firework_charge": {
+    "id": 402,
+    "name": "Firework Star"
+  },
+  "enchanted_book": {
+    "id": 403,
+    "name": "Enchanted Book"
+  },
   "comparator": {
     "id": 404,
     "name": "Redstone Comparator",
     "place": "comparator",
   },
+  "netherbrick": {
+    "id": 405,
+    "name": "Nether Brick"
+  },
+  "quartz": {
+    "id": 406,
+    "name": "Nether Quartz"
+  },
+  "tnt_minecart": {
+    "id": 407,
+    "name": "Minecart with TNT"
+  },
+  "hopper_minecart": {
+    "id": 408,
+    "name": "Minecart with Hopper"
+  },
+  "prismarine_shard": {
+    "id": 409,
+    "name": "Prismarine Shard"
+  },
+  "prismarine_crystals": {
+    "id": 410,
+    "name": "Prismarine Crystals"
+  },
+  "rabbit": {
+    "id": 411,
+    "name": "Raw Rabbit"
+  },
+  "cooked_rabbit": {
+    "id": 412,
+    "name": "Cooked Rabbit"
+  },
+  "rabbit_stew": {
+    "id": 413,
+    "name": "Rabbit Stew"
+  },
+  "rabbit_foot": {
+    "id": 414,
+    "name": "Rabbit's Foot"
+  },
+  "rabbit_hide": {
+    "id": 415,
+    "name": "Rabbit Hide"
+  },
+  "armor_stand": {
+    "id": 416,
+    "name": "Armor Stand"
+  },
+  "iron_horse_armor": {
+    "id": 417,
+    "name": "Iron Horse Armor"
+  },
+  "golden_horse_armor": {
+    "id": 418,
+    "name": "Golden Horse Armor"
+  },
+  "diamond_horse_armor": {
+    "id": 419,
+    "name": "Diamond Horse Armor"
+  },
+  "lead": {
+    "id": 420,
+    "name": "Lead"
+  },
+  "name_tag": {
+    "id": 421,
+    "name": "Name Tag"
+  },
+  "command_block_minecart": {
+    "id": 422,
+    "name": "Minecart with Command Block"
+  },
+  "mutton": {
+    "id": 423,
+    "name": "Raw Mutton"
+  },
+  "cooked_mutton": {
+    "id": 424,
+    "name": "Cooked Mutton"
+  },
   "banner": {
     "id": 425,
     "name": "Banner",
+  },
+  "spruce_door": {
+    "id": 427,
+    "name": "Spruce Door"
+  },
+  "birch_door": {
+    "id": 428,
+    "name": "Birch Door"
+  },
+  "jungle_door": {
+    "id": 429,
+    "name": "Jungle Door"
+  },
+  "acacia_door": {
+    "id": 430,
+    "name": "Acacia Door"
+  },
+  "dark_oak_door": {
+    "id": 431,
+    "name": "Dark Oak Door"
+  },
+  "chorus_fruit": {
+    "id": 432,
+    "name": "Chorus Fruit"
+  },
+  "popped_chorus_fruit": {
+    "id": 433,
+    "name": "Popped Chorus Fruit"
+  },
+  "beetroot": {
+    "id": 434,
+    "name": "Beetroot"
+  },
+  "beetroot_seeds": {
+    "id": 435,
+    "name": "Beetroot Seeds"
+  },
+  "beetroot_soup": {
+    "id": 436,
+    "name": "Beetroot Soup"
+  },
+  "dragon_breath": {
+    "id": 437,
+    "name": "Dragon's Breath"
+  },
+  "splash_potion": {
+    "id": 438,
+    "name": "Splash Potion"
+  },
+  "spectral_arrow": {
+    "id": 439,
+    "name": "Spectral Arrow"
+  },
+  "tipped_arrow": {
+    "id": 440,
+    "name": "Tipped Arrow"
+  },
+  "lingering_potion": {
+    "id": 441,
+    "name": "Lingering Potion"
+  },
+  "shield": {
+    "id": 442,
+    "name": "Shield"
+  },
+  "elytra": {
+    "id": 443,
+    "name": "Elytra"
+  },
+  "spruce_boat": {
+    "id": 444,
+    "name": "Spruce Boat"
+  },
+  "birch_boat": {
+    "id": 445,
+    "name": "Birch Boat"
+  },
+  "jungle_boat": {
+    "id": 446,
+    "name": "Jungle Boat"
+  },
+  "acacia_boat": {
+    "id": 447,
+    "name": "Acacia Boat"
+  },
+  "dark_oak_boat": {
+    "id": 448,
+    "name": "Dark Oak Boat"
+  },
+  "totem_of_undying": {
+    "id": 449,
+    "name": "Totem of Undying"
+  },
+  "shulker_shell": {
+    "id": 450,
+    "name": "Shulker Shell"
+  },
+  "iron_nugget": {
+    "id": 452,
+    "name": "Iron Nugget"
+  },
+  "record_13": {
+    "id": 2256,
+    "name": "13 Disc"
+  },
+  "record_cat": {
+    "id": 2257,
+    "name": "Cat Disc"
   }
+  "record_blocks": {
+    "id": 2258,
+    "name": "Blocks Disc"
+  },
+  "record_chirp": {
+    "id": 2259,
+    "name": "Chirp Disc"
+  },
+  "record_far": {
+    "id": 2260,
+    "name": "Far Disc"
+  },
+  "record_mall": {
+    "id": 2261,
+    "name": "Mall Disc"
+  },
+  "record_mellohi": {
+    "id": 2262,
+    "name": "Mellohi Disc"
+  },
+  "record_stal": {
+    "id": 2263,
+    "name": "Stal Disc"
+  },
+  "record_strad": {
+    "id": 2264,
+    "name": "Strad Disc"
+  },
+  "record_ward": {
+    "id": 2265,
+    "name": "Ward Disc"
+  },
+  "record_11": {
+    "id": 2266,
+    "name": "11 Disc"
+  },
+  "record_wait": {
+    "id": 2267,
+    "name": "Wait Disc"
+  },
 }
