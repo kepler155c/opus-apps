@@ -70,7 +70,6 @@ local methodsPage = UI.Page {
   viewportConsole = UI.ViewportWindow {
     y = 8,
     height = UI.term.height - 8,
-    backgroundColor = colors.brown,
   },
   statusBar = UI.StatusBar {
     status = 'q to return',

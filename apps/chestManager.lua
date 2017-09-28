@@ -425,26 +425,19 @@ local function saveResources()
 end
 
 local itemPage = UI.Page {
-  backgroundColor = colors.lightGray,
   titleBar = UI.TitleBar {
     title = 'Limit Resource',
     previousPage = true,
     event = 'form_cancel',
-    backgroundColor = colors.green
   },
   form = UI.Form {
-    x = 2, y = 3, height = 8, rex = -4,
-    margin = 1,
+    x = 1, y = 2, height = 10, rex = -1,
     [1] = UI.TextEntry {
       width = 7,
-      backgroundColor = colors.gray,
-      backgroundFocusColor = colors.gray,
       formLabel = 'Min', formKey = 'low', help = 'Craft if below min'
     },
     [2] = UI.TextEntry {
       width = 7,
-      backgroundColor = colors.gray,
-      backgroundFocusColor = colors.gray,
       formLabel = 'Max', formKey = 'limit', help = 'Eject if above max'
     },
     [3] = UI.Chooser {
@@ -577,9 +570,10 @@ end
 local listingPage = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
-      { text = 'Learn',  event = 'learn'  },
-      { text = 'Forget', event = 'forget' },
-      { text = 'Craft',  event = 'craft'  },
+      { text = 'Learn',   event = 'learn'   },
+      { text = 'Forget',  event = 'forget'  },
+      { text = 'Craft',   event = 'craft'   },
+      { text = 'Refresh', event = 'refresh', rx = -8 },
     },
   },
   grid = UI.Grid {
@@ -593,20 +587,17 @@ local listingPage = UI.Page {
     sortColumn = 'displayName',
   },
   statusBar = UI.StatusBar {
-    backgroundColor = colors.gray,
+    --backgroundColor = colors.gray,
     width = UI.term.width,
     filterText = UI.Text {
-      x = 2, width = 6,
+      x = 2,
       value = 'Filter',
     },
     filter = UI.TextEntry {
-      x = 9, width = 19,
+      x = 9, rex = -2,
       limit = 50,
-    },
-    refresh = UI.Button {
-      x = 31, width = 8,
-      text = 'Refresh', 
-      event = 'refresh',
+      backgroundColor = colors.gray,
+      backgroundFocusColor = colors.gray,
     },
   },
   accelerators = {
@@ -798,7 +789,6 @@ end
 
 local learnPage = UI.Dialog {
   height = 7, width = UI.term.width - 6,
-  backgroundColor = colors.lightGray,
   title = 'Learn Recipe',
   idField = UI.Text {
     x = 5,
@@ -845,7 +835,6 @@ end
 
 local craftPage = UI.Dialog {
   height = 6, width = UI.term.width - 10,
-  backgroundColor = colors.lightGray,
   title = 'Enter amount to craft',
   idField = UI.TextEntry {
     x = 15,
@@ -853,8 +842,6 @@ local craftPage = UI.Dialog {
     width = 10,
     limit = 6,
     value = '1',
-    backgroundColor = colors.black,
-    backgroundFocusColor = colors.black,
   },
   accept = UI.Button {
     rx = -7, ry = -1,
@@ -864,7 +851,6 @@ local craftPage = UI.Dialog {
   cancel = UI.Button {
     rx = -3, ry = -1,
     backgroundColor = colors.red,
-    backgroundFocusColor = colors.red,
     text = '\215', event = 'cancel'
   },
 }

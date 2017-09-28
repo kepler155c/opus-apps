@@ -150,6 +150,7 @@ local function getListing(t, path)
 end
 
 local mainPage = UI.Page({
+  backgroundColor = colors.black,
   menuBar = UI.MenuBar({
     buttons = {
       { text = 'Groups', event = 'groups' },
@@ -159,7 +160,7 @@ local mainPage = UI.Page({
   }),
   computers = UI.ScrollingGrid({
     y = 2,
-    height = UI.term.height-3,
+    height = UI.term.height-2,
     columns = {
       { heading = 'Label', key = 'label', width = width },
     },
@@ -171,7 +172,7 @@ local mainPage = UI.Page({
       { heading = 'Name', key = 'label', width = width },
     },
     sortColumn = 'label',
-    height = UI.term.height - 3,
+    height = UI.term.height - 2,
     width = width,
     x = UI.term.width - width + 1,
     y = 2,
@@ -190,6 +191,7 @@ local mainPage = UI.Page({
 })
 
 local editorPage = UI.Page({
+  backgroundColor = colors.black,
   menuBar = UI.MenuBar({
     showBackButton = true,
     buttons = {
@@ -342,10 +344,11 @@ local function nameDialog(f)
   local dialog = UI.Dialog({
 --    x = (UI.term.width - 28) / 2,
     width = 22,
+    height = 6,
     title = 'Enter Name',
     form = UI.Form {
       x = 2, rex = -2, y = 2,
-      textEntry = UI.TextEntry({ y = 3, width = 20, limit = 20 })
+      textEntry = UI.TextEntry({ y = 2, width = 20, limit = 20 })
     },
   })
 
@@ -392,12 +395,16 @@ function groupsPage:eventHandler(event)
       end)
 
   elseif event.type == 'delete' then
-    fs.delete(fs.combine(GROUPS_PATH, self.grid:getSelected().label))
-    self:draw()
+    if self.grid:getSelected() then
+      fs.delete(fs.combine(GROUPS_PATH, self.grid:getSelected().label))
+      self:draw()
+    end
 
   elseif event.type == 'edit' then
-    editorPage.groupName = self.grid:getSelected().label
-    UI:setPage(editorPage)
+    if self.grid:getSelected() then
+      editorPage.groupName = self.grid:getSelected().label
+      UI:setPage(editorPage)
+    end
   end
 
   return UI.Page.eventHandler(self, event)

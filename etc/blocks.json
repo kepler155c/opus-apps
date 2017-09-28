@@ -735,9 +735,14 @@
   }, 
   "skull": {
     "id": 144, 
-    "name": "Mob Head", 
+    "name": ["Skeleton Skull",
+      "Wither Skeleton Skull",
+      "Zombie Head",
+      "Human Head",
+      "Creeper Head",
+      "Dragon Head"]
     "place": "mobhead",
-  }, 
+  },
   "anvil": {
     "id": 145, 
     "name": ["Anvil",
@@ -1461,10 +1466,6 @@
     "id": 295,
     "name": "Wheat Seeds",
   },
-  "wheat": {
-    "id": 296,
-    "name": "Wheat"
-  },
   "bread": {
     "id": 297,
     "name": "Bread"
@@ -1574,10 +1575,6 @@
     "id": 323,
     "name": "Sign",
   },
-  "wooden_door": {
-    "id": 324,
-    "name": "Oak Door"
-  },
   "bucket": {
     "id": 325,
     "name": "Bucket"
@@ -1597,10 +1594,6 @@
   "saddle": {
     "id": 329,
     "name": "Saddle"
-  },
-  "iron_door": {
-    "id": 330,
-    "name": "Iron Door"
   },
   "redstone": {
     "id": 331,
@@ -1629,10 +1622,6 @@
   "clay_ball": {
     "id": 337,
     "name": "Clay"
-  },
-  "reeds": {
-    "id": 338,
-    "name": "Sugar Canes"
   },
   "paper": {
     "id": 339,
@@ -1713,10 +1702,6 @@
     "id": 353,
     "name": "Sugar"
   },
-  "cake": {
-    "id": 354,
-    "name": "Cake"
-  },
   "bed-block": {
     "id": 355,
     "name": "Bed",
@@ -1787,10 +1772,6 @@
     "id": 371,
     "name": "Gold Nugget"
   },
-  "nether_wart": {
-    "id": 372,
-    "name": "Nether Wart"
-  },
   "potion": {
     "id": 373,
     "name": "Potion"
@@ -1814,14 +1795,6 @@
   "magma_cream": {
     "id": 378,
     "name": "Magma Cream"
-  },
-  "brewing_stand": {
-    "id": 379,
-    "name": "Brewing Stand"
-  },
-  "cauldron": {
-    "id": 380,
-    "name": "Cauldron"
   },
   "ender_eye": {
     "id": 381,
@@ -1859,10 +1832,6 @@
     "id": 389,
     "name": "Item Frame"
   },
-  "flower_pot": {
-    "id": 390,
-    "name": "Flower Pot"
-  },
   "carrot": {
     "id": 391,
     "name": "Carrot",
@@ -1886,15 +1855,6 @@
   "golden_carrot": {
     "id": 396,
     "name": "Golden Carrot"
-  },
-  "skull": {
-    "id": 397,
-    "name": ["Skeleton Skull",
-      "Wither Skeleton Skull",
-      "Zombie Head",
-      "Human Head",
-      "Creeper Head",
-      "Dragon Head"]
   },
   "carrot_on_a_stick": {
     "id": 398,
@@ -2008,26 +1968,6 @@
   "banner": {
     "id": 425,
     "name": "Banner",
-  },
-  "spruce_door": {
-    "id": 427,
-    "name": "Spruce Door"
-  },
-  "birch_door": {
-    "id": 428,
-    "name": "Birch Door"
-  },
-  "jungle_door": {
-    "id": 429,
-    "name": "Jungle Door"
-  },
-  "acacia_door": {
-    "id": 430,
-    "name": "Acacia Door"
-  },
-  "dark_oak_door": {
-    "id": 431,
-    "name": "Dark Oak Door"
   },
   "chorus_fruit": {
     "id": 432,

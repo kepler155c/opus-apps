@@ -104,7 +104,7 @@ function subDB:seedDB()
     [ "minecraft:powered_comparator:0"   ] = "minecraft:comparator:0",
     [ "minecraft:piston_head:0"          ] = "minecraft:air:0",
     [ "minecraft:piston_extension:0"     ] = "minecraft:air:0",
-    [ "minecraft:minecraft:portal:0"     ] = "minecraft:air:0",
+    [ "minecraft:portal:0"               ] = "minecraft:air:0",
     [ "minecraft:double_wooden_slab:0"   ] = "minecraft:planks:0",
     [ "minecraft:double_wooden_slab:1"   ] = "minecraft:planks:1",
     [ "minecraft:double_wooden_slab:2"   ] = "minecraft:planks:2",
@@ -1423,7 +1423,6 @@ end
 
 --[[-- substitutionPage --]]--
 substitutionPage = UI.Page {
-  backgroundColor = colors.gray,
   titleBar = UI.TitleBar {
     previousPage = true,
     title = 'Substitute a block'
@@ -1454,7 +1453,6 @@ substitutionPage.menuBar:add({
   filterLabel = UI.Text({
     value = 'Search',
     x = UI.term.width-14,
-    textColor = colors.black,
   }),
   filter = UI.TextEntry({
     x = UI.term.width-7,
@@ -1474,7 +1472,7 @@ function substitutionPage.info:draw()
   self:clear()
   self:setCursorPos(1, 1)
   self:print(' Replace ' .. inName .. '\n')
-  self:print('         ' .. sub.id .. ':' .. sub.dmg .. '\n', nil, colors.yellow)
+  --self:print('         ' .. sub.id .. ':' .. sub.dmg .. '\n', nil, colors.yellow)
   self:print(' With    ' .. outName)
 end
 
@@ -1860,7 +1858,7 @@ end
 --[[-- startPage --]]--
 
 local wy = 2
-local my = 4
+local my = 3
 
 if UI.term.width < 30 then
   wy = 9
@@ -1895,6 +1893,7 @@ local startPage = UI.Page {
     x = 2,
     y = my,
     height = 7,
+    backgroundColor = UI.Page.defaults.backgroundColor,
     menuItems = {
       { prompt = 'Set starting level', event = 'startLevel' },
       { prompt = 'Set starting block', event = 'startBlock' },
@@ -2161,6 +2160,6 @@ else
     turtle.setPolicy(turtle.policies.digAttack)
     turtle.setPoint(SUPPLIES_PT)
     turtle.point.heading = 0
-    Event.pullEvents()
+    UI:pullEvents()
   end)
 end

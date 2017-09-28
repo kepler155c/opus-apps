@@ -173,7 +173,6 @@ local getSourceListing = function(source)
 end
 
 local appPage = UI.Page({
-  backgroundColor = UI.ViewportWindow.defaults.backgroundColor,
   menuBar = UI.MenuBar({
     showBackButton = not pocket,
     buttons = {

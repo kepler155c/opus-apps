@@ -18,6 +18,8 @@ UI:configure('Music', ...)
 
 local monitor = UI.term
 
+UI.Button.defaults.backgroundFocusColor = colors.gray
+
 local page = UI.Page({
   volume = 15,
   stationName = UI.Text({
@@ -25,7 +27,7 @@ local page = UI.Page({
     x = 2,
     width = monitor.width - 14,
     height = 3,
-    backgroundColor = colors.brown,
+    backgroundColor = colors.black,
   }),
   seek = UI.Button({
     y = 7,

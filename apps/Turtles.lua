@@ -38,17 +38,9 @@ local policies = {
 }
 
 local page = UI.Page {
---[[
-  policy = UI.Chooser {
-    x = 2, y = 8,
-    choices = {
-      { name = ' None ', value = 'none'       },
-      { name = ' Safe ', value = 'turtleSafe' },
-    },
-  },
-]]
   coords = UI.Window {
-    x = 2, y = 2, height = 3, rex = -2,
+    backgroundColor = colors.black,
+    height = 4,
   },
   tabs = UI.Tabs {
     x = 1, y = 5, rey = -2,
@@ -63,7 +55,7 @@ local page = UI.Page {
       autospace = true,
     },
     turtles = UI.Grid {
-      tabTitle = 'Sel',
+      tabTitle = 'Select',
       backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
       columns = {
         { heading = 'label',  key = 'label'    },
@@ -86,6 +78,7 @@ local page = UI.Page {
       disableHeader = true,
       sortColumn = 'index',
     },
+--[[
     policy = UI.Grid {
       tabTitle = 'Mod',
       backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
@@ -97,8 +90,10 @@ local page = UI.Page {
       sortColumn = 'label',
       autospace = true,
     },
+    ]]
     action = UI.Window {
-      tabTitle = 'Act',
+      tabTitle = 'Action',
+      backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
       moveUp = UI.Button {
         x = 5, y = 2,
         text = '/\\',
@@ -177,14 +172,14 @@ end
 
 function page.coords:draw()
   local t = self.parent.turtle
+  self:clear()
   if t then
-    self:clear()
-    self:setCursorPos(1, 1)
+    self:setCursorPos(2, 2)
     local ind = 'GPS'
     if not t.point.gps then
       ind = 'REL'
     end
-    self:print(string.format('%s : %d,%d,%d\nFuel: %s\n', 
+    self:print(string.format('%s : %d,%d,%d\n Fuel: %s\n', 
       ind, t.point.x, t.point.y, t.point.z, Util.toBytes(t.fuel)))
   end
 end
@@ -305,7 +300,7 @@ function page.tabs.tabBar:selectTab(tabTitle)
   if tabTitle then
     config.tab = tabTitle
     Config.update('Turtles', config)
-    return UI.TabBar.selectTab(self, tab)
+    return UI.TabBar.selectTab(self, tabTitle)
   end
 end
 
@@ -356,10 +351,10 @@ UI:setPage(page)
 
 local lookup = {
   Run = page.tabs.scripts,
-  Sel = page.tabs.turtles,
+  Select = page.tabs.turtles,
   Inv = page.tabs.inventory,
-  Mod = page.tabs.policy,
-  Act = page.tabs.action,
+--  Mod = page.tabs.policy,
+  Action = page.tabs.action,
 }
 
 if lookup[options.tab.value] then
