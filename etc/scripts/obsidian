@@ -44,7 +44,7 @@ local function findObsidian()
       end
     end
 
-    if turtle.getCount(16) > 0 then
+    if turtle.getItemCount(16) > 0 then
       print('Inventory full')
       print('Enter to continue...')
       read()

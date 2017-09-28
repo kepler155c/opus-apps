@@ -5,8 +5,7 @@ local Util = require('util')
 
 local function syntax()
   printError('Syntax:')
-  print('mwm sessionName [monitor]')
-  error()
+  error('mwm sessionName [monitor]')
 end
 
 local args       = { ... }

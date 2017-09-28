@@ -466,7 +466,9 @@ local function randomSapling()
         table.insert(ALL_SAPLINGS, slot.key)
       end
     end
-    sapling = ALL_SAPLINGS[math.random(1, #ALL_SAPLINGS)]
+    if #ALL_SAPLINGS > 0 then
+      sapling = ALL_SAPLINGS[math.random(1, #ALL_SAPLINGS)]
+    end
   end
 
   return sapling
