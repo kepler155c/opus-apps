@@ -43,7 +43,7 @@ local page = UI.Page {
     height = 4,
   },
   tabs = UI.Tabs {
-    x = 1, y = 5, rey = -2,
+    x = 1, y = 5, ey = -2,
     scripts = UI.Grid {
       tabTitle = 'Run',
       backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,

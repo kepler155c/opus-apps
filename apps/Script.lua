@@ -179,9 +179,9 @@ local mainPage = UI.Page({
   }),
   statusBar = UI.StatusBar({
     columns = {
-      { '', 'status', 4 },
-      { '', 'fuelF', 5 },
-      { '', 'distanceF', 4 },
+      { key = 'status' },
+      { key = 'fuelF',     width = 5 },
+      { key = 'distanceF', width = 4 },
     },
     autospace = true,
   }),
@@ -347,7 +347,7 @@ local function nameDialog(f)
     height = 6,
     title = 'Enter Name',
     form = UI.Form {
-      x = 2, rex = -2, y = 2,
+      x = 2, ex = -2, y = 2,
       textEntry = UI.TextEntry({ y = 2, width = 20, limit = 20 })
     },
   })
@@ -470,7 +470,7 @@ function mainPage:eventHandler(event)
 
   elseif event.type == 'grid_focus_row' then
     local computer = self.computers:getSelected()
-    self.statusBar.values = { computer }
+    self.statusBar.values = computer
     self.statusBar:draw()
 
   elseif event.type == 'grid_select' then
@@ -498,15 +498,16 @@ function mainPage:eventHandler(event)
 end
 
 function mainPage.statusBar:draw()
-  local computer = self.values[1]
-  if computer then
-    if computer.fuel then
-      computer.fuelF = string.format("%dk", math.floor(computer.fuel/1000))
+  if self.values then
+    local computer = self.values
+    if computer then
+      if computer.fuel then
+        computer.fuelF = string.format("%dk", math.floor(computer.fuel/1000))
+      end
+      if computer.distance then
+        computer.distanceF = Util.round(computer.distance, 1)
+      end
     end
-    if computer.distance then
-      computer.distanceF = Util.round(computer.distance, 1)
-    end
-    mainPage.statusBar:adjustWidth()
   end
   UI.StatusBar.draw(self)
 end
@@ -558,7 +559,7 @@ Event.onInterval(1, function()
     local selected = mainPage.computers:getSelected()
     if selected then
       local computer = _G.network[selected.id]
-      mainPage.statusBar.values = { computer }
+      mainPage.statusBar.values = computer
       mainPage.statusBar:draw()
       mainPage:sync()
     end

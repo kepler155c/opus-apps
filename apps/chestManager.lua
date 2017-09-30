@@ -431,7 +431,7 @@ local itemPage = UI.Page {
     event = 'form_cancel',
   },
   form = UI.Form {
-    x = 1, y = 2, height = 10, rex = -1,
+    x = 1, y = 2, height = 10, ex = -1,
     [1] = UI.TextEntry {
       width = 7,
       formLabel = 'Min', formKey = 'low', help = 'Craft if below min'
@@ -573,7 +573,7 @@ local listingPage = UI.Page {
       { text = 'Learn',   event = 'learn'   },
       { text = 'Forget',  event = 'forget'  },
       { text = 'Craft',   event = 'craft'   },
-      { text = 'Refresh', event = 'refresh', rx = -8 },
+      { text = 'Refresh', event = 'refresh', x = -9 },
     },
   },
   grid = UI.Grid {
@@ -594,7 +594,7 @@ local listingPage = UI.Page {
       value = 'Filter',
     },
     filter = UI.TextEntry {
-      x = 9, rex = -2,
+      x = 9, ex = -2,
       limit = 50,
       backgroundColor = colors.gray,
       backgroundFocusColor = colors.gray,
@@ -797,11 +797,11 @@ local learnPage = UI.Dialog {
     value = 'Place recipe in turtle'
   },
   accept = UI.Button {
-    rx = -13, ry = -2,
+    x = -14, y = -3,
     text = 'Ok', event = 'accept',
   },
   cancel = UI.Button {
-    rx = -8, ry = -2,
+    x = -9, y = -3,
     text = 'Cancel', event = 'cancel'
   },
   statusBar = UI.StatusBar {
@@ -844,12 +844,12 @@ local craftPage = UI.Dialog {
     value = '1',
   },
   accept = UI.Button {
-    rx = -7, ry = -1,
+    x = -8, y = -2,
     backgroundColor = colors.green,
     text = '+', event = 'accept',
   },
   cancel = UI.Button {
-    rx = -3, ry = -1,
+    x = -4, y = -2,
     backgroundColor = colors.red,
     text = '\215', event = 'cancel'
   },

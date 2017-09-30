@@ -22,52 +22,42 @@ end
 multishell.setTitle(multishell.getCurrent(), 'Storage Activity')
 UI:configure('StorageActivity', ...)
 
-local changedPage = UI.Page({
-  grid = UI.Grid({
+local changedPage = UI.Page {
+  grid = UI.Grid {
+    ey = -6,
     columns = {
       { heading = 'Qty',    key = 'count',       width = 5                  },
       { heading = 'Change', key = 'change',      width = 6                  },
-      { heading = 'Name',   key = 'displayName', width = UI.term.width - 15 },
+      { heading = 'Name',   key = 'displayName' },
     },
     sortColumn = 'displayName',
-    rey = -6,
-  }),
-  buttons = UI.Window({
-    ry = -4,
-    height = 5,
+  },
+  buttons = UI.Window {
+    y = -5, height = 5,
     backgroundColor = colors.gray,
-    prevButton = UI.Button({
+    prevButton = UI.Button {
+      x = 2, y = 2, height = 3, width = 5,
       event = 'previous',
       backgroundColor = colors.lightGray,
-      x = 2,
-      y = 2,
-      height = 3,
-      width = 5,
       text = ' < '
-    }),
-    resetButton = UI.Button({
+    },
+    resetButton = UI.Button {
+      x = 8, y = 2, height = 3, ex = -8,
       event = 'reset',
       backgroundColor = colors.lightGray,
-      x = 8,
-      y = 2,
-      height = 3,
-      rex = -8,
       text = 'Reset'
-    }),
-    nextButton = UI.Button({
+    },
+    nextButton = UI.Button {
+      x = -6, y = 2, height = 3, width = 5,
       event = 'next',
       backgroundColor = colors.lightGray,
-      rx = -5,
-      y = 2,
-      height = 3,
-      width = 5,
       text = ' > '
-    })
-  }),
+    },
+  },
   accelerators = {
     q = 'quit',
   }
-})
+}
 
 function changedPage.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)

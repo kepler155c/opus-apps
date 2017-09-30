@@ -1375,7 +1375,7 @@ end
 --[[-- blankPage --]]--
 blankPage = UI.Page()
 function blankPage:draw()
-  self:clear()
+  self:clear(colors.black)
   self:setCursorPos(1, 1)
 end
 
