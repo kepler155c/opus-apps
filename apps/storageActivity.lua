@@ -9,7 +9,7 @@ local Util            = require('util')
 
 local storage = RefinedAdapter()
 if not storage:isValid() then
-  storage = MEAdapter()
+  storage = MEAdapter({ auto = true })
   if not storage:isValid() then
     storage = ChestAdapter()
   end

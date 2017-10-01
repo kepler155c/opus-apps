@@ -5,6 +5,7 @@ local Config         = require('config')
 local Craft          = require('turtle.craft')
 local Event          = require('event')
 local itemDB         = require('itemDB')
+local MEAdapater     = require('meAdapter')
 local Peripheral     = require('peripheral')
 local RefinedAdapter = require('refinedAdapter')
 local Terminal       = require('terminal')
@@ -21,20 +22,42 @@ multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 local config = {
   trashDirection     = 'up',    -- trash /chest in relation to chest
   inventoryDirection = { direction = 'north', wrapSide = 'back' },
-  chestDirection     = { direction = 'down', wrapSide = 'top' },
+  chestDirection     = { direction = 'down',  wrapSide = 'top'  },
 }
 
 Config.load('chestManager', config)
 
-local controller = RefinedAdapter()
-if not controller:isValid() then
---  error('Refined storage controller not found')
-  controller = nil
-end
-
----------------------------------------------------------------------- FIX ME
 local inventoryAdapter = ChestAdapter(config.inventoryDirection)
 local turtleChestAdapter = ChestAdapter(config.chestDirection)
+local duckAntenna
+
+local controller = RefinedAdapter()
+if not controller:isValid() then
+  controller = MEAdapater(config.inventoryDirection)
+  if not controller:isValid() then
+    controller = nil
+  else
+    inventoryAdapter = controller -- ME functions as inventory and crafting
+  end
+end
+
+if device.workbench then
+
+  local oppositeSide = {
+    [ 'left'  ] = 'right',
+    [ 'right' ] = 'left',
+  }
+
+  local duckAntennaSide = oppositeSide[device.workbench.side]
+  duckAntenna = peripheral.wrap(duckAntennaSide)
+  if not duckAntenna or not duckAntenna.getAllStacks then
+    duckAntenna = nil
+  end
+end
+
+local canCraft = not not duckAntenna or turtleChestAdapter:isValid()
+
+---------------------------------------------------------------------- FIX ME
 
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE = 'usr/etc/recipes.db'
@@ -194,7 +217,7 @@ end
 
 local function craftItem(recipe, items, originalItem, craftList, count)
 
-  if craftingPaused or not device.workbench or not isGridClear() then
+  if craftingPaused or not canCraft or not isGridClear() then
     return
   end
 
@@ -315,7 +338,7 @@ local function getAutocraftItems()
   for _,res in pairs(resources) do
 
     if res.auto then
-      res.count = 4  -- this could be higher to increase autocrafting speed
+      res.count = 64  -- this could be higher to increase autocrafting speed
       local key = uniqueKey(res)
       craftList[key] = res
     end
@@ -361,7 +384,7 @@ local function watchResources(items)
     end
 
     if res.limit and item.count > res.limit then
-      inventoryAdapter:provide(
+      local s, m = inventoryAdapter:provide(
         { name = item.name, damage = item.damage }, 
         item.count - res.limit,
         nil,
@@ -587,8 +610,6 @@ local listingPage = UI.Page {
     sortColumn = 'displayName',
   },
   statusBar = UI.StatusBar {
-    --backgroundColor = colors.gray,
-    width = UI.term.width,
     filterText = UI.Text {
       x = 2,
       value = 'Filter',
@@ -720,6 +741,20 @@ function listingPage:applyFilter()
 end
 
 local function getTurtleInventory()
+
+  if duckAntenna then
+    local list = duckAntenna.getAllStacks(false)
+    for k,v in pairs(list) do
+      v.name = v.id
+      v.damage = v.dmg
+      v.displayName = v.display_name
+      v.count = v.qty
+      v.maxDamage = v.max_dmg
+      v.maxCount = v.max_size
+    end
+    return list
+  end
+
   local inventory = { }
   for i = 1,16 do
     local qty = turtle.getItemCount(i)
@@ -747,7 +782,7 @@ local function learnRecipe(page)
   local ingredients = getTurtleInventory()
   if ingredients then
     turtle.select(1)
-    if device.workbench and turtle.craft() then
+    if canCraft and turtle.craft() then
       recipe = getTurtleInventory()
       if recipe and recipe[1] then
         clearGrid()

@@ -14,6 +14,7 @@ local processes  = { }
 local parentTerm = term.current()
 local configFile = args[1] or syntax()
 local defaultEnv = Util.shallowCopy(getfenv(1))
+local running
 local monitor
 local exitSession
 
@@ -170,16 +171,26 @@ end
 
 function Process:drawSizers(showSizers)
 
+  local sizeChars = {
+    '\135', '\139', '\141', '\142'
+  }
+
+  if Util.getVersion() < 1.8 then
+    sizeChars = {
+      '#', '#', '#', '#'
+    }
+  end
+
   self.showSizers = showSizers
 
   self.container.setBackgroundColor(colors.black)
   self.container.setTextColor(colors.white)
 
   if self.showSizers then
-    write(self.container, 1, 1, '\135')
-    write(self.container, self.width, 1, '\139')
-    write(self.container, 1, self.height, '\141')
-    write(self.container, self.width, self.height, '\142')
+    write(self.container, 1, 1, sizeChars[1])
+    write(self.container, self.width, 1, sizeChars[2])
+    write(self.container, 1, self.height, sizeChars[3])
+    write(self.container, self.width, self.height, sizeChars[4])
 
     self.container.setTextColor(colors.yellow)
     write(self.container, 1, 3, '+')
@@ -250,7 +261,11 @@ function Process:resume(event, ...)
   if not self.filter or self.filter == event or event == "terminate" then
     term.redirect(self.terminal)
 
+    local previous = running
+    running = self -- stupid shell set title
     local ok, result = coroutine.resume(self.co, event, ...)
+    running = previous
+
     self.terminal = term.current()
     if ok then
       self.filter = result
@@ -269,7 +284,7 @@ function defaultEnv.multishell.getFocus()
 end
 
 function defaultEnv.multishell.setFocus(uid)
-  local process, key = Util.find(processes, 'uid', uid)
+  local process = Util.find(processes, 'uid', uid)
 
   if process then
     if processes[#processes] ~= process then
@@ -296,8 +311,8 @@ function defaultEnv.multishell.setTitle(uid, title)
 end
 
 function defaultEnv.multishell.getCurrent()
-  if #processes > 0 then
-    return processes[#processes].uid
+  if running then
+    return running.uid
   end
 end
 
