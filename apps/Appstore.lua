@@ -1,5 +1,6 @@
 requireInjector(getfenv(1))
 
+local Ansi   = require('ansi')
 local Config = require('config')
 local SHA1   = require('sha1')
 local UI     = require('ui')
@@ -199,12 +200,16 @@ local appPage = UI.Page({
 function appPage.container.viewport:draw()
   local app = self.parent.parent.app
   local str = string.format(
-    'By: %s\nCategory: %s\nFile name: %s\n\n%s',
-    app.creator, app.categoryName, app.name, app.description)
+    '%s \nBy: %s \nCategory: %s\nFile name: %s\n\n%s',
+    Ansi.yellow .. app.title .. Ansi.reset,
+    app.creator, 
+    app.categoryName, app.name, 
+    Ansi.yellow .. app.description .. Ansi.reset)
 
   self:clear()
-  local y = self:wrappedWrite(1, 1, app.title, self.width, nil, colors.yellow)
-  self.height = self:wrappedWrite(1, y, str, self.width)
+  self:setCursorPos(1, 1)
+  self:print(str)
+  self.ymax = self.cursorY
 
   if appPage.notification.enabled then
     appPage.notification:draw()

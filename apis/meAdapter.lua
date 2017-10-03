@@ -70,11 +70,32 @@ local function convertItem(item)
 end
 
 function MEAdapter:refresh()
+  local keys = { 
+    'damage',
+    'displayName',
+    'maxCount',
+    'maxDamage',
+    'name',
+    'nbtHash',
+  }
   self.items = self.getAvailableItems('all')
   for _,v in pairs(self.items) do
     Util.merge(v, v.item)
     convertItem(v)
+
+    local key = { v.name, v.damage, v.nbtHash }
+    if not itemDB:get(key) then
+debug(v)
+      local t = { }
+      for _,k in pairs(keys) do
+        t[k] = v[k]
+      end
+debug(t)
+      itemDB:add(key, t)
+    end
   end
+  itemDB:flush()
+
   return self.items
 end
 

@@ -16,7 +16,7 @@ multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 
 -- 3 wide monitor (any side of turtle)
 
--- Config location is /sys/config/resourceManager
+-- Config location is /sys/config/chestManager
 -- adjust directions in that file if needed
 
 local config = {
@@ -55,16 +55,13 @@ if device.workbench then
   end
 end
 
-local canCraft = not not duckAntenna or turtleChestAdapter:isValid()
-
----------------------------------------------------------------------- FIX ME
-
 local RESOURCE_FILE = 'usr/config/resources.db'
-local RECIPES_FILE = 'usr/etc/recipes.db'
+local RECIPES_FILE  = 'usr/etc/recipes.db'
 
-local jobListGrid
 local craftingPaused = false
+local canCraft = not not duckAntenna or turtleChestAdapter:isValid()
 local recipes = Util.readTable(RECIPES_FILE) or { }
+local jobListGrid
 local resources
 
 Craft.setRecipes(recipes)

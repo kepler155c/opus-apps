@@ -7,18 +7,18 @@ local Util  = require('util')
 multishell.setTitle(multishell.getCurrent(), 'Events')
 UI:configure('Events', ...)
 
-local page = UI.Page({
-  menuBar = UI.MenuBar({
+local page = UI.Page {
+  menuBar = UI.MenuBar {
     buttons = {
       { text = 'Filter', event = 'filter' },
       { text = 'Reset',  event = 'reset'  },
       { text = 'Pause ', event = 'toggle', name = 'pauseButton' },
     },
-  }),
-  grid = UI.Grid({
+  },
+  grid = UI.Grid {
     y = 2,
     columns = {
-      { heading = 'Event', key = 'event' },
+      { key = 'event' },
       { key = 'p1' },
       { key = 'p2' },
       { key = 'p3' },
@@ -26,7 +26,8 @@ local page = UI.Page({
       { key = 'p5' },
     },
     autospace = true,
-  }),
+    disableHeader = true,
+  },
   accelerators = {
     f = 'filter',
     p = 'toggle',
@@ -35,7 +36,7 @@ local page = UI.Page({
     q = 'quit',
   },
   filtered = { },
-})
+}
 
 function page:eventHandler(event)
 
@@ -53,7 +54,11 @@ function page:eventHandler(event)
     self.menuBar:draw()
 
   elseif event.type == 'grid_select' then
-    multishell.openTab({ path = 'sys/apps/Lua.lua', args = { event.selected }, focused = true })
+    multishell.openTab({
+      path = 'sys/apps/Lua.lua',
+      args = { event.selected },
+      focused = true,
+    })
 
   elseif event.type == 'reset' then
     self.filtered = { }
@@ -68,7 +73,7 @@ function page:eventHandler(event)
     self.grid:draw()
 
   elseif event.type == 'quit' then
-    Event.exitPullEvents()
+    UI:exitPullEvents()
 
   elseif event.type == 'focus_change' then
     if event.focused == self.grid then

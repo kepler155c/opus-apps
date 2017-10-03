@@ -96,34 +96,37 @@ local page = UI.Page {
       backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
       moveUp = UI.Button {
         x = 5, y = 2,
-        text = '/\\',
+        text = 'up',
         fn = 'turtle.up',
       },
       moveDown = UI.Button {
         x = 5, y = 4,
-        text = '\\/',
+        text = 'dn',
         fn = 'turtle.down',
       },
       moveForward = UI.Button {
         x = 9, y = 3,
-        text = '>',
+        text = 'f',
         fn = 'turtle.forward',
       },
       moveBack = UI.Button {
         x = 2, y = 3,
-        text = '<',
+        text = 'b',
         fn = 'turtle.back',
       },
       turnLeft = UI.Button {
         x = 2, y = 6,
-        text = '<-',
+        text = 'lt',
         fn = 'turtle.turnLeft',
       },
       turnRight = UI.Button {
         x = 8, y = 6,
-        text = '->',
+        text = 'rt',
         fn = 'turtle.turnRight',
       },
+      info = UI.TextArea {
+        x = 2, y = 9
+      }
     },
   },
   statusBar = UI.StatusBar(),
@@ -148,8 +151,12 @@ function page:runFunction(script, nowrap)
       if not nowrap then
         script = 'turtle.run(' .. script .. ')'
       end
-      if socket:write({ type = 'script', args = script }) then
-        return true
+      if socket:write({ type = 'scriptEx', args = script }) then
+        local t = socket:read(3)
+        if t then
+          return table.unpack(t)
+        end
+        return false, 'Socket timeout'
       end
     end
     socket = nil
@@ -304,12 +311,32 @@ function page.tabs.tabBar:selectTab(tabTitle)
   end
 end
 
+function page:showBlocks()
+
+  local script = [[
+    local function inspect(direction)
+      local s,b = turtle['inspect' .. (direction or '')]()
+      if not s then
+        return 'minecraft:air:0'
+      end
+      return string.format('%s:%d', b.name, b.metadata)
+    end
+
+    local bu, bf, bd = inspect('Up'), inspect(), inspect('Down')
+    return string.format('%s\n%s\n%s', bu, bf, bd)
+  ]]
+
+  local s, m = self:runFunction(script, true)
+  self.tabs.action.info:setText(s or m)
+end
+
 function page:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
   elseif event.type == 'button_press' then
     if event.button.fn then
       self:runFunction(event.button.fn, event.button.nowrap)
+      self:showBlocks()
     elseif event.button.script then
       self:runScript(event.button.script)
     end

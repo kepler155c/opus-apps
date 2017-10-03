@@ -1,8 +1,9 @@
 requireInjector(getfenv(1))
 
-local Logger = require('logger')
-local Point  = require('point')
-local Util   = require('util')
+local Logger  = require('logger')
+local Pathing = require('turtle.pathfind')
+local Point   = require('point')
+local Util    = require('util')
 
 if device and device.wireless_modem then
   Logger.setWirelessLogging()
@@ -239,6 +240,9 @@ end
 
 function safeGoto(x, z, y, h)
   local oldStatus = turtle.status
+
+  -- only pathfind above or around other turtles (never down)
+  Pathing.setBox({ x = 0, y = 0, z = 0, ex = x, ey = y + 1, ez = z })
   while not turtle.pathfind({ x = x, z = z, y = y or turtle.point.y, heading = h }) do
     --status('stuck')
     if turtle.abort then
