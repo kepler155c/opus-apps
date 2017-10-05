@@ -85,12 +85,10 @@ function MEAdapter:refresh()
 
     local key = { v.name, v.damage, v.nbtHash }
     if not itemDB:get(key) then
-debug(v)
       local t = { }
       for _,k in pairs(keys) do
         t[k] = v[k]
       end
-debug(t)
       itemDB:add(key, t)
     end
   end

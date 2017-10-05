@@ -1,22 +1,25 @@
-requireInjector = requireInjector or load(http.get('https://raw.githubusercontent.com/kepler155c/opus/master/sys/apis/injector.lua').readAll())()
-requireInjector(getfenv(1))
+local injector = requireInjector or load(http.get('https://raw.githubusercontent.com/kepler155c/opus/master/sys/apis/injector.lua').readAll())()
+injector(getfenv(1))
 
-local Util = require('util')
+local Canvas = require('ui.canvas')
+local Util   = require('util')
 
 local function syntax()
   printError('Syntax:')
   error('mwm sessionName [monitor]')
 end
 
-local args       = { ... }
-local UID        = 0
-local processes  = { }
-local parentTerm = term.current()
-local configFile = args[1] or syntax()
-local defaultEnv = Util.shallowCopy(getfenv(1))
+local args        = { ... }
+local UID         = 0
+local multishell  = { }
+local processes   = { }
+local parentTerm  = term.current()
+local sessionFile = args[1] or syntax()
 local running
 local monitor
-local exitSession
+
+local defaultEnv = Util.shallowCopy(getfenv(1))
+defaultEnv.multishell = multishell
 
 if args[2] then
   monitor = peripheral.wrap(args[2]) or syntax()
@@ -36,23 +39,6 @@ local function nextUID()
   return UID
 end
 
-local function saveSession()
-  local t = { }
-  for _,process in pairs(processes) do
-    if process.path and not process.isShell then
-      table.insert(t, {
-        x = process.x,
-        y = process.y,
-        width = process.width - 2,
-        height = process.height - 3,
-        path = process.path,
-        args = process.args,
-      })
-    end
-  end
-  Util.writeTable(configFile, t)
-end
-
 local function write(win, x, y, text)
   win.setCursorPos(x, y)
   win.write(text)
@@ -61,20 +47,9 @@ end
 local function redraw()
   monitor.clear()
   for k,process in ipairs(processes) do
-    process.container.redraw()
+    process.container.canvas:dirty()
     process:focus(k == #processes)
   end
-end
-
-local function focusProcess(process)
-  if #processes > 0 then
-    local lastFocused = processes[#processes]
-    lastFocused:focus(false)
-  end
-
-  Util.removeByValue(processes, process)
-  table.insert(processes, process)
-  process:focus(true)
 end
 
 local function getProcessAt(x, y)
@@ -99,23 +74,23 @@ function Process:new(args)
   args.height = args.height or termDim.height
 
   local self = setmetatable({
-    uid = nextUID(),
-    x = args.x or 1,
-    y = args.y or 1,
-    width = args.width + 2,
+    uid    = nextUID(),
+    x      = args.x or 1,
+    y      = args.y or 1,
+    width  = args.width + 2,
     height = args.height + 3,
-    path = args.path,
-    args = args.args  or { },
-    title = args.title or 'shell',
+    path   = args.path,
+    args   = args.args  or { },
+    title  = args.title or 'shell',
   }, { __index = Process })
 
   self:adjustDimensions()
 
-  self.container = window.create(monitor, self.x, self.y, self.width, self.height, true)
-  self.titleBar = window.create(self.container, 2, 2, self.width - 2, 1, true)
+  self.container = window.create(monitor, self.x, self.y, self.width, self.height, false)
   self.window = window.create(self.container, 2, 3, args.width, args.height, true)
 
   self.terminal = self.window
+  Canvas.convertWindow(self.container, monitor, self.x, self.y)
 
   self.co = coroutine.create(function()
 
@@ -124,43 +99,31 @@ function Process:new(args)
     if args.fn then
       result, err = Util.runFunction(args.env, args.fn, table.unpack(self.args))
     elseif args.path then
-      result, err = os.run(args.env, args.path, table.unpack(self.args))
+      result, err = Util.run(args.env, args.path, table.unpack(self.args))
     end
 
-    if not result and err ~= 'Terminated' then
-      if err then
-        printError(tostring(err))
-        os.sleep(3)
-      end
+    if not result and err and err ~= 'Terminated' then
+      printError('\n' .. tostring(err))
+      os.pullEventRaw('terminate')
     end
-    Util.removeByValue(processes, self)
-    saveSession()
-    redraw()
+    multishell.removeProcess(self)
   end)
 
-  if #processes > 0 then
-    processes[#processes]:focus(false)
-  end
-  table.insert(processes, self)
-  self:focus(true)
-
-  local previousTerm = term.current()
-  self:resume()
-  term.redirect(previousTerm)
+  self:focus(false)
 
   return self
 end
 
 function Process:focus(focused)
   if focused then
-    self.titleBar.setBackgroundColor(colors.yellow)
+    self.container.setBackgroundColor(colors.yellow)
   else
-    self.titleBar.setBackgroundColor(colors.gray)
+    self.container.setBackgroundColor(colors.gray)
   end
-  self.titleBar.clear()
-  self.titleBar.setTextColor(colors.black)
-  write(self.titleBar, 2, 1, self.title)
-  write(self.titleBar, self.width - 3, 1, '*')
+  self.container.setTextColor(colors.black)
+  write(self.container, 2, 2, string.rep(' ', self.width - 2))
+  write(self.container, 3, 2, self.title)
+  write(self.container, self.width - 2, 2, '*')
 
   if focused then
     self.window.restoreCursor()
@@ -229,10 +192,29 @@ function Process:reposition()
   self.container.setBackgroundColor(colors.black)
   self.container.clear()
 
-  self.titleBar.reposition(2, 2, self.width - 2, 1)
   self.window.reposition(2, 3, self.width - 2, self.height - 3)
 
   redraw()
+end
+
+function Process:click(x, y)
+  if y == 2 then -- title bar
+    if x == self.width - 2 then
+      self:resume('terminate')
+    else
+      self:drawSizers(not self.showSizers)
+    end
+
+  elseif x == 1 or y == 1 then -- sizers
+    self:resizeClick(x, y)
+
+  elseif x > 1 and x < self.width then
+    if self.showSizers then
+      self:drawSizers(false)
+    end
+    self:resume('mouse_click', 1, x - 1, y - 2)
+    self:resume('mouse_up',    1, x - 1, y - 2)
+  end
 end
 
 function Process:resizeClick(x, y)
@@ -250,7 +232,7 @@ function Process:resizeClick(x, y)
   self:reposition()
   self:resume('term_resize')
   self:drawSizers(true)
-  saveSession()
+  multishell.saveSession(sessionFile)
 end
 
 function Process:resume(event, ...)
@@ -277,32 +259,41 @@ function Process:resume(event, ...)
 end
 
 --[[ Install a multishell manager for the monitor ]]--
-defaultEnv.multishell = { }
-
-function defaultEnv.multishell.getFocus()
+function multishell.getFocus()
   return processes[#processes].uid
 end
 
-function defaultEnv.multishell.setFocus(uid)
+function multishell.setFocus(uid)
   local process = Util.find(processes, 'uid', uid)
 
   if process then
-    if processes[#processes] ~= process then
-      focusProcess(process)
+    local lastFocused = processes[#processes]
+    if lastFocused ~= process then
+
+      if lastFocused then
+        lastFocused:focus(false)
+      end
+
+      Util.removeByValue(processes, process)
+      table.insert(processes, process)
+      multishell.restack()
+
+      process:focus(true)
+      process.container.canvas:dirty()
     end
     return true
   end
   return false
 end
 
-function defaultEnv.multishell.getTitle(uid)
+function multishell.getTitle(uid)
   local process = Util.find(processes, 'uid', uid)
   if process then
     return process.title
   end
 end
 
-function defaultEnv.multishell.setTitle(uid, title)
+function multishell.setTitle(uid, title)
   local process = Util.find(processes, 'uid', uid)
   if process then
     process.title = title or ''
@@ -310,18 +301,22 @@ function defaultEnv.multishell.setTitle(uid, title)
   end
 end
 
-function defaultEnv.multishell.getCurrent()
+function multishell.getCurrent()
   if running then
     return running.uid
   end
 end
 
-function defaultEnv.multishell.getCount()
+function multishell.getCount()
   return #processes
 end
 
-function defaultEnv.multishell.launch(env, file, ...)
-  return defaultEnv.multishell.openTab({
+function multishell.getTabs()
+  return processes
+end
+
+function multishell.launch(env, file, ...)
+  return multishell.openTab({
     path  = file,
     env   = env,
     title = 'shell',
@@ -329,145 +324,205 @@ function defaultEnv.multishell.launch(env, file, ...)
   })
 end
 
-function defaultEnv.multishell.openTab(tabInfo)
+function multishell.openTab(tabInfo)
   local process = Process:new(tabInfo)
-  saveSession()
+
+  table.insert(processes, 1, process)
+  multishell.restack()
+
+  process.container.setVisible(true)
+
+  local previousTerm = term.current()
+  process:resume()
+  term.redirect(previousTerm)
+
+  multishell.saveSession(sessionFile)
   return process.uid
+end
+
+function multishell.restack()       -- reset the stacking order
+  for k,v in ipairs(processes) do
+    v.container.canvas.layers = { }
+    for l = k + 1, #processes do
+      table.insert(v.container.canvas.layers, processes[l].container.canvas)
+    end
+  end
+end
+
+function multishell.removeProcess(process)
+  Util.removeByValue(processes, process)
+  multishell.restack()
+  multishell.saveSession(sessionFile)
+  redraw()
+end
+
+function multishell.saveSession(sessionFile)
+  local t = { }
+  for _,process in pairs(processes) do
+    if process.path and not process.isShell then
+      table.insert(t, {
+        x = process.x,
+        y = process.y,
+        width = process.width - 2,
+        height = process.height - 3,
+        path = process.path,
+        args = process.args,
+      })
+    end
+  end
+  Util.writeTable(sessionFile, t)
+end
+
+function multishell.loadSession(sessionFile)
+  local config = Util.readTable(sessionFile)
+  if config then
+    for _,v in pairs(config) do
+      multishell.openTab(v)
+    end
+  end
+end
+
+function multishell.stop()
+  multishell._stop = true
+end
+
+function multishell.start()
+  while not multishell._stop do
+
+    local event = { os.pullEventRaw() }
+
+    if event[1] == 'terminate' then
+      local focused = processes[#processes]
+      if focused.isShell then
+        focused:resume('terminate')
+      else
+        break
+      end
+
+    elseif event[1] == 'monitor_touch' then
+      local x, y = event[3], event[4]
+
+      local key, process = getProcessAt(x, y)
+      if process then
+        if key ~= #processes then
+          multishell.setFocus(process.uid)
+        end
+        process:click(x - process.x + 1, y - process.y + 1)
+
+      else
+        process = processes[#processes]
+        if process and process.showSizers then
+          process.x = math.floor(x - (process.width) / 2)
+          process.y = y
+          process:reposition()
+          process:drawSizers(true)
+          multishell.saveSession(sessionFile)
+        end
+      end
+
+    elseif event[1] == 'mouse_click' or
+           event[1] == 'mouse_up' then
+
+      local focused = processes[#processes]
+      if not focused.isShell then
+        multishell.setFocus(1) -- shell is always 1
+      else
+        focused:resume(unpack(event))
+      end
+
+    elseif event[1] == 'char' or
+           event[1] == 'key' or
+           event[1] == 'key_up' or
+           event[1] == 'paste' then
+
+      local focused = processes[#processes]
+      if focused then
+        focused:resume(unpack(event))
+      end
+
+    else
+      for _,process in pairs(Util.shallowCopy(processes)) do
+        process:resume(unpack(event))
+      end
+    end
+
+    local didRedraw
+    for _,process in pairs(processes) do
+      if process.container.canvas:isDirty() then
+        process.container.canvas:redraw(monitor)
+        didRedraw = true
+      end
+    end
+
+    local focused = processes[#processes]
+    if didRedraw and focused then
+      --focused.container.canvas:dirty()
+      --focused.container.canvas:redraw(parentTerm)
+      focused.window.restoreCursor()
+      local cx, cy = focused.container.getCursorPos()
+      monitor.setCursorPos(
+        focused.container.canvas.x + cx - 1,
+        focused.container.canvas.y + cy - 1)
+    end
+  end
 end
 
 --[[ Special shell process for launching programs ]]--
 local function addShell()
 
   local process = setmetatable({
-    x       = monDim.width - 8,
+    x       = monDim.width,
     y       = monDim.height,
-    width   = 9,
+    width   = 1,
     height  = 1,
     isShell = true,
     uid     = nextUID(),
+    title   = 'Terminal',
   }, { __index = Process })
 
   function process:focus(focused)
     self.window.setVisible(focused)
     if focused then
       self.window.restoreCursor()
-      self.container.setTextColor(colors.yellow)
-      self.container.setBackgroundColor(colors.black)
     else
       parentTerm.clear()
       parentTerm.setCursorBlink(false)
-      self.container.setTextColor(colors.lightGray)
-      self.container.setBackgroundColor(colors.black)
+      local str = 'Click screen for shell'
+      write(parentTerm,
+        math.floor((termDim.width - #str) / 2),
+        math.floor(termDim.height / 2),
+        str)
     end
-    write(self.container, 1, 1, '[ shell ]')
   end
 
-  function process:resizeClick()
+  function process:click()
   end
 
-  function process:drawSizers()
-  end
-
-  process.container = window.create(monitor, process.x, process.y, process.width, process.height, true)
+  process.container = window.create(monitor, process.x, process.y+1, process.width, process.height, true)
   process.window    = window.create(parentTerm, 1, 1, termDim.width, termDim.height, true)
   process.terminal  = process.window
+
+  Canvas.convertWindow(process.container, monitor, process.x, process.y)
 
   process.co = coroutine.create(function()
     print('To run a program on the monitor, type "fg <program>"')
     print('To quit, type "exit"')
-    print('Press the [ shell ] button on the monitor to return to this shell')
     os.run(Util.shallowCopy(defaultEnv), shell.resolveProgram('shell'))
-    exitSession = true
+    multishell.stop()
   end)
 
   table.insert(processes, process)
-
   process:focus(true)
+
   local previousTerm = term.current()
   process:resume()
   term.redirect(previousTerm)
 end
 
-local function loadSession()
-  if fs.exists(configFile) then
-    local config = Util.readTable(configFile)
-    if config then
-      for _,v in pairs(config) do
-        Process:new(v)
-      end
-    end
-  end
-end
-
 addShell()
-loadSession()
 
-while not exitSession do
-
-  local event = { os.pullEventRaw() }
-
-  if event[1] == 'terminate' then
-    break
-
-  elseif event[1] == "monitor_touch" then
-    local x, y = event[3], event[4]
-
-    local key, process = getProcessAt(x, y)
-    if process then
-      if key ~= #processes then
-        focusProcess(process)
-      end
-
-      x = x - process.x + 1
-      y = y - process.y + 1
-
-      if y == 2 then -- title bar
-        if x == process.width - 2 then
-          process:resume('terminate')
-        else
-          process:drawSizers(not process.showSizers)
-        end
-
-      elseif x == 1 or y == 1 then -- sizers
-        process:resizeClick(x, y)
-
-      elseif x > 1 and x < process.width then
-        if process.showSizers then
-          process:drawSizers(false)
-        end
-        process:resume('mouse_click', 1, x - 1, y - 2)
-        process:resume('mouse_up',    1, x - 1, y - 2)
-      end
-    else
-      process = processes[#processes]
-      if process and process.showSizers then
-        process.x = math.floor(x - (process.width) / 2)
-        process.y = y
-        process:reposition()
-        process:drawSizers(true)
-        saveSession()
-      end
-    end
-
-  elseif event[1] == "char" or
-         event[1] == "key" or
-         event[1] == "key_up" or
-         event[1] == "paste" then
-
-    local focused = processes[#processes]
-    if focused then
-      focused:resume(unpack(event))
-    end
-
-  else
-    for _,process in pairs(Util.shallowCopy(processes)) do
-      process:resume(unpack(event))
-    end
-    if processes[#processes] then
-      processes[#processes].window.restoreCursor()
-    end
-  end
-end
+multishell.loadSession(sessionFile)
+multishell.start()
 
 term.redirect(parentTerm)
 parentTerm.clear()

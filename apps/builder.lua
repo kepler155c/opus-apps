@@ -195,8 +195,8 @@ function UI.Spinner:init(args)
   defaults.startX = defaults.x
   defaults.startY = defaults.y
 
-  UI.setProperties(self, defaults)
-  UI.setProperties(self, args)
+  UI:setProperties(self, defaults)
+  UI:setProperties(self, args)
 end
 
 function UI.Spinner:spin(text)
