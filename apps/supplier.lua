@@ -139,7 +139,7 @@ function Builder:getSupplies()
   local t = { }
   for _,s in ipairs(self.slots) do
     if s.need > 0 then
-      local item = Builder.itemProvider:getItemInfo(s.id, s.dmg)
+      local item = Builder.itemProvider:getItemInfo(s)
       if item then
         if item.name then
           s.name = item.name

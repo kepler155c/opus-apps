@@ -5,6 +5,49 @@ local Util       = require('util')
 
 local MEAdapter = class()
 
+local convertNames = {
+  name = 'id',
+  damage = 'dmg',
+  maxCount = 'max_size',
+  count = 'qty',
+  displayName = 'display_name',
+  maxDamage = 'max_dmg',
+}
+local keys = { 
+  'damage',
+  'displayName',
+  'maxCount',
+  'maxDamage',
+  'name',
+  'nbtHash',
+}
+
+-- Strip off color prefix
+local function safeString(text)
+
+  local val = text:byte(1)
+
+  if val < 32 or val > 128 then
+
+    local newText = {}
+    for i = 4, #text do
+      local val = text:byte(i)
+      newText[i - 3] = (val > 31 and val < 127) and val or 63
+    end
+    return string.char(unpack(newText))
+  end
+
+  return text
+end
+
+local function convertItem(item)
+  for k,v in pairs(convertNames) do
+    item[k] = item[v]
+    item[v] = nil
+  end
+  item.displayName = safeString(item.displayName)
+end
+
 function MEAdapter:init(args)
   local defaults = {
     items = { },
@@ -34,50 +77,8 @@ function MEAdapter:isValid()
   return self.getAvailableItems and self.getAvailableItems()
 end
 
--- Strip off color prefix
-local function safeString(text)
-
-  local val = text:byte(1)
-
-  if val < 32 or val > 128 then
-
-    local newText = {}
-    for i = 4, #text do
-      local val = text:byte(i)
-      newText[i - 3] = (val > 31 and val < 127) and val or 63
-    end
-    return string.char(unpack(newText))
-  end
-
-  return text
-end
-
-local convertNames = {
-  name = 'id',
-  damage = 'dmg',
-  maxCount = 'max_size',
-  count = 'qty',
-  displayName = 'display_name',
-  maxDamage = 'max_dmg',
-}
-
-local function convertItem(item)
-  for k,v in pairs(convertNames) do
-    item[k] = item[v]
-    item[v] = nil
-  end
-  item.displayName = safeString(item.displayName)
-end
-
 function MEAdapter:refresh()
-  local keys = { 
-    'damage',
-    'displayName',
-    'maxCount',
-    'maxDamage',
-    'name',
-    'nbtHash',
-  }
+
   self.items = self.getAvailableItems('all')
   for _,v in pairs(self.items) do
     Util.merge(v, v.item)
@@ -105,7 +106,7 @@ end
 function MEAdapter:getItemInfo(item)
    for key,i in pairs(self.items) do
     if item.name == i.name and item.damage == i.damage and item.nbtHash == i.nbtHash then
-      return item
+      return i
     end
   end
 end
@@ -143,7 +144,7 @@ function MEAdapter:craft(item, count)
             dmg = item.damage,
             nbt_hash = item.nbtHash,
           },
-          qty or 1,
+          count or 1,
           cpu
         )
 
@@ -207,8 +208,10 @@ function MEAdapter:craftItems(items)
     if count >= #cpus then
       break
     end
-    if self:craft(item.name, item.damage, item.count) then
-      count = count + 1
+    if not self:isCrafting(item) then
+      if self:craft(item, item.count) then
+        count = count + 1
+      end
     end
   end
 end

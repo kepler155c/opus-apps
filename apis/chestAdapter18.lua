@@ -16,10 +16,9 @@ local keys = Util.transpose({
 
 function ChestAdapter:init(args)
   local defaults = {
-    items = { },
-    name = 'chest',
+    name      = 'chest',
     direction = 'up',
-    wrapSide = 'bottom',
+    wrapSide  = 'bottom',
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
@@ -99,11 +98,11 @@ function ChestAdapter:listItems(throttle)
   return items
 end
 
-function ChestAdapter:getItemInfo(name, damage, nbtHash)
+function ChestAdapter:getItemInfo(item)
   if not self.cache then
     self:listItems()
   end
-  local key = table.concat({ name, damage, nbtHash }, ':')
+  local key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
   return self.cache[key]
 end
 

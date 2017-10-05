@@ -7,6 +7,7 @@ requireInjector(getfenv(1))
 local Blocks    = require('blocks')
 local class     = require('class')
 local Event     = require('event')
+local itemDB    = require('itemDB')
 local MEAdapter = require('meAdapter')
 local Message   = require('message')
 local Point     = require('point')
@@ -44,9 +45,10 @@ local pistonFacings
 
 -- Temp functions until conversion to new adapters is complete
 local function convertSingleForward(item)
+  item.displayName = item.display_name
   item.name = item.id
   item.damage = item.dmg
-  item.count = item.count
+  item.count = item.qty
   item.maxCount = item.max_size
   return item
 end
@@ -65,6 +67,7 @@ local function convertSingleBack(item)
     item.qty = item.count
     item.max_size = item.maxCount
     item.display_name = item.displayName
+    --item.name = item.displayName
   end
   return item
 end
@@ -395,7 +398,7 @@ function Builder:getGenericSupplyList(blockIndex)
 
   for _,s in pairs(slots) do
     if s.id then
-      s.name = blocks.nameDB:getName(s.id, s.dmg)
+      s.display_name = itemDB:getName({ name = s.id, damage = s.dmg })
     end
   end
 
@@ -476,9 +479,13 @@ function Builder:getSupplies()
   local t = { }
   for _,s in ipairs(self.slots) do
     if s.need > 0 then
-      local item = convertSingleBack(self.itemAdapter:getItemInfo(s.id, s.dmg))
+      local item = convertSingleBack(self.itemAdapter:getItemInfo({
+        name = s.id,
+        damage = s.dmg,
+        nbtHash = s.nbt_hash,
+      }))
       if item then
-        s.name = item.display_name
+        s.display_name = item.display_name
 
         local qty = math.min(s.need - s.qty, item.qty)
 
@@ -494,7 +501,7 @@ function Builder:getSupplies()
           s.qty = turtle.getItemCount(s.index)
         end
       else
-        s.name = blocks.nameDB:getName(s.id, s.dmg)
+        s.display_name = itemDB:getName({ name = s.id, damage = s.dmg })
       end
     end
     if s.qty < s.need then
@@ -1463,10 +1470,10 @@ substitutionPage.menuBar:add({
 function substitutionPage.info:draw()
 
   local sub = self.parent.sub
-  local inName = blocks.nameDB:getName(sub.id, sub.dmg)
+  local inName = itemDB:getName({ name = sub.id, damage = sub.dmg })
   local outName = ''
   if sub.sid then
-    outName = blocks.nameDB:getName(sub.sid, sub.sdmg)
+    outName = itemDB:getName({ name = sub.sid, damage = sub.sdmg })
   end
 
   self:clear()
@@ -1513,10 +1520,10 @@ function substitutionPage:eventHandler(event)
     self.statusBar:draw()
 
   elseif event.type == 'grid_select' then
-    if not blocks.nameDB:lookupName(event.selected.id, event.selected.dmg) then
-      blocks.nameDB:add({event.selected.id, event.selected.dmg}, event.selected.name)
-      blocks.nameDB:flush()
-    end
+--    if not item:lookupName(event.selected.id, event.selected.dmg) then
+--      blocks.nameDB:add({event.selected.id, event.selected.dmg}, event.selected.name)
+--      blocks.nameDB:flush()
+--    end
 
     self:applySubstitute(event.selected.id, event.selected.dmg)
     self.info:draw()
@@ -1581,15 +1588,15 @@ supplyPage = UI.Page {
       --{ text = 'Refresh', event = 'refresh', help = 'Refresh inventory' },
       { text = 'Continue',    event = 'build', help = 'Continue building' },
       { text = 'Menu',        event = 'menu',  help = 'Return to main menu' },
-      { text = 'Force Craft', event = 'craft', help = 'Request crafting (again)' },
+--      { text = 'Force Craft', event = 'craft', help = 'Request crafting (again)' },
     }
   },
   grid = UI.Grid {
     columns = {
-      { heading = 'Name', key = 'name',  width = UI.term.width - 7 },
+      { heading = 'Name', key = 'display_name',  width = UI.term.width - 7 },
       { heading = 'Need', key = 'need',  width = 4                 },
     },
-    sortColumn = 'name',
+    sortColumn = 'display_name',
     y = 3,
     width = UI.term.width,
     height = UI.term.height - 3
@@ -1610,10 +1617,11 @@ supplyPage = UI.Page {
 
 function supplyPage:eventHandler(event)
 
+--[[
   if event.type == 'craft' then
     local s = self.grid:getSelected()
-    if Builder.itemAdapter:craft(s.id, s.dmg, s.need-s.qty) then
-      local name = s.name or ''
+    if Builder.itemAdapter:craftItems({{ name = s.id, damage = s.dmg, nbtHash = s.nbt_hash }}, s.need-s.qty) then
+      local name = s.display_name or ''
       self.statusBar:timedStatus('Requested ' .. s.need-s.qty .. ' ' .. name, 3)
     else
       self.statusBar:timedStatus('Unable to craft')
@@ -1621,8 +1629,9 @@ function supplyPage:eventHandler(event)
 
   elseif event.type == 'refresh' then
     self:refresh()
+]]
 
-  elseif event.type == 'build' then
+  if event.type == 'build' then
     Builder:build()
 
   elseif event.type == 'menu' then
@@ -1709,11 +1718,11 @@ listingPage = UI.Page({
   }),
   grid = UI.ScrollingGrid({
     columns = {
-      { heading = 'Name', key = 'name', width = UI.term.width - 14 },
+      { heading = 'Name', key = 'display_name', width = UI.term.width - 14 },
       { heading = 'Need', key = 'need', width = 5                  },
       { heading = 'Have', key = 'qty',  width = 5                  },
     },
-    sortColumn = 'name',
+    sortColumn = 'display_name',
     y = 3,
     height = UI.term.height-3,
     help = 'Set a block type or pick a substitute block'
@@ -1737,13 +1746,17 @@ function listingPage:eventHandler(event)
 
   if event.type == 'craft' then
     local s = self.grid:getSelected()
-    local item = convertSingleBack(Builder.itemAdapter:getItemInfo(s.id, s.dmg))
+    local item = convertSingleBack(Builder.itemAdapter:getItemInfo({
+      name = s.id,
+      damage = s.dmg,
+      nbtHash = s.nbt_hash,
+    }))
     if item and item.is_craftable then
       local qty = math.max(0, s.need - item.qty)
 
       if item then
-        Builder.itemAdapter:craft(s.id, s.dmg, qty)
-        local name = s.name or s.key
+        Builder.itemAdapter:craftItems({{ name = s.id, damage = s.dmg, nbtHash = s.nbt_hash, count = qty }})
+        local name = s.display_name or s.id
         self.statusBar:timedStatus('Requested ' .. qty .. ' ' .. name, 3)
       end
     else
@@ -1801,27 +1814,31 @@ function listingPage:refresh(throttle)
 
   for _,b in pairs(supplyList) do
     if b.need > 0 then
-      local item = convertSingleBack(Builder.itemAdapter:getItemInfo(b.id, b.dmg))
+      local item = convertSingleBack(Builder.itemAdapter:getItemInfo({
+        name = b.id,
+        damage = b.dmg,
+        nbtHash = b.nbt_hash,
+      }))
 
       if item then
-        local block = blocks.blockDB:lookup(b.id, b.dmg)
-        if not block then
-          blocks.nameDB:add({b.id, b.dmg}, item.display_name)
-        elseif not block.name and item.display_name then
-          blocks.nameDB:add({b.id, b.dmg}, item.display_name)
-        end
-        b.name = item.display_name
+--        local block = blocks.blockDB:lookup(b.id, b.dmg)
+--        if not block then
+--          blocks.nameDB:add({b.id, b.dmg}, item.display_name)
+--        elseif not block.name and item.display_name then
+--          blocks.nameDB:add({b.id, b.dmg}, item.display_name)
+--        end
+        b.display_name = item.display_name
         b.qty = item.qty
         b.is_craftable = item.is_craftable
       else
-        b.name = blocks.nameDB:getName(b.id, b.dmg)
+        b.display_name = itemDB:getName({ name = b.id, damage = b.dmg })
       end
     end
     if throttle then
       throttle()
     end
   end
-  blocks.nameDB:flush()
+  --blocks.nameDB:flush()
 
   if self.fullList then
     self.grid:setValues(supplyList)

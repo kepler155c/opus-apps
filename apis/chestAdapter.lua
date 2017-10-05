@@ -1,111 +1,152 @@
-local class = require('class')
-local Logger = require('logger')
+local class      = require('class')
+local itemDB     = require('itemDB')
+local Peripheral = require('peripheral')
+local Util       = require('util')
 
-local ChestProvider = class()
- 
-function ChestProvider:init(args)
-  
-  args = args or { }
+local ChestAdapter = class()
 
-  self.stacks = {}
-  self.name = 'chest'
-  self.direction = args.direction or 'up'
-  self.wrapSide = args.wrapSide or 'bottom'
-  self.p = peripheral.wrap(self.wrapSide)
+local convertNames = {
+  name = 'id',
+  damage = 'dmg',
+  maxCount = 'max_size',
+  count = 'qty',
+  displayName = 'display_name',
+  maxDamage = 'max_dmg',
+}
+local keys = { 
+  'damage',
+  'displayName',
+  'maxCount',
+  'maxDamage',
+  'name',
+  'nbtHash',
+}
+
+-- Strip off color prefix
+local function safeString(text)
+
+  local val = text:byte(1)
+
+  if val < 32 or val > 128 then
+
+    local newText = {}
+    for i = 4, #text do
+      local val = text:byte(i)
+      newText[i - 3] = (val > 31 and val < 127) and val or 63
+    end
+    return string.char(unpack(newText))
+  end
+
+  return text
+end
+
+local function convertItem(item)
+  for k,v in pairs(convertNames) do
+    item[k] = item[v]
+    item[v] = nil
+  end
+  item.displayName = safeString(item.displayName)
+end
+
+function ChestAdapter:init(args)
+  local defaults = {
+    name      = 'chest',
+    direction = 'up',
+    wrapSide  = 'bottom',
+  }
+  Util.merge(self, defaults)
+  Util.merge(self, args)
+
+  local chest = Peripheral.getBySide(self.wrapSide)
+  if not chest then
+    chest = Peripheral.getByMethod('getAllStacks')
+  end
+  if chest then
+    Util.merge(self, chest)
+  end
 end
  
-function ChestProvider:isValid()
-  return self.p and self.p.getAllStacks
+function ChestAdapter:isValid()
+  return not not self.getAllStacks
 end
  
-function ChestProvider:refresh()
-  if self.p then
-    self.p.condenseItems()
-    self.stacks = self.p.getAllStacks(false)
-    local t = { }
-    for _,s in ipairs(self.stacks) do
-      local key = s.id .. ':' .. s.dmg
-      if t[key] and t[key].qty < 64 then
-        t[key].max_size = t[key].qty
-      else
-        t[key] = {
-          qty = s.qty
-        }
+function ChestAdapter:refresh(throttle)
+  return self:listItems(throttle)
+end
+
+-- provide a consolidated list of items
+function ChestAdapter:listItems(throttle)
+  self.cache = { }
+
+  for _,v in pairs(self.getAllStacks(false)) do
+    convertItem(v)
+    local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
+
+    local entry = self.cache[key]
+    if not entry then
+      self.cache[key] = v
+
+      local ikey = { v.name, v.damage, v.nbtHash }
+      if not itemDB:get(ikey) then
+        local t = { }
+        for _,k in pairs(keys) do
+          t[k] = v[k]
+        end
+        itemDB:add(ikey, t)
       end
-    end
-    for _,s in ipairs(self.stacks) do
-      local key = s.id .. ':' .. s.dmg
-      if t[key].max_size then
-        s.max_size = t[key].qty
-      else
-        s.max_size = 64
-      end
+    else
+      entry.count = entry.count + v.count
     end
   end
-  return self.stacks
+  itemDB:flush()
+  return self.cache
+end
+
+function ChestAdapter:getItemInfo(item)
+  if not self.cache then
+    self:listItems()
+  end
+  local key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
+  return self.cache[key]
 end
  
-function ChestProvider:getItemInfo(id, dmg)
-  local item = { id = id, dmg = dmg, qty = 0, max_size = 64 }
-  for _,stack in pairs(self.stacks) do
-    if stack.id == id and stack.dmg == dmg then
-      item.name = stack.display_name
-      item.qty = item.qty + stack.qty
-      item.max_size = stack.max_size
-    end
-  end
-  if item.name then
-    return item
-  end
-end
- 
-function ChestProvider:craft(id, dmg, qty)
+function ChestAdapter:craft(id, dmg, qty)
   return false
 end
 
-function ChestProvider:craftItems(items)
+function ChestAdapter:craftItems(items)
 end
 
-function ChestProvider:provide(item, qty, slot)
-  if self.p then
-    self.stacks = self.p.getAllStacks(false)
-    for key,stack in pairs(self.stacks) do
-      if stack.id == item.id and stack.dmg == item.dmg then
-        local amount = math.min(qty, stack.qty)
-        self.p.pushItemIntoSlot(self.direction, key, amount, slot)
-        qty = qty - amount
-        if qty <= 0 then
-          break
-        end
+function ChestAdapter:provide(item, qty, slot, direction)
+  for key,stack in pairs(self.getAllStacks(false)) do
+    if stack.id == item.name and
+       stack.dmg == item.damage and
+       stack.nbt_hash == item.nbtHash then
+
+      local amount = math.min(qty, stack.qty)
+      self.pushItemIntoSlot(direction or self.direction, key, amount, slot)
+      qty = qty - amount
+      if qty <= 0 then
+        break
       end
     end
   end
 end
 
-function ChestProvider:extract(slot, qty)
-  if self.p then
-    self.p.pushItem(self.direction, slot, qty)
+function ChestAdapter:extract(slot, qty, toSlot)
+  if toSlot then
+    self.pushItemIntoSlot(self.direction, slot, qty, toSlot)
+  else
+    self.pushItem(self.direction, slot, qty)
   end
 end
 
-function ChestProvider:insert(slot, qty)
-  if self.p then
-    local s, m = pcall(function() self.p.pullItem(self.direction, slot, qty) end)
-    if not s and m then
-      print('chestProvider:pullItem')
-      print(m)
-      Logger.log('chestProvider', 'Insert failed, trying again')
-      sleep(1)
-      s, m = pcall(function() self.p.pullItem(self.direction, slot, qty) end)
-      if not s and m then
-        print('chestProvider:pullItem')
-        print(m)
-        Logger.log('chestProvider', 'Insert failed again')
-      else
-        Logger.log('chestProvider', 'Insert successful')
-      end
-    end
+function ChestAdapter:insert(slot, qty)
+  local s, m = pcall(function() self.pullItem(self.direction, slot, qty) end)
+  if not s and m then
+    sleep(1)
+    pcall(function() self.pullItem(self.direction, slot, qty) end)
   end
 end
 
-return ChestProvider
+return ChestAdapter
