@@ -1883,7 +1883,6 @@ if UI.term.width < 30 then
 end
 
 local startPage = UI.Page {
-  -- titleBar = UI.TitleBar({ title = 'Builder v' .. Builder.version }),
   window = UI.Window {
     x = UI.term.width-16,
     y = wy,
@@ -1896,13 +1895,11 @@ local startPage = UI.Page {
         { heading = 'Value', key = 'value', width = 7 },
       },
       disableHeader = true,
-      --y = UI.term.height-1,
       x = 1,
       y = 2,
       width = 16,
       height = 9,
-      --autospace = true,
-      selectable = false,
+      inactive = true,
       backgroundColor = colors.gray
     },
   },
