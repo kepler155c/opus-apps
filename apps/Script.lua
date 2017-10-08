@@ -1,10 +1,16 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Config = require('config')
 local Event  = require('event')
 local Socket = require('socket')
 local UI     = require('ui')
 local Util   = require('util')
+
+local colors     = _G.colors
+local fs         = _G.fs
+local multishell = _ENV.multishell
+local os         = _G.os
+local shell      = _ENV.shell
 
 local GROUPS_PATH = 'usr/groups'
 local SCRIPTS_PATH = 'usr/etc/scripts'
@@ -26,7 +32,7 @@ if UI.term.width % 2 ~= 0 then
   width = width + 1
 end
 
-function processVariables(script)
+local function processVariables(script)
 
   local fn = loadstring('return ' .. config.variables)
   if fn then
@@ -40,7 +46,7 @@ function processVariables(script)
   return script
 end
 
-function invokeScript(computer, scriptName)
+local function invokeScript(computer, scriptName)
 
   local script = Util.readFile(scriptName)
   if not script then
@@ -74,7 +80,7 @@ function invokeScript(computer, scriptName)
   socket:close()
 end
 
-function runScript(computerOrGroup, scriptName)
+local function runScript(computerOrGroup, scriptName)
   if computerOrGroup.id then
     invokeScript(computerOrGroup, scriptName)
   else
@@ -208,14 +214,14 @@ local editorPage = UI.Page({
     y = 3,
   }),
   right = UI.Button({
-    text = '>', 
+    text = '>',
     event = 'right',
     x = width - 2,
     y = 2,
     width = 3,
   }),
   left = UI.Button({
-    text = '<', 
+    text = '<',
     event = 'left',
     x = UI.term.width - width + 1,
     y = 2,
@@ -459,11 +465,6 @@ function mainPage:eventHandler(event)
 
   elseif event.type == 'toggle' then
     config.showGroups = not config.showGroups
-    local text = 'Computers'
-    if config.showGroups then
-      text = 'Groups'
-    end
---    self.statusBar.toggleButton.text = text
     self:draw()
 
     Config.update('script', config)

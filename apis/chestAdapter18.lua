@@ -5,7 +5,7 @@ local Peripheral = require('peripheral')
 
 local ChestAdapter = class()
 
-local keys = Util.transpose({ 
+local keys = Util.transpose({
   'damage',
   'displayName',
   'maxCount',
@@ -22,7 +22,7 @@ function ChestAdapter:init(args)
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
-  
+
   local chest = Peripheral.getBySide(self.wrapSide)
   if not chest then
     chest = Peripheral.getByMethod('list')
@@ -106,10 +106,10 @@ function ChestAdapter:getItemInfo(item)
   return self.cache[key]
 end
 
-function ChestAdapter:craft(name, damage, qty)
+function ChestAdapter:craft()
 end
 
-function ChestAdapter:craftItems(items)
+function ChestAdapter:craftItems()
 end
 
 function ChestAdapter:provide(item, qty, slot, direction)

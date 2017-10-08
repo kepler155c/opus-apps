@@ -1,10 +1,12 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Event    = require('event')
 local Logger   = require('logger')
 local Socket   = require('socket')
-local Terminal = require('terminal')
 local Util     = require('util')
+
+local multishell = _ENV.multishell
+local os         = _G.os
 
 Logger.setScreenLogging()
 
@@ -14,7 +16,7 @@ if #args == 1 then
   remoteId = tonumber(args[1])
 else
   print('Enter host ID')
-  remoteId = tonumber(read())
+  remoteId = tonumber(_G.read())
 end
 
 if not remoteId then
@@ -70,7 +72,7 @@ while true do
   while true do
     local e = Event.pullEvent()
     if e[1] == 'terminate' then
-    	break
+      break
     end
     if not socket.connected then
       break

@@ -13,7 +13,7 @@ local convertNames = {
   displayName = 'display_name',
   maxDamage = 'max_dmg',
 }
-local keys = { 
+local keys = {
   'damage',
   'displayName',
   'maxCount',
@@ -31,7 +31,7 @@ local function safeString(text)
 
     local newText = {}
     for i = 4, #text do
-      local val = text:byte(i)
+      val = text:byte(i)
       newText[i - 3] = (val > 31 and val < 127) and val or 63
     end
     return string.char(unpack(newText))
@@ -65,11 +65,11 @@ function ChestAdapter:init(args)
     Util.merge(self, chest)
   end
 end
- 
+
 function ChestAdapter:isValid()
   return not not self.getAllStacks
 end
- 
+
 function ChestAdapter:refresh(throttle)
   return self:listItems(throttle)
 end
@@ -109,12 +109,11 @@ function ChestAdapter:getItemInfo(item)
   local key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
   return self.cache[key]
 end
- 
-function ChestAdapter:craft(id, dmg, qty)
-  return false
+
+function ChestAdapter:craft()
 end
 
-function ChestAdapter:craftItems(items)
+function ChestAdapter:craftItems()
 end
 
 function ChestAdapter:provide(item, qty, slot, direction)
@@ -144,7 +143,7 @@ end
 function ChestAdapter:insert(slot, qty)
   local s, m = pcall(function() self.pullItem(self.direction, slot, qty) end)
   if not s and m then
-    sleep(1)
+    os.sleep(1)
     pcall(function() self.pullItem(self.direction, slot, qty) end)
   end
 end

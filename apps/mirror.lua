@@ -1,9 +1,12 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Terminal = require('terminal')
 
+local shell = _ENV.shell
+local term  = _G.term
+
 local args = { ... }
-local mon = device[table.remove(args, 1) or 'monitor']
+local mon = _G.device[table.remove(args, 1) or 'monitor']
 if not mon then
   error('mirror: Invalid device')
 end

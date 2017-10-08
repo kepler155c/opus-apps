@@ -64,7 +64,7 @@ function blockDB:lookup(id, dmg)
   if not id then
     return
   end
- 
+
   return self.data[id .. ':' .. dmg]
 end
 
@@ -136,12 +136,12 @@ function placementDB:addSubsForBlockType(id, dmg, bt)
       sub.extra)
   end
 end
- 
+
 function placementDB:add(id, dmg, sid, sdmg, direction, extra)
   if direction and #direction == 0 then
     direction = nil
   end
- 
+
   local entry = {
     oid = id,      -- numeric ID
     odmg = dmg,    -- dmg with placement info
@@ -176,9 +176,9 @@ function blockTypeDB:addTemp(blockType, subs)
   end
   self.dirty = true
 end
- 
+
 function blockTypeDB:load()
- 
+
   blockTypeDB:addTemp('stairs', {
     { 0, nil, 0, 'east-up' },
     { 1, nil, 0, 'west-up' },
@@ -575,7 +575,8 @@ function Blocks:init(args)
   placementDB:load2(blockDB, blockTypeDB)
 end
 
--- for an ID / dmg (with placement info) - return the correct block (without the placment info embedded in the dmg)
+-- for an ID / dmg (with placement info)
+-- return the correct block (without the placment info embedded in the dmg)
 function Blocks:getPlaceableBlock(id, dmg)
 
   local p = placementDB:get({id, dmg})

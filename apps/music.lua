@@ -1,7 +1,13 @@
-require = requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Event = require('event')
 local UI    = require('ui')
+
+local colors = _G.colors
+local device = _G.device
+local turtle = _G.turtle
+
+local multishell = _ENV.multishell
 
 multishell.setTitle(multishell.getCurrent(), 'Music')
 
@@ -15,8 +21,6 @@ if not turtle then
 end
 
 UI:configure('Music', ...)
-
-local monitor = UI.term
 
 UI.Button.defaults.backgroundFocusColor = colors.gray
 
@@ -146,12 +150,12 @@ function page:eventHandler(event)
   end
 end
 
-function page:setVolume(volume, displayOnly)
+function page:setVolume(volume)
   volume = math.min(volume, 15)
   volume = math.max(volume, 1)
   self.volume = volume
   volume = math.ceil(volume / 2)
- 
+
   for i = 1, volume do
     self.volumeControls[i].backgroundColor =
       self.volumeControls[i].color
@@ -224,7 +228,7 @@ end
 
 function page:updateStationName()
   local title = radio.getAudioTitle()
- 
+
   if title then
     self.stationName.value = title
     self.stationName:draw()

@@ -4,6 +4,11 @@ local DEFLATE = require('deflatelua')
 local UI      = require('ui')
 local Point   = require('point')
 
+local bit    = _G.bit
+local fs     = _G.fs
+local term   = _G.term
+local turtle = _G.turtle
+
 --[[
   Loading and manipulating a schematic
 --]]
@@ -24,7 +29,7 @@ end
 --[[
   Credit to Orwell for the schematic file reader code
   http://www.computercraft.info/forums2/index.php?/topic/1949-turtle-schematic-file-builder/
- 
+
   Some parts of the file reader code was modified from the original
 --]]
 
@@ -52,7 +57,7 @@ function Schematic:readname(h)
     local c = h:readbyte(h)
     if c == nil then
       return
-    end  
+    end
     str = str .. string.char(c)
   end
   return str
@@ -218,11 +223,11 @@ function DiskFile:close()
 end
 
 local MemoryFile = class()
-function MemoryFile:init(args)
+function MemoryFile:init()
   self.s = { }
   self.i = 1
 end
-function MemoryFile:open(filename)
+function MemoryFile:open()
   self.i = 1
 end
 function MemoryFile:close() end
@@ -247,7 +252,7 @@ function Schematic:decompress(ifname, spinner)
   local mh = MemoryFile()
 
   DEFLATE.gunzip({
-    input=function(...) spinner:spin() return ifh.read() end,
+    input=function() spinner:spin() return ifh.read() end,
     output=function(b) mh:write(b) end,
     disable_crc=true
   })
@@ -310,7 +315,7 @@ end
 
 function Schematic:load(filename)
 
-  local cursorX, cursorY = term.getCursorPos()
+  local _, cursorY = term.getCursorPos()
   local spinner = UI.Spinner({
     x = UI.term.width,
     y = cursorY - 1
@@ -757,7 +762,7 @@ function Schematic:determineBlockPlacement(y)
       -- otherwise, the turtle must place the block from the same plane
       -- against another block
       -- if no block to place against (from side) then the turtle must place from
-      -- the other side 
+      -- the other side
       --
       -- Stair bug in 1.7 - placing a stair southward doesn't respect the turtle's direction
       -- all other directions are fine
@@ -843,8 +848,6 @@ end
 -- set the order for block dependencies
 function Schematic:setPlacementOrder(spinner, placementChains)
 
-  local cursorX, cursorY = term.getCursorPos()
-
   -- optimize for overlapping check
   for _,chain in pairs(placementChains) do
     for index,_ in pairs(chain.keys) do
@@ -917,9 +920,9 @@ function Schematic:setPlacementOrder(spinner, placementChains)
     ]]--
 
     local masterChain = table.remove(chains)
- 
+
     --[[ it's something like this:
- 
+
        A chain     B chain           result
           1                            1
           2 --------  2                2
@@ -1040,12 +1043,10 @@ v.info = 'Unplaceable'
   end
 
   term.clearLine()
-
-  return t
 end
 
 function Schematic:optimizeRoute(spinner, y)
- 
+
   local function getNearestNeighbor(p, pt, maxDistance)
     local key, block, heading
     local moves = maxDistance
@@ -1146,7 +1147,6 @@ function Schematic:optimizeRoute(spinner, y)
 
   local maxDistance = self.width*self.length
   local plane, doors = extractPlane(y)
-  spinner:spin(percent)
   pt.index = 0
   for i = 1, #plane do
     local b = getNearestNeighbor(plane, pt, maxDistance)

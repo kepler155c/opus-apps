@@ -5,7 +5,7 @@ local itemDB     = require('itemDB')
 
 local RefinedAdapter = class()
 
-local keys = { 
+local keys = {
   'damage',
   'displayName',
   'maxCount',
@@ -109,8 +109,8 @@ end
 function RefinedAdapter:isCrafting(item)
   for _,task in pairs(self.getCraftingTasks()) do
     local output = task.getPattern().outputs[1]
-    if output.name == item.name and 
-       output.damage == item.damage and 
+    if output.name == item.name and
+       output.damage == item.damage and
        output.nbtHash == item.nbtHash then
       return true
     end
@@ -125,18 +125,18 @@ function RefinedAdapter:craft(item, qty)
   end
 end
 
-function RefinedAdapter:craftItems(items)
+function RefinedAdapter:craftItems()
   return false
 end
 
-function RefinedAdapter:provide(item, qty, slot)
+function RefinedAdapter:provide()
 end
- 
-function RefinedAdapter:extract(slot, qty)
+
+function RefinedAdapter:extract()
 --  self.pushItems(self.direction, slot, qty)
 end
 
-function RefinedAdapter:insert(slot, qty)
+function RefinedAdapter:insert()
 --  self.pullItems(self.direction, slot, qty)
 end
 

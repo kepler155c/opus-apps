@@ -3,7 +3,8 @@ local itemDB     = require('itemDB')
 local Peripheral = require('peripheral')
 local Util       = require('util')
 
-local MEAdapter = class()
+local os         = _G.os
+local peripheral = _G.peripheral
 
 local convertNames = {
   name = 'id',
@@ -13,7 +14,7 @@ local convertNames = {
   displayName = 'display_name',
   maxDamage = 'max_dmg',
 }
-local keys = { 
+local keys = {
   'damage',
   'displayName',
   'maxCount',
@@ -31,7 +32,7 @@ local function safeString(text)
 
     local newText = {}
     for i = 4, #text do
-      local val = text:byte(i)
+      val = text:byte(i)
       newText[i - 3] = (val > 31 and val < 127) and val or 63
     end
     return string.char(unpack(newText))
@@ -47,6 +48,8 @@ local function convertItem(item)
   end
   item.displayName = safeString(item.displayName)
 end
+
+local MEAdapter = class()
 
 function MEAdapter:init(args)
   local defaults = {
@@ -72,7 +75,7 @@ function MEAdapter:init(args)
     end
   end
 end
- 
+
 function MEAdapter:isValid()
   return self.getAvailableItems and self.getAvailableItems()
 end
@@ -102,9 +105,9 @@ function MEAdapter:listItems()
   self:refresh()
   return self.items
 end
- 
+
 function MEAdapter:getItemInfo(item)
-   for key,i in pairs(self.items) do
+   for _,i in pairs(self.items) do
     if item.name == i.name and item.damage == i.damage and item.nbtHash == i.nbtHash then
       return i
     end
@@ -123,7 +126,7 @@ function MEAdapter:isCPUAvailable()
     end
   end
   return available
-end 
+end
 
 function MEAdapter:craft(item, count)
 
@@ -133,7 +136,7 @@ function MEAdapter:craft(item, count)
 
   self:refresh()
 
-  local item = self:getItemInfo(item)
+  item = self:getItemInfo(item)
   if item and item.is_craftable then
 
     local cpus = self.getCraftingCPUs() or { }
@@ -186,8 +189,8 @@ end
 
 function MEAdapter:isCrafting(item)
   for _,v in pairs(self:getJobList()) do
-    if v.name == item.name and 
-       v.damage == item.damage and 
+    if v.name == item.name and
+       v.damage == item.damage and
        v.nbtHash == item.nbtHash then
       return true
     end
@@ -220,7 +223,7 @@ function MEAdapter:provide(item, count, slot, direction)
   return pcall(function()
     while count > 0 do
       local qty = math.min(count, 64)
-      local s, m = self.exportItem({
+      local s = self.exportItem({
         id = item.name,
         dmg = item.damage
       }, direction or self.direction, qty, slot)
@@ -232,18 +235,14 @@ function MEAdapter:provide(item, count, slot, direction)
     end
   end)
 end
- 
+
 function MEAdapter:insert(slot, count)
   local s, m = pcall(function() self.pullItem(self.direction, slot, count) end)
   if not s and m then
-    print('MEAdapter:pullItem')
-    print(m)
-    sleep(1)
+    os.sleep(1)
     s, m = pcall(function() self.pullItem(self.direction, slot, count) end)
     if not s and m then
-      print('MEAdapter:pullItem')
-      print(m)
-      read()
+      error(m)
     end
   end
 end

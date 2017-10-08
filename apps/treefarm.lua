@@ -1,4 +1,4 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 --[[
   Requirements:
@@ -26,6 +26,10 @@ local Level        = require('turtle.level')
 local Pathing      = require('turtle.pathfind')
 local Point        = require('point')
 local Util         = require('util')
+
+local os     = _G.os
+local read   = _G.read
+local turtle = _G.turtle
 
 local FUEL_BASE = 0
 local FUEL_DIRE = FUEL_BASE + 10
@@ -175,7 +179,7 @@ local function makeSingleCharcoal()
 
   local slots = turtle.getSummedInventory()
 
-  if not state.furnace or 
+  if not state.furnace or
      slots[CHARCOAL] or
      not slots[OAK_LOG] or
      slots[OAK_LOG].count < 2 then
@@ -195,13 +199,13 @@ local function makeCharcoal()
 
   local slots = turtle.getSummedInventory()
 
-  if not state.furnace or 
+  if not state.furnace or
      not slots[CHARCOAL] or
      slots[CHARCOAL].count >= MIN_CHARCOAL then
     return true
   end
 
-  local function getLogSlot(slots)
+  local function getLogSlot()
     local maxslot = { count = 0 }
     for k,slot in pairs(slots) do
       if string.match(k, 'minecraft:log') then
@@ -214,7 +218,8 @@ local function makeCharcoal()
   end
 
   repeat
-    local slots    = turtle.getSummedInventory()
+    slots = turtle.getSummedInventory()
+
     local charcoal = slots[CHARCOAL].count
     local slot     = getLogSlot(slots)
 
@@ -266,7 +271,7 @@ local function getCobblestone(count)
       turtle.select(1)
       turtle.digDown()
       turtle.down()
-      for i = 1, 4 do
+      for _ = 1, 4 do
         if inspect(turtle.inspect) == STONE then
           turtle.dig()
         end
@@ -391,9 +396,9 @@ local function dropOffItems()
   if state.chest_1 then
     local slots = turtle.getSummedInventory()
 
-    if state.chest_1 and 
-       slots[CHARCOAL] and 
-       slots[CHARCOAL].count >= MIN_CHARCOAL and 
+    if state.chest_1 and
+       slots[CHARCOAL] and
+       slots[CHARCOAL].count >= MIN_CHARCOAL and
        (turtle.getItemCount('minecraft:log') > 0 or
         turtle.getItemCount('minecraft:log2') > 0) then
 
@@ -510,10 +515,10 @@ local function fell()
 
   local pts = Util.shallowCopy(state.trees)
 
-  local pt = table.remove(pts, math.random(1, #pts))
+  local rpt = table.remove(pts, math.random(1, #pts))
 
   -- give the pathfinder hints about what to avoid (state.trees)
-  if not turtle.faceAgainst(pt, { blocks = Util.shallowCopy(state.trees) }) or
+  if not turtle.faceAgainst(rpt, { blocks = Util.shallowCopy(state.trees) }) or
      not string.match(inspect(turtle.inspect), 'minecraft:log') then
     return true
   end
@@ -523,7 +528,7 @@ local function fell()
   local fuel = turtle.getFuelLevel()
 
   -- push this point to the start of this list
-  table.insert(pts, 1, pt)
+  table.insert(pts, 1, rpt)
 
   Point.eachClosest(turtle.point, pts, function(pt)
     if turtle.faceAgainst(pt, { blocks = Util.shallowCopy(state.trees) }) and
@@ -570,7 +575,7 @@ local function moreTrees()
   end)
 end
 
-function getTurtleFacing(block)
+local function getTurtleFacing(block)
   local directions = {
     [5] = 2,
     [3] = 3,
@@ -586,7 +591,7 @@ function getTurtleFacing(block)
   return directions[bi.metadata]
 end
 
-function saveTurtleFacing()
+local function saveTurtleFacing()
   if not state.facing then
     setState('facing', getTurtleFacing(CHEST))
   end
@@ -600,9 +605,9 @@ local function findGround()
     local s, block = turtle.inspectDown()
 
     if not s then block = { name = 'minecraft:air', metadata = 0 } end
-    b = block.name .. ':' .. block.metadata
+    local b = block.name .. ':' .. block.metadata
 
-    if b == 'minecraft:dirt:0' or 
+    if b == 'minecraft:dirt:0' or
        b == 'minecraft:grass:0' or
        block.name == 'minecraft:chest' then
       break
@@ -719,7 +724,7 @@ local tasks = {
   { desc = 'Placing torches',    fn = placeTorches       },
   { desc = 'Refueling',          fn = refuel             },
   { desc = 'Dropping off items', fn = dropOffItems       },
-  { desc = 'Condensing',         fn = turtle.condense    },  
+  { desc = 'Condensing',         fn = turtle.condense    },
   { desc = 'Sleeping',           fn = updateClock        },
 }
 
@@ -734,12 +739,12 @@ local s, m = turtle.run(function()
       turtle.status = task.desc
       turtle.select(1)
       if not task.fn() then
-        Util.filterInplace(tasks, function(v) return v.fn ~= task.fn end) 
+        Util.filterInplace(tasks, function(v) return v.fn ~= task.fn end)
       end
     end
   end
 end)
 
 if not s then
-  error('Failed')
+  error(m or 'Failed')
 end

@@ -1,4 +1,4 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Config   = require('config')
 local Event    = require('event')
@@ -7,6 +7,14 @@ local Socket   = require('socket')
 local Terminal = require('terminal')
 local UI       = require('ui')
 local Util     = require('util')
+
+local colors     = _G.colors
+local fs         = _G.fs
+local multishell = _ENV.multishell
+local network    = _G.network
+local os         = _G.os
+local shell      = _ENV.shell
+local term       = _G.term
 
 multishell.setTitle(multishell.getCurrent(), 'Turtles')
 UI.Button.defaults.focusIndicator = ' '
@@ -27,15 +35,7 @@ local options = {
 local SCRIPTS_PATH = 'usr/etc/scripts'
 
 local nullTerm = Terminal.getNullTerm(term.current())
-local turtles = { }
 local socket
-local policies = { 
-  { label = 'none' },
-  { label = 'digOnly' },
-  { label = 'attackOnly' },
-  { label = 'digAttack' },
-  { label = 'turtleSafe' },
-}
 
 local page = UI.Page {
   coords = UI.Window {
@@ -142,7 +142,7 @@ function page:enable(turtle)
 end
 
 function page:runFunction(script, nowrap)
-  for i = 1, 2 do
+  for _ = 1, 2 do
     if not socket then
       socket = Socket.connect(self.turtle.id, 161)
     end
@@ -186,7 +186,7 @@ function page.coords:draw()
     if not t.point.gps then
       ind = 'REL'
     end
-    self:print(string.format('%s : %d,%d,%d\n Fuel: %s\n', 
+    self:print(string.format('%s : %d,%d,%d\n Fuel: %s\n',
       ind, t.point.x, t.point.y, t.point.z, Util.toBytes(t.fuel)))
   end
 end
@@ -210,12 +210,6 @@ function page.tabs.inventory:draw()
           v.selected = true
         end
         if v.id then
---          local item = itemDB:get({ v.id, v.dmg })
---          if item then
---            v.id = item.displayName
---          else
---            v.id = v.id:gsub('.*:(.*)', '%1')
---          end
           v.id = itemDB:getName(v)
         end
       end
@@ -356,7 +350,7 @@ if not Util.getOptions(options, { ... }, true) then
 end
 
 if options.turtle.value >= 0 then
-  for i = 1, 10 do
+  for _ = 1, 10 do
     page.turtle = _G.network[options.turtle.value]
     if page.turtle then
       break

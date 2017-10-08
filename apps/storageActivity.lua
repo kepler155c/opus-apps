@@ -1,4 +1,4 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local ChestAdapter    = require('chestAdapter18')
 local Event           = require('event')
@@ -6,6 +6,9 @@ local MEAdapter       = require('meAdapter')
 local RefinedAdapter  = require('refinedAdapter')
 local UI              = require('ui')
 local Util            = require('util')
+
+local colors     = _G.colors
+local multishell = _ENV.multishell
 
 local storage = RefinedAdapter()
 if not storage:isValid() then
@@ -73,7 +76,7 @@ function changedPage.grid:getDisplayValues(row)
 end
 
 function changedPage:eventHandler(event)
- 
+
   if event.type == 'reset' then
     self.lastItems = nil
     self.grid:setValues({ })
@@ -102,22 +105,23 @@ end
 
 function changedPage:refresh()
   local t = storage:listItems()
- 
+
   if not t or Util.empty(t) then
     self:clear()
     self:centeredWrite(math.ceil(self.height/2), 'Communication failure')
     return
   end
- 
+
   for k,v in pairs(t) do
     t[k] = Util.shallowCopy(v)
   end
- 
+
   if not self.lastItems then
     self.lastItems = t
     self.grid:setValues({ })
   else
-    local changedItems = {}
+    local changedItems = { }
+    local found
     for _,v in pairs(self.lastItems) do
       found = false
       for k2,v2 in pairs(t) do
@@ -141,12 +145,12 @@ function changedPage:refresh()
       end
     end
     -- No items left
-    for k,v in pairs(t) do
+    for _,v in pairs(t) do
       v.lastCount = 0
       table.insert(changedItems, v)
     end
 
-    for k,v in pairs(changedItems) do
+    for _,v in pairs(changedItems) do
       v.change  = v.count - v.lastCount
     end
 
@@ -154,11 +158,11 @@ function changedPage:refresh()
   end
   self.grid:draw()
 end
- 
+
 Event.onInterval(5, function()
   changedPage:refresh()
   changedPage:sync()
 end)
- 
+
 UI:setPage(changedPage)
 UI:pullEvents()

@@ -12,7 +12,7 @@ function nameDB:load()
   end
 
   for strId, block in pairs(blocks) do
-    local strId = 'minecraft:' .. strId
+    strId = 'minecraft:' .. strId
     if type(block.name) == 'string' then
       self.data[strId .. ':0'] = block.name
     else

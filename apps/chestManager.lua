@@ -1,4 +1,4 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local ChestAdapter   = require('chestAdapter18')
 local Config         = require('config')
@@ -11,6 +11,11 @@ local RefinedAdapter = require('refinedAdapter')
 local Terminal       = require('terminal')
 local UI             = require('ui')
 local Util           = require('util')
+
+local device     = _G.device
+local multishell = _ENV.multishell
+local peripheral = _G.peripheral
+local term       = _G.term
 
 multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 
@@ -58,6 +63,9 @@ end
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE  = 'usr/etc/recipes.db'
 
+local colors = _G.colors
+local turtle = _G.turtle
+
 local craftingPaused = false
 local canCraft = not not duckAntenna or turtleChestAdapter:isValid()
 local recipes = Util.readTable(RECIPES_FILE) or { }
@@ -97,18 +105,6 @@ local function getItemQuantity(items, item)
   return 0
 end
 
-local function getItemDetails(items, item)
-  local cItem = getItem(items, item)
-  if cItem then
-    return cItem
-  end
-  cItem = itemDB:get(itemDB:makeKey(item))
-  if cItem then
-    return { count = 0, maxCount = cItem.maxCount }
-  end
-  return { count = 0, maxCount = 64 }
-end
-
 local function uniqueKey(item)
   return table.concat({ item.name, item.damage, item.nbtHash }, ':')
 end
@@ -143,12 +139,12 @@ local function mergeResources(t)
     v.lname = v.displayName:lower()
   end
 end
- 
+
 local function filterItems(t, filter)
   if filter then
     local r = {}
     filter = filter:lower()
-    for k,v in pairs(t) do
+    for _,v in pairs(t) do
       if string.find(v.lname, filter) then
         table.insert(r, v)
       end
@@ -160,7 +156,6 @@ end
 
 local function sumItems3(ingredients, items, summedItems, count)
 
-  local canCraft = 0
   for _,key in pairs(ingredients) do
     local item = splitKey(key)
     local summedItem = summedItems[key]
@@ -205,7 +200,7 @@ local function addCraftingRequest(item, craftList, count)
   local key = uniqueKey(item)
   local request = craftList[key]
   if not craftList[key] then
-    request = { name = item.name, damage = item.damage, nbtHash = nbtHash, count = 0 }
+    request = { name = item.name, damage = item.damage, nbtHash = item.nbtHash, count = 0 }
     request.displayName = itemDB:getName(request)
     craftList[key] = request
   end
@@ -238,7 +233,7 @@ local function craftItem(recipe, items, originalItem, craftList, count)
     local summedItems = { }
     sumItems3(recipe.ingredients, items, summedItems, math.ceil(count / recipe.count))
 
-    for key,ingredient in pairs(summedItems) do
+    for _,ingredient in pairs(summedItems) do
       if not ingredient.recipe and ingredient.count < 0 then
         addCraftingRequest(ingredient, craftList, -ingredient.count)
       end
@@ -270,7 +265,7 @@ local function craftItems(craftList, allItems)
         else
           local count = item.count
           while count >= 1 do -- try to request smaller quantities until successful
-            local s, m = pcall(function()
+            local s = pcall(function()
               item.status = '(no recipe)'
               if not controller:craft(item, count) then
                 item.status = '(missing ingredients)'
@@ -289,7 +284,7 @@ local function craftItems(craftList, allItems)
   end
 end
 
-local function jobMonitor(jobList)
+local function jobMonitor()
 
   local mon = Peripheral.getByType('monitor')
 
@@ -368,7 +363,7 @@ local function watchResources(items)
   local craftList = { }
   local outputs   = { }
 
-  for k, res in pairs(resources) do
+  for _,res in pairs(resources) do
     local item = getItemWithQty(items, res, res.ignoreDamage)
     if not item then
       item = {
@@ -381,8 +376,8 @@ local function watchResources(items)
     end
 
     if res.limit and item.count > res.limit then
-      local s, m = inventoryAdapter:provide(
-        { name = item.name, damage = item.damage }, 
+      inventoryAdapter:provide(
+        { name = item.name, damage = item.damage },
         item.count - res.limit,
         nil,
         config.trashDirection)
@@ -522,9 +517,9 @@ function itemPage:enable(item)
 
   local devices = self.form[6].choices
   Util.clear(devices)
-  for _,device in pairs(device) do
-    if device.setOutput then
-      table.insert(devices, { name = device.name, value = device.name })
+  for _,dev in pairs(device) do
+    if dev.setOutput then
+      table.insert(devices, { name = dev.name, value = dev.name })
     end
   end
 
@@ -564,7 +559,7 @@ function itemPage:eventHandler(event)
     if filtered.auto ~= true then
       filtered.auto = nil
     end
- 
+
     if filtered.rsControl ~= true then
       filtered.rsControl = nil
       filtered.rsSide = nil
@@ -629,9 +624,6 @@ function listingPage.grid:getRowTextColor(row, selected)
     return colors.yellow
   end
   if row.has_recipe then
-    if selected then
-      return colors.cyan
-    end
     return colors.cyan
   end
   return UI.Grid:getRowTextColor(row, selected)
@@ -705,7 +697,7 @@ function listingPage:eventHandler(event)
       self.grid:draw()
     end
 
-  elseif event.type == 'text_change' then 
+  elseif event.type == 'text_change' then
     self.filter = event.text
     if #self.filter == 0 then
       self.filter = nil
@@ -741,7 +733,7 @@ local function getTurtleInventory()
 
   if duckAntenna then
     local list = duckAntenna.getAllStacks(false)
-    for k,v in pairs(list) do
+    for _,v in pairs(list) do
       v.name = v.id
       v.damage = v.dmg
       v.displayName = v.display_name
@@ -765,22 +757,12 @@ local function getTurtleInventory()
   return inventory
 end
 
-local function filter(t, filter)
-  local keys = Util.keys(t)
-  for _,key in pairs(keys) do
-    if not Util.key(filter, key) then
-      t[key] = nil
-    end
-  end
-end
-
 local function learnRecipe(page)
-  local recipe = { }
   local ingredients = getTurtleInventory()
   if ingredients then
     turtle.select(1)
     if canCraft and turtle.craft() then
-      recipe = getTurtleInventory()
+      local recipe = getTurtleInventory()
       if recipe and recipe[1] then
         clearGrid()
 
@@ -851,7 +833,7 @@ function learnPage:disable()
   craftingPaused = false
   UI.Dialog.disable(self)
 end
- 
+
 function learnPage:eventHandler(event)
   if event.type == 'cancel' then
     UI:setPreviousPage()
@@ -902,12 +884,11 @@ function craftPage:disable()
   craftingPaused = false
   UI.Dialog.disable(self)
 end
- 
+
 function craftPage:eventHandler(event)
   if event.type == 'cancel' then
     UI:setPreviousPage()
-  elseif event.type == 'accept' then
-    
+  --elseif event.type == 'accept' then
   else
     return UI.Dialog.eventHandler(self, event)
   end

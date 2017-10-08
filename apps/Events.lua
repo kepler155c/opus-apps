@@ -1,8 +1,11 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Event = require('event')
 local UI    = require('ui')
 local Util  = require('util')
+
+local multishell = _ENV.multishell
+local os         = _G.os
 
 multishell.setTitle(multishell.getCurrent(), 'Events')
 UI:configure('Events', ...)

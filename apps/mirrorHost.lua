@@ -1,15 +1,18 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Event  = require('event')
 local Logger = require('logger')
 local Socket = require('socket')
+
+local colors = _G.colors
+local term   = _G.term
 
 Logger.setScreenLogging()
 
 local mon = term.current()
 local args = { ... }
 if args[1] then
-  mon = device[args[1]]
+  mon = _G.device[args[1]]
 end
 
 if not mon then

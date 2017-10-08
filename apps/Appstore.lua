@@ -1,25 +1,28 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Ansi   = require('ansi')
-local Config = require('config')
 local SHA1   = require('sha1')
 local UI     = require('ui')
 local Util   = require('util')
 
--- scrap this entire file. don't muck with standard apis
+local fs         = _G.fs
+local http       = _G.http
+local multishell = _ENV.multishell
+local os         = _G.os
+local shell      = _ENV.shell
 
 local REGISTRY_DIR = 'usr/.registry'
 
 
 --                                           FIX SOMEDAY
-function os.registerApp(app, key)
+local function registerApp(app, key)
 
   app.key = SHA1.sha1(key)
   Util.writeTable(fs.combine(REGISTRY_DIR, app.key), app)
   os.queueEvent('os_register_app')
 end
 
-function os.unregisterApp(key)
+local function unregisterApp(key)
 
   local filename = fs.combine(REGISTRY_DIR, SHA1.sha1(key))
   if fs.exists(filename) then
@@ -29,7 +32,7 @@ function os.unregisterApp(key)
 end
 
 
-local sandboxEnv = Util.shallowCopy(getfenv(1))
+local sandboxEnv = Util.shallowCopy(_ENV)
 setmetatable(sandboxEnv, { __index = _G })
 
 multishell.setTitle(multishell.getCurrent(), 'App Store')
@@ -243,7 +246,7 @@ function appPage:eventHandler(event)
 
   elseif event.type == 'uninstall' then
     if self.app.runOnly then
-      s,m = runApp(self.app, false, 'uninstall')
+      runApp(self.app, false, 'uninstall')
     else
       fs.delete(fs.combine(APP_DIR, self.app.name))
       self.notification:success("Uninstalled " .. self.app.name, 3)
@@ -251,7 +254,7 @@ function appPage:eventHandler(event)
       self.menuBar.removeButton:disable('Remove')
       self.menuBar:draw()
 
-      os.unregisterApp(self.app.creator .. '.' .. self.app.name)
+      unregisterApp(self.app.creator .. '.' .. self.app.name)
     end
 
   elseif event.type == 'install' then
@@ -275,7 +278,7 @@ function appPage:eventHandler(event)
           category = 'Games'
         end
 
-        os.registerApp({
+        registerApp({
           run = fs.combine(APP_DIR, self.app.name),
           title = self.app.title,
           category = category,
@@ -314,7 +317,7 @@ local categoryPage = UI.Page {
 
 function categoryPage:setCategory(source, name, index)
   self.grid.values = { }
-  for k,v in pairs(source.storeURLs) do
+  for _,v in pairs(source.storeURLs) do
     if index == 0 or index == v.catagory then
       table.insert(self.grid.values, v)
     end
@@ -339,7 +342,7 @@ function categoryPage:setSource(source)
     end
 
     local buttons = { }
-    for k,v in Util.spairs(source.storeCatagoryNames, 
+    for k,v in Util.spairs(source.storeCatagoryNames,
           function(a, b) return a:lower() < b:lower() end) do
 
       if v ~= 'Operating System' then

@@ -1,6 +1,10 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
-Base64 = require('base64')
+local Base64 = require('base64')
+
+local http  = _G.http
+local os    = _G.os
+local shell = _ENV.shell
 
 local args = { ... }
 

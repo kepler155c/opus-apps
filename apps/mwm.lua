@@ -1,8 +1,15 @@
 local injector = requireInjector or load(http.get('https://raw.githubusercontent.com/kepler155c/opus/master/sys/apis/injector.lua').readAll())()
-injector(getfenv(1))
+injector()
 
 local Canvas = require('ui.canvas')
 local Util   = require('util')
+
+local colors     = _G.colors
+local os         = _G.os
+local peripheral = _G.peripheral
+local shell      = _ENV.shell
+local term       = _G.term
+local window     = _G.window
 
 local function syntax()
   printError('Syntax:')
@@ -18,7 +25,7 @@ local sessionFile = args[1] or syntax()
 local running
 local monitor
 
-local defaultEnv = Util.shallowCopy(getfenv(1))
+local defaultEnv = Util.shallowCopy(_ENV)
 defaultEnv.multishell = multishell
 
 if args[2] then
@@ -55,7 +62,7 @@ end
 local function getProcessAt(x, y)
   for k = #processes, 1, -1 do
     local process = processes[k]
-    if x >= process.x and 
+    if x >= process.x and
        y >= process.y and
        x <= process.x + process.width - 1 and
        y <= process.y + process.height - 1 then
@@ -356,7 +363,7 @@ function multishell.removeProcess(process)
   redraw()
 end
 
-function multishell.saveSession(sessionFile)
+function multishell.saveSession(filename)
   local t = { }
   for _,process in pairs(processes) do
     if process.path and not process.isShell then
@@ -370,11 +377,11 @@ function multishell.saveSession(sessionFile)
       })
     end
   end
-  Util.writeTable(sessionFile, t)
+  Util.writeTable(filename, t)
 end
 
-function multishell.loadSession(sessionFile)
-  local config = Util.readTable(sessionFile)
+function multishell.loadSession(filename)
+  local config = Util.readTable(filename)
   if config then
     for _,v in pairs(config) do
       multishell.openTab(v)
