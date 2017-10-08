@@ -56,7 +56,7 @@ local sources = {
 
 shell.setDir(APP_DIR)
 
-function downloadApp(app)
+local function downloadApp(app)
   local h
 
   if type(app.url) == "table" then
@@ -72,7 +72,7 @@ function downloadApp(app)
   end
 end
 
-function runApp(app, checkExists, ...)
+local function runApp(app, checkExists, ...)
 
   local path, fn
   local args = { ... }
@@ -82,7 +82,7 @@ function runApp(app, checkExists, ...)
   else
     local program = downloadApp(app)
 
-    fn = function() 
+    fn = function()
 
       if not program then
         error('Failed to download')
@@ -173,37 +173,35 @@ local getSourceListing = function(source)
   end
 end
 
-local appPage = UI.Page({
-  menuBar = UI.MenuBar({
-    showBackButton = not pocket,
+local appPage = UI.Page {
+  menuBar = UI.MenuBar {
+--    showBackButton = not pocket,
     buttons = {
+      { text = '\027',    event = 'back'    },
       { text = 'Install', event = 'install' },
       { text = 'Run',     event = 'run'     },
       { text = 'View',    event = 'view'    },
       { text = 'Remove',  event = 'uninstall', name = 'removeButton' },
     },
-  }),
-  container = UI.Window({
-    x = 2,
-    y = 3,
-    height = UI.term.height - 3,
-    width = UI.term.width - 2,
-    viewport = UI.ViewportWindow(),
-  }),
+  },
+  container = UI.Window {
+    x = 2, y = 3, ex = -2, ey = -3,
+    viewport = UI.Viewport(),
+  },
   notification = UI.Notification(),
   accelerators = {
     q = 'back',
     backspace = 'back',
   },
-})
+}
 
 function appPage.container.viewport:draw()
   local app = self.parent.parent.app
   local str = string.format(
     '%s \nBy: %s \nCategory: %s\nFile name: %s\n\n%s',
     Ansi.yellow .. app.title .. Ansi.reset,
-    app.creator, 
-    app.categoryName, app.name, 
+    app.creator,
+    app.categoryName, app.name,
     Ansi.yellow .. app.description .. Ansi.reset)
 
   self:clear()
@@ -293,31 +291,26 @@ function appPage:eventHandler(event)
   return true
 end
 
-local categoryPage = UI.Page({
-  menuBar = UI.MenuBar({
+local categoryPage = UI.Page {
+  menuBar = UI.MenuBar {
     buttons = {
-      { text = 'Catalog',  event = 'dropdown', dropdown = 'sourceMenu'   },
-      { text = 'Category', event = 'dropdown', dropdown = 'categoryMenu' },
+      { text = 'Catalog',  dropdown = sources },
+      { text = 'Category', name = 'categoryButton', dropdown = { } },
     },
-  }),
-  sourceMenu = UI.DropMenu({
-    buttons = sources,
-  }),
-  grid = UI.ScrollingGrid({
-    y = 2,
-    height = UI.term.height - 2,
+  },
+  grid = UI.ScrollingGrid {
+    y = 2, ey = -2,
     columns = {
       { heading = 'Title', key = 'title' },
     },
     sortColumn = 'title',
-    autospace = true,
-  }),
+  },
   statusBar = UI.StatusBar(),
   accelerators = {
     l = 'lua',
     q = 'quit',
   },
-})
+}
 
 function categoryPage:setCategory(source, name, index)
   self.grid.values = { }
@@ -359,19 +352,17 @@ function categoryPage:setSource(source)
     end
 
     source.categoryMenu = UI.DropMenu({
-      y = 2,
-      x = 1,
       buttons = buttons,
     })
     source.index, source.name = Util.first(source.storeCatagoryNames)
 
-    categoryPage:add({
+    categoryPage.menuBar.categoryButton:add({
       categoryMenu = source.categoryMenu
     })
   end
 
   self.source = source
-  self.categoryMenu = source.categoryMenu
+  self.menuBar.categoryButton.dropmenu = source.categoryMenu
   categoryPage:setCategory(source, source.name, source.index)
 end
 

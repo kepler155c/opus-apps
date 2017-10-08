@@ -1,24 +1,28 @@
 requireInjector(getfenv(1))
 
+local Ansi  = require('ansi')
 local Event = require('event')
 local UI    = require('ui')
 local Util  = require('util')
+
+local colors = _G.colors
+local peripheral = _G.peripheral
 
 multishell.setTitle(multishell.getCurrent(), 'Devices')
 
 --[[ -- PeripheralsPage  -- ]] --
 local peripheralsPage = UI.Page {
   grid = UI.ScrollingGrid {
-    columns = { 
+    ey = -2,
+    columns = {
       { heading = 'Type', key = 'type' },
       { heading = 'Side', key = 'side' },
-    },  
+    },
     sortColumn = 'type',
-    height = UI.term.height - 1,
     autospace = true,
   },
   statusBar = UI.StatusBar {
-    status = 'Select peripheral'
+    values = 'Select peripheral',
   },
   accelerators = {
     q = 'quit',
@@ -60,16 +64,17 @@ end
 
 --[[ -- MethodsPage  -- ]] --
 local methodsPage = UI.Page {
-  grid = UI.ScrollingGrid {
-    columns = { 
-      { heading = 'Name', key = 'name', width = UI.term.width }
-    },  
-    sortColumn = 'name',
-    height = 7,
+  backgroundColor = colors.black,
+  doc = UI.TextArea {
+    backgroundColor = colors.black,
+    x = 2, y = 2, ex = -1, ey = -7,
   },
-  viewportConsole = UI.ViewportWindow {
-    y = 8,
-    height = UI.term.height - 8,
+  grid = UI.ScrollingGrid {
+    y = -6, ey = -2,
+    columns = {
+      { heading = 'Name', key = 'name', width = UI.term.width }
+    },
+    sortColumn = 'name',
   },
   statusBar = UI.StatusBar {
     status = 'q to return',
@@ -84,8 +89,9 @@ function methodsPage:enable(p)
 
   self.peripheral = p or self.peripheral
 
-  local p = peripheral.wrap(self.peripheral.side)
+  p = peripheral.wrap(self.peripheral.side)
   if p.getDocs then
+    -- plethora
     self.grid.values = { }
     for k,v in pairs(p.getDocs()) do
       table.insert(self.grid.values, {
@@ -94,27 +100,35 @@ function methodsPage:enable(p)
       })
     end
   elseif not p.getAdvancedMethodsData then
+    -- computercraft
     self.grid.values = { }
-    for name,f in pairs(p) do
+    for name in pairs(p) do
       table.insert(self.grid.values, {
         name = name,
         noext = true,
       })
     end
   else
+    -- open peripherals
     self.grid.values = p.getAdvancedMethodsData()
     for name,f in pairs(self.grid.values) do
       f.name = name
     end
   end
 
-  self.viewportConsole.offy = 0
-
   self.grid:update()
   self.grid:setIndex(1)
 
+  self.doc:setText(self:getDocumentation())
+
   self.statusBar:setStatus(self.peripheral.type)
   UI.Page.enable(self)
+
+  self:setFocus(self.grid)
+end
+
+function methodsPage.doc:focus()
+  -- allow keyboard scrolling
 end
 
 function methodsPage:eventHandler(event)
@@ -122,82 +136,62 @@ function methodsPage:eventHandler(event)
     UI:setPage(peripheralsPage)
     return true
   elseif event.type == 'grid_focus_row' then
-    self.viewportConsole.offy = 0
-    self.viewportConsole:draw()
+    self.doc:setText(self:getDocumentation())
   end
   return UI.Page.eventHandler(self, event)
 end
 
-function methodsPage.viewportConsole:draw()
-  local c = self
-  local method = methodsPage.grid:getSelected()
+function methodsPage:getDocumentation()
 
-  c:clear()
-  c:setCursorPos(1, 1)
+  local method = self.grid:getSelected()
 
-  if method.noext then
-    c.cursorY = 2
-    c:print('No extended Information')
-    return 2
+  if method.noext then    -- computercraft docs
+    return 'No documentation'
   end
 
-  if method.doc then
-    c:print(method.doc, nil, colors.yellow)
-    c.ymax = c.cursorY + 1
-    return
+  if method.doc then      -- plethora docs
+    return Ansi.yellow .. method.doc
   end
 
+  -- open peripherals docs
+  local sb = { }
   if method.description then
-    c:print(method.description)
+    table.insert(sb, method.description .. '\n\n')
   end
-
-  c.cursorY = c.cursorY + 2
-  c.cursorX = 1
 
   if method.returnTypes ~= '()' then
-    c:print(method.returnTypes .. ' ', nil, colors.yellow)
+    table.insert(sb, Ansi.yellow .. method.returnTypes .. ' ')
   end
-  c:print(method.name, nil, colors.black)
-  c:print('(')
-
-  local maxArgLen = 1
+  table.insert(sb, Ansi.blue .. method.name .. Ansi.reset .. '(')
 
   for k,arg in ipairs(method.args) do
-    if #arg.description > 0 then
-      maxArgLen = math.max(#arg.name, maxArgLen)
-    end
-    local argName = arg.name
-    local fg = colors.green
     if arg.optional then
-      argName = string.format('[%s]', arg.name)
-      fg = colors.orange
+      table.insert(sb, Ansi.orange .. string.format('[%s]', arg.name))
+    else
+      table.insert(sb, Ansi.green .. arg.name)
     end
-    c:print(argName, nil, fg)
     if k < #method.args then
-      c:print(', ')
+      table.insert(sb, ',')
     end
   end
-  c:print(')')
+  table.insert(sb, Ansi.reset .. ')')
 
-  c.cursorY = c.cursorY + 1
-
+  Util.filterInplace(method.args, function(a) return #a.description > 0 end)
   if #method.args > 0 then
-    for _,arg in ipairs(method.args) do
-      if #arg.description > 0 then
-        c.cursorY = c.cursorY + 1
-        c.cursorX = 1
-        local fg = colors.green
-        if arg.optional then
-          fg = colors.orange
-        end
-        c:print(arg.name .. ': ', nil, fg)
-        c.cursorX = maxArgLen + 3
-        c:print(arg.description, nil, nil, maxArgLen + 3)
+    table.insert(sb, '\n\n')
+    for k,arg in ipairs(method.args) do
+      if arg.optional then
+        table.insert(sb, Ansi.orange)
+      else
+        table.insert(sb, Ansi.green)
+      end
+      table.insert(sb, arg.name .. Ansi.reset .. ': ' .. arg.description)
+      if k ~= #method.args then
+        table.insert(sb, '\n\n')
       end
     end
   end
-
-  c.ymax = c.cursorY + 1
+  return table.concat(sb)
 end
 
 Event.on('peripheral', function()
