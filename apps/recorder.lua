@@ -83,7 +83,10 @@ local function loadAPI(url, env)
 	apiEnv.shell = nil
 	apiEnv.multishell = nil
 	setmetatable(apiEnv, { __index = _G })
-	local fn = Util.loadUrl(url, apiEnv)
+	local fn, m = Util.loadUrl(url, apiEnv)
+	if not fn then
+		error(m)
+	end
 	fn()
 	return apiEnv
 end
@@ -91,7 +94,10 @@ end
 bbpack  = loadAPI('http://pastebin.com/raw/PdrJjb5S', getfenv(1))
 GIF     = loadAPI('http://pastebin.com/raw/5uk9uRjC', getfenv(1))
 
-Util.runUrl(getfenv(1), 'http://pastebin.com/raw/cUYTGbpb', 'get', 'CnLzL5fg')
+local s, m = Util.runUrl(getfenv(1), 'http://pastebin.com/raw/cUYTGbpb', 'get', 'CnLzL5fg')
+if not s then
+	error(m)
+end
 --	'Y0eLUPtr')
 -- CnLzL5fg
 local function snooze()

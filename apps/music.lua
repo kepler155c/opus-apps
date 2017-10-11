@@ -11,13 +11,13 @@ local multishell = _ENV.multishell
 
 multishell.setTitle(multishell.getCurrent(), 'Music')
 
+if not turtle then
+  error('This program can only be run on a turtle')
+end
+
 local radio = device.drive or error('No drive attached')
 if radio.side ~= 'top' and radio.side ~= 'bottom' then
   error('Disk drive must be above or below turtle')
-end
-
-if not turtle then
-  error('This program can only be run on a turtle')
 end
 
 UI:configure('Music', ...)

@@ -1,4 +1,4 @@
-local injector = requireInjector or load(http.get('https://raw.githubusercontent.com/kepler155c/opus/master/sys/apis/injector.lua').readAll())()
+local injector = _G.requireInjector or load(http.get('https://raw.githubusercontent.com/kepler155c/opus/develop/sys/apis/injector.lua').readAll())()
 injector()
 
 local Canvas = require('ui.canvas')
@@ -7,6 +7,7 @@ local Util   = require('util')
 local colors     = _G.colors
 local os         = _G.os
 local peripheral = _G.peripheral
+local printError = _G.printError
 local shell      = _ENV.shell
 local term       = _G.term
 local window     = _G.window
