@@ -291,7 +291,7 @@ function normalChestUnload()
       makeWalkableTunnel(action, tpt, { x = pt.x, z = pt.z })
     end)
 
-  safeGoto(0, 0)
+  safeGoto(0, 0, 0)
   if not turtle.detectUp() then
     error('no chest')
   end

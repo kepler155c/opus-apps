@@ -128,10 +128,6 @@ function methodsPage:enable(p)
   self:setFocus(self.grid)
 end
 
-function methodsPage.doc:focus()
-  -- allow keyboard scrolling
-end
-
 function methodsPage:eventHandler(event)
   if event.type == 'back' then
     UI:setPage(peripheralsPage)

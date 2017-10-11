@@ -125,7 +125,8 @@ local page = UI.Page {
         fn = 'turtle.turnRight',
       },
       info = UI.TextArea {
-        x = 2, y = 9
+        x = 2, y = 9,
+        inactive = true,
       }
     },
   },
@@ -379,7 +380,7 @@ local lookup = {
 }
 
 if lookup[options.tab.value] then
-  page.tabs:activateTab(lookup[options.tab.value])
+  page.tabs:activateTab(lookup[options.tab.value].uid)
 end
 
 UI:pullEvents()
