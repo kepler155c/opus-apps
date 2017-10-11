@@ -1,13 +1,13 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
-local Logger  = require('logger')
 local Pathing = require('turtle.pathfind')
 local Point   = require('point')
 local Util    = require('util')
 
-if device and device.wireless_modem then
-  Logger.setWirelessLogging()
-end
+local fs     = _G.fs
+local read   = _G.read
+local os     = _G.os
+local turtle = _G.turtle
 
 local args = { ... }
 local options = {
@@ -37,14 +37,10 @@ local fortuneBlocks = {
 
 local MIN_FUEL = 7500
 local LOW_FUEL = 1500
-local MAX_FUEL = 100000
+local MAX_FUEL = turtle.getFuelLimit()
 
 local PROGRESS_FILE = 'usr/config/mining.progress'
 local TRASH_FILE    = 'usr/config/mining.trash'
-
-if not term.isColor() then
-  MAX_FUEL = 20000
-end
 
 local mining = {
   diameter = 1,
@@ -52,10 +48,9 @@ local mining = {
   chunks = -1,
 }
 
-local trash
-local boreDirection
+local trash, boreDirection, unload
 
-function getChunkCoordinates(diameter, index, x, z)
+local function getChunkCoordinates(diameter, index, x, z)
   local dirs = { -- circumference of grid
     { xd =  0, zd =  1, heading = 1 }, -- south
     { xd = -1, zd =  0, heading = 2 },
@@ -68,13 +63,13 @@ function getChunkCoordinates(diameter, index, x, z)
     dirs[4].z = z
     return dirs[4]
   end
-  dir = dirs[math.floor(index / (diameter - 1)) + 1]
+  local dir = dirs[math.floor(index / (diameter - 1)) + 1]
   dir.x = x + dir.xd * 16
   dir.z = z + dir.zd * 16
   return dir
 end
 
-function getBoreLocations(x, z)
+local function getBoreLocations(x, z)
 
   local locations = {}
 
@@ -116,7 +111,7 @@ function getBoreLocations(x, z)
 end
 
 -- get the bore location closest to the miner
-local function getClosestLocation(points, b)
+local function getClosestLocation(points)
   local key = 1
   local leastMoves = 9000
   for k,pt in pairs(points) do
@@ -124,21 +119,21 @@ local function getClosestLocation(points, b)
     local moves = Point.calculateMoves(turtle.point, pt)
 
     if moves < leastMoves then
-      key = k 
+      key = k
       leastMoves = moves
       if leastMoves == 0 then
         break
-      end 
-    end 
-  end 
+      end
+    end
+  end
   return table.remove(points, key)
-end 
+end
 
-function getCornerOf(c)
+local function getCornerOf(c)
   return math.floor(c.x / 16) * 16, math.floor(c.z / 16) * 16
 end
 
-function nextChunk()
+local function nextChunk()
 
   local x, z = getCornerOf({ x = mining.x, z = mining.z })
   local points = math.pow(mining.diameter, 2) - math.pow(mining.diameter-2, 2)
@@ -168,15 +163,15 @@ function nextChunk()
   return true
 end
 
-function addTrash()
+local function addTrash()
 
   if not trash then
     trash = { }
   end
 
   local slots = turtle.getFilledSlots()
- 
-  for k,slot in pairs(slots) do
+
+  for _,slot in pairs(slots) do
     trash[slot.iddmg] = true
   end
 
@@ -184,17 +179,16 @@ function addTrash()
   Util.writeTable(TRASH_FILE, trash)
 end
 
-function log(text)
+local function log(text)
   print(text)
-  Logger.log('mineWorker', text)
 end
 
-function status(status)
-  turtle.status = status
-  log(status)
+local function status(newStatus)
+  turtle.status = newStatus
+  log(newStatus)
 end
 
-function refuel()
+local function refuel()
   if turtle.getFuelLevel() < MIN_FUEL then
     local oldStatus = turtle.status
     status('refueling')
@@ -220,41 +214,24 @@ function refuel()
 
   turtle.select(1)
 end
- 
-function enderChestUnload()
-  log('unloading')
-  turtle.select(1)
-  if not Util.tryTimed(5, function()
-      turtle.digDown()
-      return turtle.placeDown()
-    end) then
-    log('placedown failed')
-  else
-    turtle.reconcileInventory(slots, turtle.dropDown)
- 
-    turtle.select(1)
-    turtle.drop(64)
-    turtle.digDown()
-  end
-end
 
-function safeGoto(x, z, y, h)
+local function safeGoto(x, z, y, h)
   local oldStatus = turtle.status
 
   -- only pathfind above or around other turtles (never down)
-  Pathing.setBox({ x = 0, y = 0, z = 0, ex = x, ey = y + 1, ez = z })
+  Pathing.setBox({ x = turtle.point.x, y = turtle.point.y, z = turtle.point.z, ex = x, ey = y, ez = z })
   while not turtle.pathfind({ x = x, z = z, y = y or turtle.point.y, heading = h }) do
     --status('stuck')
     if turtle.abort then
       return false
     end
-    --os.sleep(1)
+    os.sleep(3)
   end
   turtle.status = oldStatus
   return true
 end
 
-function safeGotoY(y)
+local function safeGotoY(y)
   local oldStatus = turtle.status
   while not turtle.gotoY(y) do
     status('stuck')
@@ -267,7 +244,7 @@ function safeGotoY(y)
   return true
 end
 
-function makeWalkableTunnel(action, tpt, pt)
+local function makeWalkableTunnel(action, tpt, pt)
   if action ~= 'turn' and not Point.compare(tpt, { x = 0, z = 0 }) then -- not at source
     if not Point.compare(tpt, pt) then                                  -- not at dest
       local r, block = turtle.inspectUp()
@@ -281,7 +258,26 @@ function makeWalkableTunnel(action, tpt, pt)
   end
 end
 
-function normalChestUnload()
+--[[
+local function enderChestUnload()
+  log('unloading')
+  turtle.select(1)
+  if not Util.tryTimed(5, function()
+      turtle.digDown()
+      return turtle.placeDown()
+    end) then
+    log('placedown failed')
+  else
+    turtle.reconcileInventory(slots, turtle.dropDown)
+
+    turtle.select(1)
+    turtle.drop(64)
+    turtle.digDown()
+  end
+end
+]]
+
+local function normalChestUnload()
   local oldStatus = turtle.status
   status('unloading')
   local pt = Util.shallowCopy(turtle.point)
@@ -297,7 +293,7 @@ function normalChestUnload()
   end
   local slots = turtle.getFilledSlots()
   for _,slot in pairs(slots) do
-    if not trash[slot.iddmg] and 
+    if not trash[slot.iddmg] and
       slot.iddmg ~= 'minecraft:bucket:0' and
       slot.id ~= 'minecraft:diamond_pickaxe' and
       slot.id ~= 'cctweaks:toolHost' then
@@ -317,7 +313,7 @@ function normalChestUnload()
   status(oldStatus)
 end
 
-function ejectTrash()
+local function ejectTrash()
 
   local cobbleSlotCount = 0
 
@@ -340,7 +336,35 @@ function ejectTrash()
   end)
 end
 
-function mineable(action)
+local function checkSpace()
+  if turtle.getItemCount(16) > 0 then
+    refuel()
+    local oldStatus = turtle.status
+    status('condensing')
+    ejectTrash()
+    turtle.condense()
+    local lastSlot = 16
+    if boreDirection == 'down' then
+      lastSlot = 15
+    end
+    if turtle.getItemCount(lastSlot) > 0 then
+      unload()
+    end
+    status(oldStatus)
+    turtle.select(1)
+  end
+end
+
+local function collectDrops(suckAction)
+  for _ = 1, 50 do
+    if not suckAction() then
+      break
+    end
+    checkSpace()
+  end
+end
+
+local function mineable(action)
   local r, block = action.inspect()
   if not r then
     return false
@@ -375,12 +399,12 @@ function mineable(action)
   return block.name
 end
 
-function fortuneDig(action, blockName)
+local function fortuneDig(action, blockName)
   if options.fortunePick.value and fortuneBlocks[blockName] then
     turtle.select('cctweaks:toolHost')
     turtle.equipRight()
     turtle.select(options.fortunePick.value)
-    repeat until not turtle.dig()
+    repeat until not action.dig()
     turtle.select('minecraft:diamond_pickaxe')
     turtle.equipRight()
     turtle.select(1)
@@ -388,7 +412,7 @@ function fortuneDig(action, blockName)
   end
 end
 
-function mine(action)
+local function mine(action)
   local blockName = mineable(action)
   if blockName then
     checkSpace()
@@ -398,12 +422,12 @@ function mine(action)
     end
   end
 end
- 
-function bore()
+
+local function bore()
 
   local loc = turtle.point
   local level = loc.y
- 
+
   turtle.select(1)
   status('boring down')
   boreDirection = 'down'
@@ -417,15 +441,11 @@ function bore()
       break
     end
 
-    if turtle.point.y < -2 then
---      turtle.setDigPolicy(turtle.digPolicies.turtleSafe)
-    end
-
     mine(turtle.getAction('down'))
     if not Util.tryTimed(3, turtle.down) then
       break
     end
- 
+
     if loc.y < level - 1 then
       mine(turtle.getAction('forward'))
       turtle.turnRight()
@@ -438,20 +458,16 @@ function bore()
 
   turtle.turnRight()
   mine(turtle.getAction('forward'))
- 
+
   turtle.turnRight()
   mine(turtle.getAction('forward'))
- 
+
   turtle.turnLeft()
- 
+
   while true do
     if turtle.abort then
       status('aborting')
       return false
-    end
-
-    if turtle.point.y > -2 then
---      turtle.setDigPolicy(turtle.digPolicies.turtleSafe)
     end
 
     while not Util.tryTimed(3, turtle.up) do
@@ -464,12 +480,12 @@ function bore()
     if loc.y >= level - 1 then
       break
     end
- 
+
     mine(turtle.getAction('forward'))
     turtle.turnLeft()
     mine(turtle.getAction('forward'))
   end
- 
+
   if turtle.getFuelLevel() < LOW_FUEL then
     refuel()
     local veryMinFuel = Point.turtleDistance(turtle.point, { x = 0, y = 0, z = 0}) + 512
@@ -480,34 +496,6 @@ function bore()
   end
 
   return true
-end
- 
-function checkSpace()
-  if turtle.getItemCount(16) > 0 then
-    refuel()
-    local oldStatus = turtle.status
-    status('condensing')
-    ejectTrash()
-    turtle.condense()
-    local lastSlot = 16
-    if boreDirection == 'down' then
-      lastSlot = 15
-    end
-    if turtle.getItemCount(lastSlot) > 0 then
-      unload()
-    end
-    status(oldStatus)
-    turtle.select(1)
-  end
-end
- 
-function collectDrops(suckAction)
-  for i = 1, 50 do
-    if not suckAction() then
-      break
-    end
-    checkSpace()
-  end
 end
 
 function Point.compare(pta, ptb)
@@ -520,15 +508,15 @@ function Point.compare(pta, ptb)
   return false
 end
 
-function inspect(action, name)
+local function inspect(action, name)
   local r, block = action.inspect()
   if r and block.name == name then
     return true
   end
 end
- 
-function boreCommand()
-  local pt = getClosestLocation(mining.locations, turtle.point)
+
+local function boreCommand()
+  local pt = getClosestLocation(mining.locations)
 
   turtle.setMoveCallback(function(action, tpt)
       makeWalkableTunnel(action, tpt, pt)
@@ -628,15 +616,13 @@ turtle.run(function()
   turtle.reset()
   turtle.setPolicy(turtle.policies.digAttack)
   turtle.setDigPolicy(turtle.digPolicies.turtleSafe)
-
   unload()
   status('mining')
 
   local s, m = pcall(function() main() end)
   if not s and m then
-    printError(m)
+    _G.printError(m)
   end
-
   turtle.abort = false
   safeGotoY(0)
   safeGoto(0, 0, 0, 0)
