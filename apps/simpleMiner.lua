@@ -554,6 +554,7 @@ if not Util.getOptions(options, args) then
   return
 end
 
+-- TODO: this won't work - need to Util.merge file into mining
 mining.depth = options.depth.value
 mining.chunks = options.chunks.value
 
@@ -619,7 +620,7 @@ turtle.run(function()
   unload()
   status('mining')
 
-  local s, m = pcall(function() main() end)
+  local s, m = pcall(main)
   if not s and m then
     _G.printError(m)
   end

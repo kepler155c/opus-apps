@@ -1,7 +1,6 @@
 local class   = require('class')
 local Util    = require('util')
 local DEFLATE = require('deflatelua')
-local UI      = require('ui')
 local Point   = require('point')
 
 local bit    = _G.bit
@@ -15,6 +14,52 @@ local turtle = _G.turtle
 
 local schematicMagic = 0x0a00
 local gzipMagic = 0x1f8b
+
+--[[-- Spinner --]]--
+local Spinner = class()
+function Spinner:init(args)
+  local defaults = {
+    timeout = .095,
+    c = os.clock(),
+    spinIndex = 0,
+    spinSymbols = { '-', '/', '|', '\\' }
+  }
+  defaults.x, defaults.y = term.getCursorPos()
+  defaults.startX = defaults.x
+  defaults.startY = defaults.y
+
+  Util.merge(self, defaults)
+  Util.merge(self, args)
+end
+
+function Spinner:spin(text)
+  local cc = os.clock()
+  if text then
+    self.text = text
+  end
+  if cc > self.c + self.timeout then
+    term.setCursorPos(self.x, self.y)
+    local str = self.spinSymbols[self.spinIndex % #self.spinSymbols + 1]
+    if self.text then
+      str = str .. ' ' .. self.text
+      self.text = nil
+    end
+    term.write(str)
+    self.spinIndex = self.spinIndex + 1
+    os.sleep(0)
+    self.c = os.clock()
+  end
+end
+
+function Spinner:stop(text)
+  term.setCursorPos(self.x, self.y)
+  local str = string.rep(' ', #self.spinSymbols)
+  if text then
+    str = str .. ' ' .. text
+  end
+  term.write(str)
+  term.setCursorPos(self.startX, self.startY)
+end
 
 local Schematic = class()
 function Schematic:init(args)
@@ -281,7 +326,7 @@ function Schematic:loadpass(fh, spinner)
 
   fh:close()
 
-  print('Assigning coords ')
+  spinner.text = 'Assigning coords '
   local index = 1
   for _, b in ipairs(self.blocks) do
     while index < b.index do
@@ -314,11 +359,10 @@ function Schematic:loadpass(fh, spinner)
 end
 
 function Schematic:load(filename)
-
-  local _, cursorY = term.getCursorPos()
-  local spinner = UI.Spinner({
-    x = UI.term.width,
-    y = cursorY - 1
+  local _, cy = term.getCursorPos()
+  local spinner = Spinner({
+    x = 1,
+    y = cy,
   })
   local f
 
@@ -327,7 +371,7 @@ function Schematic:load(filename)
     filename = originalFile .. '.uncompressed'
 
     if not fs.exists(filename) then
-      print('Decompressing')
+      spinner.text = 'Decompressing'
       f = self:decompress(originalFile, spinner)
     end
   end
@@ -340,7 +384,7 @@ function Schematic:load(filename)
 
   self:checkFileType(f)
 
-  print('Loading blocks   ')
+  spinner.text = 'Loading blocks   '
   self:loadpass(f, spinner)
 
   self.rowIndex = { }
@@ -357,7 +401,7 @@ function Schematic:load(filename)
 end
 
 function Schematic:assignDamages(spinner)
-  print('Assigning damages')
+  spinner.text = 'Assigning damages'
 
   for _,b in pairs(self.blocks) do
     b.dmg = self.damages[b.index] or 0
@@ -586,7 +630,7 @@ function Schematic:determineBlockPlacement(y)
 
   print('Processing level ' .. y)
 
-  local spinner = UI.Spinner({
+  local spinner = Spinner({
     x = 1,
     spinSymbols = { 'o.....', '.o....', '..o...', '...o..', '....o.', '.....o' }
   })
