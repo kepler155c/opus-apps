@@ -314,8 +314,8 @@ local function writeHighlighted(sLine, ny)
     text = '',
   }
 
-  local function tryWrite(sLine, regex, fgcolor)
-    local match = sLine:match(regex)
+  local function tryWrite(line, regex, fgcolor)
+    local match = line:match(regex)
     if match then
       local fg
       if type(fgcolor) == "string" then
@@ -325,7 +325,7 @@ local function writeHighlighted(sLine, ny)
       end
       buffer.text = buffer.text .. match
       buffer.fg = buffer.fg .. string.rep(fg, #match)
-      return sLine:sub(#match + 1)
+      return line:sub(#match + 1)
     end
     return nil
   end
@@ -452,12 +452,12 @@ local function hacky_read()
   local _oldSetCursorPos = term.setCursorPos
   local _oldGetCursorPos = term.getCursorPos
 
-  term.setCursorPos = function(x, y)
-    return _oldSetCursorPos(x, h)
+  term.setCursorPos = function(cx)
+    return _oldSetCursorPos(cx, h)
   end
   term.getCursorPos = function()
-    local x, y = _oldGetCursorPos()
-    return x, 1
+    local cx = _oldGetCursorPos()
+    return cx, 1
   end
 
   local s, m = pcall(function() return read() end)
@@ -986,18 +986,18 @@ local __actions = {
     local count = 0
     local lines = { }
 
-    for _ = csy, cey do
-      local line = tLines[y]
+    for cy = csy, cey do
+      local line = tLines[cy]
       if line then
-        local x = 1
+        local cx = 1
         local ex = #line
-        if y == csy then
-          x = csx
+        if cy == csy then
+          cx = csx
         end
-        if y == cey then
+        if cy == cey then
           ex = cex - 1
         end
-        local str = line:sub(x, ex)
+        local str = line:sub(cx, ex)
         count = count + #str
         table.insert(lines, str)
       end
@@ -1055,6 +1055,7 @@ local __actions = {
         setStatus('Using system clipboard')
       end
     end
+    mark.continue = mark.active
   end,
 
   copy_marked = function()
@@ -1063,6 +1064,7 @@ local __actions = {
       clipboard.setData(text)
       clipboard.useInternal(true)
     else
+      debug(text)
       os.queueEvent('clipboard_copy', text)
     end
     setStatus('%d chars copied', size)
