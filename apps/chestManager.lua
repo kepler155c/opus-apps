@@ -675,7 +675,7 @@ function listingPage:eventHandler(event)
     UI:setPage('learn')
 
   elseif event.type == 'craft' then
-    UI:setPage('craft')
+    UI:setPage('craft', self.grid:getSelected())
 
   elseif event.type == 'forget' then
     local item = self.grid:getSelected()
@@ -850,7 +850,7 @@ end
 local craftPage = UI.Dialog {
   height = 6, width = UI.term.width - 10,
   title = 'Enter amount to craft',
-  idField = UI.TextEntry {
+  count = UI.TextEntry {
     x = 15,
     y = 3,
     width = 10,
@@ -874,7 +874,8 @@ function craftPage:draw()
   self:write(6, 3, 'Quantity')
 end
 
-function craftPage:enable()
+function craftPage:enable(item)
+  self.item = item
   craftingPaused = true
   self:focusFirst()
   UI.Dialog.enable(self)
@@ -888,7 +889,15 @@ end
 function craftPage:eventHandler(event)
   if event.type == 'cancel' then
     UI:setPreviousPage()
-  --elseif event.type == 'accept' then
+  elseif event.type == 'accept' then
+    local key = uniqueKey(self.item)
+    local craftList = { }
+    craftList[key] = Util.shallowCopy(self.item)
+    craftList[key].count = tonumber(self.count.value)
+
+    craftingPaused = false
+    craftItems(craftList, inventoryAdapter:listItems())
+    UI:setPreviousPage()
   else
     return UI.Dialog.eventHandler(self, event)
   end

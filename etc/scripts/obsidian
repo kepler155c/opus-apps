@@ -1,7 +1,10 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Point = require('point')
 local Util  = require('util')
+
+local os     = _G.os
+local turtle = _G.turtle
 
 local checkedNodes, nodes
 
@@ -47,7 +50,7 @@ local function findObsidian()
     if turtle.getItemCount(16) > 0 then
       print('Inventory full')
       print('Enter to continue...')
-      read()
+      _G.read()
     end
 
     if b and b.name == 'minecraft:obsidian' then
@@ -63,40 +66,43 @@ local function findObsidian()
       break
     end
 
-    local node = Point.closest(turtle.point, nodes)
+    node = Point.closest(turtle.point, nodes)
     if not turtle.gotoPoint(node) then
       break
     end
   until turtle.abort
 end
 
-turtle.reset()
-turtle.setPolicy(turtle.policies.digOnly)
-local s, m = turtle.run(function() 
-  repeat
+turtle.run(function()
+  turtle.reset()
+  turtle.setPolicy(turtle.policies.digOnly)
 
-    checkedNodes = { }
-    nodes = { }
+  local s, m = pcall(function()
+    repeat
+      checkedNodes = { }
+      nodes = { }
 
-    local _,b = turtle.inspectDown()
-    if not b or b.name ~= 'minecraft:obsidian' then
-      break
-    end
+      local _,b = turtle.inspectDown()
+      if not b or b.name ~= 'minecraft:obsidian' then
+        break
+      end
 
-    findObsidian()
-    if not turtle.select('minecraft:water_bucket') then
-      break
-    end
-    turtle.goto(0, 0)
-    turtle.placeDown()
-    os.sleep(2)
-    turtle.placeDown()
-    turtle.down()
-    turtle.select(1)
-  until turtle.abort
+      findObsidian()
+      if not turtle.select('minecraft:water_bucket') then
+        break
+      end
+      turtle._goto(0, 0)
+      turtle.placeDown()
+      os.sleep(2)
+      turtle.placeDown()
+      turtle.down()
+      turtle.select(1)
+    until turtle.abort
+  end)
+
+  if not s and m then
+    error(m)
+  end
+
+  turtle._goto(0, 0, 0, 0)
 end)
-turtle.goto(0, 0, 0, 0)
-turtle.reset()
-if not s and m then
-  error(m)
-end

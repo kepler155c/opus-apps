@@ -1,4 +1,12 @@
-shell.setCompletionFunction(shell.getRunningProgram(), function(shell, index, text)
+local colors     = _G.colors
+local fs         = _G.fs
+local keys       = _G.keys
+local multishell = _ENV.multishell
+local os         = _G.os
+local shell      = _ENV.shell
+local term       = _G.term
+
+shell.setCompletionFunction(shell.getRunningProgram(), function(_, index, text)
   if index == 1 then
     return fs.complete(text, shell.dir(), true, false)
   end
@@ -32,37 +40,44 @@ local isError
 local fileInfo
 
 local dirty     = { y = 1, ey = h }
-local mark      = { anchor, active, continue }
+local mark      = { }
 local keyboard
 local searchPattern
 local undo      = { chain = { }, pointer = 0 }
 local complete  = { }
+local clipboard
 
-if not clipboard then
-  _G.clipboard = { internal, data }
-  clipboard.shim = true
+-- do we need a clipboard shim
+if not multishell or not multishell.hook then -- is this OpusOS ?
+  if _G.clipboard then -- has it been installed already
+    clipboard = _G.clipboard
+  else
+    clipboard = { }
 
-  function clipboard.setData(data)
-    clipboard.data = data
-    if data then
-      clipboard.useInternal(true)
+    function clipboard.setData(data)
+      clipboard.data = data
+      if data then
+        clipboard.useInternal(true)
+      end
     end
-  end
 
-  function clipboard.getText()
-    if clipboard.data then
-      return tostring(clipboard.data)
+    function clipboard.getText()
+      if clipboard.data then
+        return tostring(clipboard.data)
+      end
     end
-  end
 
-  function clipboard.isInternal()
-    return clipboard.internal
-  end
-
-  function clipboard.useInternal(mode)
-    if mode ~= clipboard.mode then
-      clipboard.internal = mode
+    function clipboard.isInternal()
+      return clipboard.internal
     end
+
+    function clipboard.useInternal(mode)
+      if mode ~= clipboard.mode then
+        clipboard.internal = mode
+      end
+    end
+
+    _G.clipboard = clipboard
   end
 end
 
@@ -110,7 +125,7 @@ local keyMapping = {
   [ 'control-up'          ] = 'scroll_up',
   [ 'scrollDown'          ] = 'scroll_down',
   [ 'control-down'        ] = 'scroll_down',
-  [ 'mouse_click'         ] = 'goto',
+  [ 'mouse_click'         ] = 'go_to',
   [ 'control-l'           ] = 'goto_line',
 
   -- marking
@@ -140,7 +155,7 @@ local keyMapping = {
   [ 'control-x'           ] = 'cut',
   [ 'control-c'           ] = 'copy',
   [ 'control-v'           ] = 'paste',
-  [ 'control-t'           ] = 'toggle_clipboard',
+  [ 'control-m'           ] = 'toggle_clipboard',
 
   -- file
   [ 'control-s'           ] = 'save',
@@ -171,7 +186,7 @@ end
 
 local function getFileInfo(path)
   local abspath = shell.resolve(path)
- 
+
   local fi = {
     abspath = abspath,
     path = path,
@@ -184,7 +199,7 @@ local function getFileInfo(path)
   else
     fi.isReadOnly = fs.isReadOnly(fi.abspath)
   end
- 
+
   return fi
 end
 
@@ -246,16 +261,16 @@ local function save( _sPath )
   local function innerSave()
     file = fs.open( _sPath, "w" )
     if file then
-      for n, sLine in ipairs( tLines ) do
+      for _,sLine in ipairs( tLines ) do
         file.write(sLine .. "\n")
       end
     else
       error( "Failed to open ".._sPath )
     end
   end
-  
+
   local ok, err = pcall( innerSave )
-  if file then 
+  if file then
     file.close()
   end
   return ok, err
@@ -265,7 +280,7 @@ local function split(str, pattern)
   pattern = pattern or "(.-)\n"
   local t = {}
   local function helper(line) table.insert(t, line) return "" end
-  helper((str:gsub(pattern, helper))) 
+  helper((str:gsub(pattern, helper)))
   return t
 end
 
@@ -315,8 +330,8 @@ local function writeHighlighted(sLine, ny)
     return nil
   end
 
-  while #sLine > 0 do  
-    sLine = 
+  while #sLine > 0 do
+    sLine =
       tryWrite(sLine, "^%-%-%[%[.-%]%]", color.commentColor ) or
       tryWrite(sLine, "^%-%-.*",         color.commentColor ) or
       tryWrite(sLine, "^\".-[^\\]\"",    color.stringColor  ) or
@@ -343,8 +358,8 @@ local function writeHighlighted(sLine, ny)
     if ny == mark.ey then
       ex = mark.ex
     end
-    buffer.bg = string.rep('f', sx - 1) .. 
-                string.rep('7', ex - sx) .. 
+    buffer.bg = string.rep('f', sx - 1) ..
+                string.rep('7', ex - sx) ..
                 string.rep('f', #buffer.text - ex + 1)
 
   else
@@ -388,9 +403,12 @@ local function redraw()
   end
 
   if not (w < 32 and #sStatus > 0) then
-    local clipboardIndicator = 'S'
-    if clipboard.isInternal() then
-      clipboardIndicator = 'I'
+    local clipboardIndicator = ''
+    if clipboard then
+      clipboardIndicator = 'S'
+      if clipboard.isInternal() then
+        clipboardIndicator = 'I'
+      end
     end
 
     local modifiedIndicator = ' '
@@ -485,13 +503,6 @@ local __actions = {
   addUndo = function(entry)
     local last = undo.chain[#undo.chain]
     if last and last.action == entry.action then
-      --[[
-      debug('---')
-      debug(last)
-      debug(last.args)
-      debug(entry)
-      debug(entry.args)
-      ]]--
       if last.action == 'deleteText' then
         if last.args[3] == entry.args[1] and
            last.args[4] == entry.args[2] then
@@ -575,7 +586,7 @@ local __actions = {
   goto_line = function()
     local lineNo = tonumber(actions.input('Line: '))
     if lineNo then
-      actions.goto(1, lineNo)
+      actions.go_to(1, lineNo)
     else
       setStatus('Invalid line number')
     end
@@ -593,9 +604,9 @@ local __actions = {
         if ny < y or ny == y and nx <= x then
           setStatus(messages.wrapped)
         end
-        actions.goto(nx, ny)
+        actions.go_to(nx, ny)
         actions.mark_to(nx + #pattern, ny)
-        actions.goto(nx, ny)
+        actions.go_to(nx, ny)
         return
       end
       sx = 1
@@ -625,7 +636,7 @@ local __actions = {
     if bReadOnly then
       setError("Access denied")
     else
-      local ok, err = save(sPath)
+      local ok = save(sPath)
       if ok then
         setStatus('"%s" %dL, %dC written',
            fileInfo.path, #tLines, fs.getSize(fileInfo.abspath))
@@ -641,7 +652,7 @@ local __actions = {
 
   run = function()
     local sTempPath = "/.temp"
-    local ok, err = save(sTempPath)
+    local ok = save(sTempPath)
     if ok then
       local nTask = shell.openTab(sTempPath)
       if nTask then
@@ -732,7 +743,7 @@ local __actions = {
 
   mark_to = function(nx, ny)
     actions.mark_begin()
-    actions.goto(nx, ny)
+    actions.go_to(nx, ny)
     actions.mark_finish()
   end,
 
@@ -795,9 +806,7 @@ local __actions = {
     actions.dirty_all()
   end,
 
-  setCursor = function(newX, newY)
-    local oldX, oldY = lastPos.x, lastPos.y
-
+  setCursor = function()
     lastPos.x = x
     lastPos.y = y
 
@@ -806,27 +815,23 @@ local __actions = {
 
     if screenX < 1 then
       scrollX = x - 1
-      screenX = 1
       actions.dirty_all()
     elseif screenX > w then
       scrollX = x - w
-      screenX = w
       actions.dirty_all()
     end
 
     if screenY < 1 then
       scrollY = y - 1
-      screenY = 1
       actions.dirty_all()
     elseif screenY > h - 1 then
       scrollY = y - (h - 1)
-      screenY = h - 1
       actions.dirty_all()
     end
   end,
 
   top = function()
-    actions.goto(1, 1)
+    actions.go_to(1, 1)
   end,
 
   bottom = function()
@@ -856,11 +861,11 @@ local __actions = {
   end,
 
   pageUp = function()
-    actions.goto(x, y - (h - 1))
+    actions.go_to(x, y - (h - 1))
   end,
 
   pageDown = function()
-    actions.goto(x, y + (h - 1))
+    actions.go_to(x, y + (h - 1))
   end,
 
   home = function()
@@ -966,7 +971,7 @@ local __actions = {
 
     local front = tLines[sy]:sub(1, sx - 1)
     local back = tLines[ey]:sub(ex, #tLines[ey])
-    for k = 2, ey - sy + 1 do
+    for _ = 2, ey - sy + 1 do
       table.remove(tLines, y + 1)
     end
     tLines[y] = front .. back
@@ -981,7 +986,7 @@ local __actions = {
     local count = 0
     local lines = { }
 
-    for y = csy, cey do
+    for _ = csy, cey do
       local line = tLines[y]
       if line then
         local x = 1
@@ -1042,22 +1047,25 @@ local __actions = {
   end,
 
   toggle_clipboard = function()
-    if clipboard.shim then
+    if clipboard then
       clipboard.setInternal(not clipboard.internal)
-    end
-    if clipboard.isInternal() then
-      setStatus('Using internal clipboard')
-    else
-      setStatus('Using system clipboard')
+      if clipboard.isInternal() then
+        setStatus('Using internal clipboard')
+      else
+        setStatus('Using system clipboard')
+      end
     end
   end,
 
   copy_marked = function()
-    local text, size = 
-        actions.copyText(mark.x, mark.y, mark.ex, mark.ey)
-    clipboard.setData(text)
+    local text, size = actions.copyText(mark.x, mark.y, mark.ex, mark.ey)
+    if clipboard then
+      clipboard.setData(text)
+      clipboard.useInternal(true)
+    else
+      os.queueEvent('clipboard_copy', text)
+    end
     setStatus('%d chars copied', size)
-    clipboard.useInternal(true)
   end,
 
   cut = function()
@@ -1078,7 +1086,7 @@ local __actions = {
     if mark.active then
       actions.delete()
     end
-    if clipboard.isInternal() then
+    if clipboard and clipboard.isInternal() then
       text = clipboard.getText()
     end
     if text then
@@ -1089,7 +1097,7 @@ local __actions = {
     end
   end,
 
-  goto = function(cx, cy)
+  go_to = function(cx, cy)
     y = math.min(math.max(cy, 1), #tLines)
     x = math.min(math.max(cx, 1), #tLines[y] + 1)
   end,
@@ -1120,98 +1128,100 @@ load(sPath)
 term.setCursorBlink(true)
 redraw()
 
-if not keyboard then
-  keyboard = { control, shift, combo }
+keyboard = { }
 
-  function keyboard:translate(event, code)
-    if event == 'key' then
-      local ch = keys.getName(code)
-      if ch then
-
-        if code == keys.leftCtrl or code == keys.rightCtrl then
-          self.control = true
-          self.combo = false
-          return
-        end
-
-        if code == keys.leftShift or code == keys.rightShift  then
-          self.shift = true
-          self.combo = false
-          return
-        end
-
-        if self.shift then
-          if #ch > 1 then
-            ch = 'shift-' .. ch
-          elseif self.control then
-            -- will create control-X
-            -- better than shift-control-x
-            ch = ch:upper()
-          end
-          self.combo = true
-        end
-
-        if self.control then
-          ch = 'control-' .. ch
-          self.combo = true
-          -- even return numbers such as
-          -- control-seven
-          return ch
-        end
-
-        -- filter out characters that will be processed in
-        -- the subsequent char event
-        if ch and #ch > 1 and (code < 2 or code > 11) then
-          return ch
-        end
-      end
-
-    elseif event == 'key_up' then
+function keyboard:translate(event, code)
+  if event == 'key' then
+    local ch = keys.getName(code)
+    if ch then
 
       if code == keys.leftCtrl or code == keys.rightCtrl then
-        self.control = false
-      elseif code == keys.leftShift or code == keys.rightShift then
-        self.shift = false
-      else
+        if not self.control then
+          self.control = true
+          self.combo = false
+        end
         return
       end
 
-      -- only send through the shift / control event if it wasn't
-      -- used in combination with another event
-      if not self.combo then
-        return keys.getName(code)
+      if code == keys.leftShift or code == keys.rightShift  then
+        if not self.shift then
+          self.shift = true
+          self.combo = false
+        end
+        return
       end
 
-    elseif event == 'char' then
-      if not self.control then
-        self.combo = true
-        return event
-      end
-
-    elseif event == 'mouse_click' then
-
-      local buttons = { 'mouse_click', 'mouse_rightclick', 'mouse_doubleclick' }
-
-      self.combo = true
       if self.shift then
-        return 'shift-' .. buttons[code]
+        if #ch > 1 then
+          ch = 'shift-' .. ch
+        elseif self.control then
+          -- will create control-X
+          -- better than shift-control-x
+          ch = ch:upper()
+        end
+        self.combo = true
       end
-      return buttons[code]
 
-    elseif event == "mouse_scroll" then
-      local directions = {
-        [ -1 ] = 'scrollUp',
-        [  1 ] = 'scrollDown'
-      }
-      return directions[code]
+      if self.control then
+        ch = 'control-' .. ch
+        self.combo = true
+        -- even return numbers such as
+        -- control-seven
+        return ch
+      end
 
-    elseif event == 'paste' then
+      -- filter out characters that will be processed in
+      -- the subsequent char event
+      if ch and #ch > 1 and (code < 2 or code > 11) then
+        return ch
+      end
+    end
+
+  elseif event == 'key_up' then
+
+    if code == keys.leftCtrl or code == keys.rightCtrl then
+      self.control = false
+    elseif code == keys.leftShift or code == keys.rightShift then
+      self.shift = false
+    else
+      return
+    end
+
+    -- only send through the shift / control event if it wasn't
+    -- used in combination with another event
+    if not self.combo then
+      return keys.getName(code)
+    end
+
+  elseif event == 'char' then
+    if not self.control then
       self.combo = true
-      return event
-
-    elseif event == 'mouse_drag' then
       return event
     end
+
+  elseif event == 'mouse_click' then
+
+    local buttons = { 'mouse_click', 'mouse_rightclick', 'mouse_doubleclick' }
+
+    self.combo = true
+    if self.shift then
+      return 'shift-' .. buttons[code]
+    end
+    return buttons[code]
+
+  elseif event == "mouse_scroll" then
+    local directions = {
+      [ -1 ] = 'scrollUp',
+      [  1 ] = 'scrollDown'
+    }
+    return directions[code]
+
+  elseif event == 'paste' then
+    self.combo = true
+    return event
+
+  elseif event == 'mouse_drag' then
+    return event
   end
 end
 
