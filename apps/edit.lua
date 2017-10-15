@@ -1064,7 +1064,6 @@ local __actions = {
       clipboard.setData(text)
       clipboard.useInternal(true)
     else
-      debug(text)
       os.queueEvent('clipboard_copy', text)
     end
     setStatus('%d chars copied', size)

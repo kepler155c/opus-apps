@@ -58,12 +58,11 @@ function MEAdapter:init(args)
     jobList = { },
     direction = 'up',
     wrapSide = 'bottom',
-    auto = false,
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
 
-  if self.auto then
+  if self.autoDetect then
     local mep = Peripheral.getByMethod('getAvailableItems')
     if mep then
       Util.merge(self, mep)

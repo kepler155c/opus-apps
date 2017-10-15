@@ -23,12 +23,26 @@ function ChestAdapter:init(args)
   Util.merge(self, defaults)
   Util.merge(self, args)
 
-  local chest = Peripheral.getBySide(self.wrapSide)
+  local chest
+  if not self.autoDetect then
+    chest = Peripheral.getBySide(self.wrapSide)
+    if chest and not chest.list then
+      chest = nil
+    end
+  end
   if not chest then
     chest = Peripheral.getByMethod('list')
   end
+
   if chest then
     Util.merge(self, chest)
+
+    local sides = {
+      top = 'down',
+      bottom = 'up',
+    }
+
+    self.direction = sides[self.side] or self.direction
   end
 end
 

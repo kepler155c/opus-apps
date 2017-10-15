@@ -12,12 +12,11 @@ local multishell = _ENV.multishell
 
 local storage = RefinedAdapter()
 if not storage:isValid() then
-  storage = MEAdapter({ auto = true })
-  if not storage:isValid() then
-    storage = ChestAdapter()
-  end
+  storage = MEAdapter({ autoDetect = true })
 end
-
+if not storage:isValid() then
+  storage = ChestAdapter({ autoDetect = true })
+end
 if not storage:isValid() then
   error('Not connected to a storage device')
 end
