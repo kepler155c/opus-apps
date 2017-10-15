@@ -147,7 +147,7 @@ end
 
 local tabId = multishell.getCurrent()
 
-multishell.addHotkey(25, function()
+multishell.addHotkey('control-p', function()
   os.queueEvent('recorder_stop')
 end)
 
@@ -185,7 +185,7 @@ while true do
 	end
 end
 
-multishell.removeHotkey(25)
+multishell.removeHotkey('control-p')
 
 for k,fn in pairs(oldTerm) do
 	multishell.term[k] = fn

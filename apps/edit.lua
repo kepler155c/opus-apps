@@ -5,6 +5,7 @@ local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
 local term       = _G.term
+local textutils  = _G.textutils
 
 shell.setCompletionFunction(shell.getRunningProgram(), function(_, index, text)
   if index == 1 then
@@ -38,10 +39,11 @@ local bRunning  = true
 local sStatus   = ""
 local isError
 local fileInfo
+local lastAction
 
 local dirty     = { y = 1, ey = h }
 local mark      = { }
-local keyboard
+--local input
 local searchPattern
 local undo      = { chain = { }, pointer = 0 }
 local complete  = { }
@@ -56,24 +58,11 @@ if not multishell or not multishell.hook then -- is this OpusOS ?
 
     function clipboard.setData(data)
       clipboard.data = data
-      if data then
-        clipboard.useInternal(true)
-      end
     end
 
     function clipboard.getText()
       if clipboard.data then
         return tostring(clipboard.data)
-      end
-    end
-
-    function clipboard.isInternal()
-      return clipboard.internal
-    end
-
-    function clipboard.useInternal(mode)
-      if mode ~= clipboard.mode then
-        clipboard.internal = mode
       end
     end
 
@@ -154,8 +143,7 @@ local keyMapping = {
   -- copy/paste
   [ 'control-x'           ] = 'cut',
   [ 'control-c'           ] = 'copy',
-  [ 'control-v'           ] = 'paste',
-  [ 'control-m'           ] = 'toggle_clipboard',
+  [ 'shift-paste'         ] = 'paste_internal',
 
   -- file
   [ 'control-s'           ] = 'save',
@@ -403,21 +391,13 @@ local function redraw()
   end
 
   if not (w < 32 and #sStatus > 0) then
-    local clipboardIndicator = ''
-    if clipboard then
-      clipboardIndicator = 'S'
-      if clipboard.isInternal() then
-        clipboardIndicator = 'I'
-      end
-    end
-
     local modifiedIndicator = ' '
     if undo.chain[1] then
       modifiedIndicator = '*'
     end
 
-    local str = string.format(' %d:%d %s%s',
-      y, x, clipboardIndicator, modifiedIndicator)
+    local str = string.format(' %d:%d %s',
+      y, x, modifiedIndicator)
     term.setTextColor(color.highlightColor)
     term.setBackgroundColor(colors.gray)
     term.setCursorPos(w - #str + 1, h)
@@ -460,7 +440,7 @@ local function hacky_read()
     return cx, 1
   end
 
-  local s, m = pcall(function() return read() end)
+  local s, m = pcall(function() return _G.read() end)
   term.setCursorPos = _oldSetCursorPos
   term.getCursorPos = _oldGetCursorPos
   if s then
@@ -483,7 +463,7 @@ local __actions = {
     term.write(prompt)
     local str = hacky_read()
     term.setCursorBlink(true)
-    keyboard.shift, keyboard.control = false, false
+    --keyboard.shift, keyboard.control = false, false
     term.setCursorPos(x - scrollX, y - scrollY)
     actions.dirty_line(scrollY + h)
     return str
@@ -523,7 +503,7 @@ local __actions = {
   end,
 
   autocomplete = function()
-    if keyboard.lastAction ~= 'autocomplete' or not complete.results then
+    if lastAction ~= 'autocomplete' or not complete.results then
       local sLine = tLines[y]:sub(1, x - 1)
       local nStartPos = sLine:find("[a-zA-Z0-9_%.]+$")
       if nStartPos then
@@ -1046,27 +1026,14 @@ local __actions = {
     actions.insertText(x, y, ch)
   end,
 
-  toggle_clipboard = function()
-    if clipboard then
-      clipboard.setInternal(not clipboard.internal)
-      if clipboard.isInternal() then
-        setStatus('Using internal clipboard')
-      else
-        setStatus('Using system clipboard')
-      end
-    end
-    mark.continue = mark.active
-  end,
-
   copy_marked = function()
-    local text, size = actions.copyText(mark.x, mark.y, mark.ex, mark.ey)
+    local text = actions.copyText(mark.x, mark.y, mark.ex, mark.ey)
     if clipboard then
       clipboard.setData(text)
-      clipboard.useInternal(true)
     else
       os.queueEvent('clipboard_copy', text)
     end
-    setStatus('%d chars copied', size)
+    setStatus('shift-^v to paste')
   end,
 
   cut = function()
@@ -1087,14 +1054,17 @@ local __actions = {
     if mark.active then
       actions.delete()
     end
-    if clipboard and clipboard.isInternal() then
-      text = clipboard.getText()
-    end
     if text then
       actions.insertText(x, y, text)
       setStatus('%d chars added', #text)
     else
       setStatus('Clipboard empty')
+    end
+  end,
+
+  paste_internal = function()
+    if clipboard then
+      actions.paste(clipboard.getText())
     end
   end,
 
@@ -1129,100 +1099,99 @@ load(sPath)
 term.setCursorBlink(true)
 redraw()
 
-keyboard = { }
+local modifiers = {
+  [1] = keys.leftCtrl,
+  [2] = keys.rightCtrl,
+  [3] = keys.leftShift,
+  [4] = keys.rightShift,
+}
 
-function keyboard:translate(event, code)
-  if event == 'key' then
-    local ch = keys.getName(code)
-    if ch then
+local input = {
+  pressed = { },
+}
 
-      if code == keys.leftCtrl or code == keys.rightCtrl then
-        if not self.control then
-          self.control = true
-          self.combo = false
-        end
-        return
-      end
+function input:toCode(code)
 
-      if code == keys.leftShift or code == keys.rightShift  then
-        if not self.shift then
-          self.shift = true
-          self.combo = false
-        end
-        return
-      end
+  local ch = self.ch or keys.getName(code)
+  local result = { }
 
-      if self.shift then
-        if #ch > 1 then
-          ch = 'shift-' .. ch
-        elseif self.control then
-          -- will create control-X
-          -- better than shift-control-x
-          ch = ch:upper()
-        end
-        self.combo = true
-      end
+  if self.pressed[keys.leftCtrl] or self.pressed[keys.rightCtrl] then
+    table.insert(result, 'control')
+  end
 
-      if self.control then
-        ch = 'control-' .. ch
-        self.combo = true
-        -- even return numbers such as
-        -- control-seven
-        return ch
-      end
-
-      -- filter out characters that will be processed in
-      -- the subsequent char event
-      if ch and #ch > 1 and (code < 2 or code > 11) then
-        return ch
-      end
-    end
-
-  elseif event == 'key_up' then
-
-    if code == keys.leftCtrl or code == keys.rightCtrl then
-      self.control = false
-    elseif code == keys.leftShift or code == keys.rightShift then
-      self.shift = false
+  if self.pressed[keys.leftShift] or self.pressed[keys.rightShift] then
+    if modifiers[code] or #ch > 1 then
+      table.insert(result, 'shift')
     else
-      return
+      ch = ch:upper()
     end
+  end
 
-    -- only send through the shift / control event if it wasn't
-    -- used in combination with another event
-    if not self.combo then
-      return keys.getName(code)
+  if not modifiers[code] then
+    table.insert(result, ch)
+  end
+
+  return table.concat(result, '-')
+end
+
+function input:translate(event, code, heldDown)
+  if event == 'key' then
+    if heldDown then
+      if not modifiers[code] then
+        self.fired = input:toCode(code)
+        return self.fired
+      end
+    else
+      self.fired = nil
+      self.ch = nil
+      self.pressed[code] = true
     end
 
   elseif event == 'char' then
-    if not self.control then
-      self.combo = true
-      return event
+    self.ch = code
+
+  elseif event == 'key_up' then
+    if not self.fired then
+      if self.pressed[code] then
+        self.fired = input:toCode(code)
+        self.pressed[code] = nil
+        return self.fired
+      end
     end
+
+    self.pressed[code] = nil
 
   elseif event == 'mouse_click' then
 
     local buttons = { 'mouse_click', 'mouse_rightclick', 'mouse_doubleclick' }
-
-    self.combo = true
-    if self.shift then
-      return 'shift-' .. buttons[code]
-    end
-    return buttons[code]
+    self.ch = buttons[code]
+    self.fired = input:toCode(0)
+    return self.fired
 
   elseif event == "mouse_scroll" then
     local directions = {
       [ -1 ] = 'scrollUp',
       [  1 ] = 'scrollDown'
     }
-    return directions[code]
+    self.ch = directions[code]
+    self.fired = input:toCode(0)
+    return self.fired
 
   elseif event == 'paste' then
-    self.combo = true
-    return event
+    self.ch = 'paste'
+    self.pressed[keys.leftCtrl] = nil
+    self.pressed[keys.rightCtrl] = nil
+    if clipboard then
+      self.fired = input:toCode(0)
+    else
+      self.fired = 'paste'
+    end
+    return self.fired
 
   elseif event == 'mouse_drag' then
-    return event
+    self.ch = 'mouse_drag'
+    self.fired = input:toCode(0)
+    return self.fired
   end
 end
 
@@ -1234,7 +1203,7 @@ while bRunning do
     action = 'exit'
   elseif sEvent == "mouse_click" or sEvent == 'mouse_drag' then
     if param3 < h or sEvent == 'mouse_drag' then
-      local ch = keyboard:translate(sEvent, param)
+      local ch = input:translate(sEvent, param)
       if ch then
         action = keyMapping[ch]
         param = param2 + scrollX
@@ -1242,7 +1211,7 @@ while bRunning do
       end
     end
   else
-    local ch = keyboard:translate(sEvent, param)
+    local ch = input:translate(sEvent, param)
     if ch then
       action = keyMapping[ch]
     end
@@ -1258,7 +1227,7 @@ while bRunning do
 
     actions[action](param, param2)
     if action ~= 'menu' then
-      keyboard.lastAction = action
+      lastAction = action
     end
 
     if x ~= lastPos.x or y ~= lastPos.y then
