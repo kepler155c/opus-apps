@@ -26,7 +26,7 @@ if fs.exists(sPath) and fs.isDir(sPath) then
 end
 
 if multishell then
-  multishell.setTitle(multishell.getCurrent(), sPath)
+  multishell.setTitle(multishell.getCurrent(), fs.getName(sPath))
 end
 
 local x, y      = 1, 1
@@ -1093,12 +1093,6 @@ local __actions = {
 
 actions = __actions
 
--- Actual program functionality begins
-load(sPath)
-
-term.setCursorBlink(true)
-redraw()
-
 local modifiers = {
   [ keys.leftCtrl   ] = true,
   [ keys.rightCtrl  ] = true,
@@ -1221,6 +1215,10 @@ function input:translate(event, code, p1, p2)
     return input:toCode(0, self.mch)
   end
 end
+
+load(sPath)
+term.setCursorBlink(true)
+redraw()
 
 while bRunning do
   local sEvent, param, param2, param3 = os.pullEventRaw()

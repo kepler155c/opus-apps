@@ -1,5 +1,6 @@
-local itemDB = require('itemDB')
 local Util   = require('util')
+
+local turtle = _G.turtle
 
 local Craft = { }
 
