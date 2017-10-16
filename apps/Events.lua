@@ -126,7 +126,7 @@ Event.addRoutine(function()
         p4 = e[5],
         p5 = e[6],
       })
-      if #page.grid.values > page.grid.height - 1 then
+      if #page.grid.values > page.grid.height then
         table.remove(page.grid.values, #page.grid.values)
       end
       page.grid:update()

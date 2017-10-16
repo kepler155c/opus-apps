@@ -35,6 +35,7 @@ local scrollX   = 0
 local scrollY   = 0
 local lastPos   = { x = 1, y = 1 }
 local tLines    = { }
+local input     = { pressed = { } }
 local bRunning  = true
 local sStatus   = ""
 local isError
@@ -43,7 +44,6 @@ local lastAction
 
 local dirty     = { y = 1, ey = h }
 local mark      = { }
---local input
 local searchPattern
 local undo      = { chain = { }, pointer = 0 }
 local complete  = { }
@@ -158,7 +158,7 @@ local keyMapping = {
   -- misc
   [ 'control-g'           ] = 'status',
   [ 'control-r'           ] = 'refresh',
-  [ 'leftCtrl'            ] = 'menu',
+  [ 'control'             ] = 'menu',
 }
 
 local messages = {
@@ -463,7 +463,7 @@ local __actions = {
     term.write(prompt)
     local str = hacky_read()
     term.setCursorBlink(true)
-    --keyboard.shift, keyboard.control = false, false
+    input:reset()
     term.setCursorPos(x - scrollX, y - scrollY)
     actions.dirty_line(scrollY + h)
     return str
@@ -1100,24 +1100,24 @@ term.setCursorBlink(true)
 redraw()
 
 local modifiers = {
-  [1] = keys.leftCtrl,
-  [2] = keys.rightCtrl,
-  [3] = keys.leftShift,
-  [4] = keys.rightShift,
+  [ keys.leftCtrl   ] = true,
+  [ keys.rightCtrl  ] = true,
+  [ keys.leftShift  ] = true,
+  [ keys.rightShift ] = true,
 }
 
-local input = {
-  pressed = { },
-}
+function input:toCode(code, ch)
 
-function input:toCode(code)
-
-  local ch = self.ch or keys.getName(code)
+  ch = ch or keys.getName(code)
   local result = { }
 
   if self.pressed[keys.leftCtrl] or self.pressed[keys.rightCtrl] then
     table.insert(result, 'control')
   end
+
+  --if self.pressed[keys.leftAlt] or self.pressed[keys.rightAlt] then
+  --  table.insert(result, 'alt')
+  --end
 
   if self.pressed[keys.leftShift] or self.pressed[keys.rightShift] then
     if modifiers[code] or #ch > 1 then
@@ -1134,11 +1134,21 @@ function input:toCode(code)
   return table.concat(result, '-')
 end
 
-function input:translate(event, code, heldDown)
+function input:reset()
+  self.pressed = { }
+  self.ch = nil
+  self.fired = nil
+
+  self.timer = nil
+  self.mch = nil
+  self.mfired = nil
+end
+
+function input:translate(event, code, p1, p2)
   if event == 'key' then
-    if heldDown then
+    if p1 then -- key is held down
       if not modifiers[code] then
-        self.fired = input:toCode(code)
+        self.fired = input:toCode(code, self.ch)
         return self.fired
       end
     else
@@ -1153,29 +1163,12 @@ function input:translate(event, code, heldDown)
   elseif event == 'key_up' then
     if not self.fired then
       if self.pressed[code] then
-        self.fired = input:toCode(code)
+        self.fired = input:toCode(code, self.ch)
         self.pressed[code] = nil
         return self.fired
       end
     end
-
     self.pressed[code] = nil
-
-  elseif event == 'mouse_click' then
-
-    local buttons = { 'mouse_click', 'mouse_rightclick', 'mouse_doubleclick' }
-    self.ch = buttons[code]
-    self.fired = input:toCode(0)
-    return self.fired
-
-  elseif event == "mouse_scroll" then
-    local directions = {
-      [ -1 ] = 'scrollUp',
-      [  1 ] = 'scrollDown'
-    }
-    self.ch = directions[code]
-    self.fired = input:toCode(0)
-    return self.fired
 
   elseif event == 'paste' then
     self.ch = 'paste'
@@ -1188,10 +1181,44 @@ function input:translate(event, code, heldDown)
     end
     return self.fired
 
+  elseif event == 'mouse_click' then
+    local buttons = { 'mouse_click', 'mouse_rightclick' }
+    self.mch = buttons[code]
+    self.mfired = nil
+
   elseif event == 'mouse_drag' then
-    self.ch = 'mouse_drag'
-    self.fired = input:toCode(0)
-    return self.fired
+    self.mch = 'mouse_drag'
+    self.mfired = input:toCode(0, self.mch)
+    return self.mfired
+
+  elseif event == 'mouse_up' then
+    if not self.mfired then
+      local clock = os.clock()
+      if self.timer and
+         p1 == self.x and p2 == self.y and
+         (clock - self.timer < .5) then
+
+        self.mch = 'mouse_doubleclick'
+        self.timer = nil
+      else
+        self.timer = os.clock()
+        self.x = p1
+        self.y = p2
+      end
+      self.mfired = input:toCode(0, self.mch)
+    else
+      self.mch = 'mouse_up'
+      self.mfired = input:toCode(0, self.mch)
+    end
+    return self.mfired
+
+  elseif event == "mouse_scroll" then
+    local directions = {
+      [ -1 ] = 'scrollUp',
+      [  1 ] = 'scrollDown'
+    }
+    self.mch = directions[code]
+    return input:toCode(0, self.mch)
   end
 end
 
@@ -1201,9 +1228,11 @@ while bRunning do
 
   if sEvent == 'terminate' then
     action = 'exit'
-  elseif sEvent == "mouse_click" or sEvent == 'mouse_drag' then
+  elseif sEvent == 'multishell_focus' then -- opus only event
+    input:reset()
+  elseif sEvent == "mouse_click" or sEvent == 'mouse_drag' or sEvent == 'mouse_up' then
+    local ch = input:translate(sEvent, param, param2, param3)
     if param3 < h or sEvent == 'mouse_drag' then
-      local ch = input:translate(sEvent, param)
       if ch then
         action = keyMapping[ch]
         param = param2 + scrollX
@@ -1211,9 +1240,14 @@ while bRunning do
       end
     end
   else
-    local ch = input:translate(sEvent, param)
+    local ch = input:translate(sEvent, param, param2)
     if ch then
-      action = keyMapping[ch]
+      if #ch == 1 then
+        action = keyMapping.char
+        param = ch
+      else
+        action = keyMapping[ch]
+      end
     end
   end
 
