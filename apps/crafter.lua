@@ -7,10 +7,9 @@ local Peripheral     = require('peripheral')
 local UI             = require('ui')
 local Util           = require('util')
 
-local colors = _G.colors
-local device     = _G.device
+local colors     = _G.colors
 local multishell = _ENV.multishell
-local turtle = _G.turtle
+local turtle     = _G.turtle
 
 multishell.setTitle(multishell.getCurrent(), 'Crafter')
 
@@ -211,7 +210,6 @@ local function watchResources(items)
         name = item.name,
         displayName = item.displayName,
         status = '',
-        rsControl = res.rsControl,
       }
     end
   end
@@ -239,6 +237,32 @@ local function saveResources()
   Util.writeTable(RESOURCE_FILE, t)
 end
 
+local function findMachines()
+  repeat until not turtle.forward()
+
+  local index = 0
+  local t = { }
+  repeat
+    local machine = Peripheral.getBySide('bottom')
+    if machine then
+      local name = machine.name
+      local i = 1
+      while t[name] do
+        name = machine.name .. '_' .. i
+        i = i + 1
+      end
+      t[name] = true
+
+      table.insert(machines, {
+        value = name,
+        name = name,
+        index = index,
+      })
+    end
+    index = index + 1
+  until not turtle.back()
+end
+
 local itemPage = UI.Page {
   titleBar = UI.TitleBar {
     title = 'Limit Resource',
@@ -251,21 +275,7 @@ local itemPage = UI.Page {
       width = 7,
       formLabel = 'Min', formKey = 'low', help = 'Craft if below min'
     },
-    [2] = UI.TextEntry {
-      width = 7,
-      formLabel = 'Max', formKey = 'limit', help = 'Eject if above max'
-    },
-    [3] = UI.Chooser {
-      width = 7,
-      formLabel = 'Autocraft', formKey = 'auto',
-      nochoice = 'No',
-      choices = {
-        { name = 'Yes', value = true },
-        { name = 'No', value = false },
-      },
-      help = 'Craft until out of ingredients'
-    },
-    [4] = UI.Chooser {
+    [2] = UI.Chooser {
       width = 7,
       formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
       nochoice = 'No',
@@ -274,36 +284,6 @@ local itemPage = UI.Page {
         { name = 'No', value = false },
       },
       help = 'Ignore damage of item'
-    },
-    [5] = UI.Chooser {
-      width = 7,
-      formLabel = 'RS Control', formKey = 'rsControl',
-      nochoice = 'No',
-      choices = {
-        { name = 'Yes', value = true },
-        { name = 'No', value = false },
-      },
-      help = 'Control via redstone'
-    },
-    [6] = UI.Chooser {
-      width = 25,
-      formLabel = 'RS Device', formKey = 'rsDevice',
-      --choices = devices,
-      help = 'Redstone Device'
-    },
-    [7] = UI.Chooser {
-      width = 10,
-      formLabel = 'RS Side', formKey = 'rsSide',
-      --nochoice = 'No',
-      choices = {
-        { name = 'up', value = 'up' },
-        { name = 'down', value = 'down' },
-        { name = 'east', value = 'east' },
-        { name = 'north', value = 'north' },
-        { name = 'west', value = 'west' },
-        { name = 'south', value = 'south' },
-      },
-      help = 'Output side'
     },
   },
   statusBar = UI.StatusBar { }
@@ -314,18 +294,6 @@ function itemPage:enable(item)
 
   self.form:setValues(item)
   self.titleBar.title = item.displayName or item.name
-
-  local devices = self.form[6].choices
-  Util.clear(devices)
-  for _,dev in pairs(device) do
-    if dev.setOutput then
-      table.insert(devices, { name = dev.name, value = dev.name })
-    end
-  end
-
-  if Util.size(devices) == 0 then
-    table.insert(devices, { name = 'None found', values = '' })
-  end
 
   UI.Page.enable(self)
   self:focusFirst()
@@ -341,30 +309,13 @@ function itemPage:eventHandler(event)
 
   elseif event.type == 'form_complete' then
     local values = self.form.values
-    local keys = { 'name', 'auto', 'low', 'limit', 'damage',
-                   'nbtHash',
-                   'rsControl', 'rsDevice', 'rsSide', }
+    local keys = { 'name', 'low', 'damage', 'nbtHash', }
 
     local filtered = { }
     for _,key in pairs(keys) do
       filtered[key] = values[key]
     end
     filtered.low = tonumber(filtered.low)
-    filtered.limit = tonumber(filtered.limit)
-
-    --filtered.ignoreDamage = filtered.ignoreDamage == true
-    --filtered.auto = filtered.auto == true
-    --filtered.rsControl = filtered.rsControl == true
-
-    if filtered.auto ~= true then
-      filtered.auto = nil
-    end
-
-    if filtered.rsControl ~= true then
-      filtered.rsControl = nil
-      filtered.rsSide = nil
-      filtered.rsDevice = nil
-    end
 
     if values.ignoreDamage == true then
       filtered.damage = 0
@@ -382,12 +333,108 @@ function itemPage:eventHandler(event)
   return true
 end
 
+local learnPage = UI.Page {
+  grid = UI.ScrollingGrid {
+    y = 2, height = 3,
+    disableHeader = true,
+    columns = {
+      { heading = 'Name', key = 'displayName' , width = 31 },
+      { heading = 'Qty',  key = 'count'       , width = 5  },
+    },
+    sortColumn = 'displayName',
+  },
+  ingredients = UI.ScrollingGrid {
+    y = 6, height = 3,
+    values = machines,
+    disableHeader = true,
+    columns = {
+      { heading = 'Name', key = 'displayName' , width = 31 },
+      { heading = 'Qty',  key = 'count'       , width = 5  },
+    },
+    sortColumn = 'displayName',
+  },
+  machine = UI.Chooser {
+    choices = machines,
+    x = 10, ex = -2, y = -3,
+  },
+  filter = UI.TextEntry {
+    x = 9, ex = -17, y = -1,
+    limit = 50,
+    backgroundColor = colors.gray,
+    backgroundFocusColor = colors.gray,
+  },
+  accept = UI.Button {
+    x = -14, y = -1,
+    text = 'Ok', event = 'accept',
+  },
+  cancel = UI.Button {
+    x = -9, y = -1,
+    text = 'Cancel', event = 'cancel'
+  },
+}
+
+function learnPage:enable(target)
+  self.target = target
+  self.filter.value = ''
+  self.allItems = inventoryAdapter:listItems()
+  mergeResources(self.allItems)
+  self.grid.values = self.allItems
+  self.grid:update()
+  self.ingredients.values = { }
+  self.ingredients:update()
+  self:setFocus(self.filter)
+  UI.Page.enable(self)
+end
+
+function learnPage:draw()
+  UI.Page.draw(self)
+  self:write(2, self.height - 2, 'Machine')
+  self:centeredWrite(1, 'Inventory', nil, colors.yellow)
+  self:centeredWrite(5, 'Ingredients', nil, colors.yellow)
+  self:write(2, self.height, 'Filter')
+end
+
+function learnPage:eventHandler(event)
+  if event.type == 'cancel' then
+    UI:setPreviousPage()
+  elseif event.type == 'accept' then
+    local recipe = {
+      count = 1,
+      ingredients = { },
+      machine = self.machine.value,
+    }
+    for key in pairs(self.ingredients.values) do
+      table.insert(recipe.ingredients, key)
+    end
+    recipes[uniqueKey(self.target)] = recipe
+    Util.writeTable(RECIPES_FILE, recipes)
+
+    UI:setPreviousPage()
+  elseif event.type == 'grid_select' then
+    local key = uniqueKey(event.selected)
+    if not self.ingredients.values[key] then
+      self.ingredients.values[key] = Util.shallowCopy(event.selected)
+      self.ingredients.values[key].count = 0
+    end
+    self.ingredients.values[key].count = self.ingredients.values[key].count + 1
+    self.ingredients:update()
+    self.ingredients:draw()
+
+  elseif event.type == 'text_change' then
+    local t = filterItems(self.allItems, event.text)
+    self.grid:setValues(t)
+    self.grid:draw()
+  else
+    return UI.Page.eventHandler(self, event)
+  end
+  return true
+end
+
 local listingPage = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
       { text = 'Learn',   event = 'learn'   },
       { text = 'Forget',  event = 'forget'  },
-      { text = 'Craft',   event = 'craft'   },
       { text = 'Refresh', event = 'refresh', x = -9 },
     },
   },
@@ -397,7 +444,6 @@ local listingPage = UI.Page {
       { heading = 'Name', key = 'displayName' , width = 22 },
       { heading = 'Qty',  key = 'count'       , width = 5  },
       { heading = 'Min',  key = 'low'         , width = 4  },
-      { heading = 'Max',  key = 'limit'       , width = 4  },
     },
     sortColumn = 'displayName',
   },
@@ -435,9 +481,6 @@ function listingPage.grid:getDisplayValues(row)
   if row.low then
     row.low = Util.toBytes(row.low)
   end
-  if row.limit then
-    row.limit = Util.toBytes(row.limit)
-  end
   return row
 end
 
@@ -472,7 +515,7 @@ function listingPage:eventHandler(event)
     self.statusBar.filter:focus()
 
   elseif event.type == 'learn' then
-    UI:setPage('learn')
+    UI:setPage('learn', self.grid:getSelected())
 
   elseif event.type == 'craft' then
     UI:setPage('craft', self.grid:getSelected())
@@ -534,21 +577,19 @@ loadResources()
 UI:setPages({
   listing = listingPage,
   item = itemPage,
+  learn = learnPage,
 })
 
 UI:setPage(listingPage)
 listingPage:setFocus(listingPage.statusBar.filter)
 
+findMachines()
 repeat until not turtle.forward()
 clearGrid()
 
-repeat
-  local machine = Peripheral.getBySide('bottom')
-  if machine then
-    debug(machine.name)
-    table.insert(machines, machine)
-  end
-until not turtle.back()
+Event.on('turtle_abort', function()
+  UI:exitPullEvents()
+end)
 
 Event.onInterval(30, function()
   if not craftingPaused then
