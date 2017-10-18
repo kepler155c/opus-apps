@@ -321,7 +321,7 @@ local function ejectTrash()
     if slot.iddmg == 'minecraft:cobblestone:0' then
       if cobbleSlotCount == 0 and slot.count > 36 then
         turtle.select(slot.index)
-        turtle.dropDown(32)
+        turtle.dropDown(slot.count - 36)
       end
       cobbleSlotCount = cobbleSlotCount + 1
     end

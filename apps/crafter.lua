@@ -124,12 +124,13 @@ end
 local function canCraft(recipe, items, count)
   count = math.ceil(count / recipe.count)
 
-  for _,key in pairs(recipe.ingredients) do
+  for key,qty in pairs(recipe.ingredients) do
     local item = getItem(items, splitKey(key))
     if not item then
       return 0
     end
-    count = math.min(item.count, count)
+    local x = math.min(math.floor(item.count / qty), item.maxCount)
+    count = math.min(x, count)
   end
 
   return count
@@ -142,12 +143,14 @@ local function craftItem(recipe, items, count)
     return false
   end
 
-  for k,v in pairs(recipe.ingredients) do
-    local item = splitKey(v)
-    inventoryAdapter:provide(item, count, k)
-    if turtle.getItemCount(k) ~= count then
+  local slot = 1
+  for key,qty in pairs(recipe.ingredients) do
+    local item = splitKey(key)
+    inventoryAdapter:provide(item, count * qty, slot)
+    if turtle.getItemCount(slot) ~= count then
       return false
     end
+    slot = slot + 1
   end
   gotoMachine(recipe.machine)
   turtle.emptyInventory(turtle.dropDown)
@@ -159,6 +162,7 @@ local function craftItems(craftList, items)
     if recipe then
       craftItem(recipe, items, item.count)
       repeat until not turtle.forward()
+      clearGrid()
       items = inventoryAdapter:listItems() -- refresh counts
     end
   end
@@ -285,16 +289,21 @@ local itemPage = UI.Page {
       },
       help = 'Ignore damage of item'
     },
+    button = UI.Button {
+      x = 2, y = 9,
+      text = 'Recipe', event = 'learn',
+    },
   },
   statusBar = UI.StatusBar { }
 }
 
 function itemPage:enable(item)
-  self.item = item
+  if item then
+    self.item = item
 
-  self.form:setValues(item)
-  self.titleBar.title = item.displayName or item.name
-
+    self.form:setValues(item)
+    self.titleBar.title = item.displayName or item.name
+  end
   UI.Page.enable(self)
   self:focusFirst()
 end
@@ -302,6 +311,9 @@ end
 function itemPage:eventHandler(event)
   if event.type == 'form_cancel' then
     UI:setPreviousPage()
+
+  elseif event.type == 'learn' then
+    UI:setPage('learn', self.item)
 
   elseif event.type == 'focus_change' then
     self.statusBar:setStatus(event.focused.help)
@@ -334,96 +346,188 @@ function itemPage:eventHandler(event)
 end
 
 local learnPage = UI.Page {
-  grid = UI.ScrollingGrid {
-    y = 2, height = 3,
-    disableHeader = true,
-    columns = {
-      { heading = 'Name', key = 'displayName' , width = 31 },
-      { heading = 'Qty',  key = 'count'       , width = 5  },
+  scroller = UI.WindowScroller {
+    ey = -2,
+    screen1 = UI.Window {
+      ingredients = UI.ScrollingGrid {
+        y = 2, height = 3,
+        values = machines,
+        disableHeader = true,
+        columns = {
+          { heading = 'Name', key = 'displayName', width = 31 },
+          { heading = 'Qty',  key = 'count'      , width = 5  },
+        },
+        sortColumn = 'displayName',
+      },
+      grid = UI.ScrollingGrid {
+        y = 6, height = 5,
+        disableHeader = true,
+        columns = {
+          { heading = 'Name', key = 'displayName', width = 31 },
+          { heading = 'Qty',  key = 'count'      , width = 5  },
+        },
+        sortColumn = 'displayName',
+      },
+      filter = UI.TextEntry {
+        x = 20, ex = -2, y = 5,
+        limit = 50,
+        shadowText = 'filter',
+        backgroundColor = colors.lightGray,
+        backgroundFocusColor = colors.lightGray,
+      },
     },
-    sortColumn = 'displayName',
-  },
-  ingredients = UI.ScrollingGrid {
-    y = 6, height = 3,
-    values = machines,
-    disableHeader = true,
-    columns = {
-      { heading = 'Name', key = 'displayName' , width = 31 },
-      { heading = 'Qty',  key = 'count'       , width = 5  },
+    screen2 = UI.Window {
+      machine = UI.ScrollingGrid {
+        y = 2, height = 7,
+        values = machines,
+        disableHeader = true,
+        columns = {
+          { heading = 'Name', key = 'name'},
+        },
+        sortColumn = 'index',
+      },
+      count = UI.TextEntry {
+        x = 11, y = -2, width = 5,
+        limit = 50,
+      },
     },
-    sortColumn = 'displayName',
   },
-  machine = UI.Chooser {
-    choices = machines,
-    x = 10, ex = -2, y = -3,
+  cancelButton = UI.Button {
+    x = 2, y = -1,
+    text = ' Cancel ',
+    event = 'cancel',
   },
-  filter = UI.TextEntry {
-    x = 9, ex = -17, y = -1,
-    limit = 50,
-    backgroundColor = colors.gray,
-    backgroundFocusColor = colors.gray,
+  previousButton = UI.Button {
+    x = -20, y = -1,
+    text = '<< Back',
+    event = 'previous',
   },
-  accept = UI.Button {
-    x = -14, y = -1,
-    text = 'Ok', event = 'accept',
-  },
-  cancel = UI.Button {
-    x = -9, y = -1,
-    text = 'Cancel', event = 'cancel'
+  nextButton = UI.Button {
+    x = -10, y = -1,
+    text = 'Next >>',
+    event = 'next',
   },
 }
 
 function learnPage:enable(target)
   self.target = target
-  self.filter.value = ''
   self.allItems = inventoryAdapter:listItems()
   mergeResources(self.allItems)
-  self.grid.values = self.allItems
-  self.grid:update()
-  self.ingredients.values = { }
-  self.ingredients:update()
-  self:setFocus(self.filter)
+
+  local screen1 = self.scroller.screen1
+  local screen2 = self.scroller.screen2
+
+  screen1.filter.value = ''
+  screen1.grid.values = self.allItems
+  screen1.grid:update()
+  screen1.ingredients.values = { }
+  screen2.count.value = 1
+  screen2.machine:update()
+
+  self.nextButton.text = 'Next >>'
+  self.nextButton.event = 'next'
+
+  if target.has_recipe then
+    local recipe = recipes[uniqueKey(target)]
+    screen2.count.value = recipe.count
+    screen2.machine:setIndex(select(2, Util.find(machines, 'name', recipe.machine)))
+    for k,v in pairs(recipe.ingredients) do
+      screen1.ingredients.values[k] =
+        { name = k, count = v, displayName = itemDB:getName(k) }
+    end
+  end
+  screen1.ingredients:update()
+
   UI.Page.enable(self)
+  self.previousButton:disable()
 end
 
-function learnPage:draw()
-  UI.Page.draw(self)
-  self:write(2, self.height - 2, 'Machine')
-  self:centeredWrite(1, 'Inventory', nil, colors.yellow)
-  self:centeredWrite(5, 'Ingredients', nil, colors.yellow)
-  self:write(2, self.height, 'Filter')
+function learnPage.scroller.screen1:enable()
+  UI.Window.enable(self)
+  self.filter:focus()
+  learnPage.previousButton:enable()
+  learnPage.nextButton.text = 'Accept'
+  learnPage.nextButton.event = 'accept'
+end
+
+function learnPage.scroller.screen1:draw()
+  UI.Window.draw(self)
+  self:write(2, 1, 'Ingredients', nil, colors.yellow)
+  self:write(2, 5, 'Inventory', nil, colors.yellow)
+end
+
+function learnPage.scroller.screen1:eventHandler(event)
+  if event.type == 'text_change' then
+    local t = filterItems(learnPage.allItems, event.text)
+    self.grid:setValues(t)
+    self.grid:draw()
+  else
+    return false
+  end
+  return true
+end
+
+function learnPage.scroller.screen2:enable()
+  UI.Window.enable(self)
+ end
+
+function learnPage.scroller.screen2:draw()
+  UI.Window.draw(self)
+  self:centeredWrite(1, 'Machine', nil, colors.yellow)
+  self:write(2, 10, 'Produces')
 end
 
 function learnPage:eventHandler(event)
   if event.type == 'cancel' then
     UI:setPreviousPage()
+
+  elseif event.type == 'next' then
+    self.scroller:nextChild()
+    self:draw()
+
+  elseif event.type == 'previous' then
+    self.scroller:prevChild()
+    self:draw()
+
   elseif event.type == 'accept' then
+
+    local screen1 = self.scroller.screen1
+    local screen2 = self.scroller.screen2
+
     local recipe = {
-      count = 1,
+      count = tonumber(screen2.count.value) or 1,
       ingredients = { },
-      machine = self.machine.value,
+      machine = screen2.machine:getSelected().name,
     }
-    for key in pairs(self.ingredients.values) do
-      table.insert(recipe.ingredients, key)
+    for key, item in pairs(screen1.ingredients.values) do
+      recipe.ingredients[key] = item.count
     end
     recipes[uniqueKey(self.target)] = recipe
     Util.writeTable(RECIPES_FILE, recipes)
 
     UI:setPreviousPage()
-  elseif event.type == 'grid_select' then
-    local key = uniqueKey(event.selected)
-    if not self.ingredients.values[key] then
-      self.ingredients.values[key] = Util.shallowCopy(event.selected)
-      self.ingredients.values[key].count = 0
-    end
-    self.ingredients.values[key].count = self.ingredients.values[key].count + 1
-    self.ingredients:update()
-    self.ingredients:draw()
 
-  elseif event.type == 'text_change' then
-    local t = filterItems(self.allItems, event.text)
-    self.grid:setValues(t)
-    self.grid:draw()
+  elseif event.type == 'grid_select' then
+    local screen1 = self.scroller.screen1
+
+    if event.element == screen1.grid then
+      local key = uniqueKey(event.selected)
+      if not screen1.ingredients.values[key] then
+        screen1.ingredients.values[key] = Util.shallowCopy(event.selected)
+        screen1.ingredients.values[key].count = 0
+      end
+      screen1.ingredients.values[key].count = screen1.ingredients.values[key].count + 1
+      screen1.ingredients:update()
+      screen1.ingredients:draw()
+    elseif event.element == screen1.ingredients then
+      event.selected.count = event.selected.count - 1
+      if event.selected.count == 0 then
+        screen1.ingredients.values[uniqueKey(event.selected)] = nil
+        screen1.ingredients:update()
+      end
+      screen1.ingredients:draw()
+    end
+
   else
     return UI.Page.eventHandler(self, event)
   end
@@ -433,9 +537,8 @@ end
 local listingPage = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
-      { text = 'Learn',   event = 'learn'   },
       { text = 'Forget',  event = 'forget'  },
-      { text = 'Refresh', event = 'refresh', x = -9 },
+      { text = 'Refresh', event = 'refresh' },
     },
   },
   grid = UI.Grid {
@@ -513,9 +616,6 @@ function listingPage:eventHandler(event)
     self:refresh()
     self.grid:draw()
     self.statusBar.filter:focus()
-
-  elseif event.type == 'learn' then
-    UI:setPage('learn', self.grid:getSelected())
 
   elseif event.type == 'craft' then
     UI:setPage('craft', self.grid:getSelected())
