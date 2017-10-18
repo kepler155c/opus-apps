@@ -5,6 +5,7 @@ local Event          = require('event')
 local itemDB         = require('itemDB')
 local Peripheral     = require('peripheral')
 local UI             = require('ui')
+local Terminal       = require('terminal')
 local Util           = require('util')
 
 local colors     = _G.colors
@@ -23,6 +24,7 @@ local craftingPaused = false
 local recipes = Util.readTable(RECIPES_FILE) or { }
 local resources
 local machines = { }
+local jobListGrid
 
 local function getItem(items, inItem, ignoreDamage)
   for _,item in pairs(items) do
@@ -34,17 +36,6 @@ local function getItem(items, inItem, ignoreDamage)
       end
     end
   end
-end
-
-local function splitKey(key)
-  local t = Util.split(key, '(.-):')
-  local item = { }
-  if #t[#t] > 8 then
-    item.nbtHash = table.remove(t)
-  end
-  item.damage = tonumber(table.remove(t))
-  item.name = table.concat(t, ':')
-  return item
 end
 
 local function uniqueKey(item)
@@ -64,7 +55,7 @@ local function mergeResources(t)
   end
 
   for k in pairs(recipes) do
-    local v = splitKey(k)
+    local v = itemDB:splitKey(k)
     local item = getItem(t, v)
     if not item then
       item = Util.shallowCopy(v)
@@ -110,13 +101,20 @@ local function clearGrid()
 end
 
 local function gotoMachine(machine)
-  local _, k = Util.find(machines, 'name', machine)
 
-  if not k then
-    error('Unable to locate machine: ' .. tostring(machine))
+  local index
+  if type(machine) == 'number' then
+    index = machine
+  else
+    local _, k = Util.find(machines, 'name', machine)
+
+    if not k then
+      error('Unable to locate machine: ' .. tostring(machine))
+    end
+    index = k - 1
   end
 
-  for _ = 1, k - 1 do
+  for _ = 1, index do
     turtle.back()
   end
 end
@@ -125,9 +123,9 @@ local function canCraft(recipe, items, count)
   count = math.ceil(count / recipe.count)
 
   for key,qty in pairs(recipe.ingredients) do
-    local item = getItem(items, splitKey(key))
+    local item = getItem(items, itemDB:splitKey(key))
     if not item then
-      return 0
+      return 0, itemDB:getName(key)
     end
     local x = math.min(math.floor(item.count / qty), item.maxCount)
     count = math.min(x, count)
@@ -136,32 +134,44 @@ local function canCraft(recipe, items, count)
   return count
 end
 
-local function craftItem(recipe, items, count)
+local function craftItem(recipe, items, cItem, count)
   repeat until not turtle.forward()
-  count = canCraft(recipe, items, count)
+
+  local missing
+  count, missing = canCraft(recipe, items, count)
   if count == 0 then
+    cItem.status = 'missing ' .. missing
     return false
   end
 
   local slot = 1
   for key,qty in pairs(recipe.ingredients) do
-    local item = splitKey(key)
+    local item = itemDB:splitKey(key)
     inventoryAdapter:provide(item, count * qty, slot)
     if turtle.getItemCount(slot) ~= count then
+      cItem.status = 'failed'
       return false
     end
     slot = slot + 1
   end
   gotoMachine(recipe.machine)
   turtle.emptyInventory(turtle.dropDown)
+  if #turtle.getFilledSlots() ~= 0 then
+    cItem.status = 'machine busy'
+  else
+    cItem.status = 'crafting'
+  end
 end
 
 local function craftItems(craftList, items)
   for key, item in pairs(craftList) do
     local recipe = recipes[key]
     if recipe then
-      craftItem(recipe, items, item.count)
+      craftItem(recipe, items, item, item.count)
       repeat until not turtle.forward()
+      jobListGrid:update()
+      jobListGrid:draw()
+      jobListGrid:sync()
       clearGrid()
       items = inventoryAdapter:listItems() -- refresh counts
     end
@@ -223,7 +233,7 @@ end
 local function loadResources()
   resources = Util.readTable(RESOURCE_FILE) or { }
   for k,v in pairs(resources) do
-    Util.merge(v, splitKey(k))
+    Util.merge(v, itemDB:splitKey(k))
   end
 end
 
@@ -248,6 +258,10 @@ local function findMachines()
   local t = { }
   repeat
     local machine = Peripheral.getBySide('bottom')
+    if not machine then
+      local _
+      _, machine = turtle.inspectDown()
+    end
     if machine then
       local name = machine.name
       local i = 1
@@ -258,13 +272,50 @@ local function findMachines()
       t[name] = true
 
       table.insert(machines, {
-        value = name,
         name = name,
         index = index,
       })
     end
     index = index + 1
   until not turtle.back()
+end
+
+local function jobMonitor()
+  local mon = Peripheral.getBySide('top')
+
+  if mon then
+    mon = UI.Device({
+      device = mon,
+      textScale = .5,
+    })
+  else
+    mon = UI.Device({
+      device = Terminal.getNullTerm(term.current())
+    })
+  end
+
+  jobListGrid = UI.Grid({
+    parent = mon,
+    sortColumn = 'displayName',
+    columns = {
+      { heading = 'Qty',      key = 'count',       width = 6                  },
+      { heading = 'Crafting', key = 'displayName', width = mon.width / 2 - 10 },
+      { heading = 'Status',   key = 'status',      width = mon.width - 10     },
+    },
+  })
+
+  function jobListGrid:getRowTextColor(row, selected)
+    if row.status == '(no recipe)'then
+      return colors.red
+    elseif row.statusCode == 'missing' then
+      return colors.yellow
+    end
+
+    return UI.Grid:getRowTextColor(row, selected)
+  end
+
+  jobListGrid:draw()
+  jobListGrid:sync()
 end
 
 local itemPage = UI.Page {
@@ -346,66 +397,54 @@ function itemPage:eventHandler(event)
 end
 
 local learnPage = UI.Page {
-  scroller = UI.WindowScroller {
-    ey = -2,
-    [2] = UI.Window {
-      ingredients = UI.ScrollingGrid {
-        y = 2, height = 3,
-        values = machines,
-        disableHeader = true,
-        columns = {
-          { heading = 'Name', key = 'displayName', width = 31 },
-          { heading = 'Qty',  key = 'count'      , width = 5  },
+  wizard = UI.Wizard {
+    pages = {
+      screen1 = UI.Window {
+        index = 1,
+        ingredients = UI.ScrollingGrid {
+          y = 2, height = 3,
+          values = machines,
+          disableHeader = true,
+          columns = {
+            { heading = 'Name', key = 'displayName', width = 31 },
+            { heading = 'Qty',  key = 'count'      , width = 5  },
+          },
+          sortColumn = 'displayName',
         },
-        sortColumn = 'displayName',
-      },
-      grid = UI.ScrollingGrid {
-        y = 6, height = 5,
-        disableHeader = true,
-        columns = {
-          { heading = 'Name', key = 'displayName', width = 31 },
-          { heading = 'Qty',  key = 'count'      , width = 5  },
+        grid = UI.ScrollingGrid {
+          y = 6, height = 5,
+          disableHeader = true,
+          columns = {
+            { heading = 'Name', key = 'displayName', width = 31 },
+            { heading = 'Qty',  key = 'count'      , width = 5  },
+          },
+          sortColumn = 'displayName',
         },
-        sortColumn = 'displayName',
+        filter = UI.TextEntry {
+          x = 20, ex = -2, y = 5,
+          limit = 50,
+          shadowText = 'filter',
+          backgroundColor = colors.lightGray,
+          backgroundFocusColor = colors.lightGray,
+        },
       },
-      filter = UI.TextEntry {
-        x = 20, ex = -2, y = 5,
-        limit = 50,
-        shadowText = 'filter',
-        backgroundColor = colors.lightGray,
-        backgroundFocusColor = colors.lightGray,
+      screen2 = UI.Window {
+        index = 2,
+        machine = UI.ScrollingGrid {
+          y = 2, height = 7,
+          values = machines,
+          disableHeader = true,
+          columns = {
+            { heading = 'Name', key = 'name'},
+          },
+          sortColumn = 'index',
+        },
+        count = UI.TextEntry {
+          x = 11, y = -2, width = 5,
+          limit = 50,
+        },
       },
     },
-    [1] = UI.Window {
-      machine = UI.ScrollingGrid {
-        y = 2, height = 7,
-        values = machines,
-        disableHeader = true,
-        columns = {
-          { heading = 'Name', key = 'name'},
-        },
-        sortColumn = 'index',
-      },
-      count = UI.TextEntry {
-        x = 11, y = -2, width = 5,
-        limit = 50,
-      },
-    },
-  },
-  cancelButton = UI.Button {
-    x = 2, y = -1,
-    text = ' Cancel ',
-    event = 'cancel',
-  },
-  previousButton = UI.Button {
-    x = -20, y = -1,
-    text = '<< Back',
-    event = 'previous',
-  },
-  nextButton = UI.Button {
-    x = -10, y = -1,
-    text = 'Next >>',
-    event = 'next',
   },
 }
 
@@ -414,11 +453,8 @@ function learnPage:enable(target)
   self.allItems = inventoryAdapter:listItems()
   mergeResources(self.allItems)
 
-  self.scroller.screen1 = self.scroller.children[2]
-  self.scroller.screen2 = self.scroller.children[1]
-
-  local screen1 = self.scroller.screen1
-  local screen2 = self.scroller.screen2
+  local screen1 = self.wizard.screen1
+  local screen2 = self.wizard.screen2
 
   screen1.filter.value = ''
   screen1.grid.values = self.allItems
@@ -427,13 +463,14 @@ function learnPage:enable(target)
   screen2.count.value = 1
   screen2.machine:update()
 
-  self.nextButton.text = 'Next >>'
-  self.nextButton.event = 'next'
-
   if target.has_recipe then
     local recipe = recipes[uniqueKey(target)]
     screen2.count.value = recipe.count
-    screen2.machine:setIndex(select(2, Util.find(machines, 'name', recipe.machine)))
+    if type(recipe.machine) == 'number' then
+      screen2.machine:setIndex(select(2, Util.find(machines, 'index', recipe.machine)))
+    else
+      screen2.machine:setIndex(select(2, Util.find(machines, 'name', recipe.machine)))
+    end
     for k,v in pairs(recipe.ingredients) do
       screen1.ingredients.values[k] =
         { name = k, count = v, displayName = itemDB:getName(k) }
@@ -442,24 +479,20 @@ function learnPage:enable(target)
   screen1.ingredients:update()
 
   UI.Page.enable(self)
-  self.previousButton:disable()
 end
 
-function learnPage.scroller.screen1:enable()
+function learnPage.wizard.screen1:enable()
   UI.Window.enable(self)
-  self.filter:focus()
-  learnPage.previousButton:enable()
-  learnPage.nextButton.text = 'Accept'
-  learnPage.nextButton.event = 'accept'
+  self:setFocus(self.filter)
 end
 
-function learnPage.scroller.screen1:draw()
+function learnPage.wizard.screen1:draw()
   UI.Window.draw(self)
   self:write(2, 1, 'Ingredients', nil, colors.yellow)
   self:write(2, 5, 'Inventory', nil, colors.yellow)
 end
 
-function learnPage.scroller.screen1:eventHandler(event)
+function learnPage.wizard.screen1:eventHandler(event)
   if event.type == 'text_change' then
     local t = filterItems(learnPage.allItems, event.text)
     self.grid:setValues(t)
@@ -470,11 +503,12 @@ function learnPage.scroller.screen1:eventHandler(event)
   return true
 end
 
-function learnPage.scroller.screen2:enable()
+function learnPage.wizard.screen2:enable()
   UI.Window.enable(self)
- end
+  self:setFocus(self.count)
+end
 
-function learnPage.scroller.screen2:draw()
+function learnPage.wizard.screen2:draw()
   UI.Window.draw(self)
   self:centeredWrite(1, 'Machine', nil, colors.yellow)
   self:write(2, 10, 'Produces')
@@ -484,23 +518,15 @@ function learnPage:eventHandler(event)
   if event.type == 'cancel' then
     UI:setPreviousPage()
 
-  elseif event.type == 'next' then
-    self.scroller:nextChild()
-    self:draw()
-
-  elseif event.type == 'previous' then
-    self.scroller:prevChild()
-    self:draw()
-
   elseif event.type == 'accept' then
 
-    local screen1 = self.scroller.screen1
-    local screen2 = self.scroller.screen2
+    local screen1 = self.wizard.screen1
+    local screen2 = self.wizard.screen2
 
     local recipe = {
       count = tonumber(screen2.count.value) or 1,
       ingredients = { },
-      machine = screen2.machine:getSelected().name,
+      machine = screen2.machine:getSelected().index,
     }
     for key, item in pairs(screen1.ingredients.values) do
       recipe.ingredients[key] = item.count
@@ -511,7 +537,7 @@ function learnPage:eventHandler(event)
     UI:setPreviousPage()
 
   elseif event.type == 'grid_select' then
-    local screen1 = self.scroller.screen1
+    local screen1 = self.wizard.screen1
 
     if event.element == screen1.grid then
       local key = uniqueKey(event.selected)
@@ -689,6 +715,7 @@ listingPage:setFocus(listingPage.statusBar.filter)
 findMachines()
 repeat until not turtle.forward()
 clearGrid()
+jobMonitor()
 
 Event.on('turtle_abort', function()
   UI:exitPullEvents()
@@ -704,6 +731,12 @@ Event.onInterval(30, function()
     end
     local items = inventoryAdapter:listItems()
     local craftList = watchResources(items)
+
+    jobListGrid:setValues(craftList)
+    jobListGrid:update()
+    jobListGrid:draw()
+    jobListGrid:sync()
+
     craftItems(craftList, items)
   end
 end)

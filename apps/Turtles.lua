@@ -298,14 +298,6 @@ function page.statusBar:draw()
   UI.StatusBar.draw(self)
 end
 
-function page.tabs.tabBar:selectTab(tabTitle)
-  if tabTitle then
-    config.tab = tabTitle
-    Config.update('Turtles', config)
-    return UI.TabBar.selectTab(self, tabTitle)
-  end
-end
-
 function page:showBlocks()
 
   local script = [[
@@ -328,6 +320,11 @@ end
 function page:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
+
+  elseif event.type == 'tab_select' then
+    config.tab = event.button.text
+    Config.update('Turtles', config)
+
   elseif event.type == 'button_press' then
     if event.button.fn then
       self:runFunction(event.button.fn, event.button.nowrap)
@@ -369,18 +366,10 @@ Event.onInterval(1, function()
   end
 end)
 
-UI:setPage(page)
-
-local lookup = {
-  Run = page.tabs.scripts,
-  Select = page.tabs.turtles,
-  Inv = page.tabs.inventory,
---  Mod = page.tabs.policy,
-  Action = page.tabs.action,
-}
-
-if lookup[options.tab.value] then
-  page.tabs:activateTab(lookup[options.tab.value].uid)
+if config.tab then
+  page.tabs.tabBar:selectTab(config.tab)
 end
+
+UI:setPage(page)
 
 UI:pullEvents()

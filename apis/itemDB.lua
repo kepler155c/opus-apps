@@ -4,7 +4,11 @@ local Util    = require('util')
 
 local itemDB = TableDB({ fileName = 'usr/config/items.db' })
 
-local function splitKey(key, item)
+function itemDB:makeKey(item)
+  return { item.name, item.damage, item.nbtHash }
+end
+
+function itemDB:splitKey(key, item)
 
   item = item or { }
 
@@ -45,15 +49,11 @@ function itemDB:add(key, item)
   TableDB.add(self, key, item)
 end
 
-function itemDB:makeKey(item)
-  return { item.name, item.damage, item.nbtHash }
-end
-
 -- Accepts: "minecraft:stick:0" or { name = 'minecraft:stick', damage = 0 }
 function itemDB:getName(item)
 
   if type(item) == 'string' then
-    item = splitKey(item)
+    item = self:splitKey(item)
   end
 
   local detail = self:get(self:makeKey(item))
@@ -70,7 +70,7 @@ function itemDB:load()
   TableDB.load(self)
 
   for key,item in pairs(self.data) do
-    splitKey(key, item)
+    self:splitKey(key, item)
     item.maxDamage = item.maxDamage or 0
     item.maxCount = item.maxCount or 64
   end

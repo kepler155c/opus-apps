@@ -644,7 +644,7 @@ end
 function listingPage.statusBar:draw()
   return UI.Window.draw(self)
 end
-
+--[[
 function listingPage.statusBar.filter:eventHandler(event)
   if event.type == 'mouse_rightclick' then
     self.value = ''
@@ -657,6 +657,7 @@ function listingPage.statusBar.filter:eventHandler(event)
   end
   return UI.TextEntry.eventHandler(self, event)
 end
+]]
 
 function listingPage:eventHandler(event)
   if event.type == 'quit' then
