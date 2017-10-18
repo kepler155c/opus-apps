@@ -348,7 +348,7 @@ end
 local learnPage = UI.Page {
   scroller = UI.WindowScroller {
     ey = -2,
-    screen1 = UI.Window {
+    [2] = UI.Window {
       ingredients = UI.ScrollingGrid {
         y = 2, height = 3,
         values = machines,
@@ -376,7 +376,7 @@ local learnPage = UI.Page {
         backgroundFocusColor = colors.lightGray,
       },
     },
-    screen2 = UI.Window {
+    [1] = UI.Window {
       machine = UI.ScrollingGrid {
         y = 2, height = 7,
         values = machines,
@@ -413,6 +413,9 @@ function learnPage:enable(target)
   self.target = target
   self.allItems = inventoryAdapter:listItems()
   mergeResources(self.allItems)
+
+  self.scroller.screen1 = self.scroller.children[2]
+  self.scroller.screen2 = self.scroller.children[1]
 
   local screen1 = self.scroller.screen1
   local screen2 = self.scroller.screen2
