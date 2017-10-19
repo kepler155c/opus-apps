@@ -126,9 +126,20 @@ end
 function ChestAdapter:craftItems()
 end
 
+local function rpairs(t)
+  local i = #t
+  return function()
+    local k,v = i, t[i]
+    i = i - 1
+    if v then
+      return k, v
+    end
+  end
+end
+
 function ChestAdapter:provide(item, qty, slot, direction)
   local stacks = self.list()
-  for key,stack in pairs(stacks) do
+  for key,stack in rpairs(stacks) do
     if stack.name == item.name and stack.damage == item.damage then
       local amount = math.min(qty, stack.count)
       if amount > 0 then

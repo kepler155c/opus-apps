@@ -20,7 +20,6 @@ local inventoryAdapter = ChestAdapter({ wrapSide = 'front', direction = 'north' 
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE  = 'usr/etc/recipes2.db'
 
-local craftingPaused = false
 local recipes = Util.readTable(RECIPES_FILE) or { }
 local resources
 local machines = { }
@@ -148,7 +147,7 @@ local function craftItem(recipe, items, cItem, count)
   for key,qty in pairs(recipe.ingredients) do
     local item = itemDB:splitKey(key)
     inventoryAdapter:provide(item, count * qty, slot)
-    if turtle.getItemCount(slot) ~= count then
+    if turtle.getItemCount(slot) ~= count * qty then
       cItem.status = 'failed'
       return false
     end
@@ -435,6 +434,7 @@ local learnPage = UI.Page {
           values = machines,
           disableHeader = true,
           columns = {
+            { heading = '', key = 'index', width = 2 },
             { heading = 'Name', key = 'name'},
           },
           sortColumn = 'index',
@@ -722,23 +722,21 @@ Event.on('turtle_abort', function()
 end)
 
 Event.onInterval(30, function()
-  if not craftingPaused then
-    repeat until not turtle.forward()
-    if turtle.getFuelLevel() < 100 then
-      turtle.select(1)
-      inventoryAdapter:provide({ name = 'minecraft:coal', damage = 1 }, 16, 1)
-      turtle.refuel()
-    end
-    local items = inventoryAdapter:listItems()
-    local craftList = watchResources(items)
-
-    jobListGrid:setValues(craftList)
-    jobListGrid:update()
-    jobListGrid:draw()
-    jobListGrid:sync()
-
-    craftItems(craftList, items)
+  repeat until not turtle.forward()
+  if turtle.getFuelLevel() < 100 then
+    turtle.select(1)
+    inventoryAdapter:provide({ name = 'minecraft:coal', damage = 1 }, 16, 1)
+    turtle.refuel()
   end
+  local items = inventoryAdapter:listItems()
+  local craftList = watchResources(items)
+
+  jobListGrid:setValues(craftList)
+  jobListGrid:update()
+  jobListGrid:draw()
+  jobListGrid:sync()
+
+  craftItems(craftList, items)
 end)
 
 UI:pullEvents()
