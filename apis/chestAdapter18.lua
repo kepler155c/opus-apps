@@ -127,9 +127,11 @@ function ChestAdapter:craftItems()
 end
 
 local function rpairs(t)
-  local i = #t
+  local tkeys = Util.keys(t)
+  local i = #tkeys
   return function()
-    local k,v = i, t[i]
+    local key = tkeys[i]
+    local k,v = key, t[key]
     i = i - 1
     if v then
       return k, v
