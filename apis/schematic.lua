@@ -235,7 +235,7 @@ function Schematic:isCompressed(filename)
   end
 
   local magic = h.read() * 256 +  h.read()
-
+debug({ magic, gzipMagic })
   h.close()
 
   return magic == gzipMagic
