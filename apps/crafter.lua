@@ -24,6 +24,7 @@ local recipes = Util.readTable(RECIPES_FILE) or { }
 local resources
 local machines = { }
 local jobListGrid
+local lastItems
 
 local function getItem(items, inItem, ignoreDamage)
   for _,item in pairs(items) do
@@ -162,17 +163,17 @@ local function craftItem(recipe, items, cItem, count)
   end
 end
 
-local function craftItems(craftList, items)
+local function craftItems(craftList)
   for key, item in pairs(craftList) do
     local recipe = recipes[key]
     if recipe then
-      craftItem(recipe, items, item, item.count)
+      craftItem(recipe, lastItems, item, item.count)
       repeat until not turtle.forward()
       jobListGrid:update()
       jobListGrid:draw()
       jobListGrid:sync()
       clearGrid()
-      items = inventoryAdapter:listItems() -- refresh counts
+      lastItems = inventoryAdapter:listItems() -- refresh counts
     end
   end
 end
@@ -450,7 +451,7 @@ local learnPage = UI.Page {
 
 function learnPage:enable(target)
   self.target = target
-  self.allItems = inventoryAdapter:listItems()
+  self.allItems = lastItems
   mergeResources(self.allItems)
 
   local screen1 = self.wizard.screen1
@@ -466,11 +467,7 @@ function learnPage:enable(target)
   if target.has_recipe then
     local recipe = recipes[uniqueKey(target)]
     screen2.count.value = recipe.count
-    if type(recipe.machine) == 'number' then
-      screen2.machine:setIndex(select(2, Util.find(machines, 'index', recipe.machine)))
-    else
-      screen2.machine:setIndex(select(2, Util.find(machines, 'name', recipe.machine)))
-    end
+    screen2.machine:setIndex(select(2, Util.find(machines, 'index', recipe.machine)))
     for k,v in pairs(recipe.ingredients) do
       screen1.ingredients.values[k] =
         { name = k, count = v, displayName = itemDB:getName(k) }
@@ -573,7 +570,7 @@ local listingPage = UI.Page {
   grid = UI.Grid {
     y = 2, height = UI.term.height - 2,
     columns = {
-      { heading = 'Name', key = 'displayName' , width = 22 },
+      { heading = 'Name', key = 'displayName' },
       { heading = 'Qty',  key = 'count'       , width = 5  },
       { heading = 'Min',  key = 'low'         , width = 4  },
     },
@@ -691,7 +688,7 @@ function listingPage:enable()
 end
 
 function listingPage:refresh()
-  self.allItems = inventoryAdapter:listItems()
+  self.allItems = lastItems
   mergeResources(self.allItems)
   self:applyFilter()
 end
@@ -702,6 +699,11 @@ function listingPage:applyFilter()
 end
 
 loadResources()
+findMachines()
+repeat until not turtle.forward()
+clearGrid()
+jobMonitor()
+lastItems = inventoryAdapter:listItems()
 
 UI:setPages({
   listing = listingPage,
@@ -711,11 +713,6 @@ UI:setPages({
 
 UI:setPage(listingPage)
 listingPage:setFocus(listingPage.statusBar.filter)
-
-findMachines()
-repeat until not turtle.forward()
-clearGrid()
-jobMonitor()
 
 Event.on('turtle_abort', function()
   UI:exitPullEvents()
@@ -728,15 +725,16 @@ Event.onInterval(30, function()
     inventoryAdapter:provide({ name = 'minecraft:coal', damage = 1 }, 16, 1)
     turtle.refuel()
   end
-  local items = inventoryAdapter:listItems()
-  local craftList = watchResources(items)
+  lastItems = inventoryAdapter:listItems()
+  local craftList = watchResources(lastItems)
 
   jobListGrid:setValues(craftList)
   jobListGrid:update()
   jobListGrid:draw()
   jobListGrid:sync()
 
-  craftItems(craftList, items)
+  craftItems(craftList)
 end)
 
 UI:pullEvents()
+jobListGrid.parent:reset()

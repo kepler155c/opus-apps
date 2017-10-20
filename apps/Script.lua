@@ -308,7 +308,6 @@ function editorPage:enable()
 end
 
 function editorPage.grid2:draw()
-
   getActiveComputers(self.values)
 
   for k in pairs(editorPage.grid1.values) do
@@ -320,7 +319,6 @@ function editorPage.grid2:draw()
 end
 
 function editorPage:eventHandler(event)
-
   if event.type == 'back' then
     UI:setPage(groupsPage)
 
@@ -347,18 +345,17 @@ function editorPage:eventHandler(event)
 end
 
 local function nameDialog(f)
-  local dialog = UI.Dialog({
---    x = (UI.term.width - 28) / 2,
+  local dialog = UI.Dialog {
     width = 22,
     height = 6,
     title = 'Enter Name',
     form = UI.Form {
       x = 2, ex = -2, y = 2,
-      textEntry = UI.TextEntry({ y = 2, width = 20, limit = 20 })
+      textEntry = UI.TextEntry { y = 2, width = 20, limit = 20 },
     },
-  })
+  }
 
-  dialog.eventHandler = function(self, event)
+  function dialog:eventHandler(event)
     if event.type == 'form_complete' then
       local name = self.form.textEntry.value
       if name then
