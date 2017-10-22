@@ -1,6 +1,7 @@
 _G.requireInjector()
 
 local ChestAdapter   = require('chestAdapter18')
+local Config         = require('config')
 local Event          = require('event')
 local itemDB         = require('itemDB')
 local Peripheral     = require('peripheral')
@@ -14,8 +15,13 @@ local turtle     = _G.turtle
 
 multishell.setTitle(multishell.getCurrent(), 'Crafter')
 
+local config = {
+  inventory = { direction = 'north', wrapSide = 'front' },
+}
+Config.load('crafter', config)
+
 repeat until not turtle.forward()
-local inventoryAdapter = ChestAdapter({ wrapSide = 'bottom', direction = 'up' })
+local inventoryAdapter = ChestAdapter(config.inventory)
 
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE  = 'usr/etc/recipes2.db'

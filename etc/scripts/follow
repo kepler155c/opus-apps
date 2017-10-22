@@ -88,7 +88,7 @@ local function follow(id)
       end
 
       -- check if gps is inaccurate (player moving too fast)
-      if d < Point.pythagoreanDistance(turtle.point, pt) + 10 then
+      if d < Point.distance(turtle.point, pt) + 10 then
         lastPoint = Point.copy(pt)
         following = true
         os.queueEvent('turtle_follow', pt)

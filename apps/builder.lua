@@ -39,7 +39,6 @@ local supplyPage, substitutionPage
 local pistonFacings
 
 local Builder = {
-  version = '1.71',
   isCommandComputer = not turtle,
   slots = { },
   loc = { },
@@ -214,18 +213,17 @@ function Builder:getBlockCounts()
     }
   end
 
-  for k,b in ipairs(schematic.blocks) do
-    if k >= self.index then
-      local key = tostring(b.id) .. ':' .. b.dmg
-      local block = blocks[key]
-      if not block then
-        block = Util.shallowCopy(b)
-        block.qty = 0
-        block.need = 0
-        blocks[key] = block
-      end
-      block.need = block.need + 1
+  for k = self.index, #schematic.blocks do
+    local b = schematic.blocks[k]
+    local key = tostring(b.id) .. ':' .. b.dmg
+    local block = blocks[key]
+    if not block then
+      block = Util.shallowCopy(b)
+      block.qty = 0
+      block.need = 0
+      blocks[key] = block
     end
+    block.need = block.need + 1
   end
 
   return blocks
@@ -472,7 +470,7 @@ Event.on('build', function()
 end)
 
 function Builder:refuel()
-  while turtle.getFuelLevel() < 4000 and self.fuelItem do
+  while turtle.getFuelLevel() < 4000 do
     print('Refueling')
     turtle.select(1)
 
@@ -953,7 +951,6 @@ function Builder:placeDirectionalBlock(b, slot, travelPlane)
     [ 'west-up'  ] = 'east'
   }
   if stairUpDirections[d] then
-
     local isSouth = (turtle.getHeadingInfo(Builder.facing).heading +
                     turtle.getHeadingInfo(stairUpDirections[d]).heading) % 4 == 1
 
@@ -1141,7 +1138,7 @@ function Builder:loadProgress(filename)
       Builder.index = 1
     end
     Builder.facing = progress.facing or 'south'
-    Builder.loc = progress.loc
+    Builder.loc = progress.loc or { }
   end
 end
 
@@ -2052,9 +2049,16 @@ function startPage:eventHandler(event)
       Builder.supplyPoint = { x = -1, y = 0, z = -1 }
     end
 
-    turtle.setPoint(Builder.supplyPoint)
     Builder:dumpInventory()
     Builder:refuel()
+
+    if Builder.mode == 'build' then
+      Builder:getTurtleFacing()
+    end
+
+    local facing = turtle.getHeadingInfo(Builder.facing).heading
+    Point.rotate(Builder.supplyPoint, facing)
+    turtle.setPoint(Builder.supplyPoint)
 
     -- reset piston cache in case wrench was substituted
     pistonFacings = {
@@ -2070,7 +2074,6 @@ function startPage:eventHandler(event)
       Builder:build()
     else
       print('Starting build')
-      Builder:getTurtleFacing()
       Builder:resupply()
     end
 
@@ -2129,7 +2132,7 @@ if commands then
   }
 end
 
-multishell.setTitle(multishell.getCurrent(), 'Builder v' .. Builder.version)
+multishell.setTitle(multishell.getCurrent(), 'Builder')
 
 maxStackDB:load()
 subDB:load()
@@ -2161,7 +2164,7 @@ if Builder.isCommandComputer then
   UI:pullEvents()
 else
   turtle.run(function()
-    turtle.heading = 0
+    turtle.point.heading = 0
     UI:pullEvents()
   end)
 end
