@@ -159,6 +159,13 @@
       [ 7 ] = "minecraft:stained_glass:8",
     },
   },
+  [ "minecraft:carpet:1" ] = {
+    count = 3,
+    ingredients = {
+      "minecraft:wool:1",
+      "minecraft:wool:1",
+    },
+  },
   [ "minecraft:wooden_slab:2" ] = {
     count = 6,
     ingredients = {
@@ -181,13 +188,6 @@
       [ 7 ] = "minecraft:redstone:0",
     },
   },
-  [ "minecraft:light_weighted_pressure_plate:0" ] = {
-    count = 1,
-    ingredients = {
-      "minecraft:gold_ingot:0",
-      "minecraft:gold_ingot:0",
-    },
-  },
   [ "minecraft:quartz_block:1" ] = {
     count = 1,
     ingredients = {
@@ -195,15 +195,11 @@
       [ 6 ] = "minecraft:stone_slab:7",
     },
   },
-  [ "minecraft:stained_glass_pane:9" ] = {
-    count = 16,
+  [ "minecraft:light_weighted_pressure_plate:0" ] = {
+    count = 1,
     ingredients = {
-      "minecraft:stained_glass:9",
-      "minecraft:stained_glass:9",
-      "minecraft:stained_glass:9",
-      [ 5 ] = "minecraft:stained_glass:9",
-      [ 6 ] = "minecraft:stained_glass:9",
-      [ 7 ] = "minecraft:stained_glass:9",
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
     },
   },
   [ "minecraft:dye:11" ] = {
@@ -219,10 +215,15 @@
       [ 6 ] = "minecraft:wool:7",
     },
   },
-  [ "minecraft:planks:2" ] = {
-    count = 4,
+  [ "minecraft:stained_glass_pane:9" ] = {
+    count = 16,
     ingredients = {
-      [ 6 ] = "minecraft:log:2",
+      "minecraft:stained_glass:9",
+      "minecraft:stained_glass:9",
+      "minecraft:stained_glass:9",
+      [ 5 ] = "minecraft:stained_glass:9",
+      [ 6 ] = "minecraft:stained_glass:9",
+      [ 7 ] = "minecraft:stained_glass:9",
     },
   },
   [ "minecraft:end_bricks:0" ] = {
@@ -321,11 +322,10 @@
       [ 7 ] = "minecraft:brick_block:0",
     },
   },
-  [ "minecraft:carpet:1" ] = {
-    count = 3,
+  [ "minecraft:planks:2" ] = {
+    count = 4,
     ingredients = {
-      "minecraft:wool:1",
-      "minecraft:wool:1",
+      [ 6 ] = "minecraft:log:2",
     },
   },
   [ "minecraft:cobblestone_wall:0" ] = {
@@ -893,6 +893,14 @@
       [ 5 ] = "minecraft:hardened_clay:0",
       [ 6 ] = "minecraft:dye:14",
       [ 7 ] = "minecraft:hardened_clay:0",
+    },
+  },
+  [ "minecraft:tripwire_hook:0" ] = {
+    count = 2,
+    ingredients = {
+      "minecraft:iron_ingot:0",
+      [ 9 ] = "minecraft:planks:0",
+      [ 5 ] = "minecraft:stick:0",
     },
   },
   [ "minecraft:carpet:14" ] = {

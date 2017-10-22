@@ -1,6 +1,8 @@
 local Point = require('point')
 local Util  = require('util')
 
+local turtle = _G.turtle
+
 local checkedNodes = { }
 local nodes        = { }
 local box          = { }
@@ -11,7 +13,6 @@ local function toKey(pt)
 end
 
 local function addNode(node)
-
   for i = 0, 5 do
     local hi = turtle.getHeadingInfo(i)
     local testNode = { x = node.x + hi.xd, y = node.y + hi.yd, z = node.z + hi.zd }
@@ -26,14 +27,13 @@ local function addNode(node)
 end
 
 local function dig(action)
-
   local directions = {
     top = 'up',
     bottom = 'down',
   }
 
   -- convert to up, down, north, south, east, west
-  local direction = directions[action.side] or 
+  local direction = directions[action.side] or
                     turtle.getHeadingInfo(turtle.point.heading).direction
 
   local hi = turtle.getHeadingInfo(direction)
@@ -75,7 +75,7 @@ end
 -- find the closest block
 -- * favor same plane
 -- * going backwards only if the dest is above or below
-function closestPoint(reference, pts)
+local function closestPoint(reference, pts)
   local lpt, lm -- lowest
   for _,pt in pairs(pts) do
     local m = Point.turtleDistance(reference, pt)
@@ -114,7 +114,6 @@ local function getAdjacentPoint(pt)
 end
 
 return function(startPt, endPt, firstPt, verbose)
-
   checkedNodes = { }
   nodes = { }
   box = { }
@@ -125,6 +124,10 @@ return function(startPt, endPt, firstPt, verbose)
   box.ex = math.max(startPt.x, endPt.x)
   box.ey = math.max(startPt.y, endPt.y)
   box.ez = math.max(startPt.z, endPt.z)
+
+  if not Point.inBox(firstPt, box) then
+    error('Starting point is not in leveling area')
+  end
 
   if not turtle.pathfind(firstPt) then
     error('failed to reach starting point')

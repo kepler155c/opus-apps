@@ -15,7 +15,7 @@ local turtle     = _G.turtle
 multishell.setTitle(multishell.getCurrent(), 'Crafter')
 
 repeat until not turtle.forward()
-local inventoryAdapter = ChestAdapter({ wrapSide = 'front', direction = 'north' })
+local inventoryAdapter = ChestAdapter({ wrapSide = 'bottom', direction = 'up' })
 
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE  = 'usr/etc/recipes2.db'
@@ -262,7 +262,7 @@ local function findMachines()
       local _
       _, machine = turtle.inspectDown()
     end
-    if machine then
+    if machine and type(machine) == 'table' then
       local name = machine.name
       local i = 1
       while t[name] do

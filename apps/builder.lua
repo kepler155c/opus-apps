@@ -6,6 +6,7 @@ _G.requireInjector()
 
 local Blocks    = require('blocks')
 local Event     = require('event')
+local GPS       = require('gps')
 local itemDB    = require('itemDB')
 local MEAdapter = require('meAdapter')
 local Message   = require('message')
@@ -37,12 +38,11 @@ local blocks = Blocks({ dir = BUILDER_DIR })
 local supplyPage, substitutionPage
 local pistonFacings
 
-local SUPPLIES_PT = { x = -1, z = -1, y = 0 }
-
 local Builder = {
   version = '1.71',
   isCommandComputer = not turtle,
   slots = { },
+  loc = { },
   index = 1,
   mode = 'build',
   fuelItem = { id = 'minecraft:coal', dmg = 0 },
@@ -76,7 +76,6 @@ local function convertSingleBack(item)
     item.qty = item.count
     item.max_size = item.maxCount
     item.display_name = item.displayName
-    --item.name = item.displayName
   end
   return item
 end
@@ -233,7 +232,6 @@ function Builder:getBlockCounts()
 end
 
 function Builder:selectItem(id, dmg)
-
   for k,s in ipairs(self.slots) do
     if s.qty > 0 and s.id == id and s.dmg == dmg then
       -- check to see if someone pulled items from inventory
@@ -251,7 +249,6 @@ function Builder:selectItem(id, dmg)
 end
 
 function Builder:getAirResupplyList(blockIndex)
-
   local slots = { }
 
   if self.mode == 'destroy' then
@@ -289,7 +286,6 @@ function Builder:getAirResupplyList(blockIndex)
 end
 
 function Builder:getSupplyList(blockIndex)
-
   local slots, lastBlock = self:getGenericSupplyList(blockIndex)
 
   slots[15] = {
@@ -316,7 +312,6 @@ function Builder:getSupplyList(blockIndex)
 end
 
 function Builder:getGenericSupplyList(blockIndex)
-
   local slots = { }
 
   for i = 1, self.resourceSlots do
@@ -370,7 +365,6 @@ function Builder:getGenericSupplyList(blockIndex)
 end
 
 function Builder:substituteBlocks(throttle)
-
   for _,b in pairs(schematic.blocks) do
 
     -- replace schematic block type with substitution
@@ -389,7 +383,6 @@ function Builder:substituteBlocks(throttle)
 end
 
 function Builder:dumpInventory()
-
   local success = true
 
   for i = 1, 16 do
@@ -407,7 +400,6 @@ function Builder:dumpInventory()
 end
 
 function Builder:dumpInventoryWithCheck()
-
   while not self:dumpInventory() do
     print('Storage is full or missing - make space or replace')
     print('Press enter to continue')
@@ -437,7 +429,6 @@ function Builder:autocraft(supplies)
 end
 
 function Builder:getSupplies()
-
   self.itemAdapter:refresh()
 
   local t = { }
@@ -560,7 +551,6 @@ function Builder:inAirDropoff()
 end
 
 function Builder:inAirResupply()
-
   if not device.wireless_modem then
     return false
   end
@@ -633,7 +623,6 @@ function Builder:inAirResupply()
 end
 
 function Builder:sendSupplyRequest(lastBlock)
-
   if device.wireless_modem then
     local slots = self:getAirResupplyList(lastBlock)
     self.slotUid = os.clock()
@@ -642,8 +631,32 @@ function Builder:sendSupplyRequest(lastBlock)
   end
 end
 
-function Builder:resupply()
+function Builder:getBuildingCorner()
+  local pts = {
+    { x = -1,              z = -1,               y = 0 },
+    { x = -1,              z = schematic.length, y = 0 },
+    { x = schematic.width, z = -1,               y = 0 },
+    { x = schematic.width, z = schematic.length, y = 0 },
+  }
+  local supplyPoint = Util.shallowCopy(self.supplyPoint)
+  supplyPoint.heading = turtle.point.heading
+  return Point.closest(supplyPoint, pts)
+end
 
+function Builder:gotoSupplyPoint()
+  if not Point.same(turtle.point, self.supplyPoint) then
+    -- so we don't end up pathfinding through a building
+    -- go to the corner closest to the supplies point
+    -- pathfind the rest of the way
+    local pt = self:getBuildingCorner()
+    turtle._goto(pt.x, pt.z)
+    turtle.setPolicy(turtle.policies.none)
+    turtle.pathfind(self.supplyPoint)
+    os.sleep(.1) -- random 'Computer is not connected' error...
+  end
+end
+
+function Builder:resupply()
   if self.slotUid and self:inAirResupply() then
     os.queueEvent('build')
     return
@@ -652,8 +665,7 @@ function Builder:resupply()
   turtle.status = 'resupplying'
 
   self:log('Resupplying')
-  turtle.gotoYlast(SUPPLIES_PT)
-  os.sleep(.1) -- random 'Computer is not connected' error...
+  Builder:gotoSupplyPoint()
   self:dumpInventoryWithCheck()
   self:refuel()
   local lastBlock = self:getSupplyList(self.index)
@@ -795,7 +807,6 @@ function Builder:wrenchBlock(side, facing, cache)
 end
 
 function Builder:rotateBlock(side, facing)
-
   local s = Builder:getWrenchSlot()
 
   if not s then
@@ -807,32 +818,10 @@ function Builder:rotateBlock(side, facing)
   end
 
   return true
-
-  --[[
-  local origFacing
-  while true do
-    local _, bi = turtle.getAction(side).inspect()
-
-    -- spin until it repeats
-    if not origFacing then
-      origFacing = bi.metadata
-    elseif bi.metadata == origFacing then
-      return false
-    end
-
-    if facing == bi.metadata then
-      return true
-    end
-    turtle.getAction(side).place()
-  end
-
-  return false
-  ]]--
 end
 
 -- place piston, wrench piston to face downward, extend, remove piston
 function Builder:placePiston(b)
-
   local ps = Builder:selectItem('minecraft:piston', 0)
   local ws = Builder:getWrenchSlot()
 
@@ -1140,7 +1129,7 @@ end
 function Builder:saveProgress(index)
   Util.writeTable(
     fs.combine(BUILDER_DIR, schematic.filename .. '.progress'),
-    { index = index, facing = Builder.facing }
+    { index = index, facing = Builder.facing, loc = Builder.loc }
   )
 end
 
@@ -1152,12 +1141,12 @@ function Builder:loadProgress(filename)
       Builder.index = 1
     end
     Builder.facing = progress.facing or 'south'
+    Builder.loc = progress.loc
   end
 end
 
 -- find the highest y in the last 2 planes
 function Builder:findTravelPlane(index)
-
   local travelPlane
 
   for i = index, 1, -1 do
@@ -1184,7 +1173,6 @@ function Builder:gotoTravelPlane(travelPlane)
 end
 
 function Builder:build()
-
   local direction = 1
   local last = #schematic.blocks
   local travelPlane = 0
@@ -1198,6 +1186,12 @@ function Builder:build()
   elseif not self.isCommandComputer then
     travelPlane = self:findTravelPlane(self.index)
     turtle.status = 'building'
+  end
+
+  if not self.isCommandComputer then
+    local pt = self:getBuildingCorner()
+    turtle.pathfind({ x = pt.x, z = pt.z, y = travelPlane })
+    turtle.setPolicy(turtle.policies.digAttack)
   end
 
   UI:setPage('blank')
@@ -1264,8 +1258,7 @@ function Builder:build()
 
         if turtle.getItemCount(self.resourceSlots) > 0 or turtle.getFuelLevel() < minFuel then
           if turtle.getFuelLevel() < minFuel or not self:inAirDropoff() then
-            turtle.gotoPoint(SUPPLIES_PT)
-            os.sleep(.1) -- random 'Computer is not connected' error...
+            Builder:gotoSupplyPoint()
             self:dumpInventoryWithCheck()
             self:refuel()
           end
@@ -1277,9 +1270,7 @@ function Builder:build()
         local slot = Builder:selectItem(b.id, b.dmg)
         if not slot or turtle.getFuelLevel() < minFuel then
 
-          if turtle.getPoint().x > -1 or turtle.getPoint().z > -1 then
-            self:gotoTravelPlane(travelPlane)
-          end
+          self:gotoTravelPlane(travelPlane)
           self:resupply()
           return
         end
@@ -1324,12 +1315,12 @@ function Builder:build()
 
     if turtle.abort then
       turtle.status = 'aborting'
+      turtle.abort = false
       self:gotoTravelPlane(travelPlane)
-      turtle.gotoPoint(SUPPLIES_PT)
+      Builder:gotoSupplyPoint()
       turtle.setHeading(0)
       Builder:dumpInventory()
       Event.exitPullEvents()
-      UI.term:reset()
       print('Aborted')
       return
     end
@@ -1340,7 +1331,7 @@ function Builder:build()
   end
   if not self.isCommandComputer then
     self:gotoTravelPlane(travelPlane)
-    turtle.gotoPoint(SUPPLIES_PT)
+    Builder:gotoSupplyPoint()
     turtle.setHeading(0)
     Builder:dumpInventory()
 
@@ -1394,7 +1385,6 @@ function selectSubstitutionPage:enable()
 end
 
 function selectSubstitutionPage:eventHandler(event)
-
   if event.type == 'grid_select' then
     substitutionPage.sub = event.selected
     UI:setPage(substitutionPage)
@@ -1446,7 +1436,6 @@ substitutionPage.menuBar:add({
 })
 
 function substitutionPage.info:draw()
-
   local sub = self.parent.sub
   local inName = itemDB:getName({ name = sub.id, damage = sub.dmg })
   local outName = ''
@@ -1462,7 +1451,6 @@ function substitutionPage.info:draw()
 end
 
 function substitutionPage:enable()
-
   self.allItems = convertBack(Builder.itemAdapter:refresh())
   self.grid.values = self.allItems
   for _,item in pairs(self.grid.values) do
@@ -1488,7 +1476,6 @@ function substitutionPage:applySubstitute(id, dmg)
 end
 
 function substitutionPage:eventHandler(event)
-
   if event.type == 'grid_focus_row' then
     local s = string.format('%s:%d',
       event.selected.id,
@@ -1498,11 +1485,6 @@ function substitutionPage:eventHandler(event)
     self.statusBar:draw()
 
   elseif event.type == 'grid_select' then
---    if not item:lookupName(event.selected.id, event.selected.dmg) then
---      blocks.nameDB:add({event.selected.id, event.selected.dmg}, event.selected.name)
---      blocks.nameDB:flush()
---    end
-
     self:applySubstitute(event.selected.id, event.selected.dmg)
     self.info:draw()
 
@@ -1594,21 +1576,6 @@ supplyPage = UI.Page {
 }
 
 function supplyPage:eventHandler(event)
-
---[[
-  if event.type == 'craft' then
-    local s = self.grid:getSelected()
-    if Builder.itemAdapter:craftItems({{ name = s.id, damage = s.dmg, nbtHash = s.nbt_hash }}, s.need-s.qty) then
-      local name = s.display_name or ''
-      self.statusBar:timedStatus('Requested ' .. s.need-s.qty .. ' ' .. name, 3)
-    else
-      self.statusBar:timedStatus('Unable to craft')
-    end
-
-  elseif event.type == 'refresh' then
-    self:refresh()
-]]
-
   if event.type == 'build' then
     Builder:build()
 
@@ -1721,7 +1688,6 @@ function listingPage:enable(throttle)
 end
 
 function listingPage:eventHandler(event)
-
   if event.type == 'craft' then
     local s = self.grid:getSelected()
     local item = convertSingleBack(Builder.itemAdapter:getItemInfo({
@@ -1785,7 +1751,6 @@ function listingPage.grid:getRowTextColor(row, selected)
 end
 
 function listingPage:refresh(throttle)
-
   local supplyList = Builder:getBlockCounts()
 
   Builder.itemAdapter:refresh(throttle)
@@ -1799,12 +1764,6 @@ function listingPage:refresh(throttle)
       }))
 
       if item then
---        local block = blocks.blockDB:lookup(b.id, b.dmg)
---        if not block then
---          blocks.nameDB:add({b.id, b.dmg}, item.display_name)
---        elseif not block.name and item.display_name then
---          blocks.nameDB:add({b.id, b.dmg}, item.display_name)
---        end
         b.display_name = item.display_name
         b.qty = item.qty
         b.is_craftable = item.is_craftable
@@ -1816,7 +1775,6 @@ function listingPage:refresh(throttle)
       throttle()
     end
   end
-  --blocks.nameDB:flush()
 
   if self.fullList then
     self.grid:setValues(supplyList)
@@ -1833,7 +1791,6 @@ function listingPage:refresh(throttle)
 end
 
 function listingPage:manageBlock(selected)
-
   local substitutes = subDB:lookupBlocksForSub(selected.id, selected.dmg)
 
   if Util.empty(substitutes) then
@@ -1888,6 +1845,7 @@ local startPage = UI.Page {
     menuItems = {
       { prompt = 'Set starting level', event = 'startLevel' },
       { prompt = 'Set starting block', event = 'startBlock' },
+      { prompt = 'Set starting point', event = 'startPoint' },
       { prompt = 'Supply list',        event = 'assignBlocks' },
       { prompt = 'Toggle mode',        event = 'toggleMode' },
       { prompt = 'Begin',              event = 'begin' },
@@ -1921,7 +1879,6 @@ function startPage:enable()
 end
 
 function startPage:eventHandler(event)
-
   if event.type == 'startLevel' then
     local dialog = UI.Dialog({
       title = 'Enter Starting Level',
@@ -1993,6 +1950,69 @@ function startPage:eventHandler(event)
     dialog:setFocus(dialog.form.textEntry)
     UI:setPage(dialog)
 
+  elseif event.type == 'startPoint' then
+    local loc = Util.shallowCopy(Builder.loc)
+    if not loc.x then
+      local pt = GPS.getPoint()
+      if pt then
+        loc.x = pt.x
+        loc.y = pt.y
+        loc.z = pt.z
+      end
+    end
+ 
+    local dialog = UI.Dialog {
+      title = 'Set starting point',
+      height = 11,
+      width = 30,
+      form = UI.Form {
+        y = 2, x = 2, ey = -2,
+        values = loc,
+        text1 = UI.Text {
+          x = 1, y = 2, value = 'Turtle location' },
+        xLoc = UI.TextEntry {
+          x = 1, y = 3, formKey = 'x', width = 7, limit = 16, shadowText = 'x', required = true },
+        yLoc = UI.TextEntry {
+          x = 9, y = 3, formKey = 'y', width = 7, limit = 16, shadowText = 'y', required = true },
+        zLoc = UI.TextEntry {
+          x = 17, y = 3, formKey = 'z', width = 7, limit = 16, shadowText = 'z', required = true },
+        text2 = UI.Text {
+          x = 1, y = 5, value = 'Starting Point' },
+        xrLoc = UI.TextEntry {
+          x = 1, y = 6, formKey = 'rx', width = 7, limit = 16, shadowText = 'x', required = true },
+        yrLoc = UI.TextEntry {
+          x = 9, y = 6, formKey = 'ry', width = 7, limit = 16, shadowText = 'y', required = true },
+        zrLoc = UI.TextEntry {
+          x = 17, y = 6, formKey = 'rz', width = 7, limit = 16, shadowText = 'z', required = true },
+        revert = UI.Button {
+          x = 1, y = -2, text = 'Revert', event = 'revert' },
+      },
+      statusBar = UI.StatusBar({ values = 'Optional start point'}),
+    }
+
+    function dialog:eventHandler(event)
+      if event.type == 'form_complete' then
+        for k,v in pairs(loc) do
+          Builder.loc[k] = tonumber(v)
+        end
+        Builder:saveProgress(Builder.index)
+        UI:setPreviousPage()
+      elseif event.type == 'revert' then
+        Builder.loc = { }
+        Builder:saveProgress(Builder.index)
+        UI:setPreviousPage()
+      elseif event.type == 'form_invalid' then
+        self.statusBar:setStatus(event.message)
+      elseif event.type == 'form_cancel' or event.type == 'cancel' then
+        UI:setPreviousPage()
+      else
+        return UI.Dialog.eventHandler(self, event)
+      end
+      return true
+    end
+
+    UI:setPage(dialog)
+
   elseif event.type == 'assignBlocks' then
     -- this might be an approximation of the blocks needed
     -- as the current level's route may or may not have been
@@ -2021,18 +2041,20 @@ function startPage:eventHandler(event)
     turtle.status = 'thinking'
     print('Reloading schematic')
     Builder:reloadSchematic(Util.throttle())
+
+    if Builder.loc.x then
+      Builder.supplyPoint = {
+        x = Builder.loc.x - Builder.loc.rx - 1,
+        y = Builder.loc.y - Builder.loc.ry,
+        z = Builder.loc.z - Builder.loc.rz - 1,
+      }
+    else
+      Builder.supplyPoint = { x = -1, y = 0, z = -1 }
+    end
+
+    turtle.setPoint(Builder.supplyPoint)
     Builder:dumpInventory()
     Builder:refuel()
-
-    if Builder.mode == 'destroy' then
-      if device.wireless_modem then
-        Message.broadcast('supplyList', { uid = 1, slots = Builder:getAirResupplyList() })
-      end
-      print('Beginning destruction')
-    else
-      print('Starting build')
-      Builder:getTurtleFacing()
-    end
 
     -- reset piston cache in case wrench was substituted
     pistonFacings = {
@@ -2040,7 +2062,17 @@ function startPage:eventHandler(event)
       forward = { },
     }
 
-    Builder:build()
+    if Builder.mode == 'destroy' then
+      if device.wireless_modem then
+        Message.broadcast('supplyList', { uid = 1, slots = Builder:getAirResupplyList() })
+      end
+      print('Beginning destruction')
+      Builder:build()
+    else
+      print('Starting build')
+      Builder:getTurtleFacing()
+      Builder:resupply()
+    end
 
   elseif event.type == 'quit' then
     UI.term:reset()
@@ -2126,12 +2158,10 @@ UI:setPages({
 UI:setPage('start')
 
 if Builder.isCommandComputer then
-  Event.pullEvents()
+  UI:pullEvents()
 else
   turtle.run(function()
-    turtle.setPolicy(turtle.policies.digAttack)
-    turtle.setPoint(SUPPLIES_PT)
-    turtle.point.heading = 0
+    turtle.heading = 0
     UI:pullEvents()
   end)
 end

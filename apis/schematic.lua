@@ -235,7 +235,7 @@ function Schematic:isCompressed(filename)
   end
 
   local magic = h.read() * 256 +  h.read()
-debug({ magic, gzipMagic })
+
   h.close()
 
   return magic == gzipMagic
@@ -1160,8 +1160,8 @@ function Schematic:optimizeRoute(spinner, y)
     return block
   end
 
-  local pt = Util.shallowCopy(self.cache[y - 1] or turtle.point)
-  local t = {}
+  local pt = Util.shallowCopy(self.cache[y - 1] or { x = -1, y = 0, z = -1, heading = 0 })
+  local t = { }
   local ri = self.rowIndex[y]
   local blockCount = ri.e - ri.s + 1
 

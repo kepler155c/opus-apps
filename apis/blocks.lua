@@ -6,42 +6,10 @@ local JSON    = require('json')
 -- see https://github.com/Khroki/MCEdit-Unified/blob/master/pymclevel/minecraft.yaml
 -- see https://github.com/Khroki/MCEdit-Unified/blob/master/Items/minecraft/blocks.json
 
---[[-- nameDB --]]--
-local nameDB = TableDB({
-  fileName = 'blocknames.db'
-})
-function nameDB:load(dir, blockDB)
-  self.fileName = fs.combine(dir, self.fileName)
-  if fs.exists(self.fileName) then
-    TableDB.load(self)
-  end
-  self.blockDB = blockDB
-end
-
-function nameDB:getName(id, dmg)
-  return self:lookupName(id, dmg) or id .. ':' .. dmg
-end
- 
-function nameDB:lookupName(id, dmg)
-  -- is it in the name db ?
-  local name = self:get({ id, dmg })
-  if name then
-    return name
-  end
-
-  -- is it in the block db ?
-  for _,v in pairs(self.blockDB.data) do
-    if v.strId == id and v.dmg == dmg then
-      return v.name
-    end
-  end
-end
-
 --[[-- blockDB --]]--
 local blockDB = TableDB()
 
 function blockDB:load()
-
   local blocks = JSON.decodeFromFile('usr/etc/blocks.json')
 
   if not blocks then
@@ -85,19 +53,6 @@ end
 local placementDB = TableDB()
 
 function placementDB:load(sbDB, btDB)
-
-  for k,blockType in pairs(sbDB.data) do
-    local bt = btDB.data[blockType]
-    if not bt then
-      error('missing block type: ' .. blockType)
-    end
-    local id, dmg = string.match(k, '(%d+):*(%d+)')
-    self:addSubsForBlockType(tonumber(id), tonumber(dmg), bt)
-  end
-end
-
-function placementDB:load2(sbDB, btDB)
-
   for k,v in pairs(sbDB.data) do
     if v.place then
       local bt = btDB.data[v.place]
@@ -112,7 +67,6 @@ function placementDB:load2(sbDB, btDB)
   -- special case for quartz pillars
   self:addSubsForBlockType(155, 2, btDB.data['quartz-pillar'])
 end
-
 
 function placementDB:addSubsForBlockType(id, dmg, bt)
   for _,sub in pairs(bt) do
@@ -178,7 +132,6 @@ function blockTypeDB:addTemp(blockType, subs)
 end
 
 function blockTypeDB:load()
-
   blockTypeDB:addTemp('stairs', {
     { 0, nil, 0, 'east-up' },
     { 1, nil, 0, 'west-up' },
@@ -564,21 +517,17 @@ end
 
 local Blocks = class()
 function Blocks:init(args)
-
   Util.merge(self, args)
   self.blockDB = blockDB
-  self.nameDB = nameDB
 
   blockDB:load()
   blockTypeDB:load()
-  nameDB:load(self.dir, blockDB)
-  placementDB:load2(blockDB, blockTypeDB)
+  placementDB:load(blockDB, blockTypeDB)
 end
 
 -- for an ID / dmg (with placement info)
 -- return the correct block (without the placment info embedded in the dmg)
 function Blocks:getPlaceableBlock(id, dmg)
-
   local p = placementDB:get({id, dmg})
   if p then
     return Util.shallowCopy(p)
