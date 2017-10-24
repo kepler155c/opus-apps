@@ -6,7 +6,31 @@ local Point   = require('point')
 local bit    = _G.bit
 local fs     = _G.fs
 local term   = _G.term
-local turtle = _G.turtle
+
+local headings = {
+  [ 0 ] = { xd =  1, zd =  0, yd =  0, heading = 0, direction = 'east'  },
+  [ 1 ] = { xd =  0, zd =  1, yd =  0, heading = 1, direction = 'south' },
+  [ 2 ] = { xd = -1, zd =  0, yd =  0, heading = 2, direction = 'west'  },
+  [ 3 ] = { xd =  0, zd = -1, yd =  0, heading = 3, direction = 'north' },
+  [ 4 ] = { xd =  0, zd =  0, yd =  1, heading = 4, direction = 'up'    },
+  [ 5 ] = { xd =  0, zd =  0, yd = -1, heading = 5, direction = 'down'  }
+}
+
+local namedHeadings = {
+  east  = headings[0],
+  south = headings[1],
+  west  = headings[2],
+  north = headings[3],
+  up    = headings[4],
+  down  = headings[5]
+}
+
+local function getHeadingInfo(heading)
+  if heading and type(heading) == 'string' then
+    return namedHeadings[heading]
+  end
+  return headings[heading]
+end
 
 --[[
   Loading and manipulating a schematic
@@ -431,7 +455,7 @@ function Schematic:findIndexAt(x, z, y, allBlocks)
 end
 
 function Schematic:findBlockAtSide(b, side)
-  local hi = turtle.getHeadingInfo(side)
+  local hi = getHeadingInfo(side)
   local index = self:findIndexAt(b.x + hi.xd, b.z + hi.zd, b.y + hi.yd)
   if index then
     return self.blocks[index] -- could be better
@@ -465,10 +489,10 @@ function Schematic:bestSide(b, chains, ...)
   local blocks = { }
 
   for k,d in pairs(directions) do
-    local hi = turtle.getHeadingInfo(d)
+    local hi = getHeadingInfo(d)
     local sb = self:findIndexAt(b.x - hi.xd, b.z - hi.zd, b.y)
     if not sb then
-      b.heading = turtle.getHeadingInfo(d).heading
+      b.heading = getHeadingInfo(d).heading
       b.direction = d .. '-block'
       return
     end
@@ -525,7 +549,7 @@ function Schematic:bestFlipSide(b, chains)
   }
 
   local d = directions[b.direction]
-  local hi = turtle.getHeadingInfo(d)
+  local hi = getHeadingInfo(d)
   local _, fb = self:findIndexAt(b.x + hi.xd, b.z + hi.zd, b.y)
 
   if fb then
@@ -541,7 +565,7 @@ function Schematic:bestFlipSide(b, chains)
       { x = b.x - hi.xd, z = b.z - hi.zd, y = b.y },  -- room for the turtle
       { x = b.x + hi.xd, z = b.z + hi.zd, y = b.y },  -- block we are placing against
     })
-    b.direction = turtle.getHeadingInfo((hi.heading + 2) % 4).direction .. '-block'
+    b.direction = getHeadingInfo((hi.heading + 2) % 4).direction .. '-block'
   end
 end
 
@@ -581,7 +605,7 @@ function Schematic:bestOfTwoSides(b, chains, side1, side2) -- could be better
       table.insert(pc, { x = b.x,   z = b.z,   y = b.y })
 
       b.direction = side1 .. '-block'
-      b.heading = turtle.getHeadingInfo(side1).heading
+      b.heading = getHeadingInfo(side1).heading
 
       if b == lb then
         break
@@ -599,7 +623,7 @@ function Schematic:bestOfTwoSides(b, chains, side1, side2) -- could be better
     local ub = self:findBlockAtSide(fb, 'down')
     if not ub then
       fb.direction = side1 .. '-block'
-      fb.heading = turtle.getHeadingInfo(side1).heading
+      fb.heading = getHeadingInfo(side1).heading
     else
       fb.direction = od
     end
@@ -613,7 +637,7 @@ function Schematic:bestOfTwoSides(b, chains, side1, side2) -- could be better
     local ub = self:findBlockAtSide(lb, 'down')
     if not ub then
       lb.direction = side1 .. '-block'
-      lb.heading = turtle.getHeadingInfo(side1).heading
+      lb.heading = getHeadingInfo(side1).heading
     else
       fb.direction = od
     end
@@ -758,12 +782,12 @@ function Schematic:determineBlockPlacement(y)
     spinner:spin(#dirtyBlocks + #dirtyBlocks2 .. ' blocks remaining ')
 
     if directions[d] then
-      b.heading = turtle.getHeadingInfo(directions[d]).heading
+      b.heading = getHeadingInfo(directions[d]).heading
     end
 
     if doorDirections[d] then
 
-      local hi = turtle.getHeadingInfo(doorDirections[d])
+      local hi = getHeadingInfo(doorDirections[d])
       b.heading = hi.heading
 
       self:addPlacementChain(chains, {
@@ -775,9 +799,9 @@ function Schematic:determineBlockPlacement(y)
     if stairDownDirections[d] then
       if not self:findIndexAt(b.x, b.z, b.y-1) then
         b.direction = stairDownDirections[b.direction]
-        b.heading = turtle.getHeadingInfo(b.direction).heading
+        b.heading = getHeadingInfo(b.direction).heading
       else
-        b.heading = turtle.getHeadingInfo(stairDownDirections[b.direction]).heading
+        b.heading = getHeadingInfo(stairDownDirections[b.direction]).heading
       end
     end
 
@@ -816,7 +840,7 @@ function Schematic:determineBlockPlacement(y)
       if self:findIndexAt(b.x, b.z, b.y-1) then
         -- there's a block below
         b.direction = sd[1]
-        b.heading = turtle.getHeadingInfo(b.direction).heading
+        b.heading = getHeadingInfo(b.direction).heading
       else
         local _,pb = self:findIndexAt(b.x + sd[3], b.z + sd[4], b.y)
         if pb and pb.direction ~= sd[5] then
@@ -824,7 +848,7 @@ function Schematic:determineBlockPlacement(y)
           d = sd[2]  -- fall through to the blockDirections code below
           b.direction = sd[2]
         else
-          b.heading = (turtle.getHeadingInfo(sd[1]).heading + 2) % 4
+          b.heading = (getHeadingInfo(sd[1]).heading + 2) % 4
         end
       end
     elseif flipDirections[d] then
@@ -833,7 +857,7 @@ function Schematic:determineBlockPlacement(y)
 
     if blockDirections[d] then
       -- placing a block from the side
-      local hi = turtle.getHeadingInfo(blockDirections[d])
+      local hi = getHeadingInfo(blockDirections[d])
       b.heading = hi.heading
       self:addPlacementChain(chains, {
         { x = b.x + hi.xd, z = b.z + hi.zd, y = b.y },  -- block we are placing against
