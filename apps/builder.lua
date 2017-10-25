@@ -4,10 +4,10 @@ end
 
 _G.requireInjector()
 
+local Adapter   = require('inventoryAdapter')
 local Event     = require('event')
 local GPS       = require('gps')
 local itemDB    = require('itemDB')
-local MEAdapter = require('meAdapter')
 local Schematic = require('schematic')
 local TableDB   = require('tableDB')
 local UI        = require('ui')
@@ -17,11 +17,6 @@ local colors     = _G.colors
 local fs         = _G.fs
 local multishell = _ENV.multishell
 local turtle     = _G.turtle
-
-local ChestAdapter = require('chestAdapter')
-if Util.checkMinecraftVersion(1.8) then
-  ChestAdapter  = require('chestAdapter18')
-end
 
 local BUILDER_DIR = 'usr/builder'
 
@@ -34,24 +29,8 @@ else
   Builder = require('builder.turtle')
 end
 
+Builder = Builder()
 Builder.schematic = Schematic()
-
--- Temp functions until conversion to new adapters is complete
-local function convertSingleForward(item)
-  item.displayName = item.display_name
-  item.name = item.id
-  item.damage = item.dmg
-  item.count = item.qty
-  item.maxCount = item.max_size
-  return item
-end
-
-local function convertForward(t)
-  for _,v in pairs(t) do
-    convertSingleForward(v)
-  end
-  return t
-end
 
 local function convertSingleBack(item)
   if item then
@@ -283,10 +262,6 @@ function substitutionPage:enable()
   UI.Page.enable(self)
 end
 
---function substitutionPage:focusFirst()
---  self.menuBar.filter:focus()
---end
-
 function substitutionPage:applySubstitute(id, dmg)
   self.sub.sid = id
   self.sub.sdmg = dmg
@@ -317,7 +292,6 @@ function substitutionPage:eventHandler(event)
         end
       end
     end
-    --self.grid:adjustWidth()
     self.grid:update()
     self.grid:setIndex(1)
     self.grid:draw()
@@ -766,12 +740,9 @@ if #args < 1 then
   error('supply file name')
 end
 
-Builder.itemAdapter = MEAdapter()
-if not Builder.itemAdapter:isValid() then
-  Builder.itemAdapter = ChestAdapter()
-  if not Builder.itemAdapter:isValid() then
-    error('A chest or ME interface must be below turtle')
-  end
+Builder.itemAdapter = Adapter.wrap()
+if not Builder.itemAdapter then
+  error('A chest or ME interface must be below turtle')
 end
 
 multishell.setTitle(multishell.getCurrent(), 'Builder')
@@ -792,6 +763,10 @@ end
 
 Builder:loadProgress(Builder.schematic.filename .. '.progress')
 
+Event.on('build', function()
+  Builder:build()
+end)
+
 UI:setPages({
   listing = listingPage,
   start = startPage,
@@ -803,8 +778,9 @@ UI:setPage('start')
 if Builder.isCommandComputer then
   UI:pullEvents()
 else
-  turtle.run(function()
-    turtle.point.heading = 0
-    UI:pullEvents()
-  end)
+  UI:pullEvents()
+--  turtle.run(function()
+--    turtle.reset()
+--    UI:pullEvents()
+--  end)
 end

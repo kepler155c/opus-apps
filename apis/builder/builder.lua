@@ -1,4 +1,5 @@
 local Blocks    = require('blocks')
+local class     = require('class')
 local Message   = require('message')
 local Util      = require('util')
 
@@ -6,7 +7,8 @@ local device     = _G.device
 local fs         = _G.fs
 local turtle     = _G.turtle
 
-local Builder = {
+local Builder = class()
+Util.merge(Builder, {
   isCommandComputer = not turtle,
   slots = { },
   loc = { },
@@ -15,9 +17,7 @@ local Builder = {
   fuelItem = { id = 'minecraft:coal', dmg = 0 },
   resourceSlots = 14,
   facing = 'south',
-  wrenchSucks = false,
-  stairBug = false,
-}
+})
 
 local BUILDER_DIR = 'usr/builder'
 
@@ -25,26 +25,6 @@ local blockInfo = Blocks()
 
 function Builder:getBlockCounts()
   local blocks = { }
-
-  -- add a couple essential items to the supply list to allow replacements
-  if not self.isCommandComputer then
-    local wrench = self.subDB:getSubstitutedItem('SubstituteAWrench', 0)
-    wrench.qty = 0
-    wrench.need = 1
-    blocks[wrench.id .. ':' .. wrench.dmg] = wrench
-
-    local fuel = self.subDB:getSubstitutedItem(Builder.fuelItem.id, Builder.fuelItem.dmg)
-    fuel.qty = 0
-    fuel.need = 1
-    blocks[fuel.id .. ':' .. fuel.dmg] = fuel
-
-    blocks['minecraft:piston:0'] = {
-      id = 'minecraft:piston',
-      dmg = 0,
-      qty = 0,
-      need = 1,
-    }
-  end
 
   for k = self.index, #self.schematic.blocks do
     local b = self.schematic.blocks[k]
@@ -107,19 +87,19 @@ end
 function Builder:saveProgress(index)
   Util.writeTable(
     fs.combine(BUILDER_DIR, self.schematic.filename .. '.progress'),
-    { index = index, facing = Builder.facing, loc = Builder.loc }
+    { index = index, facing = self.facing, loc = self.loc }
   )
 end
 
 function Builder:loadProgress(filename)
   local progress = Util.readTable(fs.combine(BUILDER_DIR, filename))
   if progress then
-    Builder.index = progress.index
-    if Builder.index > #self.schematic.blocks then
-      Builder.index = 1
+    self.index = progress.index
+    if self.index > #self.schematic.blocks then
+      self.index = 1
     end
-    Builder.facing = progress.facing or 'south'
-    Builder.loc = progress.loc or { }
+    self.facing = progress.facing or 'south'
+    self.loc = progress.loc or { }
   end
 end
 

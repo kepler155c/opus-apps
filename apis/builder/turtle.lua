@@ -1,9 +1,10 @@
+local Adapter   = require('inventoryAdapter')
 local Builder   = require('builder.builder')
+local class     = require('class')
 local Event     = require('event')
 local itemDB    = require('itemDB')
 local Message   = require('message')
 local Point     = require('point')
-local TableDB   = require('tableDB')
 local UI        = require('ui')
 local Util      = require('util')
 
@@ -14,14 +15,7 @@ local read       = _G.read
 local rs         = _G.rs
 local turtle     = _G.turtle
 
-local BUILDER_DIR = 'usr/builder'
-
-local pistonFacings
-
-local ChestAdapter = require('chestAdapter')
-if Util.checkMinecraftVersion(1.8) then
-  ChestAdapter  = require('chestAdapter18')
-end
+local TurtleBuilder = class(Builder)
 
 -- Temp functions until conversion to new adapters is complete
 local function convertSingleForward(item)
@@ -92,10 +86,10 @@ local supplyPage = UI.Page {
 
 function supplyPage:eventHandler(event)
   if event.type == 'build' then
-    Builder:build()
+    self.builder:build()
 
   elseif event.type == 'menu' then
-    Builder:dumpInventory()
+    self.builder:dumpInventory()
     --Builder.status = 'idle'
     UI:setPage('start')
     turtle.status = 'idle'
@@ -111,16 +105,15 @@ function supplyPage:eventHandler(event)
   return UI.Page.eventHandler(self, event)
 end
 
-function supplyPage:enable()
+function supplyPage:enable(builder)
+  self.builder = builder
   self.grid:setIndex(1)
   self.statusBar:setValue('fuel',
     string.format('Fuel: %dk', math.floor(turtle.getFuelLevel() / 1024)))
---  self.statusBar:setValue('block',
---   string.format('Block: %d', Builder.index))
 
   Event.addNamedTimer('supplyRefresh', 6, true, function()
     if self.enabled then
-      Builder:autocraft(Builder:getSupplies())
+      self.builder:autocraft(self.builder:getSupplies())
       self:refresh()
       self.statusBar:timedStatus('Refreshed ', 2)
       self:sync()
@@ -152,26 +145,41 @@ end
 
 function supplyPage:refresh()
   self.statusBar:timedStatus('Refreshed ', 3)
-  local supplies = Builder:getSupplies()
+  local supplies = self.builder:getSupplies()
   if #supplies == 0 then
-    Builder:build()
+    self.builder:build()
   else
     self:setSupplies(supplies)
     self.grid:draw()
   end
 end
 
---[[-- maxStackDB --]]--
-local maxStackDB = TableDB({
-  fileName = fs.combine(BUILDER_DIR, 'maxstack.db'),
-})
+--[[-- Builder --]]--
+function TurtleBuilder:getBlockCounts()
+  local blocks = Builder.getBlockCounts(self)
 
-function maxStackDB:get(id, dmg)
-  return self.data[id .. ':' .. dmg] or 64
+  -- add a couple essential items to the supply list to allow replacements
+  local wrench = self.subDB:getSubstitutedItem('SubstituteAWrench', 0)
+  wrench.qty = 0
+  wrench.need = 1
+  blocks[wrench.id .. ':' .. wrench.dmg] = wrench
+
+  local fuel = self.subDB:getSubstitutedItem(Builder.fuelItem.id, Builder.fuelItem.dmg)
+  fuel.qty = 0
+  fuel.need = 1
+  blocks[fuel.id .. ':' .. fuel.dmg] = fuel
+
+  blocks['minecraft:piston:0'] = {
+    id = 'minecraft:piston',
+    dmg = 0,
+    qty = 0,
+    need = 1,
+  }
+
+  return blocks
 end
 
---[[-- Builder --]]--
-function Builder:selectItem(id, dmg)
+function TurtleBuilder:selectItem(id, dmg)
   for k,s in ipairs(self.slots) do
     if s.qty > 0 and s.id == id and s.dmg == dmg then
       -- check to see if someone pulled items from inventory
@@ -188,7 +196,7 @@ function Builder:selectItem(id, dmg)
   end
 end
 
-function Builder:getAirResupplyList(blockIndex)
+function TurtleBuilder:getAirResupplyList(blockIndex)
   local slots = { }
 
   if self.mode == 'destroy' then
@@ -203,10 +211,10 @@ function Builder:getAirResupplyList(blockIndex)
     slots = self:getGenericSupplyList(blockIndex)
   end
 
-  local fuel = self.subDB:getSubstitutedItem(Builder.fuelItem.id, Builder.fuelItem.dmg)
+  local fuel = self.subDB:getSubstitutedItem(self.fuelItem.id, self.fuelItem.dmg)
 
   slots[15] = {
-    id = 'minecraft:chest', --'ironchest:BlockIronChest',  --
+    id = 'minecraft:chest',
     dmg = 0,
     qty = 0,
     need = 1,
@@ -216,7 +224,6 @@ function Builder:getAirResupplyList(blockIndex)
   slots[16] = {
     id = fuel.id,
     dmg = fuel.dmg,
-    wrench = true,
     qty = 0,
     need = 64,
     index = 16,
@@ -225,7 +232,7 @@ function Builder:getAirResupplyList(blockIndex)
   return slots
 end
 
-function Builder:getSupplyList(blockIndex)
+function TurtleBuilder:getSupplyList(blockIndex)
   local slots, lastBlock = self:getGenericSupplyList(blockIndex)
 
   slots[15] = {
@@ -240,7 +247,6 @@ function Builder:getSupplyList(blockIndex)
   slots[16] = {
     id = wrench.id,
     dmg = wrench.dmg,
-    wrench = true,
     qty = 0,
     need = 1,
     index = 16,
@@ -251,7 +257,7 @@ function Builder:getSupplyList(blockIndex)
   return lastBlock
 end
 
-function Builder:getGenericSupplyList(blockIndex)
+function TurtleBuilder:getGenericSupplyList(blockIndex)
   local slots = { }
 
   for i = 1, self.resourceSlots do
@@ -264,7 +270,7 @@ function Builder:getGenericSupplyList(blockIndex)
 
   local function getSlot(id, dmg)
     -- find matching slot
-    local maxStack = maxStackDB:get(id, dmg)
+    local maxStack = itemDB:getMaxCount({ name = id, damage = dmg })
     for _, s in ipairs(slots) do
       if s.id == id and s.dmg == dmg and s.need < maxStack then
         return s
@@ -304,7 +310,7 @@ function Builder:getGenericSupplyList(blockIndex)
   return slots, lastBlock
 end
 
-function Builder:dumpInventory()
+function TurtleBuilder:dumpInventory()
   local success = true
 
   for i = 1, 16 do
@@ -321,7 +327,7 @@ function Builder:dumpInventory()
   return success
 end
 
-function Builder:dumpInventoryWithCheck()
+function TurtleBuilder:dumpInventoryWithCheck()
   while not self:dumpInventory() do
     print('Storage is full or missing - make space or replace')
     print('Press enter to continue')
@@ -330,7 +336,7 @@ function Builder:dumpInventoryWithCheck()
   end
 end
 
-function Builder:autocraft(supplies)
+function TurtleBuilder:autocraft(supplies)
   local t = { }
 
   for _,s in pairs(supplies) do
@@ -350,7 +356,7 @@ function Builder:autocraft(supplies)
   self.itemAdapter:craftItems(convertForward(t))
 end
 
-function Builder:getSupplies()
+function TurtleBuilder:getSupplies()
   self.itemAdapter:refresh()
 
   local t = { }
@@ -367,9 +373,6 @@ function Builder:getSupplies()
         local qty = math.min(s.need - s.qty, item.qty)
 
         if qty + s.qty > item.max_size then
-          maxStackDB:add({ s.id, s.dmg }, item.max_size)
-          maxStackDB.dirty = true
-          maxStackDB:flush()
           qty = item.max_size
           s.need = qty
         end
@@ -389,7 +392,7 @@ function Builder:getSupplies()
   return t
 end
 
-function Builder:refuel()
+function TurtleBuilder:refuel()
   while turtle.getFuelLevel() < 4000 do
     print('Refueling')
     turtle.select(1)
@@ -408,7 +411,7 @@ function Builder:refuel()
   end
 end
 
-function Builder:inAirDropoff()
+function TurtleBuilder:inAirDropoff()
   if not device.wireless_modem then
     return false
   end
@@ -434,9 +437,9 @@ function Builder:inAirDropoff()
       turtle._goto(pt.x, pt.z, pt.y)
       os.sleep(.1)  -- random computer is not connected error
 
-      local chestAdapter = ChestAdapter({ direction = 'down', wrapSide = 'top' })
+      local chestAdapter = Adapter.wrap({ direction = 'down', wrapSide = 'top' })
 
-      if not chestAdapter:isValid() then
+      if not chestAdapter then
         self:log('Chests above is not valid')
         return false
       end
@@ -468,7 +471,7 @@ function Builder:inAirDropoff()
   end
 end
 
-function Builder:inAirResupply()
+function TurtleBuilder:inAirResupply()
   if not device.wireless_modem then
     return false
   end
@@ -496,9 +499,9 @@ function Builder:inAirResupply()
       turtle._goto(pt.x, pt.z, pt.y)
       os.sleep(.1)  -- random computer is not connected error
 
-      local chestAdapter = ChestAdapter({ direction = 'down', wrapSide = 'top' })
+      local chestAdapter = Adapter.wrap({ direction = 'down', wrapSide = 'top' })
 
-      if not chestAdapter:isValid() then
+      if not chestAdapter then
         Util.print('not valid')
         read()
       end
@@ -540,7 +543,7 @@ function Builder:inAirResupply()
   end
 end
 
-function Builder:sendSupplyRequest(lastBlock)
+function TurtleBuilder:sendSupplyRequest(lastBlock)
   if device.wireless_modem then
     local slots = self:getAirResupplyList(lastBlock)
     self.slotUid = os.clock()
@@ -577,32 +580,30 @@ local function closestEdgePoint(pt, pts, rpt)
   return cpt
 end
 
-function Builder:getBuildingCorner()
+function TurtleBuilder:getBuildingCorner()
   local pts = {
     { x = -1,                    z = -1,                   y = 0 },
     { x = -1,                   z = self.schematic.length, y = 0 },
     { x = self.schematic.width, z = -1,                    y = 0 },
     { x = self.schematic.width, z = self.schematic.length, y = 0 },
   }
---  local supplyPoint = Util.shallowCopy(self.supplyPoint)
---  supplyPoint.heading = turtle.point.heading
-  return closestEdgePoint(self.supplyPoint, pts, turtle.point)
+  return closestEdgePoint(self.supplyPoint, pts, turtle.getPoint())
 end
 
-function Builder:gotoSupplyPoint()
-  if not Point.same(turtle.point, self.supplyPoint) then
+function TurtleBuilder:gotoSupplyPoint()
+  if not Point.same(turtle.getPoint(), self.supplyPoint) then
     -- so we don't end up pathfinding through a building
     -- go to the corner closest to the supplies point
     -- pathfind the rest of the way
     local pt = self:getBuildingCorner()
     turtle._goto(pt.x, pt.z)
-    turtle.setPolicy(turtle.policies.none)
+    turtle.setPolicy('none')
     turtle.pathfind(self.supplyPoint)
     os.sleep(.1) -- random 'Computer is not connected' error...
   end
 end
 
-function Builder:resupply()
+function TurtleBuilder:resupply()
   if self.slotUid and self:inAirResupply() then
     os.queueEvent('build')
     return
@@ -629,29 +630,29 @@ function Builder:resupply()
     turtle.setHeading(0)
     self:autocraft(supplies)
     supplyPage:setSupplies(supplies)
-    UI:setPage(supplyPage)
+    UI:setPage(supplyPage, self)
   end
 end
 
-function Builder:placeDown(slot)
+function TurtleBuilder:placeDown(slot)
   return turtle.placeDown(slot.index)
 end
 
-function Builder:placeUp(slot)
+function TurtleBuilder:placeUp(slot)
   return turtle.placeUp(slot.index)
 end
 
-function Builder:place(slot)
+function TurtleBuilder:place(slot)
   return turtle.place(slot.index)
 end
 
-function Builder:getWrenchSlot()
+function TurtleBuilder:getWrenchSlot()
   local wrench = self.subDB:getSubstitutedItem('SubstituteAWrench', 0)
   return self:selectItem(wrench.id, wrench.dmg)
 end
 
 -- figure out our orientation in the world
-function Builder:getTurtleFacing()
+function TurtleBuilder:getTurtleFacing()
   local directions = { -- reversed directions
     [5] = 'west',
     [3] = 'north',
@@ -699,14 +700,14 @@ function Builder:getTurtleFacing()
   self.facing = directions[bi2.metadata]
 end
 
-function Builder:wrenchBlock(side, facing, cache)
+function TurtleBuilder:wrenchBlock(side, facing, cache)
   local s = self:getWrenchSlot()
 
   if not s then
     return false
   end
 
-  local key = turtle.point.heading .. '-' .. facing
+  local key = turtle.getPoint().heading .. '-' .. facing
   if cache then
     local count = cache[side][key]
 
@@ -752,7 +753,7 @@ function Builder:wrenchBlock(side, facing, cache)
   return false
 end
 
-function Builder:rotateBlock(side, facing)
+function TurtleBuilder:rotateBlock(side, facing)
   local s = self:getWrenchSlot()
 
   if not s then
@@ -767,7 +768,7 @@ function Builder:rotateBlock(side, facing)
 end
 
 -- place piston, wrench piston to face downward, extend, remove piston
-function Builder:placePiston(b)
+function TurtleBuilder:placePiston(b)
   local ps = self:selectItem('minecraft:piston', 0)
   local ws = self:getWrenchSlot()
 
@@ -789,7 +790,8 @@ function Builder:placePiston(b)
     turtle.turnLeft()
   end
 
-  local success = self:wrenchBlock('forward', 'down', pistonFacings) --wrench piston to point downwards
+  --wrench piston to point downwards
+  local success = self:wrenchBlock('forward', 'down', self.pistonFacings)
 
   rs.setOutput('front', true)
   os.sleep(.25)
@@ -806,7 +808,7 @@ function Builder:placePiston(b)
   return success
 end
 
-function Builder:_goto(x, z, y, heading)
+function TurtleBuilder:_goto(x, z, y, heading)
   if not turtle._goto(x, z, y, heading) then
     print('stuck')
     print('Press enter to continue')
@@ -818,14 +820,15 @@ end
 
 -- goto used when turtle could be below travel plane
 -- if the distance is no more than 1 block, there's no need to pop back to the travel plane
-function Builder:gotoEx(x, z, y, h, travelPlane)
-  local distance = math.abs(turtle.getPoint().x - x) + math.abs(turtle.getPoint().z - z)
+function TurtleBuilder:gotoEx(x, z, y, h, travelPlane)
+  local pt = turtle.getPoint()
+  local distance = math.abs(pt.x - x) + math.abs(pt.z - z)
 
   -- following code could be better
   if distance == 0 then
     turtle.gotoY(y)
   elseif distance == 1 then
-    if turtle.point.y < y then
+    if pt.y < y then
       turtle.gotoY(y)
     end
   elseif distance > 1 then
@@ -834,7 +837,7 @@ function Builder:gotoEx(x, z, y, h, travelPlane)
   self:_goto(x, z, y, h)
 end
 
-function Builder:placeDirectionalBlock(b, slot, travelPlane)
+function TurtleBuilder:placeDirectionalBlock(b, slot, travelPlane)
   local d = b.direction
 
   local function getAdjacentPoint(pt, direction)
@@ -912,12 +915,13 @@ function Builder:placeDirectionalBlock(b, slot, travelPlane)
       self:gotoEx(b.x, b.z, b.y, (turtle.getHeadingInfo(stairUpDirections[d]).heading + 2) % 4, travelPlane)
       if self:placeUp(slot) then
         turtle.goback()
-        turtle.gotoY(turtle.point.y + 2)
+        turtle.gotoY(turtle.getPoint().y + 2)
         b.placed = self:placePiston(b)
         turtle.down()
         b.placed = self:placePiston(b)
 
-        b.heading = turtle.point.heading -- stop debug message below since we are pointing in wrong direction
+        -- stop debug message below since we are pointing in wrong direction
+        b.heading = turtle.getPoint().heading
       end
     else
       local hi = turtle.getHeadingInfo(stairUpDirections[d])
@@ -961,7 +965,7 @@ function Builder:placeDirectionalBlock(b, slot, travelPlane)
   if pistonDirections[d] then
     -- why are pistons so broke in cc 1.7 ??????????????????????
 
-    local ws = Builder:getWrenchSlot()
+    local ws = self:getWrenchSlot()
 
     if not ws then
       b.needResupply = true
@@ -980,12 +984,12 @@ function Builder:placeDirectionalBlock(b, slot, travelPlane)
     self:gotoEx(b.x, b.z, b.y, nil, travelPlane)
 
     local heading = rotatedPistonDirections[d]
-    if heading and turtle.point.heading % 2 ~= heading % 2 then
+    if heading and turtle.getPoint().heading % 2 ~= heading % 2 then
       turtle.setHeading(heading)
     end
 
     if self:placeDown(slot) then
-      b.placed = self:wrenchBlock('down', pistonDirections[d], pistonFacings)
+      b.placed = self:wrenchBlock('down', pistonDirections[d], self.pistonFacings)
     end
   end
 
@@ -1051,7 +1055,7 @@ end
 end
 
 -- find the highest y in the last 2 planes
-function Builder:findTravelPlane(index)
+function TurtleBuilder:findTravelPlane(index)
   local travelPlane
 
   for i = index, 1, -1 do
@@ -1071,13 +1075,13 @@ function Builder:findTravelPlane(index)
   return travelPlane or 0
 end
 
-function Builder:gotoTravelPlane(travelPlane)
-  if travelPlane > turtle.point.y then
+function TurtleBuilder:gotoTravelPlane(travelPlane)
+  if travelPlane > turtle.getPoint().y then
     turtle.gotoY(travelPlane)
   end
 end
 
-function Builder:build()
+function TurtleBuilder:build()
   local direction = 1
   local last = #self.schematic.blocks
   local travelPlane = 0
@@ -1095,7 +1099,7 @@ function Builder:build()
 
   local pt = self:getBuildingCorner()
   turtle.pathfind({ x = pt.x, z = pt.z, y = travelPlane })
-  turtle.setPolicy(turtle.policies.digAttack)
+  turtle.setPolicy('digAttack')
 
   for i = self.index, last, direction do
     self.index = i
@@ -1204,30 +1208,28 @@ function Builder:build()
   Event.exitPullEvents()
 end
 
-function Builder:begin()
+function TurtleBuilder:begin()
   if self.loc.x then
     self.supplyPoint = {
-      x = Builder.loc.x - Builder.loc.rx - 1,
-      y = Builder.loc.y - Builder.loc.ry,
-      z = Builder.loc.z - Builder.loc.rz - 1,
+      x = self.loc.x - self.loc.rx - 1,
+      y = self.loc.y - self.loc.ry,
+      z = self.loc.z - self.loc.rz - 1,
     }
   else
     self.supplyPoint = { x = -1, y = 0, z = -1 }
   end
 
+  turtle.reset()
   self:dumpInventory()
   self:refuel()
+  self:getTurtleFacing()
 
-  if self.mode == 'build' then
-    self:getTurtleFacing()
-  end
-
-  local facing = turtle.getHeadingInfo(Builder.facing).heading
+  local facing = turtle.getHeadingInfo(self.facing).heading
   Point.rotate(self.supplyPoint, facing)
   turtle.setPoint(self.supplyPoint)
 
   -- reset piston cache in case wrench was substituted
-  pistonFacings = {
+  self.pistonFacings = {
     down = { },
     forward = { },
   }
@@ -1244,10 +1246,4 @@ function Builder:begin()
   end
 end
 
-maxStackDB:load()
-
-Event.on('build', function()
-  Builder:build()
-end)
-
-return Builder
+return TurtleBuilder

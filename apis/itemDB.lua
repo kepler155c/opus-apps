@@ -9,7 +9,6 @@ function itemDB:makeKey(item)
 end
 
 function itemDB:splitKey(key, item)
-
   item = item or { }
 
   local t = Util.split(key, '(.-):')
@@ -23,7 +22,6 @@ function itemDB:splitKey(key, item)
 end
 
 function itemDB:get(key)
-
   local item = TableDB.get(self, key)
 
   if item then
@@ -42,7 +40,6 @@ function itemDB:get(key)
 end
 
 function itemDB:add(key, item)
-
   if item.maxDamage > 0 then
     key = { key[1], 0, key[3] }
   end
@@ -51,7 +48,6 @@ end
 
 -- Accepts: "minecraft:stick:0" or { name = 'minecraft:stick', damage = 0 }
 function itemDB:getName(item)
-
   if type(item) == 'string' then
     item = self:splitKey(item)
   end
@@ -65,8 +61,20 @@ function itemDB:getName(item)
   return nameDB:getName(item.name .. ':' .. item.damage)
 end
 
-function itemDB:load()
+function itemDB:getMaxCount(item)
+  if type(item) == 'string' then
+    item = self:splitKey(item)
+  end
 
+  local detail = self:get(self:makeKey(item))
+  if detail then
+    return detail.maxCount
+  end
+
+  return 64
+end
+
+function itemDB:load()
   TableDB.load(self)
 
   for key,item in pairs(self.data) do
