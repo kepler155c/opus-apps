@@ -5,31 +5,11 @@ local Point   = require('point')
 
 local bit    = _G.bit
 local fs     = _G.fs
+local os     = _G.os
 local term   = _G.term
 
-local headings = {
-  [ 0 ] = { xd =  1, zd =  0, yd =  0, heading = 0, direction = 'east'  },
-  [ 1 ] = { xd =  0, zd =  1, yd =  0, heading = 1, direction = 'south' },
-  [ 2 ] = { xd = -1, zd =  0, yd =  0, heading = 2, direction = 'west'  },
-  [ 3 ] = { xd =  0, zd = -1, yd =  0, heading = 3, direction = 'north' },
-  [ 4 ] = { xd =  0, zd =  0, yd =  1, heading = 4, direction = 'up'    },
-  [ 5 ] = { xd =  0, zd =  0, yd = -1, heading = 5, direction = 'down'  }
-}
-
-local namedHeadings = {
-  east  = headings[0],
-  south = headings[1],
-  west  = headings[2],
-  north = headings[3],
-  up    = headings[4],
-  down  = headings[5]
-}
-
 local function getHeadingInfo(heading)
-  if heading and type(heading) == 'string' then
-    return namedHeadings[heading]
-  end
-  return headings[heading]
+  return Point.headings[heading]
 end
 
 --[[
@@ -86,7 +66,7 @@ function Spinner:stop(text)
 end
 
 local Schematic = class()
-function Schematic:init(args)
+function Schematic:init()
   self.blocks = { }
   self.damages = { }
   self.originalBlocks = { }
@@ -122,7 +102,7 @@ function Schematic:readname(h)
   local n = n1*256 + n2
 
   local str = ""
-  for i=1,n do
+  for _=1,n do
     local c = h:readbyte(h)
     if c == nil then
       return

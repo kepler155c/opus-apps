@@ -8,7 +8,7 @@ local Adapter   = require('inventoryAdapter')
 local Event     = require('event')
 local GPS       = require('gps')
 local itemDB    = require('itemDB')
-local Schematic = require('schematic')
+local Schematic = require('builder.schematic')
 local TableDB   = require('tableDB')
 local UI        = require('ui')
 local Util      = require('util')
@@ -16,7 +16,6 @@ local Util      = require('util')
 local colors     = _G.colors
 local fs         = _G.fs
 local multishell = _ENV.multishell
-local turtle     = _G.turtle
 
 local BUILDER_DIR = 'usr/builder'
 
@@ -637,11 +636,15 @@ function startPage:eventHandler(event)
   elseif event.type == 'startPoint' then
     local loc = Util.shallowCopy(Builder.loc)
     if not loc.x then
-      local pt = GPS.getPoint()
-      if pt then
-        loc.x = pt.x
-        loc.y = pt.y
-        loc.z = pt.z
+      if _G.turtle then
+        local pt = GPS.getPoint()
+        if pt then
+          loc.x = pt.x
+          loc.y = pt.y
+          loc.z = pt.z
+        end
+      elseif _G.commands then
+        loc.x, loc.y, loc.z = _G.commands.getBlockPosition()
       end
     end
 
@@ -775,12 +778,4 @@ UI:setPages({
 
 UI:setPage('start')
 
-if Builder.isCommandComputer then
-  UI:pullEvents()
-else
-  UI:pullEvents()
---  turtle.run(function()
---    turtle.reset()
---    UI:pullEvents()
---  end)
-end
+UI:pullEvents()

@@ -46,7 +46,7 @@ local function refuel()
     itemAdapter:provide({ name = 'minecraft:coal', damage = 0 }, 64, 1)
     if turtle.getItemCount(1) == 0 then
       print('Out of fuel, add fuel to chest/ME system')
-      turtle.status = 'waiting'
+      turtle.setStatus('waiting')
       os.sleep(5)
     else
       turtle.refuel(64)
@@ -212,12 +212,12 @@ local function clear()
       if sy > osy then
         turtle.digDown()
       end
-      if turtle.abort then
+      if turtle.isAborted() then
         break
       end
     end
 
-    if turtle.abort then
+    if turtle.isAborted() then
       break
     end
     if sy + 1 >= ey then
@@ -231,7 +231,7 @@ local function clear()
 end
 
 turtle.run(function()
-  turtle.status = 'Clearing'
+  turtle.setStatus('Clearing')
 
   if turtle.enableGPS() then
 
@@ -255,7 +255,7 @@ local Level = require('turtle.level')
 local Util  = require('util')
 
 local s, m = turtle.run(function()
-  turtle.status = 'Leveling'
+  turtle.setStatus('Leveling')
 
   if turtle.enableGPS() then
 
@@ -379,7 +379,7 @@ function page:eventHandler(event)
     end
     self.statusBar:setStatus('')
   elseif event.type == 'cancel' then
-    self:runFunction(turtleId, 'turtle.abortAction()')
+    self:runFunction(turtleId, 'turtle.abort(true)')
     self.statusBar:setStatus('')
   else
     return UI.Page.eventHandler(self, event)

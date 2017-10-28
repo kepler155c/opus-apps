@@ -12,6 +12,11 @@ function Builder:begin()
   local last = #self.schematic.blocks
   local throttle = Util.throttle()
 
+  local cx, cy, cz = commands.getBlockPosition()
+  if self.loc.x then
+    cx, cy, cz = self.loc.rx, self.loc.ry, self.loc.rz
+  end
+
   if self.mode == 'destroy' then
     direction = -1
     last = 1
@@ -32,12 +37,10 @@ function Builder:begin()
       end
 
       local function placeBlock(bid, dmg, x, y, z)
-        local cx, _, cz = commands.getBlockPosition()
-
         local command = table.concat({
           "setblock",
           cx + x + 1,
-          "~" .. y,
+          cy + y,
           cz + z + 1,
           bid,
           dmg,

@@ -15,7 +15,13 @@ local read       = _G.read
 local rs         = _G.rs
 local turtle     = _G.turtle
 
+local RESOURCE_SLOTS = 14
+local FUEL_ITEM      = { id = 'minecraft:coal', dmg = 0 }
+
 local TurtleBuilder = class(Builder)
+Util.merge(TurtleBuilder, {
+  slots         = { },
+})
 
 -- Temp functions until conversion to new adapters is complete
 local function convertSingleForward(item)
@@ -92,7 +98,7 @@ function supplyPage:eventHandler(event)
     self.builder:dumpInventory()
     --Builder.status = 'idle'
     UI:setPage('start')
-    turtle.status = 'idle'
+    turtle.setStatus('waiting')
 
   elseif event.type == 'grid_focus_row' then
     self.statusBar:setValue('help', event.selected.id .. ':' .. event.selected.dmg)
@@ -164,7 +170,7 @@ function TurtleBuilder:getBlockCounts()
   wrench.need = 1
   blocks[wrench.id .. ':' .. wrench.dmg] = wrench
 
-  local fuel = self.subDB:getSubstitutedItem(Builder.fuelItem.id, Builder.fuelItem.dmg)
+  local fuel = self.subDB:getSubstitutedItem(FUEL_ITEM.id, FUEL_ITEM.dmg)
   fuel.qty = 0
   fuel.need = 1
   blocks[fuel.id .. ':' .. fuel.dmg] = fuel
@@ -200,7 +206,7 @@ function TurtleBuilder:getAirResupplyList(blockIndex)
   local slots = { }
 
   if self.mode == 'destroy' then
-    for i = 1, self.resourceSlots do
+    for i = 1, RESOURCE_SLOTS do
       slots[i] = {
         qty = 0,
         need = 0,
@@ -211,7 +217,7 @@ function TurtleBuilder:getAirResupplyList(blockIndex)
     slots = self:getGenericSupplyList(blockIndex)
   end
 
-  local fuel = self.subDB:getSubstitutedItem(self.fuelItem.id, self.fuelItem.dmg)
+  local fuel = self.subDB:getSubstitutedItem(FUEL_ITEM.id, FUEL_ITEM.dmg)
 
   slots[15] = {
     id = 'minecraft:chest',
@@ -260,7 +266,7 @@ end
 function TurtleBuilder:getGenericSupplyList(blockIndex)
   local slots = { }
 
-  for i = 1, self.resourceSlots do
+  for i = 1, RESOURCE_SLOTS do
     slots[i] = {
       qty = 0,
       need = 0,
@@ -397,13 +403,13 @@ function TurtleBuilder:refuel()
     print('Refueling')
     turtle.select(1)
 
-    local fuel = self.subDB:getSubstitutedItem(self.fuelItem.id, self.fuelItem.dmg)
+    local fuel = self.subDB:getSubstitutedItem(FUEL_ITEM.id, FUEL_ITEM.dmg)
 
     self.itemAdapter:provide(convertSingleForward(fuel), 64, 1)
     if turtle.getItemCount(1) == 0 then
       print('Out of fuel, add fuel to chest/ME system')
       turtle.setHeading(0)
-      turtle.status = 'waiting'
+      turtle.setStatus('waiting')
       os.sleep(5)
     else
       turtle.refuel(64)
@@ -426,7 +432,7 @@ function TurtleBuilder:inAirDropoff()
       return false
     end
 
-    turtle.status = 'waiting'
+    turtle.setStatus('waiting')
 
     if msg.contents.point then
       local pt = msg.contents.point
@@ -488,7 +494,7 @@ function TurtleBuilder:inAirResupply()
       return false
     end
 
-    turtle.status = 'waiting'
+    turtle.setStatus('waiting')
 
     if msg.contents.point then
       local pt = msg.contents.point
@@ -609,7 +615,7 @@ function TurtleBuilder:resupply()
     return
   end
 
-  turtle.status = 'resupplying'
+  turtle.setStatus('resupplying')
 
   self:log('Resupplying')
   self:gotoSupplyPoint()
@@ -653,11 +659,11 @@ end
 
 -- figure out our orientation in the world
 function TurtleBuilder:getTurtleFacing()
-  local directions = { -- reversed directions
-    [5] = 'west',
-    [3] = 'north',
-    [4] = 'east',
-    [2] = 'south',
+  local directions = {
+    [5] = 2,
+    [3] = 3,
+    [4] = 0,
+    [2] = 1,
   }
 
   local function getItem(item)
@@ -730,7 +736,7 @@ function TurtleBuilder:wrenchBlock(side, facing, cache)
   }
 
   if turtle.getHeadingInfo(facing).heading < 4 then
-    local offsetDirection = (turtle.getHeadingInfo(self.facing).heading +
+    local offsetDirection = (self.facing +
                 turtle.getHeadingInfo(facing).heading) % 4
     facing = turtle.getHeadingInfo(offsetDirection).direction
   end
@@ -754,17 +760,12 @@ function TurtleBuilder:wrenchBlock(side, facing, cache)
 end
 
 function TurtleBuilder:rotateBlock(side, facing)
-  local s = self:getWrenchSlot()
-
-  if not s then
-    return false
+  if self:getWrenchSlot() then
+    for _ = 1, facing do
+      turtle.getAction(side).place()
+    end
+    return true
   end
-
-  for _ = 1, facing do
-    turtle.getAction(side).place()
-  end
-
-  return true
 end
 
 -- place piston, wrench piston to face downward, extend, remove piston
@@ -813,7 +814,7 @@ function TurtleBuilder:_goto(x, z, y, heading)
     print('stuck')
     print('Press enter to continue')
     os.sleep(1)
-    turtle.status = 'stuck'
+    turtle.setStatus('stuck')
     read()
   end
 end
@@ -902,7 +903,7 @@ function TurtleBuilder:placeDirectionalBlock(b, slot, travelPlane)
     [ 'west-up'  ] = 'east'
   }
   if stairUpDirections[d] then
-    local isSouth = (turtle.getHeadingInfo(self.facing).heading +
+    local isSouth = (self.facing +
                     turtle.getHeadingInfo(stairUpDirections[d]).heading) % 4 == 1
 
     if not self.stairBug then
@@ -1091,10 +1092,10 @@ function TurtleBuilder:build()
   if self.mode == 'destroy' then
     direction = -1
     last = 1
-    turtle.status = 'destroying'
+    turtle.setStatus('destroying')
   else
     travelPlane = self:findTravelPlane(self.index)
-    turtle.status = 'building'
+    turtle.setStatus('building')
   end
 
   local pt = self:getBuildingCorner()
@@ -1120,13 +1121,13 @@ function TurtleBuilder:build()
 
         -- if no supplier, then should fill all slots
 
-        if turtle.getItemCount(self.resourceSlots) > 0 or turtle.getFuelLevel() < minFuel then
+        if turtle.getItemCount(RESOURCE_SLOTS) > 0 or turtle.getFuelLevel() < minFuel then
           if turtle.getFuelLevel() < minFuel or not self:inAirDropoff() then
             self:gotoSupplyPoint()
             self:dumpInventoryWithCheck()
             self:refuel()
           end
-          turtle.status = 'destroying'
+          turtle.setStatus('destroying')
         end
 
       else -- Build mode
@@ -1177,9 +1178,9 @@ function TurtleBuilder:build()
       throttle() -- sleep in case there are a large # of skipped blocks
     end
 
-    if turtle.abort then
-      turtle.status = 'aborting'
-      turtle.abort = false
+    if turtle.isAborted() then
+      turtle.setStatus('aborting')
+      turtle.abort(false)
       self:gotoTravelPlane(travelPlane)
       self:gotoSupplyPoint()
       turtle.setHeading(0)
@@ -1224,8 +1225,7 @@ function TurtleBuilder:begin()
   self:refuel()
   self:getTurtleFacing()
 
-  local facing = turtle.getHeadingInfo(self.facing).heading
-  Point.rotate(self.supplyPoint, facing)
+  Point.rotate(self.supplyPoint, self.facing)
   turtle.setPoint(self.supplyPoint)
 
   -- reset piston cache in case wrench was substituted

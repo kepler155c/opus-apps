@@ -1,4 +1,4 @@
-local Blocks    = require('blocks')
+local Blocks    = require('builder.blocks')
 local class     = require('class')
 local Message   = require('message')
 local Util      = require('util')
@@ -10,13 +10,9 @@ local turtle     = _G.turtle
 local Builder = class()
 Util.merge(Builder, {
   isCommandComputer = not turtle,
-  slots = { },
   loc = { },
   index = 1,
   mode = 'build',
-  fuelItem = { id = 'minecraft:coal', dmg = 0 },
-  resourceSlots = 14,
-  facing = 'south',
 })
 
 local BUILDER_DIR = 'usr/builder'
@@ -87,7 +83,7 @@ end
 function Builder:saveProgress(index)
   Util.writeTable(
     fs.combine(BUILDER_DIR, self.schematic.filename .. '.progress'),
-    { index = index, facing = self.facing, loc = self.loc }
+    { index = index, loc = self.loc }
   )
 end
 
@@ -98,7 +94,6 @@ function Builder:loadProgress(filename)
     if self.index > #self.schematic.blocks then
       self.index = 1
     end
-    self.facing = progress.facing or 'south'
     self.loc = progress.loc or { }
   end
 end

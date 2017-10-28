@@ -1,12 +1,15 @@
+local os     = _G.os
+local turtle = _G.turtle
+
 local function follow(id)
 
-  requireInjector(getfenv(1))
+  _G.requireInjector()
 
   local Event  = require('event')
   local Point  = require('point')
   local Socket = require('socket')
 
-  turtle.status = 'follow ' .. id
+  turtle.setStatus('follow ' .. id)
 
   if not turtle.enableGPS() then
     error('turtle: No GPS found')
@@ -55,7 +58,7 @@ local function follow(id)
   Event.onInterval(.5, function()
 
     local function getRemotePoint()
-      if not turtle.abort then
+      if not turtle.isAborted() then
         if socket:write({ type = 'gps' }) then
           return socket:read(3)
         end
@@ -65,7 +68,7 @@ local function follow(id)
     -- sometimes gps will fail if moving
     local pt, d
 
-    for i = 1, 3 do
+    for _ = 1, 3 do
       pt, d = getRemotePoint()
       if pt then
         break
@@ -73,18 +76,18 @@ local function follow(id)
       os.sleep(.5)
     end
 
-    if not pt or turtle.abort then
+    if not pt or turtle.isAborted() then
       error('Did not receive GPS location')
     end
 
     if not lastPoint or (lastPoint.x ~= pt.x or lastPoint.y ~= pt.y or lastPoint.z ~= pt.z) then
 
       if following then
-        turtle.abort = true
+        turtle.getState().abort = true
         while following do
           os.sleep(.1)
         end
-        turtle.abort = false
+        turtle.getState().abort = false
       end
 
       -- check if gps is inaccurate (player moving too fast)

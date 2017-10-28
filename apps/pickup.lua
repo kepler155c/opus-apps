@@ -1,11 +1,16 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Event        = require('event')
-local GPS          = require('gps')
 local ChestAdapter = require('chestAdapter18')
 local Point        = require('point')
 local Socket       = require('socket')
 local Util         = require('util')
+
+local device     = _G.device
+local os         = _G.os
+local peripheral = _G.peripheral
+local printError = _G.printError
+local turtle     = _G.turtle
 
 if not device.wireless_modem then
   error('Modem is required')
@@ -35,7 +40,7 @@ local fuel = {
 
 local slots
 
-turtle.setMoveCallback(function(action, pt)
+turtle.setMoveCallback(function()
   if slots then
     for _,slot in pairs(slots) do
       if turtle.getItemCount(slot.index) ~= slot.qty then
@@ -46,10 +51,38 @@ turtle.setMoveCallback(function(action, pt)
   end
 end)
 
-function refuel()
+local function gotoPoint(pt, doDetect)
+  slots = turtle.getInventory()
+  while not turtle.pathfind(pt, { blocks = blocks }) do
+    if turtle.isAborted() then
+      error('aborted')
+    end
+    turtle.setStatus('blocked')
+    os.sleep(5)
+  end
+
+  if doDetect and not turtle.detectDown() then
+    printError('Missing target')
+    Event.exitPullEvents()
+  end
+end
+
+local function dropOff(pt)
+  if turtle.selectSlotWithItems() then
+    gotoPoint(pt, true)
+    turtle.emptyInventory(turtle.dropDown)
+    if pt == locations.dropPt then
+      print('refreshing items')
+      local chestAdapter = ChestAdapter()
+      items = chestAdapter:refresh()
+    end
+  end
+end
+
+local function refuel()
   if turtle.getFuelLevel() < 5000 and locations.dropPt then
     print('refueling')
-    turtle.status = 'refueling'
+    turtle.setStatus('refueling')
     gotoPoint(locations.dropPt, true)
     dropOff(locations.dropPt)
     local chestAdapter = ChestAdapter({
@@ -66,8 +99,8 @@ function refuel()
   end
 end
 
-function pickUp(pt)
-  turtle.status = 'picking up'
+local function pickUp(pt)
+  turtle.setStatus('picking up')
   gotoPoint(pt, true)
   while true do
     if not turtle.selectOpenSlot() then
@@ -81,41 +114,13 @@ function pickUp(pt)
   end
 end
 
-function dropOff(pt)
-  if turtle.selectSlotWithItems() then
-    gotoPoint(pt, true)
-    turtle.emptyInventory(turtle.dropDown)
-    if pt == locations.dropPt then
-      print('refreshing items')
-      chestAdapter = ChestAdapter()
-      items = chestAdapter:refresh()
-    end
-  end
-end
-
-function gotoPoint(pt, doDetect)
-  slots = turtle.getInventory()
-  while not turtle.pathfind(pt, { blocks = blocks }) do
-    if turtle.abort then
-      error('aborted')
-    end
-    turtle.status = 'blocked'
-    os.sleep(5)
-  end
-
-  if doDetect and not turtle.detectDown() then
-    printError('Missing target')
-    Event.exitPullEvents()
-  end
-end
-
-function checkCell(pt)
+local function checkCell(pt)
   if not turtle.selectOpenSlot() then
     dropOff(locations.dropPt)
   end
 
   print('checking cell')
-  turtle.status = 'recharging'
+  turtle.setStatus('recharging')
   gotoPoint(pt, true)
   local c = peripheral.wrap('bottom')
   local energy = c.getMaxEnergyStored() -
@@ -136,9 +141,9 @@ function checkCell(pt)
   end
 end
 
-function fluid(points)
+local function fluid(points)
   print('checking fluid')
-  turtle.status = 'fluiding'
+  turtle.setStatus('fluiding')
   gotoPoint(points.source, true)
   turtle.select(1)
   turtle.digDown()
@@ -152,10 +157,10 @@ function fluid(points)
   turtle.placeDown()
 end
 
-function refill(entry)
+local function refill(entry)
   dropOff(locations.dropPt)
 
-  turtle.status = 'refilling'
+  turtle.setStatus('refilling')
   gotoPoint(locations.dropPt)
   local chestAdapter = ChestAdapter()
   for _,item in pairs(entry.items) do
@@ -167,21 +172,6 @@ function refill(entry)
       dropOff(entry.point)
     end
   end
-end
-
-function oldRefill(points)
-  gotoPoint(points.source)
-  repeat until not turtle.suckDown(64)
-  if points.target then
-    dropOff(points.target)
-  end
-  if points.targets then
-    for k,target in pairs(points.targets) do
-      dropOff(target)
-    end
-  end
-  dropOff(points.source)
-  dropOff(locations.dropPt)
 end
 
 local function makeKey(pt)
@@ -198,7 +188,7 @@ local function pickupHost(socket)
     end
 
     print('command: ' .. data.type)
-    
+
     if data.type == 'pickup' then
       local key = makeKey(data.point)
       locations.pickups[key] = data.point
@@ -207,7 +197,7 @@ local function pickupHost(socket)
 
     elseif data.type == 'items' then
       socket:write( { type = "response", response = items })
-    
+
     elseif data.type == 'refill' then
       local key = makeKey(data.entry.point)
       locations.refills[key] = data.entry
@@ -223,14 +213,12 @@ local function pickupHost(socket)
       locations.chargePt = data.point
       Util.writeTable('/usr/config/pickup', locations)
       socket:write( { type = "response", response = 'Location set' })
-    
+
     elseif data.type == 'charge' then
       local key = makeKey(data.point)
       locations.cells[key] = data.point
       Util.writeTable('/usr/config/pickup', locations)
       socket:write( { type = "response", response = 'added' })
-    
-    elseif data.type == 'fluid' then
 
     elseif data.type == 'clear' then
       local key = makeKey(data.point)
@@ -240,7 +228,7 @@ local function pickupHost(socket)
       locations.pickups[key] = nil
 
       Util.writeTable('/usr/config/pickup', locations)
-    
+
       socket:write( { type = "response", response = 'cleared' })
     else
       print('unknown command')
@@ -264,7 +252,7 @@ local function eachEntry(t, fn)
   local keys = Util.keys(t)
   for _,key in pairs(keys) do
     if t[key] then
-      if turtle.abort then
+      if turtle.isAborted() then
         return
       end
       fn(t[key])
@@ -283,7 +271,7 @@ local function eachClosestEntry(t, fn)
 
   while not Util.empty(points) do
     local closest = Point.closest(turtle.point, points)
-    if turtle.abort then
+    if turtle.isAborted() then
       return
     end
     if t[closest.key] then
@@ -299,7 +287,6 @@ local function eachClosestEntry(t, fn)
 end
 
 Event.addRoutine(function()
-
   if not turtle.enableGPS() then
     error('turtle: No GPS found')
   end
@@ -318,8 +305,8 @@ Event.addRoutine(function()
       eachEntry(locations.cells, checkCell)
     end
     print('sleeping')
-    turtle.status = 'sleeping'
-    if turtle.abort then
+    turtle.setStatus('sleeping')
+    if turtle.isAborted() then
       printError('aborted')
       break
     end

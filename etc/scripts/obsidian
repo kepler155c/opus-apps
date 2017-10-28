@@ -70,7 +70,7 @@ local function findObsidian()
     if not turtle.gotoPoint(node) then
       break
     end
-  until turtle.abort
+  until turtle.isAborted()
 end
 
 turtle.run(function()
@@ -97,7 +97,7 @@ turtle.run(function()
       turtle.placeDown()
       turtle.down()
       turtle.select(1)
-    until turtle.abort
+    until turtle.isAborted()
   end)
 
   if not s and m then

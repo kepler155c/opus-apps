@@ -184,13 +184,13 @@ local function log(text)
 end
 
 local function status(newStatus)
-  turtle.status = newStatus
+  turtle.setStatus(newStatus)
   log(newStatus)
 end
 
 local function refuel()
   if turtle.getFuelLevel() < MIN_FUEL then
-    local oldStatus = turtle.status
+    local oldStatus = turtle.getStatus()
     status('refueling')
 
     if turtle.select('minecraft:coal:0') then
@@ -216,31 +216,31 @@ local function refuel()
 end
 
 local function safeGoto(x, z, y, h)
-  local oldStatus = turtle.status
+  local oldStatus = turtle.getStatus()
 
   -- only pathfind above or around other turtles (never down)
   Pathing.setBox({ x = turtle.point.x, y = turtle.point.y, z = turtle.point.z, ex = x, ey = y, ez = z })
   while not turtle.pathfind({ x = x, z = z, y = y or turtle.point.y, heading = h }) do
     --status('stuck')
-    if turtle.abort then
+    if turtle.isAborted() then
       return false
     end
     os.sleep(3)
   end
-  turtle.status = oldStatus
+  turtle.setStatus(oldStatus)
   return true
 end
 
 local function safeGotoY(y)
-  local oldStatus = turtle.status
+  local oldStatus = turtle.getStatus()
   while not turtle.gotoY(y) do
     status('stuck')
-    if turtle.abort then
+    if turtle.isAborted() then
       return false
     end
     os.sleep(1)
   end
-  turtle.status = oldStatus
+  turtle.setStatus(oldStatus)
   return true
 end
 
@@ -278,7 +278,7 @@ end
 ]]
 
 local function normalChestUnload()
-  local oldStatus = turtle.status
+  local oldStatus = turtle.getStatus()
   status('unloading')
   local pt = Util.shallowCopy(turtle.point)
   safeGotoY(0)
@@ -339,7 +339,7 @@ end
 local function checkSpace()
   if turtle.getItemCount(16) > 0 then
     refuel()
-    local oldStatus = turtle.status
+    local oldStatus = turtle.getStatus()
     status('condensing')
     ejectTrash()
     turtle.condense()
@@ -433,7 +433,7 @@ local function bore()
   boreDirection = 'down'
 
   while true do
-    if turtle.abort then
+    if turtle.isAborted() then
       status('aborting')
       return false
     end
@@ -465,7 +465,7 @@ local function bore()
   turtle.turnLeft()
 
   while true do
-    if turtle.abort then
+    if turtle.isAborted() then
       status('aborting')
       return false
     end
@@ -473,7 +473,7 @@ local function bore()
     while not Util.tryTimed(3, turtle.up) do
       status('stuck')
     end
-    if turtle.status == 'stuck' then
+    if turtle.getStatus() == 'stuck' then
       status('boring up')
     end
 
@@ -624,7 +624,7 @@ turtle.run(function()
   if not s and m then
     _G.printError(m)
   end
-  turtle.abort = false
+  turtle.abort(false)
   safeGotoY(0)
   safeGoto(0, 0, 0, 0)
   unload()

@@ -732,11 +732,11 @@ local s, m = turtle.run(function()
 
   turtle.setPolicy("attack")
 
-  while not turtle.abort do
+  while not turtle.isAborted() do
     print('fuel: ' .. turtle.getFuelLevel())
     for _,task in ipairs(Util.shallowCopy(tasks)) do
       --print(task.desc)
-      turtle.status = task.desc
+      turtle.setStatus(task.desc)
       turtle.select(1)
       if not task.fn() then
         Util.filterInplace(tasks, function(v) return v.fn ~= task.fn end)

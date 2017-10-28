@@ -1,4 +1,4 @@
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Event      = require('event')
 local Logger     = require('logger')
@@ -7,6 +7,10 @@ local Message    = require('message')
 local Point      = require('point')
 local TableDB    = require('tableDB')
 local Util       = require('util')
+
+local device = _G.device
+local os     = _G.os
+local turtle = _G.turtle
 
 --[[
   A supplier turtle for the builder turtle. For larger builds, use
@@ -57,7 +61,7 @@ local maxStackDB = TableDB({
     }
   }
 })
- 
+
 function maxStackDB:get(id, dmg)
   return self.data[id .. ':' .. dmg] or 64
 end
@@ -87,7 +91,7 @@ function Builder:dumpInventoryWithCheck()
     print('Press enter to continue')
     --turtle.setHeading(0)
     self.ready = false
-    read()
+    _G.read()
   end
   self.ready = true
 end
@@ -95,7 +99,7 @@ end
 function Builder:autocraft(supplies)
   local t = { }
 
-  for i,s in pairs(supplies) do
+  for _,s in pairs(supplies) do
     local key = s.id .. ':' .. s.dmg
     local item = t[key]
     if not item then
@@ -108,7 +112,7 @@ function Builder:autocraft(supplies)
     end
     item.qty = item.qty + (s.need-s.qty)
   end
- 
+
   Builder.itemProvider:craftItems(t)
 end
 
@@ -133,9 +137,9 @@ function Builder:log(...)
 end
 
 function Builder:getSupplies()
- 
+
   Builder.itemProvider:refresh()
- 
+
   local t = { }
   for _,s in ipairs(self.slots) do
     if s.need > 0 then
@@ -171,7 +175,7 @@ function Builder:getSupplies()
       Builder:log('Need %d %s', s.need - s.qty, name)
     end
   end
- 
+
   return t
 end
 
@@ -179,11 +183,11 @@ local function moveTowardsX(dx)
 
   local direction = dx - turtle.point.x
   local move
-  
+
   if direction == 0 then
     return false
   end
-  
+
   if direction > 0 and turtle.point.heading == 0 or
      direction < 0 and turtle.point.heading == 2 then
     move = turtle.forward
@@ -202,7 +206,7 @@ local function moveTowardsZ(dz)
   if direction == 0 then
     return false
   end
-  
+
   if direction > 0 and turtle.point.heading == 1 or
      direction < 0 and turtle.point.heading == 3 then
     move = turtle.forward
@@ -214,7 +218,6 @@ local function moveTowardsZ(dz)
 end
 
 function Builder:finish()
-
   Builder.resupplying = true
   Builder.ready = false
   if turtle.gotoLocation('supplies') then
@@ -227,9 +230,8 @@ function Builder:finish()
 end
 
 function Builder:gotoBuilder()
-
 	if Builder.lastPoint then
-    turtle.status = 'tracking'
+    turtle.setStatus('tracking')
 		while true do
 			local pt = Point.copy(Builder.lastPoint)
 			pt.y = pt.y + 3
@@ -260,140 +262,137 @@ function Builder:gotoBuilder()
 	end
 end
 
-Message.addHandler('builder', 
-  function(h, id, msg, distance)
-  	if not id or id ~= __BUILDER_ID then
-  		return
-  	end
+Message.addHandler('builder',
+  function(_, id, msg)
+    if not id or id ~= __BUILDER_ID then
+      return
+    end
 
     if not Builder.resupplying then
-    	local pt = msg.contents
-    	pt.y = pt.y + 3
+      local pt = msg.contents
+      pt.y = pt.y + 3
 
-      turtle.status = 'supervising'
-  		turtle.gotoYfirst(pt)
-  	end
+      turtle.setStatus('supervising')
+      turtle.gotoYfirst(pt)
+    end
   end)
 
-Message.addHandler('supplyList', 
-  function(h, id, msg, distance)
-  	if not id or id ~= __BUILDER_ID then
-  		return
-  	end
+Message.addHandler('supplyList',
+  function(_, id, msg)
+    if not id or id ~= __BUILDER_ID then
+      return
+    end
 
-    turtle.status = 'resupplying'
-  	Builder.resupplying = true
-  	Builder.slots = msg.contents.slots
-  	Builder.slotUid = msg.contents.uid
+    turtle.setStatus('resupplying')
+    Builder.resupplying = true
+    Builder.slots = msg.contents.slots
+    Builder.slotUid = msg.contents.uid
 
     Builder:log('Received supply list ' .. Builder.slotUid)
 
-  	os.sleep(0)
-  	if not turtle.gotoLocation('supplies') then
-  		Builder:log('Failed to go to supply location')
-  		self.ready = false
-  		Event.exitPullEvents()
-  	end
+    os.sleep(0)
+    if not turtle.gotoLocation('supplies') then
+      Builder:log('Failed to go to supply location')
+      Builder.ready = false
+      Event.exitPullEvents()
+    end
     turtle.setHeading(1)
     os.sleep(.2) -- random 'Computer is not connected' error...
     Builder:dumpInventoryWithCheck()
     Builder:refuel()
 
     while true do
-  	  local supplies = Builder:getSupplies()
-  	  if #supplies == 0 then
-  	  	break
-  	  end
-  	  Builder:autocraft(supplies)
-      turtle.status = 'waiting'
-  	  os.sleep(5)
-  	end
-  	Builder:log('Got all supplies')
-  	os.sleep(0)
-  	Builder:gotoBuilder()
-  	Builder.resupplying = false
+      local supplies = Builder:getSupplies()
+      if #supplies == 0 then
+        break
+      end
+      Builder:autocraft(supplies)
+      turtle.setStatus('waiting')
+      os.sleep(5)
+    end
+    Builder:log('Got all supplies')
+    os.sleep(0)
+    Builder:gotoBuilder()
+    Builder.resupplying = false
   end)
 
-Message.addHandler('needSupplies', 
-  function(h, id, msg, distance)
-  	if not id or id ~= __BUILDER_ID then
-  		return
-  	end
+Message.addHandler('needSupplies',
+  function(_, id, msg)
+    if not id or id ~= __BUILDER_ID then
+    return
+    end
 
-  	if Builder.resupplying or msg.contents.uid ~= Builder.slotUid then
-  		
-  		Builder:log('No supplies ready')
+    if Builder.resupplying or msg.contents.uid ~= Builder.slotUid then
+      Builder:log('No supplies ready')
+      Message.send(__BUILDER_ID, 'gotSupplies')
+    else
+      turtle.setStatus('supplying')
+      Builder:log('Supplying')
+      os.sleep(0)
 
-  		Message.send(__BUILDER_ID, 'gotSupplies')
-  	else
-      turtle.status = 'supplying'
-  		Builder:log('Supplying')
-  		os.sleep(0)
-
-  		local pt = msg.contents.point
-  		pt.y = turtle.getPoint().y
-  		pt.heading = nil
-  		if not turtle.gotoYfirst(pt) then -- location of builder
-  			Builder.resupplying = true
-	  		Message.send(__BUILDER_ID, 'gotSupplies')
-  		  os.sleep(0)
-  			if not turtle.gotoLocation('supplies') then
-  				Builder:log('failed to go to supply location')
-  				--self.ready = false
-  				Event.exitPullEvents()
-  			end
+      local pt = msg.contents.point
+      pt.y = turtle.getPoint().y
+      pt.heading = nil
+      if not turtle.gotoYfirst(pt) then -- location of builder
+        Builder.resupplying = true
+        Message.send(__BUILDER_ID, 'gotSupplies')
+        os.sleep(0)
+        if not turtle.gotoLocation('supplies') then
+          Builder:log('failed to go to supply location')
+          Event.exitPullEvents()
+        end
         turtle.setHeading(1)
-	  		return
-  		end
-  		pt.y = pt.y - 2 -- location where builder should go for the chest to be above
+        return
+      end
+      pt.y = pt.y - 2 -- location where builder should go for the chest to be above
 
-	  	turtle.select(15)
-  		turtle.placeDown()
-  		os.sleep(.1) -- random computer not connected error
+      turtle.select(15)
+      turtle.placeDown()
+      os.sleep(.1) -- random computer not connected error
       local p = ChestProvider({ direction = 'up', wrapSide = 'bottom' })
-  		for i = 1, 16 do
-  			p:insert(i, 64)
-  		end
+      for i = 1, 16 do
+        p:insert(i, 64)
+      end
 
-  		Message.send(__BUILDER_ID, 'gotSupplies', { supplies = true, point = pt })
+      Message.send(__BUILDER_ID, 'gotSupplies', { supplies = true, point = pt })
 
-  		Message.waitForMessage('thanks', 5, __BUILDER_ID)
-  		--os.sleep(0)
+      Message.waitForMessage('thanks', 5, __BUILDER_ID)
+      --os.sleep(0)
 
-  		--p.condenseItems()
-  		for i = 1, 16 do
-  			p:extract(i, 64)
-  		end
-    	turtle.digDown()
-      turtle.status = 'waiting'
-  	end
+      --p.condenseItems()
+      for i = 1, 16 do
+        p:extract(i, 64)
+      end
+      turtle.digDown()
+      turtle.setStatus('waiting')
+    end
   end)
 
 Message.addHandler('finished',
-  function(h, id)
-  	if not id or id ~= __BUILDER_ID then
-  		return
-  	end
+  function(_, id)
+    if not id or id ~= __BUILDER_ID then
+      return
+    end
     Builder:finish()
   end)
 
 Event.on('turtle_abort',
   function()
-    turtle.abort = false
-    turtle.status = 'aborting'
+    turtle.abort(false)
+    turtle.setStatus('aborting')
     Builder:finish()
   end)
 
 local function onTheWay() -- parallel routine
   while true do
-	  local e, side, _id, id, msg, distance = os.pullEvent('modem_message')
+	  local _, _, _, id, msg, _ = os.pullEvent('modem_message')
 	  if Builder.ready then
       if id == __BUILDER_ID and msg and msg.type then
-      	if msg.type == 'needSupplies' then
-      	  Message.send(__BUILDER_ID, 'gotSupplies', { supplies = true })
-      	elseif msg.type == 'builder' then
-   		    Builder.lastPoint = msg.contents
-      	end
+        if msg.type == 'needSupplies' then
+          Message.send(__BUILDER_ID, 'gotSupplies', { supplies = true })
+        elseif msg.type == 'builder' then
+          Builder.lastPoint = msg.contents
+        end
       end
     end
   end

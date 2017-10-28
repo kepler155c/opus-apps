@@ -161,7 +161,7 @@ return function(startPt, endPt, firstPt, verbose)
     if not turtle.gotoPoint(node) then
       break
     end
-  until turtle.abort
+  until turtle.isAborted()
 
   turtle.resetState()
   turtle.setMoveCallback(oldCallback)

@@ -252,9 +252,9 @@ page:setVolume(page.volume, true)
 
 UI:setPage(page)
 
-turtle.status = 'Jamming'
+turtle.setStatus('Jamming')
 UI:pullEvents()
-turtle.status = 'idle'
+turtle.setStatus('idle')
 page:play(false)
 
 UI.term:reset()

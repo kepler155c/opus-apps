@@ -6,7 +6,7 @@ local function summon(id)
   local Point  = require('point')
   local Socket = require('socket')
 
-  turtle.status = 'GPSing'
+  turtle.setStatus('GPSing')
   turtle.setPoint({ x = 0, y = 0, z = 0, heading = 0 })
 
   local pts = {
@@ -64,7 +64,7 @@ local function summon(id)
     local pt = { x = pos.x, y = pos.y, z = pos.z }
     local _, h = Point.calculateMoves(turtle.getPoint(), pt)
     local hi = turtle.getHeadingInfo(h)
-    turtle.status = 'recalling'
+    turtle.setStatus('recalling')
     turtle.pathfind({ x = pt.x - hi.xd, z = pt.z - hi.zd, y = pt.y - hi.yd, heading = h })
   else
     error("turtle: Could not determine position")
