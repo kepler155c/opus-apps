@@ -251,17 +251,18 @@ local levelScript = [[
 
 requireInjector(getfenv(1))
 
-local Level = require('turtle.level')
 local Util  = require('util')
 
 local s, m = turtle.run(function()
+
+  turtle.addFeatures('level')
   turtle.setStatus('Leveling')
 
   if turtle.enableGPS() then
 
     local pt = Util.shallowCopy(turtle.point)
     local s, m = pcall(function()
-      Level(data.startPt, data.endPt, data.firstPt)
+      turtle.level(data.startPt, data.endPt, data.firstPt)
     end)
 
     turtle.pathfind(pt)

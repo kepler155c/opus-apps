@@ -586,14 +586,13 @@ local function closestEdgePoint(pt, pts, rpt)
   return cpt
 end
 
-function TurtleBuilder:getBuildingCorner()
-  local pts = {
-    { x = -1,                    z = -1,                   y = 0 },
-    { x = -1,                   z = self.schematic.length, y = 0 },
-    { x = self.schematic.width, z = -1,                    y = 0 },
-    { x = self.schematic.width, z = self.schematic.length, y = 0 },
+function TurtleBuilder:getBuildingCorner(y)
+  local box = {
+    x = -1, ex = self.schematic.width,
+    y =  y, ey = y,
+    z = -1, ez = self.schematic.length,
   }
-  return closestEdgePoint(self.supplyPoint, pts, turtle.getPoint())
+  return Point.closestPointInBox(turtle.getPoint(), box)
 end
 
 function TurtleBuilder:gotoSupplyPoint()
@@ -601,7 +600,7 @@ function TurtleBuilder:gotoSupplyPoint()
     -- so we don't end up pathfinding through a building
     -- go to the corner closest to the supplies point
     -- pathfind the rest of the way
-    local pt = self:getBuildingCorner()
+    local pt = self:getBuildingCorner(turtle.point.y)
     turtle._goto(pt.x, pt.z)
     turtle.setPolicy('none')
     turtle.pathfind(self.supplyPoint)
@@ -1085,7 +1084,6 @@ end
 function TurtleBuilder:build()
   local direction = 1
   local last = #self.schematic.blocks
-  local travelPlane = 0
   local minFuel = self.schematic.height + self.schematic.width + self.schematic.length + 100
   local throttle = Util.throttle()
 
@@ -1094,11 +1092,12 @@ function TurtleBuilder:build()
     last = 1
     turtle.setStatus('destroying')
   else
-    travelPlane = self:findTravelPlane(self.index)
     turtle.setStatus('building')
   end
 
-  local pt = self:getBuildingCorner()
+  local travelPlane  = self:findTravelPlane(self.index)
+
+  local pt = self:getBuildingCorner(travelPlane)
   turtle.pathfind({ x = pt.x, z = pt.z, y = travelPlane })
   turtle.setPolicy('digAttack')
 
@@ -1210,22 +1209,21 @@ function TurtleBuilder:build()
 end
 
 function TurtleBuilder:begin()
+  turtle.reset()
+  self:dumpInventory()
+  self:refuel()
+  self:getTurtleFacing()
+
   if self.loc.x then
     self.supplyPoint = {
       x = self.loc.x - self.loc.rx - 1,
       y = self.loc.y - self.loc.ry,
       z = self.loc.z - self.loc.rz - 1,
     }
+    Point.rotate(self.supplyPoint, self.facing)
   else
     self.supplyPoint = { x = -1, y = 0, z = -1 }
   end
-
-  turtle.reset()
-  self:dumpInventory()
-  self:refuel()
-  self:getTurtleFacing()
-
-  Point.rotate(self.supplyPoint, self.facing)
   turtle.setPoint(self.supplyPoint)
 
   -- reset piston cache in case wrench was substituted

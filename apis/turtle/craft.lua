@@ -2,7 +2,9 @@ local Util   = require('util')
 
 local turtle = _G.turtle
 
-local Craft = { }
+local Craft = {
+  recipes = Util.readTable('usr/etc/recipes.db') or { },
+}
 
 local function clearGrid(inventoryAdapter)
   for i = 1, 16 do
@@ -41,7 +43,6 @@ local function getItemCount(items, key)
 end
 
 local function turtleCraft(recipe, qty, inventoryAdapter)
-
   clearGrid(inventoryAdapter)
 
   for k,v in pairs(recipe.ingredients) do
@@ -57,6 +58,12 @@ local function turtleCraft(recipe, qty, inventoryAdapter)
 end
 
 function Craft.craftRecipe(recipe, count, inventoryAdapter)
+  if type(recipe) == 'string' then
+    recipe = Craft.recipes[recipe]
+    if not recipe then
+      return false, 'No recipe'
+    end
+  end
 
   local items = inventoryAdapter:listItems()
 
@@ -103,18 +110,16 @@ end
 
 -- given a certain quantity, return how many of those can be crafted
 function Craft.getCraftableAmount(recipe, count, items, missing)
-
-  local function sumItems(recipe, items, summedItems, count)
-
+  local function sumItems(recipe, summedItems, count)
     local canCraft = 0
 
-    for i = 1, count do
+    for _ = 1, count do
       for _,item in pairs(recipe.ingredients) do
         local summedItem = summedItems[item] or getItemCount(items, item)
 
         local irecipe = Craft.recipes[item]
         if irecipe and summedItem <= 0 then
-          summedItem = summedItem + sumItems(irecipe, items, summedItems, 1)
+          summedItem = summedItem + sumItems(irecipe, summedItems, 1)
         end
         if summedItem <= 0 then
           if missing then
@@ -130,7 +135,7 @@ function Craft.getCraftableAmount(recipe, count, items, missing)
     return canCraft
   end
 
-  return sumItems(recipe, items, { }, math.ceil(count / recipe.count), missing)
+  return sumItems(recipe, { }, math.ceil(count / recipe.count))
 end
 
 function Craft.canCraft(item, count, items)
@@ -149,13 +154,15 @@ function Craft.getCraftableAmountTest()
     { name = 'minecraft:planks', damage = 0, count = 5 },
     { name = 'minecraft:log',    damage = 0, count = 2 },
   }
-  results[1] = { item = 'chest', expected = 1, got = Craft.getCraftableAmount(Craft.recipes['minecraft:chest:0'], 2, items) }
+  results[1] = { item = 'chest', expected = 1,
+    got = Craft.getCraftableAmount(Craft.recipes['minecraft:chest:0'], 2, items) }
 
   items = {
     { name = 'minecraft:log',    damage = 0, count = 1 },
     { name = 'minecraft:coal',   damage = 1, count = 1 },
   }
-  results[2] = { item = 'torch', expected = 4, got = Craft.getCraftableAmount(Craft.recipes['minecraft:torch:0'], 4, items) }
+  results[2] = { item = 'torch', expected = 4,
+    got = Craft.getCraftableAmount(Craft.recipes['minecraft:torch:0'], 4, items) }
 
   return results
 end

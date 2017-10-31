@@ -113,7 +113,7 @@ local function getAdjacentPoint(pt)
   return closestPoint(turtle.getPoint(), t)
 end
 
-return function(startPt, endPt, firstPt, verbose)
+function turtle.level(startPt, endPt, firstPt, verbose)
   checkedNodes = { }
   nodes = { }
   box = { }
@@ -166,3 +166,5 @@ return function(startPt, endPt, firstPt, verbose)
   turtle.resetState()
   turtle.setMoveCallback(oldCallback)
 end
+
+return true

@@ -6,7 +6,7 @@ _G.requireInjector()
     Area around turtle must be flat and can only be dirt or grass
       (10 blocks in each direction from turtle)
     Turtle must have: crafting table, chest
-    Turtle must have a pick equipped on the left side
+    Turtle must have a pick equipped
 
   Optional:
     Add additional sapling types that can grow with a single sapling
@@ -20,12 +20,8 @@ _G.requireInjector()
     place the turtle in the original position before restarting the program.
 ]]--
 
-local ChestAdapter = require('chestAdapter18')
-local Craft        = require('turtle.craft')
-local Level        = require('turtle.level')
-local Pathing      = require('turtle.pathfind')
-local Point        = require('point')
-local Util         = require('util')
+local Point  = require('point')
+local Util   = require('util')
 
 local os     = _G.os
 local read   = _G.read
@@ -80,9 +76,6 @@ local state = Util.readTable('usr/config/treefarm') or {
 }
 
 local clock = os.clock()
-local recipes = Util.readTable('usr/etc/recipes.db') or { }
-
-Craft.setRecipes(recipes)
 
 local function inspect(fn)
   local s, item = fn()
@@ -125,28 +118,17 @@ local function safePlaceBlock(item)
 end
 
 local function craftItem(item, qty)
-
   local success
 
   if safePlaceBlock(CHEST) then
 
-    if turtle.equip('left', 'minecraft:crafting_table') then
-
-      local chestAdapter = ChestAdapter({
+    Util.print('Crafting %d %s', (qty or 1), item)
+    success = turtle.craftItem(item, qty or 1, {
         wrapSide = 'top',
         direction = 'down',
       })
-      if not chestAdapter:isValid() then
-        print('invalid chestAdapter')
-        read()
-      end
+    repeat until not turtle.suckUp()
 
-      Util.print('Crafting %d %s', (qty or 1), item)
-      success = Craft.craftRecipe(recipes[item], qty or 1, chestAdapter)
-
-      repeat until not turtle.suckUp()
-    end
-    turtle.equip('left', 'minecraft:diamond_pickaxe')
     turtle.digUp()
   end
 
@@ -360,7 +342,7 @@ local function createChests()
   end
   if state.perimeter and
      turtle.getFuelLevel() > FUEL_GOOD and
-     Craft.canCraft(CHEST, 4, turtle.getSummedInventory()) then
+     turtle.canCraft(CHEST, 4, turtle.getSummedInventory()) then
 
     print('Adding storage')
     if craftItem(CHEST, 4) then
@@ -435,7 +417,7 @@ local function placeTorches()
   end
 
   if turtle.getFuelLevel() > 100 and
-     Craft.canCraft(TORCH, 4, turtle.getSummedInventory()) then
+     turtle.canCraft(TORCH, 4, turtle.getSummedInventory()) then
 
     print('Placing torches')
 
@@ -498,7 +480,7 @@ local function fellTree(pt)
   desperateRefuel(FUEL_DIRE)
 
   if turtle.digUpAt(Point.above(pt)) then
-    Level(
+    turtle.level(
       { x = GRID_WIDTH-1,    y = 1,  z = GRID_WIDTH-1    },
       { x = -(GRID_WIDTH-1), y = 50, z = -(GRID_WIDTH-1) },
       Point.above(pt))
@@ -638,10 +620,7 @@ local function findHome()
   end
 
   print('Determining location')
-
-  turtle.point.heading = getTurtleFacing(CHEST)
-  turtle.setHeading(state.facing)
-  turtle.point.heading = 0
+  turtle.point.heading = (getTurtleFacing(CHEST) - state.facing) % 4
 
   local pt = Point.copy(turtle.point)
 
@@ -668,7 +647,7 @@ local function findHome()
   })
 
   -- when pathfinding - don't leave this box
-  Pathing.setBox({
+  turtle.setPathingBox({
     x  = GRID.TL.x,
     y  = GRID.TL.y,
     z  = GRID.TL.z,
@@ -730,6 +709,7 @@ local tasks = {
 
 local s, m = turtle.run(function()
 
+  turtle.addFeatures('level', 'crafting')
   turtle.setPolicy("attack")
 
   while not turtle.isAborted() do
