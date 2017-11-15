@@ -412,6 +412,17 @@
       [ 6 ] = "minecraft:iron_ingot:0",
     },
   },
+  [ "minecraft:brick_stairs:0" ] = {
+    count = 4,
+    ingredients = {
+      "minecraft:brick_block:0",
+      [ 9 ] = "minecraft:brick_block:0",
+      [ 10 ] = "minecraft:brick_block:0",
+      [ 11 ] = "minecraft:brick_block:0",
+      [ 5 ] = "minecraft:brick_block:0",
+      [ 6 ] = "minecraft:brick_block:0",
+    },
+  },
   [ "minecraft:iron_block:0" ] = {
     count = 1,
     ingredients = {
@@ -514,32 +525,11 @@
       [ 6 ] = "minecraft:planks:2",
     },
   },
-  [ "minecraft:gold_block:0" ] = {
-    count = 63,
-    ingredients = {
-      "minecraft:gold_block:0",
-      "minecraft:gold_block:0",
-      "minecraft:gold_block:0",
-      [ 9 ] = "minecraft:gold_block:0",
-      [ 10 ] = "minecraft:gold_block:0",
-      [ 11 ] = "minecraft:gold_block:0",
-      [ 5 ] = "minecraft:gold_block:0",
-      [ 6 ] = "minecraft:gold_block:0",
-      [ 7 ] = "minecraft:gold_block:0",
-    },
-  },
   [ "minecraft:carpet:10" ] = {
     count = 3,
     ingredients = {
       [ 5 ] = "minecraft:wool:10",
       [ 6 ] = "minecraft:wool:10",
-    },
-  },
-  [ "minecraft:stone:5" ] = {
-    count = 2,
-    ingredients = {
-      "minecraft:stone:3",
-      "minecraft:cobblestone:0",
     },
   },
   [ "minecraft:jungle_fence_gate:0" ] = {
@@ -551,6 +541,24 @@
       [ 5 ] = "minecraft:stick:0",
       [ 6 ] = "minecraft:planks:3",
       [ 7 ] = "minecraft:stick:0",
+    },
+  },
+  [ "minecraft:stone:5" ] = {
+    count = 2,
+    ingredients = {
+      "minecraft:stone:3",
+      "minecraft:cobblestone:0",
+    },
+  },
+  [ "minecraft:oak_stairs:0" ] = {
+    count = 8,
+    ingredients = {
+      "minecraft:planks:0",
+      [ 9 ] = "minecraft:planks:0",
+      [ 10 ] = "minecraft:planks:0",
+      [ 11 ] = "minecraft:planks:0",
+      [ 5 ] = "minecraft:planks:0",
+      [ 6 ] = "minecraft:planks:0",
     },
   },
   [ "minecraft:noteblock:0" ] = {
@@ -567,15 +575,18 @@
       [ 7 ] = "minecraft:planks:0",
     },
   },
-  [ "minecraft:oak_stairs:0" ] = {
-    count = 8,
+  [ "minecraft:gold_block:0" ] = {
+    count = 1,
     ingredients = {
-      "minecraft:planks:0",
-      [ 9 ] = "minecraft:planks:0",
-      [ 10 ] = "minecraft:planks:0",
-      [ 11 ] = "minecraft:planks:0",
-      [ 5 ] = "minecraft:planks:0",
-      [ 6 ] = "minecraft:planks:0",
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      [ 5 ] = "minecraft:gold_ingot:0",
+      [ 6 ] = "minecraft:gold_ingot:0",
+      [ 7 ] = "minecraft:gold_ingot:0",
+      [ 9 ] = "minecraft:gold_ingot:0",
+      [ 10 ] = "minecraft:gold_ingot:0",
+      [ 11 ] = "minecraft:gold_ingot:0",
     },
   },
   [ "minecraft:chest:0" ] = {
@@ -745,10 +756,12 @@
       [ 6 ] = "minecraft:dye:10",
     },
   },
-  [ "minecraft:sugar:0" ] = {
-    count = 1,
+  [ "minecraft:tripwire_hook:0" ] = {
+    count = 2,
     ingredients = {
-      [ 6 ] = "minecraft:reeds:0",
+      "minecraft:iron_ingot:0",
+      [ 9 ] = "minecraft:planks:0",
+      [ 5 ] = "minecraft:stick:0",
     },
   },
   [ "minecraft:ladder:0" ] = {
@@ -824,6 +837,12 @@
       [ 6 ] = "minecraft:iron_ingot:0",
     },
   },
+  [ "minecraft:sugar:0" ] = {
+    count = 1,
+    ingredients = {
+      [ 6 ] = "minecraft:reeds:0",
+    },
+  },
   [ "minecraft:stained_glass:6" ] = {
     count = 8,
     ingredients = {
@@ -836,20 +855,6 @@
       [ 5 ] = "minecraft:glass:0",
       [ 6 ] = "minecraft:dye:9",
       [ 7 ] = "minecraft:glass:0",
-    },
-  },
-  [ "minecraft:piston:0" ] = {
-    count = 1,
-    ingredients = {
-      "minecraft:planks:0",
-      "minecraft:planks:0",
-      "minecraft:planks:0",
-      [ 9 ] = "minecraft:cobblestone:0",
-      [ 10 ] = "minecraft:redstone:0",
-      [ 11 ] = "minecraft:cobblestone:0",
-      [ 5 ] = "minecraft:cobblestone:0",
-      [ 6 ] = "minecraft:iron_ingot:0",
-      [ 7 ] = "minecraft:cobblestone:0",
     },
   },
   [ "minecraft:planks:0" ] = {
@@ -895,12 +900,18 @@
       [ 7 ] = "minecraft:hardened_clay:0",
     },
   },
-  [ "minecraft:tripwire_hook:0" ] = {
-    count = 2,
+  [ "minecraft:piston:0" ] = {
+    count = 1,
     ingredients = {
-      "minecraft:iron_ingot:0",
-      [ 9 ] = "minecraft:planks:0",
-      [ 5 ] = "minecraft:stick:0",
+      "minecraft:planks:0",
+      "minecraft:planks:0",
+      "minecraft:planks:0",
+      [ 9 ] = "minecraft:cobblestone:0",
+      [ 10 ] = "minecraft:redstone:0",
+      [ 11 ] = "minecraft:cobblestone:0",
+      [ 5 ] = "minecraft:cobblestone:0",
+      [ 6 ] = "minecraft:iron_ingot:0",
+      [ 7 ] = "minecraft:cobblestone:0",
     },
   },
   [ "minecraft:carpet:14" ] = {

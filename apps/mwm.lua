@@ -22,7 +22,7 @@ local UID         = 0
 local multishell  = { }
 local processes   = { }
 local parentTerm  = term.current()
-local sessionFile = args[1] or syntax()
+local sessionFile = args[1] or 'config/mwm'
 local running
 local monitor
 

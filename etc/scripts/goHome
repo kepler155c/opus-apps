@@ -1,1 +1,2 @@
-turtle.run(turtle.gotoGPSHome)
+local Home = require('turtle.home')
+turtle.run(Home.go)

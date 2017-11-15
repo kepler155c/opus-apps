@@ -44,6 +44,16 @@ local function getItem(items, inItem, ignoreDamage)
   end
 end
 
+local function getItemCount(items, inItem)
+  inItem.count = 0
+  for _,item in pairs(items) do
+    if item.name == inItem.name and item.damage == inItem.damage and item.nbtHash == inItem.nbtHash then
+      inItem.count = item.count
+      break
+    end
+  end
+end
+
 local function uniqueKey(item)
   return table.concat({ item.name, item.damage, item.nbtHash }, ':')
 end
@@ -107,69 +117,138 @@ local function clearGrid()
 end
 
 local function gotoMachine(machine)
-
-  local index
-  if type(machine) == 'number' then
-    index = machine
-  else
-    local _, k = Util.find(machines, 'name', machine)
-
-    if not k then
-      error('Unable to locate machine: ' .. tostring(machine))
+  for _ = 1, machine do
+    if not turtle.back() then
+      return
     end
-    index = k - 1
   end
-
-  for _ = 1, index do
-    turtle.back()
-  end
+  return true
 end
 
 local function canCraft(recipe, items, count)
   count = math.ceil(count / recipe.count)
 
+  local icount = Util.size(recipe.ingredients)
+  local maxSlots = math.floor(16 / icount)
+debug(maxSlots)
   for key,qty in pairs(recipe.ingredients) do
     local item = getItem(items, itemDB:splitKey(key))
     if not item then
       return 0, itemDB:getName(key)
     end
-    local x = math.min(math.floor(item.count / qty), item.maxCount)
+    local x = math.min(math.floor(item.count / qty), item.maxCount * maxSlots)
     count = math.min(x, count)
+debug(count)
   end
 
-  return count
+  return count, ''
 end
 
 local function craftItem(recipe, items, cItem, count)
   repeat until not turtle.forward()
 
-  local missing
-  count, missing = canCraft(recipe, items, count)
+--  local missing
+--  count, missing = canCraft(recipe, items, count)
+--  if count == 0 then
+--    cItem.status = 'missing ' .. missing
+--    return false
+--  end
   if count == 0 then
-    cItem.status = 'missing ' .. missing
+    cItem.status = 'missing something'
     return false
   end
 
   local slot = 1
   for key,qty in pairs(recipe.ingredients) do
-    local item = itemDB:splitKey(key)
-    inventoryAdapter:provide(item, count * qty, slot)
-    if turtle.getItemCount(slot) ~= count * qty then
-      cItem.status = 'failed'
-      return false
+    local item = itemDB:get(key)
+    local c = count * qty
+    while c > 0 do
+      local maxCount = math.min(c, item.maxCount)
+      inventoryAdapter:provide(item, maxCount, slot)
+      if turtle.getItemCount(slot) == 0 then -- ~= maxCount then FIXXX !!!
+        cItem.status = 'failed'
+debug(item)
+debug({ c, maxCount, count })
+read()
+        return false
+      end
+      c = c - maxCount
+      slot = slot + 1
     end
-    slot = slot + 1
   end
-  gotoMachine(recipe.machine)
-  turtle.emptyInventory(turtle.dropDown)
-  if #turtle.getFilledSlots() ~= 0 then
-    cItem.status = 'machine busy'
+  if not gotoMachine(recipe.machine) then
+    cItem.status = 'failed to find machine'
   else
-    cItem.status = 'crafting'
+    turtle.emptyInventory(turtle.dropDown)
+    if #turtle.getFilledSlots() ~= 0 then
+      cItem.status = 'machine busy'
+    else
+      cItem.status = 'crafting'
+    end
+  end
+end
+
+local function expandList(list)
+  local items = lastItems
+
+  local function getCraftable(recipe, count)
+    local maxSlots = math.floor(16 / Util.size(recipe.ingredients))
+
+    for key,qty in pairs(recipe.ingredients) do
+      local item = getItem(items, itemDB:splitKey(key))
+      if not item then
+        item = itemDB:get(key)
+        item.count = 0
+      end
+      local need = qty * count
+debug({ key, count, need })
+      local irecipe = recipes[key]
+      if item.count < need and irecipe then
+        need = math.ceil((need - item.count) / irecipe.count)
+        if not list[key] then
+          list[key] = Util.shallowCopy(item)
+          list[key].ocount = need
+          list[key].count = 0
+        else
+          list[key].ocount = list[key].ocount + need
+        end
+debug('adding ' .. key .. ' ' .. need)
+        local icount = getCraftable(irecipe, need)
+
+        list[key].count = list[key].count + icount
+      end
+      local x = math.min(math.floor(item.count / qty), item.maxCount * maxSlots)
+      count = math.min(x, count)
+      item.count = math.max(0, item.count - (count * qty))
+    end
+
+    return count
+  end
+
+--[[
+list = { }
+debug(getCraftable(recipes['minecraft:brick:0'], 512))
+for key, item in pairs(list) do
+  debug(item.name .. ' : ' .. item.ocount .. ':' .. item.count)
+end
+read()
+]]
+
+  for key, item in pairs(Util.shallowCopy(list)) do
+    local recipe = recipes[key]
+    item.count = math.ceil(item.count / recipe.count)
+    item.ocount = item.count
+    if recipe then
+      item.count = getCraftable(recipe, item.count)
+    end
   end
 end
 
 local function craftItems(craftList)
+  expandList(craftList)
+  jobListGrid:update()
+  jobListGrid:draw()
+  jobListGrid:sync()
   for key, item in pairs(craftList) do
     local recipe = recipes[key]
     if recipe then
@@ -304,9 +383,10 @@ local function jobMonitor()
     parent = mon,
     sortColumn = 'displayName',
     columns = {
-      { heading = 'Qty',      key = 'count',       width = 6                  },
-      { heading = 'Crafting', key = 'displayName', width = mon.width / 2 - 10 },
-      { heading = 'Status',   key = 'status',      width = mon.width - 10     },
+      { heading = 'Qty',      key = 'ocount',      width = 6 },
+      { heading = 'Qty',      key = 'count',       width = 6 },
+      { heading = 'Crafting', key = 'displayName', width = (mon.width - 18) / 2 },
+      { heading = 'Status',   key = 'status', },
     },
   })
 

@@ -440,7 +440,7 @@ function TurtleBuilder:inAirDropoff()
       self:log('Received supply location')
       os.sleep(0)
 
-      turtle._goto(pt.x, pt.z, pt.y)
+      turtle._goto(pt)
       os.sleep(.1)  -- random computer is not connected error
 
       local chestAdapter = Adapter.wrap({ direction = 'down', wrapSide = 'top' })
@@ -502,7 +502,7 @@ function TurtleBuilder:inAirResupply()
       self:log('Received supply location')
       os.sleep(0)
 
-      turtle._goto(pt.x, pt.z, pt.y)
+      turtle._goto(pt)
       os.sleep(.1)  -- random computer is not connected error
 
       local chestAdapter = Adapter.wrap({ direction = 'down', wrapSide = 'top' })
@@ -553,12 +553,11 @@ function TurtleBuilder:sendSupplyRequest(lastBlock)
   if device.wireless_modem then
     local slots = self:getAirResupplyList(lastBlock)
     self.slotUid = os.clock()
-
     Message.broadcast('supplyList', { uid = self.slotUid, slots = slots })
   end
 end
 
-local function closestEdgePoint(pt, pts, rpt)
+local function closestEdgePoint(pt, pts, rpt, y)
   pt = Point.copy(pt)
   pt.heading = rpt.heading
 
@@ -583,16 +582,18 @@ local function closestEdgePoint(pt, pts, rpt)
     cpt.z = rpt.z
   end
 
+  cpt.y = y
   return cpt
 end
 
 function TurtleBuilder:getBuildingCorner(y)
-  local box = {
-    x = -1, ex = self.schematic.width,
-    y =  y, ey = y,
-    z = -1, ez = self.schematic.length,
+  local pts = {
+    { x = -1,                   z = -1,                    y = 0 },
+    { x = -1,                   z = self.schematic.length, y = 0 },
+    { x = self.schematic.width, z = -1,                    y = 0 },
+    { x = self.schematic.width, z = self.schematic.length, y = 0 },
   }
-  return Point.closestPointInBox(turtle.getPoint(), box)
+  return closestEdgePoint(self.supplyPoint, pts, turtle.getPoint(), y)
 end
 
 function TurtleBuilder:gotoSupplyPoint()
@@ -601,7 +602,7 @@ function TurtleBuilder:gotoSupplyPoint()
     -- go to the corner closest to the supplies point
     -- pathfind the rest of the way
     local pt = self:getBuildingCorner(turtle.point.y)
-    turtle._goto(pt.x, pt.z)
+    turtle._goto({ x = pt.x, z = pt.z })
     turtle.setPolicy('none')
     turtle.pathfind(self.supplyPoint)
     os.sleep(.1) -- random 'Computer is not connected' error...
@@ -809,7 +810,7 @@ function TurtleBuilder:placePiston(b)
 end
 
 function TurtleBuilder:_goto(x, z, y, heading)
-  if not turtle._goto(x, z, y, heading) then
+  if not turtle._goto({ x = x, z = z, y = y, heading = heading }) then
     print('stuck')
     print('Press enter to continue')
     os.sleep(1)

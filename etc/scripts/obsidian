@@ -67,7 +67,7 @@ local function findObsidian()
     end
 
     node = Point.closest(turtle.point, nodes)
-    if not turtle.gotoPoint(node) then
+    if not turtle._goto(node) then
       break
     end
   until turtle.isAborted()
@@ -91,7 +91,7 @@ turtle.run(function()
       if not turtle.select('minecraft:water_bucket') then
         break
       end
-      turtle._goto(0, 0)
+      turtle._goto({ x = 0, z = 0 })
       turtle.placeDown()
       os.sleep(2)
       turtle.placeDown()
@@ -104,5 +104,5 @@ turtle.run(function()
     error(m)
   end
 
-  turtle._goto(0, 0, 0, 0)
+  turtle._goto({ x = 0, y = 0, z = 0, heading = 0 })
 end)
