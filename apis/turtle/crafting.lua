@@ -43,7 +43,7 @@ function turtle.craftItem(item, count, inventoryInfo)
 
     local slot = turtle.select(CRAFTING_TABLE)
     turtle.equip(side, CRAFTING_TABLE)
-    equipped = turtle.getItemDetail(slot)
+    equipped = turtle.getItemDetail(slot.index)
   end
 
   success = Craft.craftRecipe(item, count or 1, inventory)

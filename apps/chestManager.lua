@@ -1,5 +1,6 @@
 _G.requireInjector()
 
+local Ansi           = require('ansi')
 local ChestAdapter   = require('chestAdapter18')
 local Config         = require('config')
 local Craft          = require('turtle.craft')
@@ -74,27 +75,18 @@ local resources
 
 Craft.setRecipes(recipes)
 
-local function getItem(items, inItem, ignoreDamage)
+local function getItem(items, inItem, ignoreDamage, ignoreNbtHash)
   for _,item in pairs(items) do
-    if item.name == inItem.name then
-      if ignoreDamage then
-        return item
-      elseif item.damage == inItem.damage and item.nbtHash == inItem.nbtHash then
-        return item
-      end
+    if item.name == inItem.name and
+      (ignoreDamage or item.damage == inItem.damage) and
+      (ignoreNbtHash or item.nbtHash == inItem.nbtHash) then
+      return item
     end
   end
 end
 
 local function splitKey(key)
-  local t = Util.split(key, '(.-):')
-  local item = { }
-  if #t[#t] > 8 then
-    item.nbtHash = table.remove(t)
-  end
-  item.damage = tonumber(table.remove(t))
-  item.name = table.concat(t, ':')
-  return item
+  return itemDB:splitKey(key)
 end
 
 local function getItemQuantity(items, item)
@@ -219,6 +211,7 @@ local function craftItem(recipe, items, originalItem, craftList, count)
   if missing.name then
     originalItem.status = string.format('%s missing', itemDB:getName(missing.name))
     originalItem.statusCode = 'missing'
+debug('missing: ' .. missing.name)
   end
 
   if toCraft > 0 then
@@ -338,18 +331,18 @@ local function getAutocraftItems()
   return craftList
 end
 
-local function getItemWithQty(items, res, ignoreDamage)
+local function getItemWithQty(items, res, ignoreDamage, ignoreNbtHash)
 
-  local item = getItem(items, res, ignoreDamage)
+  local item = getItem(items, res, ignoreDamage, ignoreNbtHash)
 
-  if item and ignoreDamage then
+  if item and (ignoreDamage or ignoreNbtHash) then
     local count = 0
 
     for _,v in pairs(items) do
-      if item.name == v.name and item.nbtHash == v.nbtHash then
-        if item.maxDamage > 0 or item.damage == v.damage then
-          count = count + v.count
-        end
+      if item.name == v.name and
+        (ignoreDamage or item.damage == v.damage) and
+        (ignoreNbtHash or item.nbtHash == v.nbtHash) then
+        count = count + v.count
       end
     end
     item.count = count
@@ -364,7 +357,7 @@ local function watchResources(items)
   local outputs   = { }
 
   for _,res in pairs(resources) do
-    local item = getItemWithQty(items, res, res.ignoreDamage)
+    local item = getItemWithQty(items, res, res.ignoreDamage, res.ignoreDamage)
     if not item then
       item = {
         damage = res.damage,
@@ -377,7 +370,7 @@ local function watchResources(items)
 
     if res.limit and item.count > res.limit then
       inventoryAdapter:provide(
-        { name = item.name, damage = item.damage },
+        { name = item.name, damage = item.damage, nbtHash = item.nbtHash },
         item.count - res.limit,
         nil,
         config.trashDirection)
@@ -505,6 +498,25 @@ local itemPage = UI.Page {
       },
       help = 'Output side'
     },
+    infoButton = UI.Button {
+      x = 2, y = -2,
+      event = 'show_info',
+      text = 'Info',
+    },
+  },
+  info = UI.SlideOut {
+    titleBar = UI.TitleBar {
+      title = "Information",
+    },
+    textArea = UI.TextArea {
+      x = 2, ex = -2, y = 3, ey = -4,
+      backgroundColor = colors.black,
+    },
+    cancel = UI.Button {
+      ex = -2, y = -2, width = 6,
+      text = 'Okay',
+      event = 'hide_info',
+    }
   },
   statusBar = UI.StatusBar { }
 }
@@ -534,6 +546,22 @@ end
 function itemPage:eventHandler(event)
   if event.type == 'form_cancel' then
     UI:setPreviousPage()
+
+  elseif event.type == 'show_info' then
+    self.info.textArea.value =
+      string.format(
+[[%sName:   %s%s
+%sID:     %s%s
+%sDamage: %s%s
+%sNBT:    %s%s]],
+Ansi.yellow, Ansi.reset, self.item.displayName,
+Ansi.yellow, Ansi.reset, self.item.name,
+Ansi.yellow, Ansi.reset, self.item.damage,
+Ansi.yellow, Ansi.reset, self.item.nbtHash or '(none)')
+    self.info:show()
+
+  elseif event.type == 'hide_info' then
+    self.info:hide()
 
   elseif event.type == 'focus_change' then
     self.statusBar:setStatus(event.focused.help)
@@ -763,20 +791,65 @@ local function learnRecipe(page)
   if ingredients then
     turtle.select(1)
     if canCraft and turtle.craft() then
-      local recipe = getTurtleInventory()
-      if recipe and recipe[1] then
+      local results = getTurtleInventory()
+      if results and results[1] then
         clearGrid()
 
-        local key = uniqueKey(recipe[1])
+        local maxCount
         local newRecipe = {
-          count = recipe[1].count,
           ingredients = ingredients,
         }
-        if recipe[1].maxCount ~= 64 then
-          newRecipe.maxCount = recipe[1].maxCount
+
+        for _,v1 in pairs(results) do
+          for _,v2 in pairs(ingredients) do
+            if v1.name == v2.name and
+              v1.nbtHash == v2.nbtHash and
+              (v1.damage == v2.damage or
+                (v1.maxDamage > 0 and v2.maxDamage > 0 and
+                 v1.damage ~= v2.damage)) then
+              if not newRecipe.crafingTools then
+                newRecipe.craftingTools = { }
+              end
+              local tool = Util.shallowCopy(v2)
+              if tool.maxDamage > 0 then
+                tool.damage = '*'
+              end
+
+              --[[
+              Turtles can only craft one item at a time using a tool :(
+              ]]--
+              maxCount = 1
+
+              newRecipe.craftingTools[uniqueKey(tool)] = true
+              v1.craftingTool = true
+              break
+            end
+          end
+        end
+        local recipe
+        for _,v in pairs(results) do
+          if not v.craftingTool then
+            recipe = v
+            recipe.maxCount = maxCount
+            break
+          end
+        end
+
+        if not recipe then
+          error('Failed')
+        end
+
+        newRecipe.count = recipe.count
+
+        local key = uniqueKey(recipe)
+        if recipe.maxCount ~= 64 then
+          newRecipe.maxCount = recipe.maxCount
         end
 
         for k,ingredient in pairs(ingredients) do
+          if ingredient.maxDamage > 0 then
+            ingredient.damage = '*'
+          end
           ingredients[k] = uniqueKey(ingredient)
         end
 
@@ -784,7 +857,7 @@ local function learnRecipe(page)
 
         Util.writeTable(RECIPES_FILE, recipes)
 
-        local displayName = itemDB:getName(recipe[1])
+        local displayName = itemDB:getName(recipe)
 
         listingPage.statusBar.filter:setValue(displayName)
         listingPage.statusBar:timedStatus('Learned: ' .. displayName, 3)

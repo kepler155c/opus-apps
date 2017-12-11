@@ -284,8 +284,8 @@ local function createFurnace()
     print('Adding a furnace')
     getCobblestone(8)
 
-    if craftItem(FURNACE) then
-      turtle.drop(COBBLESTONE)
+    if turtle.has(FURNACE) or craftItem(FURNACE) then
+      -- turtle.drop(COBBLESTONE)
       local furnacePt = { x = GRID.BL.x + 2, y = 1, z = GRID.BL.z + 2 }
       turtle.placeAt(furnacePt, FURNACE)
       setState('furnace', furnacePt)
@@ -306,7 +306,9 @@ local function createPerimeter()
     print('Creating a perimeter')
 
     getCobblestone(GRID_WIDTH * 2 + 1)
-    cook(COBBLESTONE, 2, STONE, OAK_PLANK, 2)
+    if not turtle.has(STONE, 2) then
+      cook(COBBLESTONE, 2, STONE, OAK_PLANK, 2)
+    end
     turtle.refuel(OAK_PLANK)
 
     turtle.pathfind(GRID.BL)
@@ -337,7 +339,7 @@ local function createPerimeter()
 end
 
 local function createChests()
-  if state.chest_1 then
+  if state.chest then
     return
   end
   if state.perimeter and
@@ -345,27 +347,24 @@ local function createChests()
      turtle.canCraft(CHEST, 4, turtle.getSummedInventory()) then
 
     print('Adding storage')
-    if craftItem(CHEST, 4) then
+    if turtle.has(CHEST, 2) or craftItem(CHEST, 2) then
 
       local pt = Point.copy(GRID.BL)
       pt.x = pt.x + 1
       pt.y = pt.y - 1
 
-      for i = 1, 2 do
-        pt.z = pt.z + 1
+      pt.z = pt.z + 1
 
-        turtle.digDownAt(pt)
-        turtle.placeDown(CHEST)
+      turtle.digDownAt(pt)
+      turtle.placeDown(CHEST)
 
-        pt.z = pt.z + 1
+      pt.z = pt.z + 1
 
-        turtle.digDownAt(pt)
-        turtle.placeDown(CHEST)
+      turtle.digDownAt(pt)
+      turtle.placeDown(CHEST)
 
-        setState('chest_' .. i, Util.shallowCopy(pt))
+      setState('chest', Util.shallowCopy(pt))
 
-        pt.z = pt.z + 1
-      end
       turtle.drop(DIRT)
       turtle.refuel(OAK_PLANK)
     end
@@ -375,24 +374,27 @@ end
 
 local function dropOffItems()
 
-  if state.chest_1 then
+  if state.chest then
     local slots = turtle.getSummedInventory()
 
-    if state.chest_1 and
+    if state.chest and
        slots[CHARCOAL] and
        slots[CHARCOAL].count >= MIN_CHARCOAL and
        (turtle.getItemCount('minecraft:log') > 0 or
         turtle.getItemCount('minecraft:log2') > 0) then
 
       print('Storing logs')
-      turtle.pathfind(Point.above(state.chest_1))
+      turtle.pathfind(Point.above(state.chest))
       turtle.dropDown('minecraft:log')
       turtle.dropDown('minecraft:log2')
-    end
 
-    if slots[APPLE] then
-      print('Storing apples')
-      turtle.dropDownAt(state.chest_2, APPLE)
+      for _, sapling in pairs(ALL_SAPLINGS) do
+        if slots[sapling] and slots[sapling].count > MAX_SAPLINGS then
+          turtle.dropDown(sapling, slots[sapling].count - MAX_SAPLINGS)
+        end
+      end
+
+      turtle.dropDown(APPLE)
     end
   end
 
@@ -421,7 +423,7 @@ local function placeTorches()
 
     print('Placing torches')
 
-    if craftItem(TORCH, 4) then
+    if turtle.has(TORCH, 4) or craftItem(TORCH, 4) then
       local pts = { }
       for x = -4, 4, 8 do
         for z = -4, 4, 8 do
@@ -532,7 +534,7 @@ local function moreTrees()
     return
   end
 
-  if not state.chest_1 or turtle.getItemCount('minecraft:sapling') < 15 then
+  if not state.chest or turtle.getItemCount('minecraft:sapling') < 15 then
     return true
   end
 
@@ -694,7 +696,7 @@ local tasks = {
   { desc = 'Emptying furnace',   fn = emptyFurnace       },
   { desc = 'Adding trees',       fn = moreTrees          },
   { desc = 'Chopping',           fn = fell               },
-  { desc = 'Snacking',           fn = eatSaplings        },
+--  { desc = 'Snacking',           fn = eatSaplings        },
   { desc = 'Creating chest',     fn = createChests       },
   { desc = 'Creating furnace',   fn = createFurnace      },
   { desc = 'Making charcoal',    fn = makeSingleCharcoal },

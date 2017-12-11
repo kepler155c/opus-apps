@@ -34,7 +34,7 @@ local function getItemCount(items, key)
   local item = splitKey(key)
   for _,v in pairs(items) do
     if v.name == item.name and
-       v.damage == item.damage and
+       (not item.damage or v.damage == item.damage) and
        v.nbtHash == item.nbtHash then
       return v.count
     end
@@ -47,7 +47,15 @@ local function turtleCraft(recipe, qty, inventoryAdapter)
 
   for k,v in pairs(recipe.ingredients) do
     local item = splitKey(v)
-    inventoryAdapter:provide(item, qty, k)
+    local provideQty = qty
+    --[[
+    Turtles can only craft 1 item at a time when using a tool.
+
+    if recipe.craftingTools and recipe.craftingTools[k] then
+      provideQty = 1
+    end
+    ]]--
+    inventoryAdapter:provide(item, provideQty, k)
     if turtle.getItemCount(k) == 0 then -- ~= qty then
                                         -- FIX: ingredients cannot be stacked
       return false
@@ -127,7 +135,9 @@ function Craft.getCraftableAmount(recipe, count, items, missing)
           end
           return canCraft
         end
-        summedItems[item] = summedItem - 1
+        if not recipe.craftingTools or not recipe.craftingTools[item] then
+          summedItems[item] = summedItem - 1
+        end
       end
       canCraft = canCraft + recipe.count
     end

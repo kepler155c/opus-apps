@@ -4,6 +4,33 @@ local Util    = require('util')
 
 local itemDB = TableDB({ fileName = 'usr/config/items.db' })
 
+local function safeString(text)
+
+  local val = text:byte(1)
+
+  if val < 32 or val > 128 then
+
+    local newText = { }
+    local skip = 0
+    for i = 1, #text do
+      val = text:byte(i)
+      if val == 167 then
+        skip = 2
+      end
+      if skip > 0 then
+        skip = skip - 1
+      else
+        if val >= 32 and val <= 128 then
+          newText[#newText + 1] = val
+        end
+      end
+    end
+    return string.char(unpack(newText))
+  end
+
+  return text
+end
+
 function itemDB:makeKey(item)
   return { item.name, item.damage, item.nbtHash }
 end
@@ -15,7 +42,10 @@ function itemDB:splitKey(key, item)
   if #t[#t] > 8 then
     item.nbtHash = table.remove(t)
   end
-  item.damage = tonumber(table.remove(t))
+  local damage = table.remove(t)
+  if damage ~= '*' then
+    item.damage = tonumber(damage)
+  end
   item.name = table.concat(t, ':')
 
   return item
@@ -28,12 +58,16 @@ function itemDB:get(key)
     return item
   end
 
-  if key[2] ~= 0 then
+  if type(key) == 'string' then
+    key = self:makeKey(self:splitKey(key))
+  end
+
+  if not key[2] or key[2] ~= 0 then
     item = TableDB.get(self, { key[1], 0, key[3] })
     if item and item.maxDamage > 0 then
       item = Util.shallowCopy(item)
       item.damage = key[2]
-      item.displayName = string.format('%s (damage: %d)', item.displayName, item.damage)
+      item.displayName = string.format('%s (damage: %s)', item.displayName, (item.damage or '*'))
       return item
     end
   end
@@ -43,6 +77,7 @@ function itemDB:add(key, item)
   if item.maxDamage > 0 then
     key = { key[1], 0, key[3] }
   end
+  item.displayName = safeString(item.displayName)
   TableDB.add(self, key, item)
 end
 
@@ -58,7 +93,7 @@ function itemDB:getName(item)
   end
 
   -- fallback to nameDB
-  return nameDB:getName(item.name .. ':' .. item.damage)
+  return nameDB:getName(item.name .. ':' .. (item.damage or '*'))
 end
 
 function itemDB:getMaxCount(item)

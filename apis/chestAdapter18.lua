@@ -57,10 +57,12 @@ function ChestAdapter:getCachedItemDetails(item, k)
   if not detail then
     pcall(function() detail = self.getItemMeta(k) end)
     if not detail then
+--      error('Inventory has changed')
       return
     end
 -- NOT SUFFICIENT
     if detail.name ~= item.name then
+--      error('Inventory has changed')
       return
     end
 
@@ -94,11 +96,12 @@ function ChestAdapter:listItems(throttle)
     local entry = self.cache[key]
     if not entry then
       entry = self:getCachedItemDetails(v, k)
-      if entry then
-        entry.count = 0
-        self.cache[key] = entry
-        table.insert(items, entry)
+      if not entry then
+        return -- Inventory has changed
       end
+      entry.count = 0
+      self.cache[key] = entry
+      table.insert(items, entry)
     end
 
     if entry then
@@ -129,7 +132,9 @@ end
 function ChestAdapter:provide(item, qty, slot, direction)
   local stacks = self.list()
   for key,stack in Util.rpairs(stacks) do
-    if stack.name == item.name and stack.damage == item.damage then
+    if stack.name == item.name and
+      (not item.damage or stack.damage == item.damage) and
+      stack.nbtHash == item.nbtHash then
       local amount = math.min(qty, stack.count)
       if amount > 0 then
         self.pushItems(direction or self.direction, key, amount, slot)

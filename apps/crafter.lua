@@ -161,6 +161,10 @@ local function craftItem(recipe, items, cItem, count)
   local slot = 1
   for key,qty in pairs(recipe.ingredients) do
     local item = itemDB:get(key)
+    if not item then
+      cItem.status = 'failed'
+      return false
+    end
     local c = count * qty
     while c > 0 do
       local maxCount = math.min(c, item.maxCount)
@@ -169,7 +173,7 @@ local function craftItem(recipe, items, cItem, count)
         cItem.status = 'failed'
 debug(item)
 debug({ c, maxCount, count })
-read()
+--read()
         return false
       end
       c = c - maxCount
@@ -198,6 +202,10 @@ local function expandList(list)
       local item = getItem(items, itemDB:splitKey(key))
       if not item then
         item = itemDB:get(key)
+        if not item then
+          --item = itemDB:splitKey(key)
+          break
+        end
         item.count = 0
       end
       local need = qty * count
@@ -210,6 +218,9 @@ debug({ key, count, need })
           list[key].ocount = need
           list[key].count = 0
         else
+          if not list[key].ocount then
+            list[key].ocount = 0
+          end
           list[key].ocount = list[key].ocount + need
         end
 debug('adding ' .. key .. ' ' .. need)
@@ -471,6 +482,10 @@ function itemPage:eventHandler(event)
       filtered.ignoreDamage = true
     end
 
+    if Util.empty(filtered) then
+      filtered = nil
+    end
+
     resources[uniqueKey(filtered)] = filtered
     saveResources()
 
@@ -553,7 +568,10 @@ function learnPage:enable(target)
   if target.has_recipe then
     local recipe = recipes[uniqueKey(target)]
     screen2.count.value = recipe.count
-    screen2.machine:setIndex(select(2, Util.find(machines, 'index', recipe.machine)))
+    local _, index = Util.find(machines, 'index', recipe.machine)
+    if index then
+      screen2.machine:setIndex(index)
+    end
     for k,v in pairs(recipe.ingredients) do
       screen1.ingredients.values[k] =
         { name = k, count = v, displayName = itemDB:getName(k) }
