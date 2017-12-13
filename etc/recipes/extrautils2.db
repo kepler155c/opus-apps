@@ -1,0 +1,21 @@
+{
+  [ "extrautils2:user:0" ] = {
+    ingredients = {
+      "minecraft:dropper:0",
+      "extrautils2:ingredients:0",
+      [ 5 ] = "minecraft:lever:0",
+    },
+    count = 1,
+  },
+  [ "extrautils2:endershard:0" ] = {
+    ingredients = {
+      "minecraft:ender_pearl:0",
+      "extrautils2:glasscutter:*",
+    },
+    craftingTools = {
+      [ "extrautils2:glasscutter:*" ] = true,
+    },
+    maxCount = 1,
+    count = 8,
+  },
+}

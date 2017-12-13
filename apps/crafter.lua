@@ -24,7 +24,7 @@ repeat until not turtle.forward()
 local inventoryAdapter = ChestAdapter(config.inventory)
 
 local RESOURCE_FILE = 'usr/config/resources.db'
-local RECIPES_FILE  = 'usr/etc/recipes2.db'
+local RECIPES_FILE  = 'usr/config/recipes2.db'
 
 local recipes = Util.readTable(RECIPES_FILE) or { }
 local resources
@@ -377,7 +377,7 @@ local function findMachines()
 end
 
 local function jobMonitor()
-  local mon = Peripheral.getBySide('top')
+  local mon = Peripheral.getByType('monitor')
 
   if mon then
     mon = UI.Device({
@@ -485,7 +485,7 @@ function itemPage:eventHandler(event)
     if Util.empty(filtered) then
       filtered = nil
     end
-
+debug(filtered)
     resources[uniqueKey(filtered)] = filtered
     saveResources()
 

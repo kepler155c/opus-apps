@@ -1,10 +1,11 @@
 local Util   = require('util')
 
+local fs     = _G.fs
 local turtle = _G.turtle
 
-local Craft = {
-  recipes = Util.readTable('usr/etc/recipes.db') or { },
-}
+local RECIPES_DIR = 'usr/etc/recipes'
+
+local Craft = { }
 
 local function clearGrid(inventoryAdapter)
   for i = 1, 16 do
@@ -65,55 +66,73 @@ local function turtleCraft(recipe, qty, inventoryAdapter)
   return turtle.craft()
 end
 
+function Craft.loadRecipes()
+  Craft.recipes = Util.readTable(fs.combine(RECIPES_DIR, 'minecraft.db')) or { }
+
+  local files = fs.list('usr/etc/recipes')
+  table.sort(files)
+  Util.removeByValue(files, 'minecraft.db')
+
+  for _,file in ipairs(files) do
+    local recipes = Util.readTable(fs.combine(RECIPES_DIR, file))
+    Util.merge(Craft.recipes, recipes)
+  end
+
+  local recipes = Util.readTable('usr/config/recipes.db') or { }
+  Util.merge(Craft.recipes, recipes)
+end
+
+function Craft.sumIngredients(recipe)
+  -- produces { ['minecraft:planks:0'] = 8 }
+  local t = { }
+  for _,item in pairs(recipe.ingredients) do
+    t[item] = (t[item] or 0) + 1
+  end
+  return t
+end
+
 function Craft.craftRecipe(recipe, count, inventoryAdapter)
   if type(recipe) == 'string' then
     recipe = Craft.recipes[recipe]
     if not recipe then
-      return false, 'No recipe'
+      return 0, 'No recipe'
     end
   end
 
   local items = inventoryAdapter:listItems()
 
-  local function sumItems(items)
-    -- produces { ['minecraft:planks:0'] = 8 }
-    local t = {}
-    for _,item in pairs(items) do
-      t[item] = (t[item] or 0) + 1
-    end
-    return t
-  end
-
   count = math.ceil(count / recipe.count)
 
   local maxCount = recipe.maxCount or math.floor(64 / recipe.count)
-  local summedItems = sumItems(recipe.ingredients)
+  local summedItems = Craft.sumIngredients(recipe)
 
   for key,icount in pairs(summedItems) do
     local itemCount = getItemCount(items, key)
     if itemCount < icount * count then
       local irecipe = Craft.recipes[key]
       if irecipe then
---Util.print('Crafting %d %s', icount * count - itemCount, key)
-        if not Craft.craftRecipe(irecipe,
-                                 icount * count - itemCount,
-                                 inventoryAdapter) then
+        local iqty = icount * count - itemCount
+        local crafted = Craft.craftRecipe(irecipe, iqty, inventoryAdapter)
+        if crafted ~= iqty then
           turtle.select(1)
-          return
+          return 0
         end
       end
     end
   end
+
+  local crafted = 0
   repeat
     if not turtleCraft(recipe, math.min(count, maxCount), inventoryAdapter) then
       turtle.select(1)
-      return false
+      break
     end
+    crafted = crafted + math.min(count, maxCount)
     count = count - maxCount
   until count <= 0
 
   turtle.select(1)
-  return true
+  return crafted * recipe.count
 end
 
 -- given a certain quantity, return how many of those can be crafted
@@ -183,5 +202,7 @@ function Craft.craftRecipeTest(name, count)
   Craft.setRecipes(Util.readTable('usr/etc/recipes.db'))
   return { Craft.craftRecipe(Craft.recipes[name], count, chestAdapter) }
 end
+
+Craft.loadRecipes()
 
 return Craft

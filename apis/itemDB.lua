@@ -52,14 +52,14 @@ function itemDB:splitKey(key, item)
 end
 
 function itemDB:get(key)
+  if type(key) == 'string' then
+    key = self:makeKey(self:splitKey(key))
+  end
+
   local item = TableDB.get(self, key)
 
   if item then
     return item
-  end
-
-  if type(key) == 'string' then
-    key = self:makeKey(self:splitKey(key))
   end
 
   if not key[2] or key[2] ~= 0 then

@@ -22,7 +22,8 @@ function RefinedAdapter:init(args)
   Util.merge(self, defaults)
   Util.merge(self, args)
 
-  local controller = Peripheral.getByType('refinedstorage:controller')
+  local controller = Peripheral.getByType('refinedstorage:controller') or
+                     Peripheral.getByMethod('listAvailableItems')
   if controller then
     Util.merge(self, controller)
   end

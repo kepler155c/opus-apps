@@ -1,0 +1,28 @@
+{
+  [ "storagedrawers:basicDrawers:0:b85f006d9f6aa0e06184f8931d4e85c1" ] = {
+    ingredients = {
+      "minecraft:planks:0",
+      "minecraft:planks:0",
+      "minecraft:planks:0",
+      [ 9 ] = "minecraft:planks:0",
+      [ 10 ] = "minecraft:planks:0",
+      [ 11 ] = "minecraft:planks:0",
+      [ 6 ] = "minecraft:chest:0",
+    },
+    count = 1,
+  },
+  [ "storagedrawers:upgradeTemplate:0" ] = {
+    ingredients = {
+      "minecraft:stick:0",
+      "minecraft:stick:0",
+      "minecraft:stick:0",
+      [ 9 ] = "minecraft:stick:0",
+      [ 10 ] = "minecraft:stick:0",
+      [ 11 ] = "minecraft:stick:0",
+      [ 5 ] = "minecraft:stick:0",
+      [ 6 ] = "storagedrawers:basicDrawers:0:b85f006d9f6aa0e06184f8931d4e85c1",
+      [ 7 ] = "minecraft:stick:0",
+    },
+    count = 2,
+  },
+}

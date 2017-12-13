@@ -1,0 +1,94 @@
+{
+  [ "appliedenergistics2:quartz_glass:0" ] = {
+    ingredients = {
+      "appliedenergistics2:material:2",
+      "minecraft:glass:0",
+      "appliedenergistics2:material:2",
+      [ 9 ] = "appliedenergistics2:material:2",
+      [ 10 ] = "minecraft:glass:0",
+      [ 11 ] = "appliedenergistics2:material:2",
+      [ 5 ] = "minecraft:glass:0",
+      [ 6 ] = "appliedenergistics2:material:2",
+      [ 7 ] = "minecraft:glass:0",
+    },
+    count = 4,
+  },
+  [ "appliedenergistics2:material:43" ] = {
+    ingredients = {
+      "appliedenergistics2:material:0",
+      "appliedenergistics2:material:8",
+      "appliedenergistics2:material:22",
+    },
+    count = 2,
+  },
+  [ "appliedenergistics2:material:44" ] = {
+    ingredients = {
+      [ 5 ] = "minecraft:quartz:0",
+      [ 6 ] = "appliedenergistics2:material:8",
+      [ 7 ] = "appliedenergistics2:material:22",
+    },
+    count = 2,
+  },
+  [ "appliedenergistics2:material:35" ] = {
+    ingredients = {
+      "minecraft:redstone:0",
+      "appliedenergistics2:material:0",
+      "minecraft:redstone:0",
+      [ 5 ] = "appliedenergistics2:material:0",
+      [ 6 ] = "appliedenergistics2:material:22",
+      [ 7 ] = "appliedenergistics2:material:0",
+      [ 9 ] = "minecraft:redstone:0",
+      [ 10 ] = "appliedenergistics2:material:0",
+      [ 11 ] = "minecraft:redstone:0",
+    },
+    count = 1,
+  },
+  [ "appliedenergistics2:interface:0" ] = {
+    ingredients = {
+      "minecraft:iron_ingot:0",
+      "minecraft:glass:0",
+      "minecraft:iron_ingot:0",
+      [ 9 ] = "minecraft:iron_ingot:0",
+      [ 10 ] = "minecraft:glass:0",
+      [ 11 ] = "minecraft:iron_ingot:0",
+      [ 5 ] = "appliedenergistics2:material:44",
+      [ 7 ] = "appliedenergistics2:material:43",
+    },
+    count = 1,
+  },
+  [ "appliedenergistics2:crystal_seed:0:5af0f90bcc279578cf09089f43278d57" ] = {
+    ingredients = {
+      "minecraft:sand:0",
+      "appliedenergistics2:material:2",
+    },
+    count = 2,
+  },
+  [ "appliedenergistics2:material:36" ] = {
+    ingredients = {
+      "minecraft:redstone:0",
+      "appliedenergistics2:material:23",
+      "minecraft:redstone:0",
+      [ 5 ] = "appliedenergistics2:material:35",
+      [ 6 ] = "appliedenergistics2:quartz_glass:0",
+      [ 7 ] = "appliedenergistics2:material:35",
+      [ 9 ] = "minecraft:redstone:0",
+      [ 10 ] = "appliedenergistics2:material:35",
+      [ 11 ] = "minecraft:redstone:0",
+    },
+    count = 1,
+  },
+  [ "appliedenergistics2:material:37" ] = {
+    ingredients = {
+      "minecraft:glowstone_dust:0",
+      "appliedenergistics2:material:24",
+      "minecraft:glowstone_dust:0",
+      [ 5 ] = "appliedenergistics2:material:36",
+      [ 6 ] = "appliedenergistics2:quartz_glass:0",
+      [ 7 ] = "appliedenergistics2:material:36",
+      [ 9 ] = "minecraft:glowstone_dust:0",
+      [ 10 ] = "appliedenergistics2:material:36",
+      [ 11 ] = "minecraft:glowstone_dust:0",
+    },
+    count = 1,
+  },
+}

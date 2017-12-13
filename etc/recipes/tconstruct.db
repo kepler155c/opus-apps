@@ -1,0 +1,22 @@
+{
+  [ "minecraft:book:0" ] = {
+    ingredients = {
+      "minecraft:paper:0",
+      "minecraft:paper:0",
+      "minecraft:paper:0",
+      [ 5 ] = "minecraft:string:0",
+      [ 6 ] = "tconstruct:pattern:0",
+      [ 7 ] = "tconstruct:pattern:0",
+    },
+    count = 1,
+  },
+  [ "tconstruct:pattern:0" ] = {
+    ingredients = {
+      "minecraft:planks:0",
+      "minecraft:stick:0",
+      [ 5 ] = "minecraft:stick:0",
+      [ 6 ] = "minecraft:planks:0",
+    },
+    count = 4,
+  },
+}

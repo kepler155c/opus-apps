@@ -1,0 +1,11 @@
+{
+  [ "exnihiloadscensio:hammerStone:0" ] = {
+    ingredients = {
+      [ 7 ] = "minecraft:cobblestone:0",
+      [ 9 ] = "minecraft:stick:0",
+      [ 2 ] = "minecraft:cobblestone:0",
+      [ 6 ] = "minecraft:stick:0",
+    },
+    count = 1,
+  },
+}

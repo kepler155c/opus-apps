@@ -62,18 +62,17 @@ if device.workbench then
 end
 
 local RESOURCE_FILE = 'usr/config/resources.db'
-local RECIPES_FILE  = 'usr/etc/recipes.db'
+local RECIPES_FILE  = 'usr/config/recipes.db'
 
 local colors = _G.colors
 local turtle = _G.turtle
 
 local craftingPaused = false
 local canCraft = not not duckAntenna or turtleChestAdapter:isValid()
-local recipes = Util.readTable(RECIPES_FILE) or { }
+local userRecipes = Util.readTable(RECIPES_FILE) or { }
 local jobListGrid
 local resources
-
-Craft.setRecipes(recipes)
+local demandCrafting = { }
 
 local function getItem(items, inItem, ignoreDamage, ignoreNbtHash)
   for _,item in pairs(items) do
@@ -113,7 +112,7 @@ local function mergeResources(t)
     end
   end
 
-  for k in pairs(recipes) do
+  for k in pairs(Craft.recipes) do
     local v = splitKey(k)
     local item = getItem(t, v)
     if not item then
@@ -132,13 +131,20 @@ local function mergeResources(t)
   end
 end
 
-local function filterItems(t, filter)
-  if filter then
-    local r = {}
-    filter = filter:lower()
+local function filterItems(t, filter, displayMode)
+  if filter or displayMode > 0 then
+    local r = { }
+    if filter then
+      filter = filter:lower()
+    end
     for _,v in pairs(t) do
-      if string.find(v.lname, filter) then
-        table.insert(r, v)
+      if not filter or string.find(v.lname, filter) then
+        if not displayMode or
+          displayMode == 0 or
+          displayMode == 1 and v.count > 0 or
+          displayMode == 2 and v.has_recipe then
+          table.insert(r, v)
+        end
       end
     end
     return r
@@ -146,22 +152,35 @@ local function filterItems(t, filter)
   return t
 end
 
-local function sumItems3(ingredients, items, summedItems, count)
+local function sumItems3(ingredients, items, summedItems, count, throttle)
 
-  for _,key in pairs(ingredients) do
+  throttle = throttle or Util.throttle()
+
+  local function sumItems(items)
+    -- produces { ['minecraft:planks:0'] = 8 }
+    local t = {}
+    for _,item in pairs(items) do
+      t[item] = (t[item] or 0) + 1
+    end
+    return t
+  end
+
+  for key,iqty in pairs(sumItems(ingredients)) do
+    throttle()
     local item = splitKey(key)
+--print(key)
     local summedItem = summedItems[key]
     if not summedItem then
       summedItem = Util.shallowCopy(item)
-      summedItem.recipe = recipes[key]
+      summedItem.recipe = Craft.recipes[key]
       summedItem.count = getItemQuantity(items, summedItem)
       summedItems[key] = summedItem
     end
-    summedItem.count = summedItem.count - count
+    summedItem.count = summedItem.count - (count * iqty)
     if summedItem.recipe and summedItem.count < 0 then
       local need = math.ceil(-summedItem.count / summedItem.recipe.count)
       summedItem.count = 0
-      sumItems3(summedItem.recipe.ingredients, items, summedItems, need)
+      sumItems3(summedItem.recipe.ingredients, items, summedItems, need, throttle)
     end
   end
 end
@@ -202,45 +221,65 @@ end
 local function craftItem(recipe, items, originalItem, craftList, count)
 
   if craftingPaused or not canCraft or not isGridClear() then
-    return
+    return 0
   end
 
   local missing = { }
   local toCraft = Craft.getCraftableAmount(recipe, count, items, missing)
-
   if missing.name then
     originalItem.status = string.format('%s missing', itemDB:getName(missing.name))
     originalItem.statusCode = 'missing'
-debug('missing: ' .. missing.name)
+-- debug(missing.name)
   end
+
+  if originalItem.forceCrafting and toCraft == 0 then
+    for key,qty in pairs(Craft.sumIngredients(recipe)) do
+      local iRecipe = Craft.recipes[key]
+      if iRecipe then
+        local need = count * qty
+        local has = getItemQuantity(items, splitKey(key))
+        if has < need then
+          craftItem(iRecipe, items, originalItem, { }, need - has)
+          items = inventoryAdapter:listItems()
+        end
+      end
+    end
+  end
+debug('count: ' .. count)
+debug('toCraft: ' .. toCraft)
+  local crafted = 0
 
   if toCraft > 0 then
-    Craft.craftRecipe(recipe, toCraft, inventoryAdapter)
+    crafted = Craft.craftRecipe(recipe, toCraft, inventoryAdapter)
     clearGrid()
     items = inventoryAdapter:listItems()
+    count = count - crafted
   end
-
-  count = count - toCraft
+debug('count: ' .. count)
 
   if count > 0 then
     local summedItems = { }
     sumItems3(recipe.ingredients, items, summedItems, math.ceil(count / recipe.count))
 
     for _,ingredient in pairs(summedItems) do
-      if not ingredient.recipe and ingredient.count < 0 then
+      --if not ingredient.recipe and ingredient.count < 0 then
+      if ingredient.count < 0 then
         addCraftingRequest(ingredient, craftList, -ingredient.count)
       end
     end
   end
+debug('crafted: ' .. crafted)
+  return crafted
 end
 
 local function craftItems(craftList, allItems)
 
   for _,key in pairs(Util.keys(craftList)) do
     local item = craftList[key]
-    local recipe = recipes[key]
+    local recipe = Craft.recipes[key]
     if recipe then
-      craftItem(recipe, allItems, item, craftList, item.count)
+      local crafted = craftItem(recipe, allItems, item, craftList, item.count)
+      item.count = item.count - crafted
       allItems = inventoryAdapter:listItems() -- refresh counts
     elseif item.rsControl then
       item.status = 'Activated'
@@ -249,7 +288,7 @@ local function craftItems(craftList, allItems)
 
   for key,item in pairs(craftList) do
 
-    if not recipes[key] and not item.rsControl then
+    if not Craft.recipes[key] and not item.rsControl then
       if not controller then
         item.status = '(no recipe)'
       else
@@ -635,16 +674,23 @@ local listingPage = UI.Page {
       value = 'Filter',
     },
     filter = UI.TextEntry {
-      x = 9, ex = -2,
+      x = 9, ex = -5,
       limit = 50,
       backgroundColor = colors.gray,
       backgroundFocusColor = colors.gray,
+    },
+    display = UI.Button {
+      x = -3,
+      event = 'toggle_display',
+      value = 0,
+      text = 'A',
     },
   },
   accelerators = {
     r = 'refresh',
     q = 'quit',
-  }
+  },
+  displayMode = 0,
 }
 
 function listingPage.grid:getRowTextColor(row, selected)
@@ -672,20 +718,6 @@ end
 function listingPage.statusBar:draw()
   return UI.Window.draw(self)
 end
---[[
-function listingPage.statusBar.filter:eventHandler(event)
-  if event.type == 'mouse_rightclick' then
-    self.value = ''
-    self:draw()
-    local page = UI:getCurrentPage()
-    page.filter = nil
-    page:applyFilter()
-    page.grid:draw()
-    page:setFocus(self)
-  end
-  return UI.TextEntry.eventHandler(self, event)
-end
-]]
 
 function listingPage:eventHandler(event)
   if event.type == 'quit' then
@@ -700,6 +732,20 @@ function listingPage:eventHandler(event)
     self.grid:draw()
     self.statusBar.filter:focus()
 
+  elseif event.type == 'toggle_display' then
+    local values = {
+      [0] = 'A',
+      [1] = 'I',
+      [2] = 'C',
+    }
+
+    event.button.value = (event.button.value + 1) % 3
+    self.displayMode = event.button.value
+    event.button.text = values[event.button.value]
+    event.button:draw()
+    self:applyFilter()
+    self.grid:draw()
+
   elseif event.type == 'learn' then
     UI:setPage('learn')
 
@@ -711,9 +757,10 @@ function listingPage:eventHandler(event)
     if item then
       local key = uniqueKey(item)
 
-      if recipes[key] then
-        recipes[key] = nil
-        Util.writeTable(RECIPES_FILE, recipes)
+      if userRecipes[key] then
+        userRecipes[key] = nil
+        Util.writeTable(RECIPES_FILE, userRecipes)
+        Craft.loadRecipes()
       end
 
       if resources[key] then
@@ -754,7 +801,7 @@ function listingPage:refresh()
 end
 
 function listingPage:applyFilter()
-  local t = filterItems(self.allItems, self.filter)
+  local t = filterItems(self.allItems, self.filter, self.displayMode)
   self.grid:setValues(t)
 end
 
@@ -853,9 +900,10 @@ local function learnRecipe(page)
           ingredients[k] = uniqueKey(ingredient)
         end
 
-        recipes[key] = newRecipe
+        userRecipes[key] = newRecipe
 
-        Util.writeTable(RECIPES_FILE, recipes)
+        Util.writeTable(RECIPES_FILE, userRecipes)
+        Craft.loadRecipes()
 
         local displayName = itemDB:getName(recipe)
 
@@ -950,13 +998,11 @@ end
 
 function craftPage:enable(item)
   self.item = item
-  craftingPaused = true
   self:focusFirst()
   UI.Dialog.enable(self)
 end
 
 function craftPage:disable()
-  craftingPaused = false
   UI.Dialog.disable(self)
 end
 
@@ -965,12 +1011,9 @@ function craftPage:eventHandler(event)
     UI:setPreviousPage()
   elseif event.type == 'accept' then
     local key = uniqueKey(self.item)
-    local craftList = { }
-    craftList[key] = Util.shallowCopy(self.item)
-    craftList[key].count = tonumber(self.count.value)
-
-    craftingPaused = false
-    craftItems(craftList, inventoryAdapter:listItems())
+    demandCrafting[key] = Util.shallowCopy(self.item)
+    demandCrafting[key].count = tonumber(self.count.value)
+    demandCrafting[key].forceCrafting = true
     UI:setPreviousPage()
   else
     return UI.Dialog.eventHandler(self, event)
@@ -1005,6 +1048,21 @@ Event.onInterval(5, function()
     else
       local craftList = watchResources(items)
       craftItems(craftList, items)
+
+      if Util.size(demandCrafting) > 0 then
+        local list = Util.shallowCopy(demandCrafting)
+        craftItems(list, inventoryAdapter:listItems())
+        for _,key in pairs(Util.keys(demandCrafting)) do
+          debug(key .. ' - ' .. demandCrafting[key].count)
+          if demandCrafting[key].count <= 0 then    -- should check statusCode
+            demandCrafting[key] = nil
+          end
+        end
+        for k,v in pairs(list) do
+          craftList[k] = v
+        end
+      end
+
       jobListGrid:setValues(craftList)
       jobListGrid:update()
       jobListGrid:draw()

@@ -1,0 +1,58 @@
+{
+  [ "mekanism:EnergyTablet:0:3a153e5a66ba42a2d96ffd50ba64918b" ] = {
+    ingredients = {
+      "minecraft:redstone:0",
+      "minecraft:gold_ingot:0",
+      "minecraft:redstone:0",
+      [ 9 ] = "minecraft:redstone:0",
+      [ 10 ] = "minecraft:gold_ingot:0",
+      [ 11 ] = "minecraft:redstone:0",
+      [ 5 ] = "mekanism:EnrichedAlloy:0",
+      [ 6 ] = "minecraft:gold_ingot:0",
+      [ 7 ] = "mekanism:EnrichedAlloy:0",
+    },
+    count = 1,
+  },
+  [ "mekanism:SpeedUpgrade:0" ] = {
+    ingredients = {
+      [ 10 ] = "minecraft:glass:0",
+      [ 2 ] = "minecraft:glass:0",
+      [ 5 ] = "mekanism:EnrichedAlloy:0",
+      [ 6 ] = "mekanism:Dust:2",
+      [ 7 ] = "mekanism:EnrichedAlloy:0",
+    },
+    count = 1,
+  },
+  [ "mekanism:ControlCircuit:1" ] = {
+    ingredients = {
+      "mekanism:EnrichedAlloy:0",
+      "mekanism:ControlCircuit:0",
+      "mekanism:EnrichedAlloy:0",
+    },
+    count = 1,
+  },
+  [ "mekanism:BasicBlock:8" ] = {
+    ingredients = {
+      "bigreactors:ingotmetals:5",
+      "minecraft:glass:0",
+      "bigreactors:ingotmetals:5",
+      [ 9 ] = "bigreactors:ingotmetals:5",
+      [ 10 ] = "minecraft:glass:0",
+      [ 11 ] = "bigreactors:ingotmetals:5",
+      [ 5 ] = "minecraft:glass:0",
+      [ 6 ] = "mekanism:Ingot:1",
+      [ 7 ] = "minecraft:glass:0",
+    },
+    count = 1,
+  },
+  [ "mekanism:EnergyUpgrade:0" ] = {
+    ingredients = {
+      [ 10 ] = "minecraft:glass:0",
+      [ 2 ] = "minecraft:glass:0",
+      [ 5 ] = "mekanism:EnrichedAlloy:0",
+      [ 6 ] = "exnihiloadscensio:itemOreGold:2",
+      [ 7 ] = "mekanism:EnrichedAlloy:0",
+    },
+    count = 1,
+  },
+}
