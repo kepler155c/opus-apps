@@ -130,21 +130,27 @@ function ChestAdapter:craftItems()
 end
 
 function ChestAdapter:provide(item, qty, slot, direction)
-  local stacks = self.list()
-  for key,stack in Util.rpairs(stacks) do
-    if stack.name == item.name and
-      (not item.damage or stack.damage == item.damage) and
-      stack.nbtHash == item.nbtHash then
-      local amount = math.min(qty, stack.count)
-      if amount > 0 then
-        self.pushItems(direction or self.direction, key, amount, slot)
-      end
-      qty = qty - amount
-      if qty <= 0 then
-        break
+  local s, m = pcall(function()
+    local stacks = self.list()
+    for key,stack in Util.rpairs(stacks) do
+      if stack.name == item.name and
+        (not item.damage or stack.damage == item.damage) and
+        (not item.nbtHash or stack.nbtHash == item.nbtHash) then
+        local amount = math.min(qty, stack.count)
+        if amount > 0 then
+          self.pushItems(direction or self.direction, key, amount, slot)
+        end
+        qty = qty - amount
+        if qty <= 0 then
+          break
+        end
       end
     end
+  end)
+  if not s then
+    debug(m)
   end
+  return s, m
 end
 
 function ChestAdapter:extract(slot, qty, toSlot)

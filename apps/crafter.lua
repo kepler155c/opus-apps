@@ -44,18 +44,30 @@ local function getItem(items, inItem, ignoreDamage)
   end
 end
 
-local function getItemCount(items, inItem)
-  inItem.count = 0
-  for _,item in pairs(items) do
-    if item.name == inItem.name and item.damage == inItem.damage and item.nbtHash == inItem.nbtHash then
-      inItem.count = item.count
-      break
-    end
-  end
-end
-
 local function uniqueKey(item)
   return table.concat({ item.name, item.damage, item.nbtHash }, ':')
+end
+
+local function getItemQuantity(items, res)
+  local count = 0
+  for _,v in pairs(items) do
+    if res.name == v.name and
+      ((not res.damage and v.maxDamage > 0) or res.damage == v.damage) and
+      ((not res.nbtHash and v.nbtHash) or res.nbtHash == v.nbtHash) then
+      count = count + v.count
+    end
+  end
+  return count
+end
+
+local function getItemWithQty(items, res)
+  for _,v in pairs(items) do
+    if res.name == v.name and
+      ((not res.damage and v.maxDamage > 0) or res.damage == v.damage) and
+      ((not res.nbtHash and v.nbtHash) or res.nbtHash == v.nbtHash) then
+      return v
+    end
+  end
 end
 
 local function mergeResources(t)
@@ -130,7 +142,7 @@ local function canCraft(recipe, items, count)
 
   local icount = Util.size(recipe.ingredients)
   local maxSlots = math.floor(16 / icount)
-debug(maxSlots)
+
   for key,qty in pairs(recipe.ingredients) do
     local item = getItem(items, itemDB:splitKey(key))
     if not item then
@@ -138,21 +150,20 @@ debug(maxSlots)
     end
     local x = math.min(math.floor(item.count / qty), item.maxCount * maxSlots)
     count = math.min(x, count)
-debug(count)
   end
 
   return count, ''
 end
 
-local function craftItem(recipe, items, cItem, count)
+local function craftItem(recipe, recipeKey, items, cItem, count)
   repeat until not turtle.forward()
 
---  local missing
---  count, missing = canCraft(recipe, items, count)
---  if count == 0 then
---    cItem.status = 'missing ' .. missing
---    return false
---  end
+  local resource = resources[recipeKey]
+  if not resource or not resource.machine then
+    cItem.status = 'machine not selected'
+    return false
+  end
+
   if count == 0 then
     cItem.status = 'missing something'
     return false
@@ -171,19 +182,20 @@ local function craftItem(recipe, items, cItem, count)
       inventoryAdapter:provide(item, maxCount, slot)
       if turtle.getItemCount(slot) == 0 then -- ~= maxCount then FIXXX !!!
         cItem.status = 'failed'
-debug(item)
-debug({ c, maxCount, count })
---read()
         return false
       end
       c = c - maxCount
       slot = slot + 1
     end
   end
-  if not gotoMachine(recipe.machine) then
+  if not gotoMachine(resource.machine) then
     cItem.status = 'failed to find machine'
   else
-    turtle.emptyInventory(turtle.dropDown)
+    if resource.dir == 'up' then
+      turtle.emptyInventory(turtle.dropUp)
+    else
+      turtle.emptyInventory(turtle.dropDown)
+    end
     if #turtle.getFilledSlots() ~= 0 then
       cItem.status = 'machine busy'
     else
@@ -199,7 +211,8 @@ local function expandList(list)
     local maxSlots = math.floor(16 / Util.size(recipe.ingredients))
 
     for key,qty in pairs(recipe.ingredients) do
-      local item = getItem(items, itemDB:splitKey(key))
+
+      local item = getItemWithQty(items, itemDB:splitKey(key))
       if not item then
         item = itemDB:get(key)
         if not item then
@@ -208,9 +221,10 @@ local function expandList(list)
         end
         item.count = 0
       end
+
       local need = qty * count
-debug({ key, count, need })
       local irecipe = recipes[key]
+
       if item.count < need and irecipe then
         need = math.ceil((need - item.count) / irecipe.count)
         if not list[key] then
@@ -223,9 +237,8 @@ debug({ key, count, need })
           end
           list[key].ocount = list[key].ocount + need
         end
-debug('adding ' .. key .. ' ' .. need)
-        local icount = getCraftable(irecipe, need)
 
+        local icount = getCraftable(irecipe, need)
         list[key].count = list[key].count + icount
       end
       local x = math.min(math.floor(item.count / qty), item.maxCount * maxSlots)
@@ -247,6 +260,7 @@ read()
 
   for key, item in pairs(Util.shallowCopy(list)) do
     local recipe = recipes[key]
+
     item.count = math.ceil(item.count / recipe.count)
     item.ocount = item.count
     if recipe then
@@ -263,7 +277,7 @@ local function craftItems(craftList)
   for key, item in pairs(craftList) do
     local recipe = recipes[key]
     if recipe then
-      craftItem(recipe, lastItems, item, item.count)
+      craftItem(recipe, key, lastItems, item, item.count)
       repeat until not turtle.forward()
       jobListGrid:update()
       jobListGrid:draw()
@@ -274,55 +288,26 @@ local function craftItems(craftList)
   end
 end
 
-local function getItemWithQty(items, res, ignoreDamage)
-  local item = getItem(items, res, ignoreDamage)
-
-  if item and ignoreDamage then
-    local count = 0
-
-    for _,v in pairs(items) do
-      if item.name == v.name and item.nbtHash == v.nbtHash then
-        if item.maxDamage > 0 or item.damage == v.damage then
-          count = count + v.count
-        end
-      end
-    end
-    item.count = count
-  end
-
-  return item
-end
-
 local function watchResources(items)
   local craftList = { }
 
   for _,res in pairs(resources) do
-    local item = getItemWithQty(items, res, res.ignoreDamage)
-    if not item then
-      item = {
-        damage = res.damage,
-        nbtHash = res.nbtHash,
-        name = res.name,
-        displayName = itemDB:getName(res),
-        count = 0
-      }
-    end
-
-    if res.low and item.count < res.low then
+    if res.low then
+      local item = Util.shallowCopy(res)
+      item.nbtHash = res.nbtHash
+      item.damage = res.damage
       if res.ignoreDamage then
-        item.damage = 0
+        item.damage = nil
       end
-      local key = uniqueKey(res)
-      craftList[key] = {
-        damage = item.damage,
-        nbtHash = item.nbtHash,
-        count = res.low - item.count,
-        name = item.name,
-        displayName = item.displayName,
-        status = '',
-      }
+      item.count = getItemQuantity(items, item)
+      if item.count < res.low then
+        item.displayName = itemDB:getName(res)
+        item.count = res.low - item.count
+        craftList[uniqueKey(res)] = item
+      end
     end
   end
+
   return craftList
 end
 
@@ -330,6 +315,11 @@ local function loadResources()
   resources = Util.readTable(RESOURCE_FILE) or { }
   for k,v in pairs(resources) do
     Util.merge(v, itemDB:splitKey(k))
+    if not v.machine then
+      local recipe = recipes[k]
+      v.machine = recipe.machine
+      v.dir = recipe.dir or 'down'
+    end
   end
 end
 
@@ -350,19 +340,32 @@ end
 local function findMachines()
   repeat until not turtle.forward()
 
+  local function getName(side)
+    local p = Peripheral.getBySide(side)
+    if p and p.getMetadata then
+      local name = p.getMetadata().displayName
+      if name and not string.find(name, '.', 1, true) then
+        return name
+      end
+    end
+  end
+
   local index = 0
   local t = { }
-  repeat
-    local machine = Peripheral.getBySide('bottom')
+
+  local function getMachine(dir)
+    local side = turtle.getAction(dir).side
+    local machine = Peripheral.getBySide(side)
     if not machine then
       local _
-      _, machine = turtle.inspectDown()
+      _, machine = turtle.getAction(dir).inspect()
     end
     if machine and type(machine) == 'table' then
-      local name = machine.name
+      local rawName = getName(side) or machine.name
+      local name = rawName
       local i = 1
       while t[name] do
-        name = machine.name .. '_' .. i
+        name = rawName .. '_' .. i
         i = i + 1
       end
       t[name] = true
@@ -370,8 +373,15 @@ local function findMachines()
       table.insert(machines, {
         name = name,
         index = index,
+        dir = dir,
+        order = #machines + 1
       })
     end
+  end
+
+  repeat
+    getMachine('down')
+    getMachine('up')
     index = index + 1
   until not turtle.back()
 end
@@ -437,23 +447,62 @@ local itemPage = UI.Page {
       },
       help = 'Ignore damage of item'
     },
+    [3] = UI.Button {
+      text = 'Select', event= 'selectMachine',
+      formLabel = 'Machine'
+    },
     button = UI.Button {
       x = 2, y = 9,
       text = 'Recipe', event = 'learn',
     },
+  },
+  machines = UI.SlideOut {
+    backgroundColor = colors.cyan,
+    grid = UI.ScrollingGrid {
+      y = 2, ey = -4,
+      values = machines,
+      disableHeader = true,
+      columns = {
+        { heading = '', key = 'index', width = 2 },
+        { heading = 'Name', key = 'name'},
+      },
+      sortColumn = 'order',
+    },
+    button1 = UI.Button {
+      x = -14, y = -2,
+      text = 'Ok', event = 'setMachine',
+    },
+    button2 = UI.Button {
+      x = -9, y = -2,
+      text = 'Cancel', event = 'cancelMachine',
+    },
+    statusBar = UI.StatusBar(),
   },
   statusBar = UI.StatusBar { }
 }
 
 function itemPage:enable(item)
   if item then
-    self.item = item
-
+    self.item = Util.shallowCopy(item)
     self.form:setValues(item)
     self.titleBar.title = item.displayName or item.name
   end
   UI.Page.enable(self)
   self:focusFirst()
+end
+
+function itemPage.machines:draw()
+  UI.Window.draw(self)
+  self:centeredWrite(1, 'Select machine', nil, colors.yellow)
+end
+
+function itemPage.machines:eventHandler(event)
+  if event.type == 'grid_focus_row' then
+    self.statusBar:setStatus(string.format('%d %s', event.selected.index, event.selected.dir))
+  else
+    return UI.SlideOut.eventHandler(self, event)
+  end
+  return true
 end
 
 function itemPage:eventHandler(event)
@@ -463,30 +512,48 @@ function itemPage:eventHandler(event)
   elseif event.type == 'learn' then
     UI:setPage('learn', self.item)
 
+  elseif event.type == 'setMachine' then
+    self.item.machine = self.machines.grid:getSelected().index
+    self.item.dir = self.machines.grid:getSelected().dir
+    self.machines:hide()
+
+  elseif event.type == 'cancelMachine' then
+    self.machines:hide()
+
+  elseif event.type == 'selectMachine' then
+    self.machines.grid:update()
+    if self.item.machine then
+      local _, index = Util.find(machines, 'index', self.item.machine)
+      if index then
+        self.machines.grid:setIndex(index)
+      end
+    end
+    self.machines:show()
+
   elseif event.type == 'focus_change' then
     self.statusBar:setStatus(event.focused.help)
     self.statusBar:draw()
 
   elseif event.type == 'form_complete' then
     local values = self.form.values
-    local keys = { 'name', 'low', 'damage', 'nbtHash', }
+    local keys = { 'name', 'low', 'damage', 'nbtHash', 'machine' }
 
     local filtered = { }
     for _,key in pairs(keys) do
       filtered[key] = values[key]
     end
     filtered.low = tonumber(filtered.low)
+    filtered.machine = self.item.machine
+    filtered.dir = self.item.dir
 
     if values.ignoreDamage == true then
       filtered.damage = 0
       filtered.ignoreDamage = true
     end
 
-    if Util.empty(filtered) then
-      filtered = nil
-    end
-debug(filtered)
-    resources[uniqueKey(filtered)] = filtered
+    local key = uniqueKey(filtered)
+
+    resources[key] = filtered
     saveResources()
 
     UI:setPreviousPage()
@@ -498,55 +565,42 @@ debug(filtered)
 end
 
 local learnPage = UI.Page {
-  wizard = UI.Wizard {
-    pages = {
-      screen1 = UI.Window {
-        index = 1,
-        ingredients = UI.ScrollingGrid {
-          y = 2, height = 3,
-          values = machines,
-          disableHeader = true,
-          columns = {
-            { heading = 'Name', key = 'displayName', width = 31 },
-            { heading = 'Qty',  key = 'count'      , width = 5  },
-          },
-          sortColumn = 'displayName',
-        },
-        grid = UI.ScrollingGrid {
-          y = 6, height = 5,
-          disableHeader = true,
-          columns = {
-            { heading = 'Name', key = 'displayName', width = 31 },
-            { heading = 'Qty',  key = 'count'      , width = 5  },
-          },
-          sortColumn = 'displayName',
-        },
-        filter = UI.TextEntry {
-          x = 20, ex = -2, y = 5,
-          limit = 50,
-          shadowText = 'filter',
-          backgroundColor = colors.lightGray,
-          backgroundFocusColor = colors.lightGray,
-        },
-      },
-      screen2 = UI.Window {
-        index = 2,
-        machine = UI.ScrollingGrid {
-          y = 2, height = 7,
-          values = machines,
-          disableHeader = true,
-          columns = {
-            { heading = '', key = 'index', width = 2 },
-            { heading = 'Name', key = 'name'},
-          },
-          sortColumn = 'index',
-        },
-        count = UI.TextEntry {
-          x = 11, y = -2, width = 5,
-          limit = 50,
-        },
-      },
+  ingredients = UI.ScrollingGrid {
+    y = 2, height = 3,
+    disableHeader = true,
+    columns = {
+      { heading = 'Name', key = 'displayName', width = 31 },
+      { heading = 'Qty',  key = 'count'      , width = 5  },
     },
+    sortColumn = 'displayName',
+  },
+  grid = UI.ScrollingGrid {
+    y = 6, height = 5,
+    disableHeader = true,
+    columns = {
+      { heading = 'Name', key = 'displayName', width = 31 },
+      { heading = 'Qty',  key = 'count'      , width = 5  },
+    },
+    sortColumn = 'displayName',
+  },
+  filter = UI.TextEntry {
+    x = 20, ex = -2, y = 5,
+    limit = 50,
+    shadowText = 'filter',
+    backgroundColor = colors.lightGray,
+    backgroundFocusColor = colors.lightGray,
+  },
+  count = UI.TextEntry {
+    x = 11, y = -1, width = 5,
+    limit = 50,
+  },
+  button1 = UI.Button {
+    x = -14, y = -1,
+    text = 'Ok', event = 'accept',
+  },
+  button2 = UI.Button {
+    x = -9, y = -1,
+    text = 'Cancel', event = 'cancel',
   },
 }
 
@@ -555,81 +609,50 @@ function learnPage:enable(target)
   self.allItems = lastItems
   mergeResources(self.allItems)
 
-  local screen1 = self.wizard.screen1
-  local screen2 = self.wizard.screen2
-
-  screen1.filter.value = ''
-  screen1.grid.values = self.allItems
-  screen1.grid:update()
-  screen1.ingredients.values = { }
-  screen2.count.value = 1
-  screen2.machine:update()
+  self.filter.value = ''
+  self.grid.values = self.allItems
+  self.grid:update()
+  self.ingredients.values = { }
+  self.count.value = 1
 
   if target.has_recipe then
     local recipe = recipes[uniqueKey(target)]
-    screen2.count.value = recipe.count
-    local _, index = Util.find(machines, 'index', recipe.machine)
-    if index then
-      screen2.machine:setIndex(index)
-    end
+    self.count.value = recipe.count
     for k,v in pairs(recipe.ingredients) do
-      screen1.ingredients.values[k] =
+      self.ingredients.values[k] =
         { name = k, count = v, displayName = itemDB:getName(k) }
     end
   end
-  screen1.ingredients:update()
+  self.ingredients:update()
 
+  self:setFocus(self.filter)
   UI.Page.enable(self)
 end
 
-function learnPage.wizard.screen1:enable()
-  UI.Window.enable(self)
-  self:setFocus(self.filter)
-end
-
-function learnPage.wizard.screen1:draw()
+function learnPage:draw()
   UI.Window.draw(self)
   self:write(2, 1, 'Ingredients', nil, colors.yellow)
   self:write(2, 5, 'Inventory', nil, colors.yellow)
-end
-
-function learnPage.wizard.screen1:eventHandler(event)
-  if event.type == 'text_change' then
-    local t = filterItems(learnPage.allItems, event.text)
-    self.grid:setValues(t)
-    self.grid:draw()
-  else
-    return false
-  end
-  return true
-end
-
-function learnPage.wizard.screen2:enable()
-  UI.Window.enable(self)
-  self:setFocus(self.count)
-end
-
-function learnPage.wizard.screen2:draw()
-  UI.Window.draw(self)
-  self:centeredWrite(1, 'Machine', nil, colors.yellow)
-  self:write(2, 10, 'Produces')
+  self:write(2, 12, 'Produces')
 end
 
 function learnPage:eventHandler(event)
-  if event.type == 'cancel' then
+
+  if event.type == 'text_change' and event.element == self.filter then
+    local t = filterItems(learnPage.allItems, event.text)
+    self.grid:setValues(t)
+    self.grid:draw()
+
+  elseif event.type == 'cancel' then
     UI:setPreviousPage()
 
   elseif event.type == 'accept' then
 
-    local screen1 = self.wizard.screen1
-    local screen2 = self.wizard.screen2
-
     local recipe = {
-      count = tonumber(screen2.count.value) or 1,
+      count = tonumber(self.count.value) or 1,
       ingredients = { },
-      machine = screen2.machine:getSelected().index,
     }
-    for key, item in pairs(screen1.ingredients.values) do
+    for key, item in pairs(self.ingredients.values) do
       recipe.ingredients[key] = item.count
     end
     recipes[uniqueKey(self.target)] = recipe
@@ -638,24 +661,22 @@ function learnPage:eventHandler(event)
     UI:setPreviousPage()
 
   elseif event.type == 'grid_select' then
-    local screen1 = self.wizard.screen1
-
-    if event.element == screen1.grid then
+    if event.element == self.grid then
       local key = uniqueKey(event.selected)
-      if not screen1.ingredients.values[key] then
-        screen1.ingredients.values[key] = Util.shallowCopy(event.selected)
-        screen1.ingredients.values[key].count = 0
+      if not self.ingredients.values[key] then
+        self.ingredients.values[key] = Util.shallowCopy(event.selected)
+        self.ingredients.values[key].count = 0
       end
-      screen1.ingredients.values[key].count = screen1.ingredients.values[key].count + 1
-      screen1.ingredients:update()
-      screen1.ingredients:draw()
-    elseif event.element == screen1.ingredients then
+      self.ingredients.values[key].count = self.ingredients.values[key].count + 1
+      self.ingredients:update()
+      self.ingredients:draw()
+    elseif event.element == self.ingredients then
       event.selected.count = event.selected.count - 1
       if event.selected.count == 0 then
-        screen1.ingredients.values[uniqueKey(event.selected)] = nil
-        screen1.ingredients:update()
+        self.ingredients.values[uniqueKey(event.selected)] = nil
+        self.ingredients:update()
       end
-      screen1.ingredients:draw()
+      self.ingredients:draw()
     end
 
   else

@@ -13,6 +13,7 @@ local function clearGrid(inventoryAdapter)
     if count > 0 then
       inventoryAdapter:insert(i, count)
       if turtle.getItemCount(i) ~= 0 then
+        -- inventory is possibly full
         return false
       end
     end
@@ -33,18 +34,24 @@ end
 
 local function getItemCount(items, key)
   local item = splitKey(key)
+  local count = 0
   for _,v in pairs(items) do
     if v.name == item.name and
        (not item.damage or v.damage == item.damage) and
        v.nbtHash == item.nbtHash then
-      return v.count
+      if item.damage then
+        return v.count
+      end
+      count = count + v.count
     end
   end
-  return 0
+  return count
 end
 
 local function turtleCraft(recipe, qty, inventoryAdapter)
-  clearGrid(inventoryAdapter)
+  if not clearGrid(inventoryAdapter) then
+    return false
+  end
 
   for k,v in pairs(recipe.ingredients) do
     local item = splitKey(v)
@@ -88,6 +95,7 @@ function Craft.sumIngredients(recipe)
   for _,item in pairs(recipe.ingredients) do
     t[item] = (t[item] or 0) + 1
   end
+-- need a check for crafting tool
   return t
 end
 
@@ -102,11 +110,9 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
   local items = inventoryAdapter:listItems()
 
   count = math.ceil(count / recipe.count)
-
   local maxCount = recipe.maxCount or math.floor(64 / recipe.count)
-  local summedItems = Craft.sumIngredients(recipe)
 
-  for key,icount in pairs(summedItems) do
+  for key,icount in pairs(Craft.sumIngredients(recipe)) do
     local itemCount = getItemCount(items, key)
     if itemCount < icount * count then
       local irecipe = Craft.recipes[key]
@@ -133,6 +139,38 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
 
   turtle.select(1)
   return crafted * recipe.count
+end
+
+-- determine the full list of ingredients needed to craft
+-- a quantity of a recipe.
+-- negative quantities denote missing ingredients
+function Craft.getResourceList(inRecipe, items, inCount)
+  local summed = { }
+  local throttle = Util.throttle()
+
+  local function sumItems(recipe, count)
+    for key,iqty in pairs(Craft.sumIngredients(recipe)) do
+      throttle()
+      local item = splitKey(key)
+      local summedItem = summed[key]
+      if not summedItem then
+        summedItem = Util.shallowCopy(item)
+        summedItem.recipe = Craft.recipes[key]
+        summedItem.count = getItemCount(items, key)
+        summed[key] = summedItem
+      end
+      summedItem.count = summedItem.count - (count * iqty)
+      if summedItem.recipe and summedItem.count < 0 then
+        local need = math.ceil(-summedItem.count / summedItem.recipe.count)
+        summedItem.count = 0
+        sumItems(summedItem.recipe, need)
+      end
+    end
+  end
+
+  sumItems(inRecipe, math.ceil(inCount / inRecipe.count))
+
+  return summed
 end
 
 -- given a certain quantity, return how many of those can be crafted

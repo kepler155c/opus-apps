@@ -71,6 +71,18 @@ function itemDB:get(key)
       return item
     end
   end
+
+  if not key[3] then
+    for _,item in pairs(self.data) do
+      if item.name == key[1] and
+        item.damage == key[2] and
+        item.nbtHash then
+        item = Util.shallowCopy(item)
+        item.nbtHash = nil
+        return item
+      end
+    end
+  end
 end
 
 function itemDB:add(key, item)

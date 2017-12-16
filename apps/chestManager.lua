@@ -89,11 +89,18 @@ local function splitKey(key)
 end
 
 local function getItemQuantity(items, item)
-  item = getItem(items, item)
-  if item then
-    return item.count
+  local count = 0
+  for _,v in pairs(items) do
+    if v.name == item.name and
+       (not item.damage or v.damage == item.damage) and
+       v.nbtHash == item.nbtHash then
+      if item.damage then
+        return v.count
+      end
+      count = count + v.count
+    end
   end
-  return 0
+  return count
 end
 
 local function uniqueKey(item)
@@ -152,39 +159,6 @@ local function filterItems(t, filter, displayMode)
   return t
 end
 
-local function sumItems3(ingredients, items, summedItems, count, throttle)
-
-  throttle = throttle or Util.throttle()
-
-  local function sumItems(items)
-    -- produces { ['minecraft:planks:0'] = 8 }
-    local t = {}
-    for _,item in pairs(items) do
-      t[item] = (t[item] or 0) + 1
-    end
-    return t
-  end
-
-  for key,iqty in pairs(sumItems(ingredients)) do
-    throttle()
-    local item = splitKey(key)
---print(key)
-    local summedItem = summedItems[key]
-    if not summedItem then
-      summedItem = Util.shallowCopy(item)
-      summedItem.recipe = Craft.recipes[key]
-      summedItem.count = getItemQuantity(items, summedItem)
-      summedItems[key] = summedItem
-    end
-    summedItem.count = summedItem.count - (count * iqty)
-    if summedItem.recipe and summedItem.count < 0 then
-      local need = math.ceil(-summedItem.count / summedItem.recipe.count)
-      summedItem.count = 0
-      sumItems3(summedItem.recipe.ingredients, items, summedItems, need, throttle)
-    end
-  end
-end
-
 local function isGridClear()
   for i = 1, 16 do
     if turtle.getItemCount(i) ~= 0 then
@@ -239,14 +213,14 @@ local function craftItem(recipe, items, originalItem, craftList, count)
         local need = count * qty
         local has = getItemQuantity(items, splitKey(key))
         if has < need then
-          craftItem(iRecipe, items, originalItem, { }, need - has)
+debug('crafting ' .. key .. ' - ' .. need - has)
+          craftItem(iRecipe, items, originalItem, { }, math.ceil((need - has) / iRecipe.count))
           items = inventoryAdapter:listItems()
         end
       end
     end
   end
-debug('count: ' .. count)
-debug('toCraft: ' .. toCraft)
+
   local crafted = 0
 
   if toCraft > 0 then
@@ -255,20 +229,17 @@ debug('toCraft: ' .. toCraft)
     items = inventoryAdapter:listItems()
     count = count - crafted
   end
-debug('count: ' .. count)
 
   if count > 0 then
-    local summedItems = { }
-    sumItems3(recipe.ingredients, items, summedItems, math.ceil(count / recipe.count))
-
-    for _,ingredient in pairs(summedItems) do
+    local ingredients = Craft.getResourceList(recipe, items, count)
+_G._p = ingredients
+    for _,ingredient in pairs(ingredients) do
       --if not ingredient.recipe and ingredient.count < 0 then
       if ingredient.count < 0 then
         addCraftingRequest(ingredient, craftList, -ingredient.count)
       end
     end
   end
-debug('crafted: ' .. crafted)
   return crafted
 end
 
@@ -278,8 +249,9 @@ local function craftItems(craftList, allItems)
     local item = craftList[key]
     local recipe = Craft.recipes[key]
     if recipe then
-      local crafted = craftItem(recipe, allItems, item, craftList, item.count)
-      item.count = item.count - crafted
+      item.status = nil
+      item.statusCode = nil
+      item.crafted = craftItem(recipe, allItems, item, craftList, item.count)
       allItems = inventoryAdapter:listItems() -- refresh counts
     elseif item.rsControl then
       item.status = 'Activated'
@@ -287,7 +259,6 @@ local function craftItems(craftList, allItems)
   end
 
   for key,item in pairs(craftList) do
-
     if not Craft.recipes[key] and not item.rsControl then
       if not controller then
         item.status = '(no recipe)'
@@ -317,7 +288,6 @@ local function craftItems(craftList, allItems)
 end
 
 local function jobMonitor()
-
   local mon = Peripheral.getByType('monitor')
 
   if mon then
@@ -1052,12 +1022,6 @@ Event.onInterval(5, function()
       if Util.size(demandCrafting) > 0 then
         local list = Util.shallowCopy(demandCrafting)
         craftItems(list, inventoryAdapter:listItems())
-        for _,key in pairs(Util.keys(demandCrafting)) do
-          debug(key .. ' - ' .. demandCrafting[key].count)
-          if demandCrafting[key].count <= 0 then    -- should check statusCode
-            demandCrafting[key] = nil
-          end
-        end
         for k,v in pairs(list) do
           craftList[k] = v
         end
@@ -1067,6 +1031,15 @@ Event.onInterval(5, function()
       jobListGrid:update()
       jobListGrid:draw()
       jobListGrid:sync()
+
+      for _,key in pairs(Util.keys(demandCrafting)) do
+        local item = demandCrafting[key]
+        item.count = item.count - item.crafted
+        if item.count <= 0 then    -- should check statusCode
+          demandCrafting[key] = nil
+        end
+      end
+
       craftList = getAutocraftItems(items) -- autocrafted items don't show on job monitor
       craftItems(craftList, items)
     end

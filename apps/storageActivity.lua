@@ -1,24 +1,16 @@
 _G.requireInjector()
 
-local ChestAdapter    = require('chestAdapter18')
-local Event           = require('event')
-local MEAdapter       = require('meAdapter')
-local RefinedAdapter  = require('refinedAdapter')
-local UI              = require('ui')
-local Util            = require('util')
+local InventoryAdapter = require('inventoryAdapter')
+local Event            = require('event')
+local UI               = require('ui')
+local Util             = require('util')
 
 local colors     = _G.colors
 local multishell = _ENV.multishell
 
-local storage = RefinedAdapter()
-if not storage:isValid() then
-  storage = MEAdapter({ autoDetect = true })
-end
-if not storage:isValid() then
-  storage = ChestAdapter({ autoDetect = true })
-end
-if not storage:isValid() then
-  error('Not connected to a storage device')
+local storage = InventoryAdapter.wrap({ autoDetect = true })
+if not storage then
+  error('Not connected to a valid inventory')
 end
 
 multishell.setTitle(multishell.getCurrent(), 'Storage Activity')
@@ -106,8 +98,9 @@ function changedPage:refresh()
   local t = storage:listItems()
 
   if not t or Util.empty(t) then
-    self:clear()
-    self:centeredWrite(math.ceil(self.height/2), 'Communication failure')
+debug('clearing')
+    self.grid:clear()
+    self.grid:centeredWrite(math.ceil(self.height/2), 'Communication failure')
     return
   end
 
@@ -164,4 +157,5 @@ Event.onInterval(5, function()
 end)
 
 UI:setPage(changedPage)
+changedPage:draw()
 UI:pullEvents()
