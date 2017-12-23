@@ -86,13 +86,12 @@ function MEAdapter:refresh()
     Util.merge(v, v.item)
     convertItem(v)
 
-    local key = { v.name, v.damage, v.nbtHash }
-    if not itemDB:get(key) then
+    if not itemDB:get(v) then
       local t = { }
       for _,k in pairs(keys) do
         t[k] = v[k]
       end
-      itemDB:add(key, t)
+      itemDB:add(t)
     end
   end
   itemDB:flush()

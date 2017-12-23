@@ -84,10 +84,6 @@ local function getItem(items, inItem, ignoreDamage, ignoreNbtHash)
   end
 end
 
-local function splitKey(key)
-  return itemDB:splitKey(key)
-end
-
 local function getItemQuantity(items, item)
   local count = 0
   for _,v in pairs(items) do
@@ -120,7 +116,7 @@ local function mergeResources(t)
   end
 
   for k in pairs(Craft.recipes) do
-    local v = splitKey(k)
+    local v = itemDB:splitKey(k)
     local item = getItem(t, v)
     if not item then
       item = Util.shallowCopy(v)
@@ -145,7 +141,7 @@ local function filterItems(t, filter, displayMode)
       filter = filter:lower()
     end
     for _,v in pairs(t) do
-      if not filter or string.find(v.lname, filter) then
+      if not filter or string.find(v.lname, filter, 1, true) then
         if not displayMode or
           displayMode == 0 or
           displayMode == 1 and v.count > 0 or
@@ -169,16 +165,20 @@ local function isGridClear()
 end
 
 local function clearGrid()
-  for i = 1, 16 do
-    local count = turtle.getItemCount(i)
-    if count > 0 then
-      inventoryAdapter:insert(i, count)
-      if turtle.getItemCount(i) ~= 0 then
-        return false
+  local function clear()
+    for i = 1, 16 do
+      local count = turtle.getItemCount(i)
+      if count > 0 then
+        inventoryAdapter:insert(i, count)
+        if turtle.getItemCount(i) ~= 0 then
+  debug('insert failed')
+          return false
+        end
       end
     end
+    return true
   end
-  return true
+  return clear() or clear()
 end
 
 local function addCraftingRequest(item, craftList, count)
@@ -194,8 +194,14 @@ end
 
 local function craftItem(recipe, items, originalItem, craftList, count)
 
-  if craftingPaused or not canCraft or not isGridClear() then
+  if craftingPaused or not canCraft then
     return 0
+  end
+
+  if not isGridClear() then
+    if not clearGrid() then
+      originalItem.status = 'Grid obstructed'
+    end
   end
 
   local missing = { }
@@ -211,11 +217,17 @@ local function craftItem(recipe, items, originalItem, craftList, count)
       local iRecipe = Craft.recipes[key]
       if iRecipe then
         local need = count * qty
-        local has = getItemQuantity(items, splitKey(key))
+        local has = getItemQuantity(items, itemDB:splitKey(key))
+--debug({ key, need, has })
         if has < need then
-debug('crafting ' .. key .. ' - ' .. need - has)
+--debug('crafting ' .. key .. ' - ' .. need - has)
+--read()
           craftItem(iRecipe, items, originalItem, { }, math.ceil((need - has) / iRecipe.count))
           items = inventoryAdapter:listItems()
+          if not items then
+            error('list failed')
+            --return 0
+          end
         end
       end
     end
@@ -232,7 +244,6 @@ debug('crafting ' .. key .. ' - ' .. need - has)
 
   if count > 0 then
     local ingredients = Craft.getResourceList(recipe, items, count)
-_G._p = ingredients
     for _,ingredient in pairs(ingredients) do
       --if not ingredient.recipe and ingredient.count < 0 then
       if ingredient.count < 0 then
@@ -243,6 +254,94 @@ _G._p = ingredients
   return crafted
 end
 
+local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
+  local summed = { }
+  local throttle = Util.throttle()
+
+  local function sumItems(recipe, count)
+    count = math.ceil(count / recipe.count)
+    local craftable = count
+
+    for key,iqty in pairs(Craft.sumIngredients(recipe)) do
+      throttle()
+      local item = itemDB:splitKey(key)
+      local summedItem = summed[key]
+      if not summedItem then
+        summedItem = Util.shallowCopy(item)
+        summedItem.recipe = Craft.recipes[key]
+
+if summedItem.recipe then
+summedItem.recipe.key = key
+end
+        summedItem.count = Craft.getItemCount(items, key)
+        summedItem.ocount = summedItem.count
+        summedItem.need = 0
+        summedItem.used = 0
+        summedItem.missing = 0
+        summedItem.craftable = 0
+        summed[key] = summedItem
+      end
+
+      local total = count * iqty                           -- 4 * 2
+      local used = math.min(summedItem.count, total)       -- 5
+      local need = total - used                            -- 3
+
+      if recipe.craftingTools and recipe.craftingTools[key] then
+        if summedItem.count > 0 then
+          summedItem.used = 1
+          need = 0
+        else
+          summedItem.need = 1
+          need = 1
+        end
+      else
+        summedItem.count = summedItem.count - used
+        summedItem.used = summedItem.used + used
+        summedItem.need = summedItem.need + need
+      end
+
+      if need > 0 then
+        if not summedItem.recipe then
+          summedItem.missing = summedItem.missing + need
+          craftable = math.min(craftable, math.floor(used / iqty))
+        else
+          local c = sumItems(summedItem.recipe, need) -- 4
+debug({ 'summed', total, used, need, c })
+          craftable = math.min(craftable, math.floor((used + c) / iqty))
+
+          summedItem.craftable = summedItem.craftable + c
+        end
+      end
+    end
+
+    if craftable > 0 then
+debug('crafting ' .. recipe.key)
+debug({ count, craftable })
+_G._p = summed
+      craftable = Craft.craftRecipe(recipe, craftable, inventoryAdapter)
+      clearGrid()
+debug('got ' .. craftable)
+
+    end
+
+    return craftable * recipe.count
+  end
+
+  local count = sumItems(inRecipe, inCount)
+debug({ 'final', inCount, count })
+  if count < inCount then
+    for _,ingredient in pairs(summed) do
+      --if not ingredient.recipe and ingredient.count < 0 then
+      if ingredient.missing > 0 then
+        addCraftingRequest(ingredient, craftList, ingredient.missing)
+        originalItem.status = string.format('%s missing', itemDB:getName(ingredient))
+        originalItem.statusCode = 'missing'
+      end
+    end
+  end
+  return count
+end
+
 local function craftItems(craftList, allItems)
 
   for _,key in pairs(Util.keys(craftList)) do
@@ -251,8 +350,16 @@ local function craftItems(craftList, allItems)
     if recipe then
       item.status = nil
       item.statusCode = nil
-      item.crafted = craftItem(recipe, allItems, item, craftList, item.count)
+      if item.forceCrafting then
+recipe.key = key
+        item.crafted = forceCraftItem(recipe, allItems, item, craftList, item.count)
+      else
+        item.crafted = craftItem(recipe, allItems, item, craftList, item.count)
+      end
       allItems = inventoryAdapter:listItems() -- refresh counts
+      if not allItems then
+        break
+      end
     elseif item.rsControl then
       item.status = 'Activated'
     end
@@ -332,7 +439,7 @@ local function getAutocraftItems()
   for _,res in pairs(resources) do
 
     if res.auto then
-      res.count = 64  -- this could be higher to increase autocrafting speed
+      res.count = 256  -- this could be higher to increase autocrafting speed
       local key = uniqueKey(res)
       craftList[key] = res
     end
@@ -366,7 +473,7 @@ local function watchResources(items)
   local outputs   = { }
 
   for _,res in pairs(resources) do
-    local item = getItemWithQty(items, res, res.ignoreDamage, res.ignoreDamage)
+    local item = getItemWithQty(items, res, res.ignoreDamage, res.ignoreNbtHash)
     if not item then
       item = {
         damage = res.damage,
@@ -422,8 +529,15 @@ end
 
 local function loadResources()
   resources = Util.readTable(RESOURCE_FILE) or { }
-  for k,v in pairs(resources) do
-    Util.merge(v, splitKey(k))
+  for _,k in pairs(Util.keys(resources)) do
+    local v = resources[k]
+    Util.merge(v, itemDB:splitKey(k))
+    if not v.damage then
+      v.damage = 0
+      v.ignoreDamage = true
+      resources[k] = nil
+      resources[uniqueKey(v)] = v
+    end
   end
 end
 
@@ -432,10 +546,18 @@ local function saveResources()
 
   for k,v in pairs(resources) do
     v = Util.shallowCopy(v)
-    v.name = nil
-    v.damage = nil
-    v.nbtHash = nil
-    t[k] = v
+    local keys = Util.transpose({ 'auto', 'low', 'limit',
+                  'ignoreDamage', 'ignoreNbtHash',
+                   'rsControl', 'rsDevice', 'rsSide' })
+
+    for _,key in pairs(Util.keys(v)) do
+      if not keys[key] then
+        v[key] = nil
+      end
+    end
+    if not Util.empty(v) then
+      t[k] = v
+    end
   end
 
   Util.writeTable(RESOURCE_FILE, t)
@@ -479,38 +601,63 @@ local itemPage = UI.Page {
     },
     [5] = UI.Chooser {
       width = 7,
-      formLabel = 'RS Control', formKey = 'rsControl',
+      formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
       nochoice = 'No',
       choices = {
         { name = 'Yes', value = true },
         { name = 'No', value = false },
       },
-      help = 'Control via redstone'
+      help = 'Ignore NBT of item'
     },
-    [6] = UI.Chooser {
-      width = 25,
-      formLabel = 'RS Device', formKey = 'rsDevice',
-      --choices = devices,
-      help = 'Redstone Device'
-    },
-    [7] = UI.Chooser {
-      width = 10,
-      formLabel = 'RS Side', formKey = 'rsSide',
-      --nochoice = 'No',
-      choices = {
-        { name = 'up', value = 'up' },
-        { name = 'down', value = 'down' },
-        { name = 'east', value = 'east' },
-        { name = 'north', value = 'north' },
-        { name = 'west', value = 'west' },
-        { name = 'south', value = 'south' },
-      },
-      help = 'Output side'
+    [6] = UI.Button {
+      x = 2, y = -2, width = 10,
+      formLabel = 'Redstone',
+      event = 'show_rs',
+      text = 'Configure',
     },
     infoButton = UI.Button {
       x = 2, y = -2,
       event = 'show_info',
       text = 'Info',
+    },
+  },
+  rsControl = UI.SlideOut {
+    backgroundColor = colors.cyan,
+    titleBar = UI.TitleBar {
+      title = "Redstone Control",
+    },
+    form = UI.Form {
+      y = 2,
+      [1] = UI.Chooser {
+        width = 7,
+        formLabel = 'RS Control', formKey = 'rsControl',
+        nochoice = 'No',
+        choices = {
+          { name = 'Yes', value = true },
+          { name = 'No', value = false },
+        },
+        help = 'Control via redstone'
+      },
+      [2] = UI.Chooser {
+        width = 25,
+        formLabel = 'RS Device', formKey = 'rsDevice',
+        --choices = devices,
+        help = 'Redstone Device'
+      },
+      [3] = UI.Chooser {
+        width = 10,
+        formLabel = 'RS Side', formKey = 'rsSide',
+        --nochoice = 'No',
+        choices = {
+          { name = 'up', value = 'up' },
+          { name = 'down', value = 'down' },
+          { name = 'east', value = 'east' },
+          { name = 'north', value = 'north' },
+          { name = 'west', value = 'west' },
+          { name = 'south', value = 'south' },
+        },
+        help = 'Output side'
+      },
     },
   },
   info = UI.SlideOut {
@@ -525,18 +672,24 @@ local itemPage = UI.Page {
       ex = -2, y = -2, width = 6,
       text = 'Okay',
       event = 'hide_info',
-    }
+    },
   },
   statusBar = UI.StatusBar { }
 }
 
 function itemPage:enable(item)
   self.item = item
+debug(self.item)
 
   self.form:setValues(item)
   self.titleBar.title = item.displayName or item.name
 
-  local devices = self.form[6].choices
+  UI.Page.enable(self)
+  self:focusFirst()
+end
+
+function itemPage.rsControl:enable()
+  local devices = self.form[1].choices
   Util.clear(devices)
   for _,dev in pairs(device) do
     if dev.setOutput then
@@ -548,25 +701,50 @@ function itemPage:enable(item)
     table.insert(devices, { name = 'None found', values = '' })
   end
 
-  UI.Page.enable(self)
-  self:focusFirst()
+  UI.SlideOut.enable(self)
+end
+
+function itemPage.rsControl:eventHandler(event)
+  if event.type == 'form_cancel' then
+    self:hide()
+  elseif event.type == 'form_complete' then
+    self:hide()
+  else
+    return UI.SlideOut.eventHandler(self, event)
+  end
+  return true
 end
 
 function itemPage:eventHandler(event)
   if event.type == 'form_cancel' then
     UI:setPreviousPage()
 
+  elseif event.type == 'show_rs' then
+    self.rsControl:show()
+
   elseif event.type == 'show_info' then
-    self.info.textArea.value =
-      string.format(
-[[%sName:   %s%s
-%sID:     %s%s
-%sDamage: %s%s
-%sNBT:    %s%s]],
-Ansi.yellow, Ansi.reset, self.item.displayName,
-Ansi.yellow, Ansi.reset, self.item.name,
-Ansi.yellow, Ansi.reset, self.item.damage,
-Ansi.yellow, Ansi.reset, self.item.nbtHash or '(none)')
+    local value =
+      string.format('%s%s%s\n%s\n',
+        Ansi.orange, self.item.displayName, Ansi.reset,
+        self.item.name)
+
+    if self.item.nbtHash then
+      value = value .. self.item.nbtHash .. '\n'
+    end
+
+    value = value .. string.format('\n%sDamage:%s %s',
+      Ansi.yellow, Ansi.reset, self.item.damage)
+
+    if self.item.maxDamage and self.item.maxDamage > 0 then
+      value = value .. string.format(' (max: %s)', self.item.maxDamage)
+    end
+
+    if self.item.maxCount then
+      value = value .. string.format('\n%sStack Size: %s%s',
+        Ansi.yellow, Ansi.reset, self.item.maxCount)
+    end
+
+    self.info.textArea.value = value
     self.info:show()
 
   elseif event.type == 'hide_info' then
@@ -578,20 +756,11 @@ Ansi.yellow, Ansi.reset, self.item.nbtHash or '(none)')
 
   elseif event.type == 'form_complete' then
     local values = self.form.values
-    local keys = { 'name', 'auto', 'low', 'limit', 'damage',
-                   'nbtHash',
-                   'rsControl', 'rsDevice', 'rsSide', }
+    local originalKey = uniqueKey(self.item)
 
-    local filtered = { }
-    for _,key in pairs(keys) do
-      filtered[key] = values[key]
-    end
+    local filtered = Util.shallowCopy(values)
     filtered.low = tonumber(filtered.low)
     filtered.limit = tonumber(filtered.limit)
-
-    --filtered.ignoreDamage = filtered.ignoreDamage == true
-    --filtered.auto = filtered.auto == true
-    --filtered.rsControl = filtered.rsControl == true
 
     if filtered.auto ~= true then
       filtered.auto = nil
@@ -603,11 +772,19 @@ Ansi.yellow, Ansi.reset, self.item.nbtHash or '(none)')
       filtered.rsDevice = nil
     end
 
-    if values.ignoreDamage == true then
+    if filtered.ignoreDamage == true then
       filtered.damage = 0
-      filtered.ignoreDamage = true
+    else
+      filtered.ignoreDamage = nil
     end
 
+    if filtered.ignoreNbtHash == true then
+      filtered.nbtHash = nil
+    else
+      filtered.ignoreNbtHash = nil
+    end
+debug(filtered)
+    resources[originalKey] = nil
     resources[uniqueKey(filtered)] = filtered
     saveResources()
 
@@ -735,7 +912,7 @@ function listingPage:eventHandler(event)
 
       if resources[key] then
         resources[key] = nil
-        Util.writeTable(RESOURCE_FILE, resources)
+        saveResources()
       end
 
       self.statusBar:timedStatus('Forgot: ' .. item.name, 3)
@@ -847,7 +1024,9 @@ local function learnRecipe(page)
         for _,v in pairs(results) do
           if not v.craftingTool then
             recipe = v
-            recipe.maxCount = maxCount
+            if maxCount then
+              recipe.maxCount = maxCount
+            end
             break
           end
         end
@@ -939,54 +1118,84 @@ function learnPage:eventHandler(event)
   return true
 end
 
-local craftPage = UI.Dialog {
-  height = 6, width = UI.term.width - 10,
-  title = 'Enter amount to craft',
-  count = UI.TextEntry {
-    x = 15,
-    y = 3,
-    width = 10,
-    limit = 6,
-    value = '1',
+local craftPage = UI.Page {
+  titleBar = UI.TitleBar {
+    title = "Information",
   },
-  accept = UI.Button {
-    x = -8, y = -2,
-    backgroundColor = colors.green,
-    text = '+', event = 'accept',
-  },
-  cancel = UI.Button {
-    x = -4, y = -2,
-    backgroundColor = colors.red,
-    text = '\215', event = 'cancel'
+  wizard = UI.Wizard {
+    y = 2,
+    pages = {
+      quantity = UI.Window {
+        index = 1,
+        text = UI.Text {
+          x = 6, y = 3,
+          value = 'Quantity',
+        },
+        count = UI.TextEntry {
+          x = 15,
+          y = 3,
+          width = 10,
+          limit = 6,
+          value = 1,
+        },
+      },
+      resources = UI.Window {
+        index = 2,
+        grid = UI.Grid {
+          y = 2, ey = -4,
+          columns = {
+            { heading = 'Name', key = 'displayName' },
+            { heading = 'Qty',  key = 'ocount'       , width = 5  },
+            { heading = 'Used',  key = 'used'         , width = 4  },
+            { heading = 'Need',  key = 'need'       , width = 4  },
+            { heading = 'Miss',  key = 'missing'       , width = 4  },
+            { heading = 'cra',  key = 'craftable'       , width = 4  },
+          },
+          sortColumn = 'displayName',
+        },
+        accept = UI.Button {
+          x = -8, y = -2,
+          backgroundColor = colors.green,
+          text = '+', event = 'accept',
+        },
+        cancel = UI.Button {
+          x = -4, y = -2,
+          backgroundColor = colors.red,
+          text = '\215', event = 'cancel'
+        },
+      },
+    },
   },
 }
-
-function craftPage:draw()
-  UI.Dialog.draw(self)
-  self:write(6, 3, 'Quantity')
-end
 
 function craftPage:enable(item)
   self.item = item
   self:focusFirst()
-  UI.Dialog.enable(self)
-end
-
-function craftPage:disable()
-  UI.Dialog.disable(self)
+  UI.Page.enable(self)
 end
 
 function craftPage:eventHandler(event)
   if event.type == 'cancel' then
     UI:setPreviousPage()
+
+  elseif event.type == 'enable_view' and event.view == self.wizard.pages.resources then
+    local items = inventoryAdapter:listItems()
+    local count = self.wizard.pages.quantity.count.value
+    local recipe = Craft.recipes[uniqueKey(self.item)]
+    local ingredients = Craft.getResourceList3(recipe, items, count)
+    self.wizard.pages.resources.grid:setValues(ingredients)
+    for _,v in pairs(ingredients) do
+      v.displayName = itemDB:getName(v)
+    end
+
   elseif event.type == 'accept' then
     local key = uniqueKey(self.item)
     demandCrafting[key] = Util.shallowCopy(self.item)
-    demandCrafting[key].count = tonumber(self.count.value)
+    demandCrafting[key].count = tonumber(self.wizard.pages.quantity.count.value)
     demandCrafting[key].forceCrafting = true
     UI:setPreviousPage()
   else
-    return UI.Dialog.eventHandler(self, event)
+    return UI.Page.eventHandler(self, event)
   end
   return true
 end
@@ -1010,7 +1219,7 @@ Event.onInterval(5, function()
 
   if not craftingPaused then
     local items = inventoryAdapter:listItems()
-    if Util.size(items) == 0 then
+    if not items or Util.size(items) == 0 then
       jobListGrid.parent:clear()
       jobListGrid.parent:centeredWrite(math.ceil(jobListGrid.parent.height/2), 'No items in system')
       jobListGrid:sync()
@@ -1020,10 +1229,13 @@ Event.onInterval(5, function()
       craftItems(craftList, items)
 
       if Util.size(demandCrafting) > 0 then
-        local list = Util.shallowCopy(demandCrafting)
-        craftItems(list, inventoryAdapter:listItems())
-        for k,v in pairs(list) do
-          craftList[k] = v
+        items = inventoryAdapter:listItems()
+        if items then
+          local list = Util.shallowCopy(demandCrafting)
+          craftItems(list, items)
+          for k,v in pairs(list) do
+            craftList[k] = v
+          end
         end
       end
 
@@ -1034,9 +1246,11 @@ Event.onInterval(5, function()
 
       for _,key in pairs(Util.keys(demandCrafting)) do
         local item = demandCrafting[key]
-        item.count = item.count - item.crafted
-        if item.count <= 0 then    -- should check statusCode
-          demandCrafting[key] = nil
+        if item.crafted then
+          item.count = item.count - item.crafted
+          if item.count <= 0 then    -- should check statusCode
+            demandCrafting[key] = nil
+          end
         end
       end
 

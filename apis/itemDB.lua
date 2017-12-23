@@ -31,8 +31,8 @@ local function safeString(text)
   return text
 end
 
-function itemDB:makeKey(item)
-  return { item.name, item.damage, item.nbtHash }
+local function makeKey(item)
+  return { item.name, item.damage or '*', item.nbtHash }
 end
 
 function itemDB:splitKey(key, item)
@@ -52,26 +52,55 @@ function itemDB:splitKey(key, item)
 end
 
 function itemDB:get(key)
+
   if type(key) == 'string' then
-    key = self:makeKey(self:splitKey(key))
+    key = self:splitKey(key)
   end
 
-  local item = TableDB.get(self, key)
-
+  local item = TableDB.get(self, makeKey(key))
   if item then
     return item
   end
 
-  if not key[2] or key[2] ~= 0 then
-    item = TableDB.get(self, { key[1], 0, key[3] })
-    if item and item.maxDamage > 0 then
+  -- try finding an item that has damage values
+  if type(key.damage) == 'number' then
+    item = TableDB.get(self, makeKey({ name = key.name, nbtHash = key.nbtHash }))
+    if item and item.maxDamage then
       item = Util.shallowCopy(item)
-      item.damage = key[2]
-      item.displayName = string.format('%s (damage: %s)', item.displayName, (item.damage or '*'))
+      item.damage = key.damage
+      if item.maxDamage > 0 and type(item.damage) == 'number' and item.damage > 0 then
+        item.displayName = string.format('%s (damage: %s)', item.displayName, item.damage)
+      end
       return item
     end
   end
 
+  if key.nbtHash then
+    item = self:get({ name = key.name, damage = key.damage })
+    if item and (item.maxDamage > 0 or item.damage == key.damage) then
+      item.nbtHash = key.nbtHash
+      return item
+    end
+
+    local damage = tonumber(key.damage)
+    for _,item in pairs(self.data) do
+      if item.name == key.name and
+        ((not damage or item.maxDamage > 0) or damage == item.damage) and
+        item.nbtHash then
+        item = Util.shallowCopy(item)
+        item.damage = damage or item.damage
+        if item.maxDamage > 0 and item.damage and item.damage > 0 then
+          item.displayName = string.format('%s (damage: %s)', item.displayName, item.damage)
+        end
+        item.nbtHash = key.nbtHash
+        return item
+      end
+    end
+  end
+
+--debug('miss: ' .. table.concat(makeKey(key), ':'))
+
+--[[
   if not key[3] then
     for _,item in pairs(self.data) do
       if item.name == key[1] and
@@ -83,11 +112,13 @@ function itemDB:get(key)
       end
     end
   end
+--]]
 end
 
-function itemDB:add(key, item)
+function itemDB:add(item)
+  local key = makeKey(item)
   if item.maxDamage > 0 then
-    key = { key[1], 0, key[3] }
+    key = makeKey({ name = item.name, damage = '*', nbtHash = item.nbtHash })
   end
   item.displayName = safeString(item.displayName)
   TableDB.add(self, key, item)
@@ -99,7 +130,7 @@ function itemDB:getName(item)
     item = self:splitKey(item)
   end
 
-  local detail = self:get(self:makeKey(item))
+  local detail = self:get(item)
   if detail then
     return detail.displayName
   end
@@ -113,7 +144,7 @@ function itemDB:getMaxCount(item)
     item = self:splitKey(item)
   end
 
-  local detail = self:get(self:makeKey(item))
+  local detail = self:get(item)
   if detail then
     return detail.maxCount
   end

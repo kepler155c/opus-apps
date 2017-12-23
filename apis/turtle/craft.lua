@@ -32,7 +32,7 @@ local function splitKey(key)
   return item
 end
 
-local function getItemCount(items, key)
+function Craft.getItemCount(items, key)
   local item = splitKey(key)
   local count = 0
   for _,v in pairs(items) do
@@ -108,12 +108,15 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
   end
 
   local items = inventoryAdapter:listItems()
+  if not items then
+    return 0, 'Inventory changed'
+  end
 
   count = math.ceil(count / recipe.count)
   local maxCount = recipe.maxCount or math.floor(64 / recipe.count)
 
   for key,icount in pairs(Craft.sumIngredients(recipe)) do
-    local itemCount = getItemCount(items, key)
+    local itemCount = Craft.getItemCount(items, key)
     if itemCount < icount * count then
       local irecipe = Craft.recipes[key]
       if irecipe then
@@ -156,7 +159,7 @@ function Craft.getResourceList(inRecipe, items, inCount)
       if not summedItem then
         summedItem = Util.shallowCopy(item)
         summedItem.recipe = Craft.recipes[key]
-        summedItem.count = getItemCount(items, key)
+        summedItem.count = Craft.getItemCount(items, key)
         summed[key] = summedItem
       end
       summedItem.count = summedItem.count - (count * iqty)
@@ -173,6 +176,70 @@ function Craft.getResourceList(inRecipe, items, inCount)
   return summed
 end
 
+function Craft.getResourceList3(inRecipe, items, inCount)
+  local summed = { }
+  local throttle = Util.throttle()
+
+  local function sumItems(recipe, count)
+    count = math.ceil(count / recipe.count)
+    local craftable = count
+
+    for key,iqty in pairs(Craft.sumIngredients(recipe)) do
+      throttle()
+      local item = splitKey(key)
+      local summedItem = summed[key]
+      if not summedItem then
+        summedItem = Util.shallowCopy(item)
+        summedItem.recipe = Craft.recipes[key]
+        summedItem.count = Craft.getItemCount(items, key)
+        summedItem.ocount = summedItem.count
+        summedItem.need = 0
+        summedItem.used = 0
+        summedItem.missing = 0
+        summedItem.craftable = 0
+        summed[key] = summedItem
+      end
+
+      local total = count * iqty                           -- 4 * 2
+      local used = math.min(summedItem.count, total)       -- 5
+      local need = total - used                            -- 3
+
+      if recipe.craftingTools and recipe.craftingTools[key] then
+        if summedItem.count > 0 then
+          summedItem.used = 1
+          need = 0
+        else
+          summedItem.need = 1
+          need = 1
+        end
+      else
+        summedItem.count = summedItem.count - used
+        summedItem.used = summedItem.used + used
+        summedItem.need = summedItem.need + need
+      end
+
+      if need > 0 then
+        if not summedItem.recipe then
+debug(summedItem)
+debug({ total, used, need })
+          summedItem.missing = summedItem.missing + need
+          craftable = math.min(craftable, math.floor(used / iqty))
+        else
+          local c = sumItems(summedItem.recipe, need) -- 4
+          craftable = math.min(craftable, math.floor((used + c) / iqty))
+          summedItem.craftable = summedItem.craftable + c
+        end
+      end
+    end
+
+    return craftable * recipe.count
+  end
+
+  sumItems(inRecipe, inCount)
+
+  return summed
+end
+
 -- given a certain quantity, return how many of those can be crafted
 function Craft.getCraftableAmount(recipe, count, items, missing)
   local function sumItems(recipe, summedItems, count)
@@ -180,7 +247,7 @@ function Craft.getCraftableAmount(recipe, count, items, missing)
 
     for _ = 1, count do
       for _,item in pairs(recipe.ingredients) do
-        local summedItem = summedItems[item] or getItemCount(items, item)
+        local summedItem = summedItems[item] or Craft.getItemCount(items, item)
 
         local irecipe = Craft.recipes[item]
         if irecipe and summedItem <= 0 then

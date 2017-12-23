@@ -11,6 +11,7 @@ local Util           = require('util')
 
 local colors     = _G.colors
 local multishell = _ENV.multishell
+local term       = _G.term
 local turtle     = _G.turtle
 
 multishell.setTitle(multishell.getCurrent(), 'Crafter')
@@ -25,6 +26,7 @@ local inventoryAdapter = ChestAdapter(config.inventory)
 
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE  = 'usr/config/recipes2.db'
+local MACHINES_FILE  = 'usr/config/machines.db'
 
 local recipes = Util.readTable(RECIPES_FILE) or { }
 local resources
@@ -60,14 +62,21 @@ local function getItemQuantity(items, res)
   return count
 end
 
-local function getItemWithQty(items, res)
+local function getItemWithQty(items, res, ignoreNbtHash)
   for _,v in pairs(items) do
     if res.name == v.name and
       ((not res.damage and v.maxDamage > 0) or res.damage == v.damage) and
-      ((not res.nbtHash and v.nbtHash) or res.nbtHash == v.nbtHash) then
+      ((ignoreNbtHash and v.nbtHash) or res.nbtHash == v.nbtHash) then
+debug('found')
+debug(v)
       return v
     end
   end
+debug('nope:' .. uniqueKey(res))
+  local item = Util.shallowCopy(res)
+  item.count = 0
+  item.maxCount = 1
+  return item
 end
 
 local function mergeResources(t)
@@ -129,30 +138,13 @@ local function clearGrid()
 end
 
 local function gotoMachine(machine)
-  for _ = 1, machine do
+  for _ = 1, machine.index do
     if not turtle.back() then
       return
     end
   end
+
   return true
-end
-
-local function canCraft(recipe, items, count)
-  count = math.ceil(count / recipe.count)
-
-  local icount = Util.size(recipe.ingredients)
-  local maxSlots = math.floor(16 / icount)
-
-  for key,qty in pairs(recipe.ingredients) do
-    local item = getItem(items, itemDB:splitKey(key))
-    if not item then
-      return 0, itemDB:getName(key)
-    end
-    local x = math.min(math.floor(item.count / qty), item.maxCount * maxSlots)
-    count = math.min(x, count)
-  end
-
-  return count, ''
 end
 
 local function craftItem(recipe, recipeKey, items, cItem, count)
@@ -161,37 +153,63 @@ local function craftItem(recipe, recipeKey, items, cItem, count)
   local resource = resources[recipeKey]
   if not resource or not resource.machine then
     cItem.status = 'machine not selected'
-    return false
+    return
+  end
+
+  local machine = Util.find(machines, 'order', resource.machine)
+  if not machine then
+    cItem.status = 'invalid machine'
+    return
   end
 
   if count == 0 then
-    cItem.status = 'missing something'
-    return false
+    for key in pairs(recipe.ingredients) do
+      local item = getItemWithQty(items, itemDB:splitKey(key), recipe.ignoreNbtHash)
+      if item.count == 0 then
+        cItem.status = 'Missing: ' .. (item.displayName or itemDB:getName(item))
+        return false
+      end
+    end
+    return
   end
 
   local slot = 1
   for key,qty in pairs(recipe.ingredients) do
-    local item = itemDB:get(key)
-    if not item then
-      cItem.status = 'failed'
-      return false
+    local item = getItemWithQty(items, itemDB:splitKey(key), recipe.ignoreNbtHash)
+    if item.count == 0 then
+debug(item)
+      cItem.status = 'Missing: ' .. (item.displayName or itemDB:getName(item))
+      return
     end
     local c = count * qty
     while c > 0 do
       local maxCount = math.min(c, item.maxCount)
       inventoryAdapter:provide(item, maxCount, slot)
-      if turtle.getItemCount(slot) == 0 then -- ~= maxCount then FIXXX !!!
-        cItem.status = 'failed'
-        return false
+      if turtle.getItemCount(slot) ~= maxCount then -- ~= maxCount then FIXXX !!!
+        cItem.status = 'Extract failed: ' .. (item.displayName or itemDB:getName(item))
+        return
       end
       c = c - maxCount
       slot = slot + 1
     end
   end
-  if not gotoMachine(resource.machine) then
+  if not gotoMachine(machine) then
     cItem.status = 'failed to find machine'
   else
-    if resource.dir == 'up' then
+    if machine.empty then
+      local s, l = pcall(Peripheral.call,
+        turtle.getAction(machine.dir).side, 'list')
+
+      if not s then
+        cItem.status = l
+        return
+      elseif not Util.empty(l) then
+        cItem.status = 'machine busy'
+        return
+      end
+    end
+
+    if machine.dir == 'up' then
       turtle.emptyInventory(turtle.dropUp)
     else
       turtle.emptyInventory(turtle.dropDown)
@@ -212,15 +230,7 @@ local function expandList(list)
 
     for key,qty in pairs(recipe.ingredients) do
 
-      local item = getItemWithQty(items, itemDB:splitKey(key))
-      if not item then
-        item = itemDB:get(key)
-        if not item then
-          --item = itemDB:splitKey(key)
-          break
-        end
-        item.count = 0
-      end
+      local item = getItemWithQty(items, itemDB:splitKey(key), recipe.ignoreNbtHash)
 
       local need = qty * count
       local irecipe = recipes[key]
@@ -271,6 +281,7 @@ end
 
 local function craftItems(craftList)
   expandList(craftList)
+  lastItems = inventoryAdapter:listItems() -- refresh counts
   jobListGrid:update()
   jobListGrid:draw()
   jobListGrid:sync()
@@ -315,10 +326,17 @@ local function loadResources()
   resources = Util.readTable(RESOURCE_FILE) or { }
   for k,v in pairs(resources) do
     Util.merge(v, itemDB:splitKey(k))
-    if not v.machine then
-      local recipe = recipes[k]
-      v.machine = recipe.machine
-      v.dir = recipe.dir or 'down'
+    if v.dir then
+      for _,m in pairs(machines) do
+        if m.index == v.machine and m.dir == v.dir then
+          v.machine = m.order
+          v.dir = nil
+          break
+        end
+      end
+      if v.dir then
+        error('did not find')
+      end
     end
   end
 end
@@ -328,6 +346,7 @@ local function saveResources()
 
   for k,v in pairs(resources) do
     v = Util.shallowCopy(v)
+
     v.name = nil
     v.damage = nil
     v.nbtHash = nil
@@ -359,6 +378,9 @@ local function findMachines()
     if not machine then
       local _
       _, machine = turtle.getAction(dir).inspect()
+      if not machine or type(machine) ~= 'table' then
+        machine = { name = 'Unknown' }
+      end
     end
     if machine and type(machine) == 'table' then
       local rawName = getName(side) or machine.name
@@ -384,6 +406,16 @@ local function findMachines()
     getMachine('up')
     index = index + 1
   until not turtle.back()
+
+  local mf = Util.readTable(MACHINES_FILE) or { }
+  for _,m in pairs(machines) do
+    local m2 = Util.find(mf, 'order', m.order)
+    if m2 then
+      m.name = m2.name or m.name
+      m.empty = m2.empty
+      m.ignore = m2.ignore
+    end
+  end
 end
 
 local function jobMonitor()
@@ -458,6 +490,10 @@ local itemPage = UI.Page {
   },
   machines = UI.SlideOut {
     backgroundColor = colors.cyan,
+    titleBar = UI.TitleBar {
+      title = 'Select Machine',
+      previousPage = true,
+    },
     grid = UI.ScrollingGrid {
       y = 2, ey = -4,
       values = machines,
@@ -476,7 +512,6 @@ local itemPage = UI.Page {
       x = -9, y = -2,
       text = 'Cancel', event = 'cancelMachine',
     },
-    statusBar = UI.StatusBar(),
   },
   statusBar = UI.StatusBar { }
 }
@@ -491,11 +526,7 @@ function itemPage:enable(item)
   self:focusFirst()
 end
 
-function itemPage.machines:draw()
-  UI.Window.draw(self)
-  self:centeredWrite(1, 'Select machine', nil, colors.yellow)
-end
-
+--[[
 function itemPage.machines:eventHandler(event)
   if event.type == 'grid_focus_row' then
     self.statusBar:setStatus(string.format('%d %s', event.selected.index, event.selected.dir))
@@ -504,6 +535,7 @@ function itemPage.machines:eventHandler(event)
   end
   return true
 end
+]]
 
 function itemPage:eventHandler(event)
   if event.type == 'form_cancel' then
@@ -513,17 +545,18 @@ function itemPage:eventHandler(event)
     UI:setPage('learn', self.item)
 
   elseif event.type == 'setMachine' then
-    self.item.machine = self.machines.grid:getSelected().index
-    self.item.dir = self.machines.grid:getSelected().dir
+    self.item.machine = self.machines.grid:getSelected().order
     self.machines:hide()
 
   elseif event.type == 'cancelMachine' then
     self.machines:hide()
 
   elseif event.type == 'selectMachine' then
-    self.machines.grid:update()
+    local machineCopy = Util.shallowCopy(machines)
+    Util.filterInplace(machineCopy, function(m) return not m.ignore end)
+    self.machines.grid:setValues(machineCopy)
     if self.item.machine then
-      local _, index = Util.find(machines, 'index', self.item.machine)
+      local _, index = Util.find(machineCopy, 'order', self.item.machine)
       if index then
         self.machines.grid:setIndex(index)
       end
@@ -544,7 +577,6 @@ function itemPage:eventHandler(event)
     end
     filtered.low = tonumber(filtered.low)
     filtered.machine = self.item.machine
-    filtered.dir = self.item.dir
 
     if values.ignoreDamage == true then
       filtered.damage = 0
@@ -685,11 +717,113 @@ function learnPage:eventHandler(event)
   return true
 end
 
+local machinesPage = UI.Page {
+  titleBar = UI.TitleBar {
+    previousPage = true,
+    title = 'Machines',
+  },
+  grid = UI.Grid {
+    y = 2, ey = -2,
+    values = machines,
+    columns = {
+      { heading = 'Name',  key = 'name' },
+      { heading = 'Side',  key = 'dir',   width = 5  },
+      { heading = 'Index', key = 'index', width = 5  },
+    },
+    sortColumn = 'order',
+  },
+  detail = UI.SlideOut {
+    backgroundColor = colors.cyan,
+    form = UI.Form {
+      x = 1, y = 2, ex = -1, ey = -2,
+      [1] = UI.TextEntry {
+        formLabel = 'Name', formKey = 'name', help = '...',
+        limit = 64,
+      },
+      [2] = UI.Chooser {
+        width = 7,
+        formLabel = 'Hidden', formKey = 'ignore',
+        nochoice = 'No',
+        choices = {
+          { name = 'Yes', value = true },
+          { name = 'No', value = false },
+        },
+        help = 'Do not show this machine'
+      },
+      [3] = UI.Chooser {
+        width = 7,
+        formLabel = 'Empty', formKey = 'empty',
+        nochoice = 'No',
+        choices = {
+          { name = 'Yes', value = true },
+          { name = 'No', value = false },
+        },
+        help = 'Check if machine is empty before crafting'
+      },
+    },
+    statusBar = UI.StatusBar(),
+  },
+  statusBar = UI.StatusBar {
+    values = 'Select Machine',
+  },
+  accelerators = {
+    h = 'toggle_hidden',
+  }
+}
+
+function machinesPage:enable()
+  self.grid:update()
+  UI.Page.enable(self)
+end
+
+function machinesPage.detail:eventHandler(event)
+  if event.type == 'focus_change' then
+    self.statusBar:setStatus(event.focused.help)
+  end
+  return UI.SlideOut.eventHandler(self, event)
+end
+
+function machinesPage.grid:getRowTextColor(row, selected)
+  if row.ignore then
+    return colors.yellow
+  end
+  return UI.Grid:getRowTextColor(row, selected)
+end
+
+function machinesPage:eventHandler(event)
+  if event.type == 'grid_select' then
+    self.detail.form:setValues(event.selected)
+    self.detail:show()
+
+  elseif event.type == 'toggle_hidden' then
+    local selected = self.grid:getSelected()
+    if selected then
+      selected.ignore = not selected.ignore
+      Util.writeTable(MACHINES_FILE, machines)
+      self:draw()
+    end
+
+  elseif event.type == 'form_complete' then
+    self.detail.form.values.empty = self.detail.form.values.empty == true
+    self.detail.form.values.ignore = self.detail.form.values.ignore == true
+    Util.writeTable(MACHINES_FILE, machines)
+    self.detail:hide()
+
+  elseif event.type == 'form_cancel' then
+    self.detail:hide()
+
+  else
+    UI.Page.eventHandler(self, event)
+  end
+  return true
+end
+
 local listingPage = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
       { text = 'Forget',  event = 'forget'  },
-      { text = 'Refresh', event = 'refresh' },
+      { text = 'Machines',  event = 'machines'  },
+      { text = 'Refresh', event = 'refresh', x = -9 },
     },
   },
   grid = UI.Grid {
@@ -768,6 +902,9 @@ function listingPage:eventHandler(event)
     self.grid:draw()
     self.statusBar.filter:focus()
 
+  elseif event.type == 'machines' then
+    UI:setPage('machines')
+
   elseif event.type == 'craft' then
     UI:setPage('craft', self.grid:getSelected())
 
@@ -823,8 +960,8 @@ function listingPage:applyFilter()
   self.grid:setValues(t)
 end
 
-loadResources()
 findMachines()
+loadResources()
 repeat until not turtle.forward()
 clearGrid()
 jobMonitor()
@@ -832,6 +969,7 @@ lastItems = inventoryAdapter:listItems()
 
 UI:setPages({
   listing = listingPage,
+  machines = machinesPage,
   item = itemPage,
   learn = learnPage,
 })
@@ -851,14 +989,16 @@ Event.onInterval(30, function()
     turtle.refuel()
   end
   lastItems = inventoryAdapter:listItems()
-  local craftList = watchResources(lastItems)
+  if lastItems then
+    local craftList = watchResources(lastItems)
 
-  jobListGrid:setValues(craftList)
-  jobListGrid:update()
-  jobListGrid:draw()
-  jobListGrid:sync()
+    jobListGrid:setValues(craftList)
+    jobListGrid:update()
+    jobListGrid:draw()
+    jobListGrid:sync()
 
-  craftItems(craftList)
+    craftItems(craftList)
+  end
 end)
 
 UI:pullEvents()

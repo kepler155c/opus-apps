@@ -38,9 +38,7 @@ function RefinedAdapter:isOnline()
 end
 
 function RefinedAdapter:getCachedItemDetails(item)
-  local key = { item.name, item.damage, item.nbtHash }
-
-  local detail = itemDB:get(key)
+  local detail = itemDB:get(item)
   if not detail then
     detail = self.findItem(item)
     if detail then
@@ -57,7 +55,7 @@ function RefinedAdapter:getCachedItemDetails(item)
       end
 
       detail = t
-      itemDB:add(key, detail)
+      itemDB:add(detail)
     end
   end
   if detail then
@@ -92,10 +90,7 @@ function RefinedAdapter:listItems()
 end
 
 function RefinedAdapter:getItemInfo(fingerprint)
-
-  local key = { fingerprint.name, fingerprint.damage, fingerprint.nbtHash }
-
-  local item = itemDB:get(key)
+  local item = itemDB:get(fingerprint)
   if not item then
     return self:getCachedItemDetails(fingerprint)
   end

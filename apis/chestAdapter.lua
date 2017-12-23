@@ -86,13 +86,12 @@ function ChestAdapter:listItems(throttle)
     if not entry then
       self.cache[key] = v
 
-      local ikey = { v.name, v.damage, v.nbtHash }
-      if not itemDB:get(ikey) then
+      if not itemDB:get(v) then
         local t = { }
         for _,k in pairs(keys) do
           t[k] = v[k]
         end
-        itemDB:add(ikey, t)
+        itemDB:add(t)
       end
     else
       entry.count = entry.count + v.count

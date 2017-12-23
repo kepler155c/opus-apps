@@ -51,17 +51,20 @@ function ChestAdapter:isValid()
 end
 
 function ChestAdapter:getCachedItemDetails(item, k)
-  local key = { item.name, item.damage, item.nbtHash }
-
-  local detail = itemDB:get(key)
+  local detail = itemDB:get(item)
   if not detail then
     pcall(function() detail = self.getItemMeta(k) end)
     if not detail then
+debug(item)
+debug('no details')
 --      error('Inventory has changed')
       return
     end
 -- NOT SUFFICIENT
     if detail.name ~= item.name then
+debug('name change ?')
+debug(item)
+debug(detail)
 --      error('Inventory has changed')
       return
     end
@@ -72,7 +75,8 @@ function ChestAdapter:getCachedItemDetails(item, k)
       end
     end
 
-    itemDB:add(key, detail)
+debug('adding')
+    itemDB:add(detail)
   end
   if detail then
     return Util.shallowCopy(detail)
@@ -91,25 +95,29 @@ function ChestAdapter:listItems(throttle)
   throttle = throttle or Util.throttle()
 
   for k,v in pairs(self.list()) do
-    local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
+    if v.count > 0 then
+      local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
 
-    local entry = self.cache[key]
-    if not entry then
-      entry = self:getCachedItemDetails(v, k)
+      local entry = self.cache[key]
       if not entry then
-        return -- Inventory has changed
+        entry = self:getCachedItemDetails(v, k)
+        if not entry then
+  debug(key)
+  debug('inv changed')
+          return -- Inventory has changed
+        end
+        entry.count = 0
+        self.cache[key] = entry
+        table.insert(items, entry)
       end
-      entry.count = 0
-      self.cache[key] = entry
-      table.insert(items, entry)
-    end
 
-    if entry then
-      entry.count = entry.count + v.count
+      if entry then
+        entry.count = entry.count + v.count
+      end
+      throttle()
     end
-    throttle()
   end
-
+--read()
   itemDB:flush()
 
   return items

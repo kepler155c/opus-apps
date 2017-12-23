@@ -20,8 +20,9 @@ local changedPage = UI.Page {
   grid = UI.Grid {
     ey = -6,
     columns = {
-      { heading = 'Qty',    key = 'count',       width = 5                  },
-      { heading = 'Change', key = 'change',      width = 6                  },
+      { heading = 'Qty',    key = 'count',       width = 5 },
+      { heading = 'Change', key = 'change',      width = 6 },
+      { heading = 'Rate',   key = 'rate',        width = 6 },
       { heading = 'Name',   key = 'displayName' },
     },
     sortColumn = 'displayName',
@@ -60,6 +61,7 @@ function changedPage.grid:getDisplayValues(row)
   if row.change < 0 then
     ind = ''
   end
+
   row.change = ind .. Util.toBytes(row.change)
   row.count = Util.toBytes(row.count)
 
@@ -67,7 +69,6 @@ function changedPage.grid:getDisplayValues(row)
 end
 
 function changedPage:eventHandler(event)
-
   if event.type == 'reset' then
     self.lastItems = nil
     self.grid:setValues({ })
@@ -98,7 +99,6 @@ function changedPage:refresh()
   local t = storage:listItems()
 
   if not t or Util.empty(t) then
-debug('clearing')
     self.grid:clear()
     self.grid:centeredWrite(math.ceil(self.height/2), 'Communication failure')
     return
@@ -110,8 +110,10 @@ debug('clearing')
 
   if not self.lastItems then
     self.lastItems = t
+    self.timestamp = os.clock()
     self.grid:setValues({ })
   else
+    self.elapsed = os.clock() - self.timestamp
     local changedItems = { }
     local found
     for _,v in pairs(self.lastItems) do
@@ -144,6 +146,7 @@ debug('clearing')
 
     for _,v in pairs(changedItems) do
       v.change  = v.count - v.lastCount
+      v.rate = Util.round(60 / self.elapsed * v.change, 1)
     end
 
     self.grid:setValues(changedItems)
