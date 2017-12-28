@@ -17,6 +17,8 @@ local device     = _G.device
 local multishell = _ENV.multishell
 local peripheral = _G.peripheral
 local term       = _G.term
+local colors     = _G.colors
+local turtle     = _G.turtle
 
 multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 
@@ -64,13 +66,10 @@ end
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE  = 'usr/config/recipes.db'
 
-local colors = _G.colors
-local turtle = _G.turtle
-
 local craftingPaused = false
 local canCraft = not not duckAntenna or turtleChestAdapter:isValid()
 local userRecipes = Util.readTable(RECIPES_FILE) or { }
-local jobListGrid
+local jobList
 local resources
 local demandCrafting = { }
 
@@ -132,6 +131,26 @@ local function mergeResources(t)
     end
     v.lname = v.displayName:lower()
   end
+end
+
+local function listItems()
+  local items
+  for _ = 1, 5 do
+    items = inventoryAdapter:listItems()
+    if items then
+      break
+    end
+    os.sleep(.25)
+  end
+  if not items then
+--    error('could not check inventory')
+term.clear()
+print('rebooting in 5 secs')
+os.sleep(5)
+os.reboot()
+  end
+
+  return items
 end
 
 local function filterItems(t, filter, displayMode)
@@ -201,6 +220,7 @@ local function craftItem(recipe, items, originalItem, craftList, count)
   if not isGridClear() then
     if not clearGrid() then
       originalItem.status = 'Grid obstructed'
+      return 0
     end
   end
 
@@ -223,7 +243,7 @@ local function craftItem(recipe, items, originalItem, craftList, count)
 --debug('crafting ' .. key .. ' - ' .. need - has)
 --read()
           craftItem(iRecipe, items, originalItem, { }, math.ceil((need - has) / iRecipe.count))
-          items = inventoryAdapter:listItems()
+          items = listItems()
           if not items then
             error('list failed')
             --return 0
@@ -238,11 +258,11 @@ local function craftItem(recipe, items, originalItem, craftList, count)
   if toCraft > 0 then
     crafted = Craft.craftRecipe(recipe, toCraft, inventoryAdapter)
     clearGrid()
-    items = inventoryAdapter:listItems()
+    items = listItems()
     count = count - crafted
   end
 
-  if count > 0 then
+  if count > 0 and items then
     local ingredients = Craft.getResourceList(recipe, items, count)
     for _,ingredient in pairs(ingredients) do
       --if not ingredient.recipe and ingredient.count < 0 then
@@ -269,15 +289,9 @@ local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
       if not summedItem then
         summedItem = Util.shallowCopy(item)
         summedItem.recipe = Craft.recipes[key]
-
-if summedItem.recipe then
-summedItem.recipe.key = key
-end
         summedItem.count = Craft.getItemCount(items, key)
-        summedItem.ocount = summedItem.count
         summedItem.need = 0
         summedItem.used = 0
-        summedItem.missing = 0
         summedItem.craftable = 0
         summed[key] = summedItem
       end
@@ -297,43 +311,34 @@ end
       else
         summedItem.count = summedItem.count - used
         summedItem.used = summedItem.used + used
-        summedItem.need = summedItem.need + need
       end
 
       if need > 0 then
         if not summedItem.recipe then
-          summedItem.missing = summedItem.missing + need
           craftable = math.min(craftable, math.floor(used / iqty))
+          summedItem.need = summedItem.need + need
         else
           local c = sumItems(summedItem.recipe, need) -- 4
-debug({ 'summed', total, used, need, c })
           craftable = math.min(craftable, math.floor((used + c) / iqty))
-
           summedItem.craftable = summedItem.craftable + c
         end
       end
     end
 
     if craftable > 0 then
-debug('crafting ' .. recipe.key)
-debug({ count, craftable })
-_G._p = summed
-      craftable = Craft.craftRecipe(recipe, craftable, inventoryAdapter)
+      craftable = Craft.craftRecipe(recipe, craftable, inventoryAdapter) / recipe.count
       clearGrid()
-debug('got ' .. craftable)
-
     end
 
     return craftable * recipe.count
   end
-
   local count = sumItems(inRecipe, inCount)
-debug({ 'final', inCount, count })
+
+--  local count, summed = Craft.getResourceList3(inRecipe, items, inCount, inventoryAdapter)
   if count < inCount then
     for _,ingredient in pairs(summed) do
-      --if not ingredient.recipe and ingredient.count < 0 then
-      if ingredient.missing > 0 then
-        addCraftingRequest(ingredient, craftList, ingredient.missing)
+      if ingredient.need > 0 then
+        addCraftingRequest(ingredient, craftList, ingredient.need)
         originalItem.status = string.format('%s missing', itemDB:getName(ingredient))
         originalItem.statusCode = 'missing'
       end
@@ -351,12 +356,11 @@ local function craftItems(craftList, allItems)
       item.status = nil
       item.statusCode = nil
       if item.forceCrafting then
-recipe.key = key
         item.crafted = forceCraftItem(recipe, allItems, item, craftList, item.count)
       else
         item.crafted = craftItem(recipe, allItems, item, craftList, item.count)
       end
-      allItems = inventoryAdapter:listItems() -- refresh counts
+      allItems = listItems() -- refresh counts
       if not allItems then
         break
       end
@@ -408,29 +412,43 @@ local function jobMonitor()
     })
   end
 
-  jobListGrid = UI.Grid({
+  jobList = UI.Page {
     parent = mon,
-    sortColumn = 'displayName',
-    columns = {
-      { heading = 'Qty',      key = 'count',       width = 6                  },
-      { heading = 'Crafting', key = 'displayName', width = mon.width / 2 - 10 },
-      { heading = 'Status',   key = 'status',      width = mon.width - 10     },
+    grid = UI.Grid {
+      sortColumn = 'displayName',
+      columns = {
+        { heading = 'Qty',      key = 'count',       width = 6                  },
+        { heading = 'Crafting', key = 'displayName', width = mon.width / 2 - 10 },
+        { heading = 'Status',   key = 'status',      width = mon.width - 10     },
+      },
     },
-  })
+  }
 
-  function jobListGrid:getRowTextColor(row, selected)
+  function jobList:showError(msg)
+    self.grid:clear()
+    self.grid:centeredWrite(math.ceil(self.grid.height / 2), msg)
+    self:sync()
+  end
 
-    if row.status == '(no recipe)'then
+  function jobList:updateList(craftList)
+    self.grid:setValues(craftList)
+    self.grid:update()
+    self:draw()
+    self:sync()
+  end
+
+  function jobList.grid:getRowTextColor(row, selected)
+    if row.status == '(no recipe)' then
       return colors.red
     elseif row.statusCode == 'missing' then
       return colors.yellow
     end
-
     return UI.Grid:getRowTextColor(row, selected)
   end
 
-  jobListGrid:draw()
-  jobListGrid:sync()
+  jobList:enable()
+  jobList:draw()
+  jobList:sync()
 end
 
 local function getAutocraftItems()
@@ -496,6 +514,12 @@ local function watchResources(items)
         item.damage = 0
       end
       local key = uniqueKey(res)
+if res.name == 'harvestcraft:applesauceitem' then
+  _G._p = items
+  debug('applesause')
+  error('applesauce')
+end
+
       craftList[key] = {
         damage = item.damage,
         nbtHash = item.nbtHash,
@@ -532,12 +556,6 @@ local function loadResources()
   for _,k in pairs(Util.keys(resources)) do
     local v = resources[k]
     Util.merge(v, itemDB:splitKey(k))
-    if not v.damage then
-      v.damage = 0
-      v.ignoreDamage = true
-      resources[k] = nil
-      resources[uniqueKey(v)] = v
-    end
   end
 end
 
@@ -942,7 +960,7 @@ function listingPage:enable()
 end
 
 function listingPage:refresh()
-  self.allItems = inventoryAdapter:listItems()
+  self.allItems = listItems()
   mergeResources(self.allItems)
   self:applyFilter()
 end
@@ -1123,7 +1141,7 @@ local craftPage = UI.Page {
     title = "Information",
   },
   wizard = UI.Wizard {
-    y = 2,
+    y = 2, ey = -2,
     pages = {
       quantity = UI.Window {
         index = 1,
@@ -1132,36 +1150,36 @@ local craftPage = UI.Page {
           value = 'Quantity',
         },
         count = UI.TextEntry {
-          x = 15,
-          y = 3,
-          width = 10,
+          x = 15, y = 3, width = 10,
           limit = 6,
           value = 1,
+        },
+        ejectText = UI.Text {
+          x = 6, y = 4,
+          value = 'Eject',
+        },
+        eject = UI.Chooser {
+          x = 15, y = 4, width = 7,
+          value = true,
+          nochoice = 'No',
+          choices = {
+            { name = 'Yes', value = true },
+            { name = 'No', value = false },
+          },
         },
       },
       resources = UI.Window {
         index = 2,
         grid = UI.Grid {
-          y = 2, ey = -4,
+          y = 2, ey = -2,
           columns = {
-            { heading = 'Name', key = 'displayName' },
-            { heading = 'Qty',  key = 'ocount'       , width = 5  },
-            { heading = 'Used',  key = 'used'         , width = 4  },
+            { heading = 'Name',  key = 'displayName' },
+            { heading = 'Total', key = 'total'      , width = 4  },
+            { heading = 'Used',  key = 'used'       , width = 4  },
+            { heading = 'Craf',  key = 'craftable'  , width = 4  },
             { heading = 'Need',  key = 'need'       , width = 4  },
-            { heading = 'Miss',  key = 'missing'       , width = 4  },
-            { heading = 'cra',  key = 'craftable'       , width = 4  },
           },
           sortColumn = 'displayName',
-        },
-        accept = UI.Button {
-          x = -8, y = -2,
-          backgroundColor = colors.green,
-          text = '+', event = 'accept',
-        },
-        cancel = UI.Button {
-          x = -4, y = -2,
-          backgroundColor = colors.red,
-          text = '\215', event = 'cancel'
         },
       },
     },
@@ -1171,7 +1189,30 @@ local craftPage = UI.Page {
 function craftPage:enable(item)
   self.item = item
   self:focusFirst()
+--  self.wizard.pages.quantity.eject.value = true
   UI.Page.enable(self)
+end
+
+function craftPage.wizard.pages.resources.grid:getDisplayValues(row)
+  local function dv(v)
+    if v == 0 then
+      return ''
+    end
+    return Util.toBytes(v)
+  end
+  row = Util.shallowCopy(row)
+  row.total = Util.toBytes(row.total)
+  row.used = dv(row.used)
+  row.craftable = dv(row.craftable)
+  row.need = dv(row.need)
+  return row
+end
+
+function craftPage.wizard.pages.resources.grid:getRowTextColor(row, selected)
+  if row.need - row.craftable > 0 then
+    return colors.orange
+  end
+  return UI.Grid:getRowTextColor(row, selected)
 end
 
 function craftPage:eventHandler(event)
@@ -1179,20 +1220,22 @@ function craftPage:eventHandler(event)
     UI:setPreviousPage()
 
   elseif event.type == 'enable_view' and event.view == self.wizard.pages.resources then
-    local items = inventoryAdapter:listItems()
+    local items = listItems()
     local count = self.wizard.pages.quantity.count.value
     local recipe = Craft.recipes[uniqueKey(self.item)]
-    local ingredients = Craft.getResourceList3(recipe, items, count)
-    self.wizard.pages.resources.grid:setValues(ingredients)
+    local _, ingredients = Craft.getResourceList3(recipe, items, count)
     for _,v in pairs(ingredients) do
       v.displayName = itemDB:getName(v)
     end
+    self.wizard.pages.resources.grid:setValues(ingredients)
 
   elseif event.type == 'accept' then
     local key = uniqueKey(self.item)
     demandCrafting[key] = Util.shallowCopy(self.item)
     demandCrafting[key].count = tonumber(self.wizard.pages.quantity.count.value)
+    demandCrafting[key].ocount = demandCrafting[key].count
     demandCrafting[key].forceCrafting = true
+    demandCrafting[key].eject = self.wizard.pages.quantity.eject.value == true
     UI:setPreviousPage()
   else
     return UI.Page.eventHandler(self, event)
@@ -1218,41 +1261,46 @@ jobMonitor()
 Event.onInterval(5, function()
 
   if not craftingPaused then
-    local items = inventoryAdapter:listItems()
+    local items = listItems()
     if not items or Util.size(items) == 0 then
-      jobListGrid.parent:clear()
-      jobListGrid.parent:centeredWrite(math.ceil(jobListGrid.parent.height/2), 'No items in system')
-      jobListGrid:sync()
-
+      jobList:showError('No items in system')
     else
-      local craftList = watchResources(items)
-      craftItems(craftList, items)
-
+      local demandCrafted
       if Util.size(demandCrafting) > 0 then
-        items = inventoryAdapter:listItems()
+        items = listItems()
         if items then
-          local list = Util.shallowCopy(demandCrafting)
-          craftItems(list, items)
-          for k,v in pairs(list) do
-            craftList[k] = v
-          end
+          demandCrafted = Util.shallowCopy(demandCrafting)
+          craftItems(demandCrafted, items)
         end
       end
 
-      jobListGrid:setValues(craftList)
-      jobListGrid:update()
-      jobListGrid:draw()
-      jobListGrid:sync()
+      items = listItems()
+      local craftList
+      if items then
+        craftList = watchResources(items)
+        craftItems(craftList, items)
+      end
+
+      if demandCrafted and craftList then
+        for k,v in pairs(demandCrafted) do
+          craftList[k] = v
+        end
+      end
 
       for _,key in pairs(Util.keys(demandCrafting)) do
         local item = demandCrafting[key]
         if item.crafted then
           item.count = item.count - item.crafted
-          if item.count <= 0 then    -- should check statusCode
+          if item.count <= 0 then
             demandCrafting[key] = nil
+            if item.eject then
+              inventoryAdapter:eject(item, item.ocount, inventoryAdapter.getMetadata().state.facing)
+            end
           end
         end
       end
+
+      jobList:updateList(craftList)
 
       craftList = getAutocraftItems(items) -- autocrafted items don't show on job monitor
       craftItems(craftList, items)
@@ -1261,4 +1309,4 @@ Event.onInterval(5, function()
 end)
 
 UI:pullEvents()
-jobListGrid.parent:reset()
+jobList.parent:reset()

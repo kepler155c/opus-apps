@@ -150,6 +150,7 @@ function changedPage:refresh()
     end
 
     self.grid:setValues(changedItems)
+    debug(storage:getPercentUsed())
   end
   self.grid:draw()
 end

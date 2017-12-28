@@ -209,7 +209,8 @@ local listingPage = UI.Page {
     columns = {
       { heading = 'Name', key = 'displayName' , width = 22 },
       { heading = 'Qty',  key = 'count'       , width = 5  },
-      { heading = 'Max',  key = 'limit'       , width = 4  },
+      { heading = 'Min',  key = 'limit'       , width = 4  },
+      { heading = 'Max',  key = 'low'       , width = 4  },
     },
     sortColumn = 'displayName',
   },

@@ -11,6 +11,7 @@ local Util           = require('util')
 
 local colors     = _G.colors
 local multishell = _ENV.multishell
+local os         = _G.os
 local term       = _G.term
 local turtle     = _G.turtle
 
@@ -32,7 +33,7 @@ local recipes = Util.readTable(RECIPES_FILE) or { }
 local resources
 local machines = { }
 local jobListGrid
-local lastItems
+local listing, docked = false, false
 
 local function getItem(items, inItem, ignoreDamage)
   for _,item in pairs(items) do
@@ -67,12 +68,9 @@ local function getItemWithQty(items, res, ignoreNbtHash)
     if res.name == v.name and
       ((not res.damage and v.maxDamage > 0) or res.damage == v.damage) and
       ((ignoreNbtHash and v.nbtHash) or res.nbtHash == v.nbtHash) then
-debug('found')
-debug(v)
       return v
     end
   end
-debug('nope:' .. uniqueKey(res))
   local item = Util.shallowCopy(res)
   item.count = 0
   item.maxCount = 1
@@ -137,7 +135,15 @@ local function clearGrid()
   return true
 end
 
+local function undock()
+  while listing do
+    os.sleep(.5)
+  end
+  docked = false
+end
+
 local function gotoMachine(machine)
+  undock()
   for _ = 1, machine.index do
     if not turtle.back() then
       return
@@ -147,8 +153,38 @@ local function gotoMachine(machine)
   return true
 end
 
+local function dock()
+  if not docked then
+    repeat until not turtle.forward()
+  end
+  docked = true
+end
+
+local function getItems()
+  while not docked do
+    os.sleep(.5)
+  end
+
+  listing = true
+
+  local items
+  for _ = 1, 5 do
+    items = inventoryAdapter:listItems()
+    if items then
+      break
+    end
+  end
+  if not items then
+    error('could not check inventory')
+  end
+
+  listing = false
+
+  return items
+end
+
 local function craftItem(recipe, recipeKey, items, cItem, count)
-  repeat until not turtle.forward()
+  dock()
 
   local resource = resources[recipeKey]
   if not resource or not resource.machine then
@@ -222,8 +258,7 @@ debug(item)
   end
 end
 
-local function expandList(list)
-  local items = lastItems
+local function expandList(list, items)
 
   local function getCraftable(recipe, count)
     local maxSlots = math.floor(16 / Util.size(recipe.ingredients))
@@ -259,15 +294,6 @@ local function expandList(list)
     return count
   end
 
---[[
-list = { }
-debug(getCraftable(recipes['minecraft:brick:0'], 512))
-for key, item in pairs(list) do
-  debug(item.name .. ' : ' .. item.ocount .. ':' .. item.count)
-end
-read()
-]]
-
   for key, item in pairs(Util.shallowCopy(list)) do
     local recipe = recipes[key]
 
@@ -280,21 +306,21 @@ read()
 end
 
 local function craftItems(craftList)
-  expandList(craftList)
-  lastItems = inventoryAdapter:listItems() -- refresh counts
+  local items = getItems()
+  expandList(craftList, items)
   jobListGrid:update()
   jobListGrid:draw()
   jobListGrid:sync()
   for key, item in pairs(craftList) do
     local recipe = recipes[key]
     if recipe then
-      craftItem(recipe, key, lastItems, item, item.count)
-      repeat until not turtle.forward()
+      craftItem(recipe, key, items, item, item.count)
+      dock()
       jobListGrid:update()
       jobListGrid:draw()
       jobListGrid:sync()
       clearGrid()
-      lastItems = inventoryAdapter:listItems() -- refresh counts
+      items = getItems()
     end
   end
 end
@@ -357,7 +383,7 @@ local function saveResources()
 end
 
 local function findMachines()
-  repeat until not turtle.forward()
+  dock()
 
   local function getName(side)
     local p = Peripheral.getBySide(side)
@@ -370,7 +396,6 @@ local function findMachines()
   end
 
   local index = 0
-  local t = { }
 
   local function getMachine(dir)
     local side = turtle.getAction(dir).side
@@ -383,17 +408,10 @@ local function findMachines()
       end
     end
     if machine and type(machine) == 'table' then
-      local rawName = getName(side) or machine.name
-      local name = rawName
-      local i = 1
-      while t[name] do
-        name = rawName .. '_' .. i
-        i = i + 1
-      end
-      t[name] = true
-
+      local name = getName(side) or machine.name
       table.insert(machines, {
         name = name,
+        rawName = name,
         index = index,
         dir = dir,
         order = #machines + 1
@@ -405,13 +423,19 @@ local function findMachines()
     getMachine('down')
     getMachine('up')
     index = index + 1
+    undock()
   until not turtle.back()
 
   local mf = Util.readTable(MACHINES_FILE) or { }
   for _,m in pairs(machines) do
     local m2 = Util.find(mf, 'order', m.order)
     if m2 then
-      m.name = m2.name or m.name
+      if not m2.rawName then
+        m2.rawName = m.rawName
+      end
+      if m.rawName == m2.rawName then
+        m.name = m2.name or m.name
+      end
       m.empty = m2.empty
       m.ignore = m2.ignore
     end
@@ -483,6 +507,10 @@ local itemPage = UI.Page {
       text = 'Select', event= 'selectMachine',
       formLabel = 'Machine'
     },
+    info = UI.TextArea {
+      x = 2, ex = -2, y = 6, height = 3,
+      textColor = colors.gray,
+    },
     button = UI.Button {
       x = 2, y = 9,
       text = 'Recipe', event = 'learn',
@@ -524,6 +552,16 @@ function itemPage:enable(item)
   end
   UI.Page.enable(self)
   self:focusFirst()
+end
+
+function itemPage.form.info:draw()
+  local recipe = recipes[uniqueKey(itemPage.item)]
+  if recipe and itemPage.item.machine then
+    self.value = string.format('Crafts %d using the %s machine',
+      recipe.count,
+      machines[itemPage.item.machine].name)
+  end
+  UI.TextArea.draw(self)
 end
 
 --[[
@@ -638,7 +676,7 @@ local learnPage = UI.Page {
 
 function learnPage:enable(target)
   self.target = target
-  self.allItems = lastItems
+  self.allItems = getItems()
   mergeResources(self.allItems)
 
   self.filter.value = ''
@@ -950,7 +988,7 @@ function listingPage:enable()
 end
 
 function listingPage:refresh()
-  self.allItems = lastItems
+  self.allItems = getItems()
   mergeResources(self.allItems)
   self:applyFilter()
 end
@@ -962,10 +1000,9 @@ end
 
 findMachines()
 loadResources()
-repeat until not turtle.forward()
+dock()
 clearGrid()
 jobMonitor()
-lastItems = inventoryAdapter:listItems()
 
 UI:setPages({
   listing = listingPage,
@@ -982,15 +1019,15 @@ Event.on('turtle_abort', function()
 end)
 
 Event.onInterval(30, function()
-  repeat until not turtle.forward()
+  dock()
   if turtle.getFuelLevel() < 100 then
     turtle.select(1)
     inventoryAdapter:provide({ name = 'minecraft:coal', damage = 1 }, 16, 1)
     turtle.refuel()
   end
-  lastItems = inventoryAdapter:listItems()
-  if lastItems then
-    local craftList = watchResources(lastItems)
+  local items = getItems()
+  if items then
+    local craftList = watchResources(items)
 
     jobListGrid:setValues(craftList)
     jobListGrid:update()

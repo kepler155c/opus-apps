@@ -66,6 +66,7 @@ local function turtleCraft(recipe, qty, inventoryAdapter)
     inventoryAdapter:provide(item, provideQty, k)
     if turtle.getItemCount(k) == 0 then -- ~= qty then
                                         -- FIX: ingredients cannot be stacked
+debug('failed ' .. v .. ' - ' .. provideQty)
       return false
     end
   end
@@ -176,7 +177,7 @@ function Craft.getResourceList(inRecipe, items, inCount)
   return summed
 end
 
-function Craft.getResourceList3(inRecipe, items, inCount)
+function Craft.getResourceList3(inRecipe, items, inCount, inventoryAdapter)
   local summed = { }
   local throttle = Util.throttle()
 
@@ -192,38 +193,35 @@ function Craft.getResourceList3(inRecipe, items, inCount)
         summedItem = Util.shallowCopy(item)
         summedItem.recipe = Craft.recipes[key]
         summedItem.count = Craft.getItemCount(items, key)
-        summedItem.ocount = summedItem.count
+        summedItem.total = 0
         summedItem.need = 0
         summedItem.used = 0
-        summedItem.missing = 0
         summedItem.craftable = 0
         summed[key] = summedItem
       end
-
+debug(key)
       local total = count * iqty                           -- 4 * 2
       local used = math.min(summedItem.count, total)       -- 5
       local need = total - used                            -- 3
 
       if recipe.craftingTools and recipe.craftingTools[key] then
+        summedItem.total = 1
         if summedItem.count > 0 then
           summedItem.used = 1
           need = 0
         else
-          summedItem.need = 1
           need = 1
         end
       else
+        summedItem.total = summedItem.total + total
         summedItem.count = summedItem.count - used
         summedItem.used = summedItem.used + used
-        summedItem.need = summedItem.need + need
       end
 
       if need > 0 then
         if not summedItem.recipe then
-debug(summedItem)
-debug({ total, used, need })
-          summedItem.missing = summedItem.missing + need
           craftable = math.min(craftable, math.floor(used / iqty))
+          summedItem.need = summedItem.need + need
         else
           local c = sumItems(summedItem.recipe, need) -- 4
           craftable = math.min(craftable, math.floor((used + c) / iqty))
@@ -232,12 +230,17 @@ debug({ total, used, need })
       end
     end
 
+    --[[
+    if inventoryAdapter and craftable > 0 then
+      craftable = Craft.craftRecipe(recipe, craftable, inventoryAdapter)
+      clearGrid(inventoryAdapter)
+    end
+    ]]
+
     return craftable * recipe.count
   end
 
-  sumItems(inRecipe, inCount)
-
-  return summed
+  return sumItems(inRecipe, inCount), summed
 end
 
 -- given a certain quantity, return how many of those can be crafted

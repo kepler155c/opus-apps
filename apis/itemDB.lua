@@ -78,6 +78,7 @@ function itemDB:get(key)
   if key.nbtHash then
     item = self:get({ name = key.name, damage = key.damage })
     if item and (item.maxDamage > 0 or item.damage == key.damage) then
+      item = Util.shallowCopy(item)
       item.nbtHash = key.nbtHash
       return item
     end

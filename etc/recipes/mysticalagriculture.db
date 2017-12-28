@@ -19,20 +19,6 @@
     },
     count = 1,
   },
-  [ "mysticalagriculture:supremium_essence:0" ] = {
-    ingredients = {
-      [ 10 ] = "mysticalagriculture:superium_essence:0",
-      [ 2 ] = "mysticalagriculture:superium_essence:0",
-      [ 5 ] = "mysticalagriculture:superium_essence:0",
-      [ 6 ] = "mysticalagriculture:infusion_crystal:*",
-      [ 7 ] = "mysticalagriculture:superium_essence:0",
-    },
-    craftingTools = {
-      [ "mysticalagriculture:infusion_crystal:*" ] = true,
-    },
-    maxCount = 1,
-    count = 1,
-  },
   [ "mysticalagriculture:intermedium_ingot:0" ] = {
     ingredients = {
       [ 10 ] = "mysticalagriculture:intermedium_essence:0",
@@ -55,20 +41,6 @@
       [ 10 ] = "minecraft:emerald:0",
       [ 11 ] = "mysticalagriculture:superium_essence:0",
     },
-    count = 1,
-  },
-  [ "mysticalagriculture:intermedium_essence:0" ] = {
-    ingredients = {
-      [ 10 ] = "mysticalagriculture:prudentium_essence:0",
-      [ 2 ] = "mysticalagriculture:prudentium_essence:0",
-      [ 5 ] = "mysticalagriculture:prudentium_essence:0",
-      [ 6 ] = "mysticalagriculture:infusion_crystal:*",
-      [ 7 ] = "mysticalagriculture:prudentium_essence:0",
-    },
-    craftingTools = {
-      [ "mysticalagriculture:infusion_crystal:*" ] = true,
-    },
-    maxCount = 1,
     count = 1,
   },
   [ "mysticalagriculture:inferium_ingot:0" ] = {
@@ -109,20 +81,6 @@
     },
     count = 1,
   },
-  [ "mysticalagriculture:superium_essence:0" ] = {
-    ingredients = {
-      [ 10 ] = "mysticalagriculture:intermedium_essence:0",
-      [ 2 ] = "mysticalagriculture:intermedium_essence:0",
-      [ 5 ] = "mysticalagriculture:intermedium_essence:0",
-      [ 6 ] = "mysticalagriculture:infusion_crystal:*",
-      [ 7 ] = "mysticalagriculture:intermedium_essence:0",
-    },
-    craftingTools = {
-      [ "mysticalagriculture:infusion_crystal:*" ] = true,
-    },
-    maxCount = 1,
-    count = 1,
-  },
   [ "mysticalagriculture:supremium_armor_core:0" ] = {
     ingredients = {
       "mysticalagriculture:supremium_essence:0",
@@ -151,20 +109,6 @@
     },
     count = 1,
   },
-  [ "mysticalagriculture:prudentium_essence:0" ] = {
-    ingredients = {
-      [ 10 ] = "mysticalagriculture:inferium_essence:0",
-      [ 2 ] = "mysticalagriculture:inferium_essence:0",
-      [ 5 ] = "mysticalagriculture:inferium_essence:0",
-      [ 6 ] = "mysticalagriculture:infusion_crystal:*",
-      [ 7 ] = "mysticalagriculture:inferium_essence:0",
-    },
-    craftingTools = {
-      [ "mysticalagriculture:infusion_crystal:*" ] = true,
-    },
-    maxCount = 1,
-    count = 1,
-  },
   [ "mysticalagriculture:base_essence_ingot:0" ] = {
     ingredients = {
       [ 10 ] = "mysticalagriculture:prosperity_shard:0",
@@ -172,16 +116,6 @@
       [ 5 ] = "mysticalagriculture:prosperity_shard:0",
       [ 6 ] = "thermalfoundation:material:136",
       [ 7 ] = "mysticalagriculture:prosperity_shard:0",
-    },
-    count = 1,
-  },
-  [ "mysticalagriculture:superium_ingot:0" ] = {
-    ingredients = {
-      [ 10 ] = "mysticalagriculture:superium_essence:0",
-      [ 2 ] = "mysticalagriculture:superium_essence:0",
-      [ 5 ] = "mysticalagriculture:superium_essence:0",
-      [ 6 ] = "mysticalagriculture:intermedium_ingot:0",
-      [ 7 ] = "mysticalagriculture:superium_essence:0",
     },
     count = 1,
   },

@@ -53,9 +53,10 @@ end
 function ChestAdapter:getCachedItemDetails(item, k)
   local detail = itemDB:get(item)
   if not detail then
-    pcall(function() detail = self.getItemMeta(k) end)
+    local s, m = pcall(function() detail = self.getItemMeta(k) end)
     if not detail then
 debug(item)
+debug(m)
 debug('no details')
 --      error('Inventory has changed')
       return
@@ -89,16 +90,16 @@ end
 
 -- provide a consolidated list of items
 function ChestAdapter:listItems(throttle)
-  self.cache = { }
+  local cache = { }
   local items = { }
-
+debug('listing')
   throttle = throttle or Util.throttle()
 
   for k,v in pairs(self.list()) do
     if v.count > 0 then
       local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
 
-      local entry = self.cache[key]
+      local entry = cache[key]
       if not entry then
         entry = self:getCachedItemDetails(v, k)
         if not entry then
@@ -107,7 +108,7 @@ function ChestAdapter:listItems(throttle)
           return -- Inventory has changed
         end
         entry.count = 0
-        self.cache[key] = entry
+        cache[key] = entry
         table.insert(items, entry)
       end
 
@@ -120,7 +121,12 @@ function ChestAdapter:listItems(throttle)
 --read()
   itemDB:flush()
 
-  return items
+debug('done listing')
+  if not Util.empty(items) then
+    self.cache = cache
+    return items
+  end
+debug('its empty')
 end
 
 function ChestAdapter:getItemInfo(item)
@@ -137,6 +143,13 @@ end
 function ChestAdapter:craftItems()
 end
 
+function ChestAdapter:getPercentUsed()
+  if self.cache then
+    return math.floor(Util.size(self.cache) / self.getDrawerCount() * 100)
+  end
+  return 0
+end
+
 function ChestAdapter:provide(item, qty, slot, direction)
   local s, m = pcall(function()
     local stacks = self.list()
@@ -147,6 +160,30 @@ function ChestAdapter:provide(item, qty, slot, direction)
         local amount = math.min(qty, stack.count)
         if amount > 0 then
           self.pushItems(direction or self.direction, key, amount, slot)
+        end
+        qty = qty - amount
+        if qty <= 0 then
+          break
+        end
+      end
+    end
+  end)
+  if not s then
+    debug(m)
+  end
+  return s, m
+end
+
+function ChestAdapter:eject(item, qty, direction)
+  local s, m = pcall(function()
+    local stacks = self.list()
+    for key,stack in Util.rpairs(stacks) do
+      if stack.name == item.name and
+        (not item.damage or stack.damage == item.damage) and
+        (not item.nbtHash or stack.nbtHash == item.nbtHash) then
+        local amount = math.min(qty, stack.count)
+        if amount > 0 then
+          self.drop(key, amount, direction)
         end
         qty = qty - amount
         if qty <= 0 then
