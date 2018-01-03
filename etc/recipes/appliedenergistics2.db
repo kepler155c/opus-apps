@@ -56,13 +56,6 @@
     },
     count = 1,
   },
-  [ "appliedenergistics2:crystal_seed:0:5af0f90bcc279578cf09089f43278d57" ] = {
-    ingredients = {
-      "minecraft:sand:0",
-      "appliedenergistics2:material:2",
-    },
-    count = 2,
-  },
   [ "appliedenergistics2:material:36" ] = {
     ingredients = {
       "minecraft:redstone:0",

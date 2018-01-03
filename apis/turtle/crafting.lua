@@ -6,11 +6,13 @@ local turtle     = _G.turtle
 local CRAFTING_TABLE = 'minecraft:crafting_table'
 
 local function clearGrid(inventory)
+print('clearing')
   for i = 1, 16 do
     local count = turtle.getItemCount(i)
     if count > 0 then
       inventory:insert(i, count)
       if turtle.getItemCount(i) ~= 0 then
+print('failed to insert')
         return false
       end
     end
@@ -19,7 +21,7 @@ local function clearGrid(inventory)
 end
 
 function turtle.craftItem(item, count, inventoryInfo)
-  local success
+  local success, msg
 
   local inventory = Adapter.wrap(inventoryInfo)
   if not inventory then
@@ -46,7 +48,8 @@ function turtle.craftItem(item, count, inventoryInfo)
     equipped = turtle.getItemDetail(slot.index)
   end
 
-  success = Craft.craftRecipe(item, count or 1, inventory)
+  clearGrid(inventory)
+  success, msg = Craft.craftRecipe(item, count or 1, inventory)
 
   if equipped then
     turtle.selectOpenSlot()
@@ -54,7 +57,7 @@ function turtle.craftItem(item, count, inventoryInfo)
     turtle.equip(side, equipped.name .. ':' .. equipped.damage)
   end
 
-  return success
+  return success, msg
 end
 
 function turtle.canCraft(item, count, items)

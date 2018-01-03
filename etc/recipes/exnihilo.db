@@ -1,5 +1,6 @@
 {
   [ "exnihiloadscensio:hammerStone:0" ] = {
+    maxCount = 1,
     ingredients = {
       [ 7 ] = "minecraft:cobblestone:0",
       [ 9 ] = "minecraft:stick:0",

@@ -1,3 +1,4 @@
+local itemDB = require('itemDB')
 local Util   = require('util')
 
 local fs     = _G.fs
@@ -32,8 +33,11 @@ local function splitKey(key)
   return item
 end
 
-function Craft.getItemCount(items, key)
-  local item = splitKey(key)
+function Craft.getItemCount(items, item)
+  if type(item) == 'string' then
+    item = splitKey(item)
+  end
+
   local count = 0
   for _,v in pairs(items) do
     if v.name == item.name and
@@ -124,6 +128,7 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
         local iqty = icount * count - itemCount
         local crafted = Craft.craftRecipe(irecipe, iqty, inventoryAdapter)
         if crafted ~= iqty then
+
           turtle.select(1)
           return 0
         end
@@ -145,102 +150,80 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
   return crafted * recipe.count
 end
 
+local function makeRecipeKey(item)
+  if type(item) == 'string' then
+    item = splitKey(item)
+  end
+  return table.concat({ item.name, item.damage or 0, item.nbtHash }, ':')
+end
+
+function Craft.findRecipe(item)
+  return Craft.recipes[makeRecipeKey(item)]
+end
+
 -- determine the full list of ingredients needed to craft
 -- a quantity of a recipe.
--- negative quantities denote missing ingredients
-function Craft.getResourceList(inRecipe, items, inCount)
+function Craft.getResourceList(recipe, items, inCount)
   local summed = { }
-  local throttle = Util.throttle()
 
-  local function sumItems(recipe, count)
-    for key,iqty in pairs(Craft.sumIngredients(recipe)) do
-      throttle()
-      local item = splitKey(key)
-      local summedItem = summed[key]
-      if not summedItem then
-        summedItem = Util.shallowCopy(item)
-        summedItem.recipe = Craft.recipes[key]
-        summedItem.count = Craft.getItemCount(items, key)
-        summed[key] = summedItem
+  local function sumItems(key, count)
+    local item = itemDB:splitKey(key)
+    local summedItem = summed[key]
+    if not summedItem then
+      summedItem = Util.shallowCopy(item)
+      summedItem.recipe = Craft.findRecipe(key)
+      summedItem.count = Craft.getItemCount(items, item)
+      summedItem.displayName = itemDB:getName(item)
+      summedItem.total = 0
+      summedItem.need = 0
+      summedItem.used = 0
+      summed[key] = summedItem
+    end
+    local total = count
+    local used = math.min(summedItem.count, total)
+    local need = total - used
+
+    if summedItem.recipe and summedItem.recipe.craftingTools and summedItem.recipe.craftingTools[key] then
+      summedItem.total = 1
+      if summedItem.count > 0 then
+        summedItem.used = 1
+        summedItem.need = 0
+        need = 0
+      else
+        if not summedItem.recipe then
+          summedItem.need = 1
+          need = 1
+        end
       end
-      summedItem.count = summedItem.count - (count * iqty)
-      if summedItem.recipe and summedItem.count < 0 then
-        local need = math.ceil(-summedItem.count / summedItem.recipe.count)
-        summedItem.count = 0
-        sumItems(summedItem.recipe, need)
+    else
+      summedItem.total = summedItem.total + total
+      summedItem.count = summedItem.count - used
+      summedItem.used = summedItem.used + used
+      if not summedItem.recipe then
+        summedItem.need = summedItem.need + need
+      end
+    end
+
+    if need > 0 and summedItem.recipe then
+      need = math.ceil(need / summedItem.recipe.count)
+      for ikey,iqty in pairs(Craft.sumIngredients(summedItem.recipe)) do
+        sumItems(ikey, math.ceil(need * iqty))
       end
     end
   end
 
-  sumItems(inRecipe, math.ceil(inCount / inRecipe.count))
+  inCount = math.ceil(inCount / recipe.count)
+  for ikey,iqty in pairs(Craft.sumIngredients(recipe)) do
+    sumItems(ikey, math.ceil(inCount * iqty))
+  end
 
   return summed
 end
 
-function Craft.getResourceList3(inRecipe, items, inCount, inventoryAdapter)
-  local summed = { }
-  local throttle = Util.throttle()
-
-  local function sumItems(recipe, count)
-    count = math.ceil(count / recipe.count)
-    local craftable = count
-
-    for key,iqty in pairs(Craft.sumIngredients(recipe)) do
-      throttle()
-      local item = splitKey(key)
-      local summedItem = summed[key]
-      if not summedItem then
-        summedItem = Util.shallowCopy(item)
-        summedItem.recipe = Craft.recipes[key]
-        summedItem.count = Craft.getItemCount(items, key)
-        summedItem.total = 0
-        summedItem.need = 0
-        summedItem.used = 0
-        summedItem.craftable = 0
-        summed[key] = summedItem
-      end
-debug(key)
-      local total = count * iqty                           -- 4 * 2
-      local used = math.min(summedItem.count, total)       -- 5
-      local need = total - used                            -- 3
-
-      if recipe.craftingTools and recipe.craftingTools[key] then
-        summedItem.total = 1
-        if summedItem.count > 0 then
-          summedItem.used = 1
-          need = 0
-        else
-          need = 1
-        end
-      else
-        summedItem.total = summedItem.total + total
-        summedItem.count = summedItem.count - used
-        summedItem.used = summedItem.used + used
-      end
-
-      if need > 0 then
-        if not summedItem.recipe then
-          craftable = math.min(craftable, math.floor(used / iqty))
-          summedItem.need = summedItem.need + need
-        else
-          local c = sumItems(summedItem.recipe, need) -- 4
-          craftable = math.min(craftable, math.floor((used + c) / iqty))
-          summedItem.craftable = summedItem.craftable + c
-        end
-      end
-    end
-
-    --[[
-    if inventoryAdapter and craftable > 0 then
-      craftable = Craft.craftRecipe(recipe, craftable, inventoryAdapter)
-      clearGrid(inventoryAdapter)
-    end
-    ]]
-
-    return craftable * recipe.count
-  end
-
-  return sumItems(inRecipe, inCount), summed
+function Craft.getResourceList4(inRecipe, items, count)
+  local summed = Craft.getResourceList(inRecipe, items, count)
+-- filter down to just raw materials
+  return Util.filter(summed, function(a) return a.used > 0 or a.need > 0 end)
 end
 
 -- given a certain quantity, return how many of those can be crafted

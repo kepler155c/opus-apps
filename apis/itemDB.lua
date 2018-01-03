@@ -141,10 +141,6 @@ function itemDB:getName(item)
 end
 
 function itemDB:getMaxCount(item)
-  if type(item) == 'string' then
-    item = self:splitKey(item)
-  end
-
   local detail = self:get(item)
   if detail then
     return detail.maxCount

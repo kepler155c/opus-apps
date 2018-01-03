@@ -24,14 +24,13 @@ function ChestAdapter:init(args)
   Util.merge(self, args)
 
   local chest
-  if not self.autoDetect then
+  if self.autoDetect then
+    chest = Peripheral.getByMethod('list')
+  else
     chest = Peripheral.getBySide(self.wrapSide)
     if chest and not chest.list then
       chest = nil
     end
-  end
-  if not chest then
-    chest = Peripheral.getByMethod('list')
   end
 
   if chest then
@@ -55,17 +54,11 @@ function ChestAdapter:getCachedItemDetails(item, k)
   if not detail then
     local s, m = pcall(function() detail = self.getItemMeta(k) end)
     if not detail then
-debug(item)
-debug(m)
-debug('no details')
 --      error('Inventory has changed')
       return
     end
 -- NOT SUFFICIENT
     if detail.name ~= item.name then
-debug('name change ?')
-debug(item)
-debug(detail)
 --      error('Inventory has changed')
       return
     end
@@ -76,7 +69,6 @@ debug(detail)
       end
     end
 
-debug('adding')
     itemDB:add(detail)
   end
   if detail then
@@ -92,7 +84,6 @@ end
 function ChestAdapter:listItems(throttle)
   local cache = { }
   local items = { }
-debug('listing')
   throttle = throttle or Util.throttle()
 
   for k,v in pairs(self.list()) do
@@ -103,8 +94,6 @@ debug('listing')
       if not entry then
         entry = self:getCachedItemDetails(v, k)
         if not entry then
-  debug(key)
-  debug('inv changed')
           return -- Inventory has changed
         end
         entry.count = 0
@@ -118,15 +107,12 @@ debug('listing')
       throttle()
     end
   end
---read()
   itemDB:flush()
 
-debug('done listing')
   if not Util.empty(items) then
     self.cache = cache
     return items
   end
-debug('its empty')
 end
 
 function ChestAdapter:getItemInfo(item)
@@ -177,11 +163,14 @@ end
 function ChestAdapter:eject(item, qty, direction)
   local s, m = pcall(function()
     local stacks = self.list()
+    local maxStack = itemDB:getMaxCount(item)
     for key,stack in Util.rpairs(stacks) do
       if stack.name == item.name and
         (not item.damage or stack.damage == item.damage) and
         (not item.nbtHash or stack.nbtHash == item.nbtHash) then
-        local amount = math.min(qty, stack.count)
+        local amount = math.min(maxStack, math.min(qty, stack.count))
+debug({ key, amount })
+debug(stack)
         if amount > 0 then
           self.drop(key, amount, direction)
         end

@@ -144,7 +144,7 @@ local itemPage = UI.Page {
 }
 
 function itemPage:enable(item)
-  self.item = item
+  self.item = Util.shallowCopy(item)
 
   self.form:setValues(item)
   self.titleBar.title = item.displayName or item.name
@@ -179,7 +179,7 @@ function itemPage:eventHandler(event)
     local originalKey = uniqueKey(self.item)
     resources[originalKey] = nil
 
-    filtered.low = tonumber(filtered.limit)
+    filtered.low = tonumber(filtered.low)
     filtered.limit = tonumber(filtered.limit)
     if filtered.limit or filtered.low then
       resources[uniqueKey(filtered)] = filtered

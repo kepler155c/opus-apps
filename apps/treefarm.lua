@@ -118,16 +118,20 @@ local function safePlaceBlock(item)
 end
 
 local function craftItem(item, qty)
-  local success
+  local success, msg
 
   if safePlaceBlock(CHEST) then
 
     Util.print('Crafting %d %s', (qty or 1), item)
-    success = turtle.craftItem(item, qty or 1, {
+    success, msg = turtle.craftItem(item, qty or 1, {
         wrapSide = 'top',
         direction = 'down',
       })
     repeat until not turtle.suckUp()
+
+    if not success then
+      print(msg)
+    end
 
     turtle.digUp()
   end

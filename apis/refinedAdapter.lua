@@ -18,12 +18,22 @@ function RefinedAdapter:init(args)
   local defaults = {
     items = { },
     name = 'refinedStorage',
+    direction = 'up',
+    wrapSide  = 'bottom',
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
 
-  local controller = Peripheral.getByType('refinedstorage:controller') or
-                     Peripheral.getByMethod('listAvailableItems')
+  local controller
+  if self.autoDetect then
+    controller = Peripheral.getByType('refinedstorage:controller')
+  else
+    controller = Peripheral.getBySide(self.wrapSide)
+    if controller and not controller.listAvailableItems then
+      controller = nil
+    end
+  end
+
   if controller then
     Util.merge(self, controller)
   end

@@ -183,64 +183,77 @@ local function getItems()
   return items
 end
 
-local function craftItem(recipe, recipeKey, items, cItem, count)
+local function craftItem(ikey, item, items)
   dock()
 
-  local resource = resources[recipeKey]
+  local resource = resources[ikey]
   if not resource or not resource.machine then
-    cItem.status = 'machine not selected'
+    item.status = 'machine not selected'
     return
   end
 
   local machine = Util.find(machines, 'order', resource.machine)
   if not machine then
-    cItem.status = 'invalid machine'
-    return
-  end
-
-  if count == 0 then
-    for key in pairs(recipe.ingredients) do
-      local item = getItemWithQty(items, itemDB:splitKey(key), recipe.ignoreNbtHash)
-      if item.count == 0 then
-        cItem.status = 'Missing: ' .. (item.displayName or itemDB:getName(item))
-        return false
-      end
-    end
+    item.status = 'invalid machine'
     return
   end
 
   local slot = 1
-  for key,qty in pairs(recipe.ingredients) do
-    local item = getItemWithQty(items, itemDB:splitKey(key), recipe.ignoreNbtHash)
-    if item.count == 0 then
-debug(item)
-      cItem.status = 'Missing: ' .. (item.displayName or itemDB:getName(item))
+  local maxCount = math.ceil(item.need / item.recipe.count)
+  for key,qty in pairs(item.recipe.ingredients) do
+    local ingredient = itemDB:get(key)
+    local c = math.min(maxCount * qty, getItemQuantity(items, ingredient))
+    c = math.min(c, ingredient.maxCount)
+    c = math.floor(c / qty)
+    if c < maxCount then
+      maxCount = c
+    end
+    if maxCount == 0 then
+      item.status = 'Missing ' .. ingredient.displayName
+      item.statusCode = 'missing'
       return
     end
-    local c = count * qty
-    while c > 0 do
-      local maxCount = math.min(c, item.maxCount)
-      inventoryAdapter:provide(item, maxCount, slot)
-      if turtle.getItemCount(slot) ~= maxCount then -- ~= maxCount then FIXXX !!!
-        cItem.status = 'Extract failed: ' .. (item.displayName or itemDB:getName(item))
-        return
-      end
-      c = c - maxCount
-      slot = slot + 1
-    end
   end
+
+  for key,qty in pairs(item.recipe.ingredients) do
+    local ingredient = itemDB:get(key)
+--    local c = item.craftable * qty
+--    while c > 0 do
+    inventoryAdapter:provide(ingredient, maxCount * qty, slot)
+    if turtle.getItemCount(slot) ~= maxCount * qty then -- ~= maxCount then FIXXX !!!
+      item.status = 'Extract failed: ' .. (ingredient.displayName or itemDB:getName(ingredient))
+debug({ key, maxCount })
+      return
+    end
+--      c = c - maxCount
+    slot = slot + 1
+    --end
+  end
+
   if not gotoMachine(machine) then
-    cItem.status = 'failed to find machine'
+    item.status = 'failed to find machine'
   else
     if machine.empty then
       local s, l = pcall(Peripheral.call,
         turtle.getAction(machine.dir).side, 'list')
 
+      if not s and not l then
+        l = 'Unable to check empty status'
+      elseif not s then
+        s, l = pcall(Peripheral.call,
+          turtle.getAction(machine.dir).side, 'getProgress')
+        if s and l == 0 then
+          l = { }
+        elseif s then
+          l = { true }
+        end
+      end
+debug { s, l }
       if not s then
-        cItem.status = l
+        item.status = l
         return
       elseif not Util.empty(l) then
-        cItem.status = 'machine busy'
+        item.status = 'machine busy'
         return
       end
     end
@@ -251,78 +264,52 @@ debug(item)
       turtle.emptyInventory(turtle.dropDown)
     end
     if #turtle.getFilledSlots() ~= 0 then
-      cItem.status = 'machine busy'
+      item.status = 'machine busy'
     else
-      cItem.status = 'crafting'
+      item.status = 'crafting'
     end
   end
 end
 
 local function expandList(list, items)
+  local summed = { }
 
-  local function getCraftable(recipe, count)
-    local maxSlots = math.floor(16 / Util.size(recipe.ingredients))
+  local function sumItems(key, count)
+    local item = itemDB:splitKey(key)
+    local summedItem = summed[key]
+    if not summedItem then
+      summedItem = Util.shallowCopy(item)
+      summedItem.recipe = recipes[key]
+      summedItem.count = getItemQuantity(items, item)
+      summedItem.displayName = itemDB:getName(item)
+      summedItem.total = 0
+      summedItem.need = 0
+      summedItem.used = 0
+      summedItem.craftable = 0
+      summed[key] = summedItem
+    end
+    local total = count
+    local used = math.min(summedItem.count, total)
+    local need = total - used
 
-    for key,qty in pairs(recipe.ingredients) do
+    summedItem.total = summedItem.total + total
+    summedItem.count = summedItem.count - used
+    summedItem.used = summedItem.used + used
+    summedItem.need = summedItem.need + need
 
-      local item = getItemWithQty(items, itemDB:splitKey(key), recipe.ignoreNbtHash)
-
-      local need = qty * count
-      local irecipe = recipes[key]
-
-      if item.count < need and irecipe then
-        need = math.ceil((need - item.count) / irecipe.count)
-        if not list[key] then
-          list[key] = Util.shallowCopy(item)
-          list[key].ocount = need
-          list[key].count = 0
-        else
-          if not list[key].ocount then
-            list[key].ocount = 0
-          end
-          list[key].ocount = list[key].ocount + need
-        end
-
-        local icount = getCraftable(irecipe, need)
-        list[key].count = list[key].count + icount
+    if need > 0 and summedItem.recipe then
+      need = math.ceil(need / summedItem.recipe.count)
+      for ikey,iqty in pairs(summedItem.recipe.ingredients) do
+        sumItems(ikey, math.ceil(need * iqty))
       end
-      local x = math.min(math.floor(item.count / qty), item.maxCount * maxSlots)
-      count = math.min(x, count)
-      item.count = math.max(0, item.count - (count * qty))
-    end
-
-    return count
-  end
-
-  for key, item in pairs(Util.shallowCopy(list)) do
-    local recipe = recipes[key]
-
-    item.count = math.ceil(item.count / recipe.count)
-    item.ocount = item.count
-    if recipe then
-      item.count = getCraftable(recipe, item.count)
     end
   end
-end
 
-local function craftItems(craftList)
-  local items = getItems()
-  expandList(craftList, items)
-  jobListGrid:update()
-  jobListGrid:draw()
-  jobListGrid:sync()
-  for key, item in pairs(craftList) do
-    local recipe = recipes[key]
-    if recipe then
-      craftItem(recipe, key, items, item, item.count)
-      dock()
-      jobListGrid:update()
-      jobListGrid:draw()
-      jobListGrid:sync()
-      clearGrid()
-      items = getItems()
-    end
+  for key, item in pairs(list) do
+    sumItems(key, item.count)
   end
+
+  return Util.filter(summed, function(a) return a.need > 0 end)
 end
 
 local function watchResources(items)
@@ -339,7 +326,7 @@ local function watchResources(items)
       item.count = getItemQuantity(items, item)
       if item.count < res.low then
         item.displayName = itemDB:getName(res)
-        item.count = res.low - item.count
+        item.count = res.low -- - item.count
         craftList[uniqueKey(res)] = item
       end
     end
@@ -348,22 +335,31 @@ local function watchResources(items)
   return craftList
 end
 
+local function craftItems()
+  local items = getItems()
+  local craftList = watchResources(items)
+  local list = expandList(craftList, items)
+  jobListGrid:setValues(list)
+  jobListGrid:update()
+  jobListGrid:draw()
+  jobListGrid:sync()
+  for key, item in pairs(list) do
+    if item.need > 0 and item.recipe then
+      craftItem(key, item, items)
+      dock()
+      items = getItems() -- should decrement count instead ...
+      jobListGrid:update()
+      jobListGrid:draw()
+      jobListGrid:sync()
+      clearGrid()
+    end
+  end
+end
+
 local function loadResources()
   resources = Util.readTable(RESOURCE_FILE) or { }
   for k,v in pairs(resources) do
     Util.merge(v, itemDB:splitKey(k))
-    if v.dir then
-      for _,m in pairs(machines) do
-        if m.index == v.machine and m.dir == v.dir then
-          v.machine = m.order
-          v.dir = nil
-          break
-        end
-      end
-      if v.dir then
-        error('did not find')
-      end
-    end
   end
 end
 
@@ -460,8 +456,7 @@ local function jobMonitor()
     parent = mon,
     sortColumn = 'displayName',
     columns = {
-      { heading = 'Qty',      key = 'ocount',      width = 6 },
-      { heading = 'Qty',      key = 'count',       width = 6 },
+      { heading = 'Qty',      key = 'need',        width = 6 },
       { heading = 'Crafting', key = 'displayName', width = (mon.width - 18) / 2 },
       { heading = 'Status',   key = 'status', },
     },
@@ -760,7 +755,7 @@ local machinesPage = UI.Page {
     previousPage = true,
     title = 'Machines',
   },
-  grid = UI.Grid {
+  grid = UI.ScrollingGrid {
     y = 2, ey = -2,
     values = machines,
     columns = {
@@ -873,14 +868,12 @@ local listingPage = UI.Page {
     },
     sortColumn = 'displayName',
   },
-  statusBar = UI.StatusBar {
-    filterText = UI.Text {
-      x = 2,
-      value = 'Filter',
-    },
+  statusBar = UI.Window {
+    y = -1,
     filter = UI.TextEntry {
-      x = 9, ex = -2,
       limit = 50,
+      shadowText = 'filter',
+      shadowTextColor = colors.lightGray,
       backgroundColor = colors.gray,
       backgroundFocusColor = colors.gray,
     },
@@ -908,10 +901,6 @@ function listingPage.grid:getDisplayValues(row)
     row.low = Util.toBytes(row.low)
   end
   return row
-end
-
-function listingPage.statusBar:draw()
-  return UI.Window.draw(self)
 end
 
 function listingPage.statusBar.filter:eventHandler(event)
@@ -1025,18 +1014,8 @@ Event.onInterval(30, function()
     inventoryAdapter:provide({ name = 'minecraft:coal', damage = 1 }, 16, 1)
     turtle.refuel()
   end
-  local items = getItems()
-  if items then
-    local craftList = watchResources(items)
-
-    jobListGrid:setValues(craftList)
-    jobListGrid:update()
-    jobListGrid:draw()
-    jobListGrid:sync()
-
-    craftItems(craftList)
-  end
+  craftItems()
 end)
 
 UI:pullEvents()
-jobListGrid.parent:reset()
+--jobListGrid.parent:reset()
