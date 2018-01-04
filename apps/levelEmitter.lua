@@ -1,6 +1,6 @@
 _G.requireInjector()
 
-local ChestAdapter   = require('chestAdapter18')
+local InventoryAdapter = require('inventoryAdapter')
 local Config         = require('config')
 local Event          = require('event')
 local itemDB         = require('itemDB')
@@ -16,11 +16,15 @@ local RESOURCE_FILE = 'usr/config/levelEmitter.db'
 multishell.setTitle(multishell.getCurrent(), 'Level Emitter')
 
 local config = {
-  inventoryDirection = { direction = 'north', wrapSide = 'back' },
+  inventorySide = 'bottom',
 }
-Config.load('levelEmitter', config)
+Config.loadWithCheck('levelEmitter', config)
 
-local inventoryAdapter = ChestAdapter(config.inventoryDirection)
+local inventoryAdapter = InventoryAdapter.wrap({ wrapSide = config.inventorySide })
+if not inventoryAdapter then
+  error('No inventory found')
+end
+
 local resources
 
 local function getItem(items, inItem, ignoreDamage, ignoreNbtHash)

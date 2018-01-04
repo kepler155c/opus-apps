@@ -5,7 +5,6 @@ local Util    = require('util')
 local itemDB = TableDB({ fileName = 'usr/config/items.db' })
 
 local function safeString(text)
-
   local val = text:byte(1)
 
   if val < 32 or val > 128 then
@@ -32,7 +31,7 @@ local function safeString(text)
 end
 
 local function makeKey(item)
-  return { item.name, item.damage or '*', item.nbtHash }
+  return table.concat({ item.name, item.damage or '*', item.nbtHash }, ':')
 end
 
 function itemDB:splitKey(key, item)
@@ -51,8 +50,7 @@ function itemDB:splitKey(key, item)
   return item
 end
 
-function itemDB:get(key)
-
+function itemDB:get(key, enforceNBT)
   if type(key) == 'string' then
     key = self:splitKey(key)
   end
@@ -75,7 +73,7 @@ function itemDB:get(key)
     end
   end
 
-  if key.nbtHash then
+  if key.nbtHash and not enforceNBT then
     item = self:get({ name = key.name, damage = key.damage })
     if item and (item.maxDamage > 0 or item.damage == key.damage) then
       item = Util.shallowCopy(item)
@@ -84,6 +82,7 @@ function itemDB:get(key)
     end
 
     local damage = tonumber(key.damage)
+debug('scan: ' .. makeKey(key))
     for _,item in pairs(self.data) do
       if item.name == key.name and
         ((not damage or item.maxDamage > 0) or damage == item.damage) and
@@ -98,31 +97,30 @@ function itemDB:get(key)
       end
     end
   end
-
---debug('miss: ' .. table.concat(makeKey(key), ':'))
-
---[[
-  if not key[3] then
-    for _,item in pairs(self.data) do
-      if item.name == key[1] and
-        item.damage == key[2] and
-        item.nbtHash then
-        item = Util.shallowCopy(item)
-        item.nbtHash = nil
-        return item
-      end
-    end
-  end
---]]
 end
 
-function itemDB:add(item)
-  local key = makeKey(item)
-  if item.maxDamage > 0 then
-    key = makeKey({ name = item.name, damage = '*', nbtHash = item.nbtHash })
+--[[
+  If the base item contains an NBT hash, then the NBT hash uniquely
+  identifies this item.
+]]--
+function itemDB:add(item, detail)
+  local nItem = { name = item.name, damage = item.damage, nbtHash = item.nbtHash }
+  if detail.maxDamage > 0 then
+    nItem.damage = '*'
   end
-  item.displayName = safeString(item.displayName)
-  TableDB.add(self, key, item)
+
+  nItem.displayName = safeString(detail.displayName)
+  nItem.maxCount = detail.maxCount
+  nItem.maxDamage = detail.maxDamage
+
+  TableDB.add(self, makeKey(nItem), nItem)
+
+  if detail.maxDamage > 0 then
+    nItem = Util.shallowCopy(nItem)
+    nItem.damage = item.damage
+  end
+
+  return nItem
 end
 
 -- Accepts: "minecraft:stick:0" or { name = 'minecraft:stick', damage = 0 }
@@ -168,6 +166,7 @@ function itemDB:flush()
       v.name = nil
       v.damage = nil
       v.nbtHash = nil
+v.count = nil -- wipe out previously saved counts - temporary
       if v.maxDamage == 0 then
         v.maxDamage = nil
       end

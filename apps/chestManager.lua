@@ -13,30 +13,39 @@ local Util           = require('util')
 local ControllerAdapter = require('controllerAdapter')
 local InventoryAdapter  = require('inventoryAdapter')
 
+local colors     = _G.colors
 local device     = _G.device
 local multishell = _ENV.multishell
 local peripheral = _G.peripheral
 local term       = _G.term
-local colors     = _G.colors
 local turtle     = _G.turtle
 
 multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 
--- Config location is /sys/config/chestManager
--- adjust directions in that file if needed
 local config = {
-  trashDirection      = 'up',    -- trash /chest in relation to chest
-  inventoryDirection  = { direction = 'north', wrapSide = 'back' },
-  chestDirection      = { direction = 'down',  wrapSide = 'top'  },
-  controllerDirection = { direction = 'south', wrapSide = 'right' },
+  trashDirection = 'up',    -- trash /chest in relation to chest
+  computer = {
+    facing = 'north',
+    desc = 'Direction computer or turtle is facing',
+  },
+  inventory     = { wrapSide = 'back',
+    desc = 'Location of main inventory' },
+  craftingChest = { wrapSide = 'top',
+    desc = 'Vanilla chest used for crafting' },
+  controller    = { wrapSide = 'right',
+    desc = 'optional - AE or refined storage controller - can be same as main inventory' },
 }
 
-Config.load('chestManager', config)
+Config.loadWithCheck('inventoryManager', config)
 
-local inventoryAdapter = InventoryAdapter.wrap(config.inventoryDirection)
-local turtleChestAdapter = InventoryAdapter.wrap(config.chestDirection)
-local controllerAdapter = ControllerAdapter.wrap(config.controllerDirection)
+local inventoryAdapter = InventoryAdapter.wrap(config.inventory, config.computer)
+local turtleChestAdapter = InventoryAdapter.wrap(config.craftingChest, config.computer)
+local controllerAdapter = ControllerAdapter.wrap(config.controller, config.computer)
 local duckAntenna
+
+if not inventoryAdapter then
+  error('Invalid inventory configuration')
+end
 
 if device.workbench then
   local oppositeSide = {
@@ -55,7 +64,7 @@ local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE  = 'usr/config/recipes.db'
 
 local craftingPaused = false
-local canCraft = not not duckAntenna or turtleChestAdapter:isValid()
+local canCraft = not not duckAntenna or turtleChestAdapter
 local userRecipes = Util.readTable(RECIPES_FILE) or { }
 local jobList
 local resources
@@ -501,8 +510,7 @@ end
 
 local function loadResources()
   resources = Util.readTable(RESOURCE_FILE) or { }
-  for _,k in pairs(Util.keys(resources)) do
-    local v = resources[k]
+  for k,v in pairs(resources) do
     Util.merge(v, itemDB:splitKey(k))
   end
 end

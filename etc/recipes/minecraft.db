@@ -1736,20 +1736,6 @@
       [ 6 ] = "minecraft:stonebrick:0",
     },
   },
-  [ "computercraft:peripheral:4" ] = {
-    ingredients = {
-      "minecraft:gold_ingot:0",
-      "minecraft:gold_ingot:0",
-      "minecraft:gold_ingot:0",
-      [ 9 ] = "minecraft:gold_ingot:0",
-      [ 10 ] = "minecraft:gold_ingot:0",
-      [ 11 ] = "minecraft:gold_ingot:0",
-      [ 5 ] = "minecraft:gold_ingot:0",
-      [ 6 ] = "minecraft:glass_pane:0",
-      [ 7 ] = "minecraft:gold_ingot:0",
-    },
-    count = 4,
-  },
   [ "minecraft:bone_block:0" ] = {
     count = 1,
     ingredients = {
@@ -2011,20 +1997,6 @@
       [ 5 ] = "minecraft:dye:15",
       [ 6 ] = "minecraft:dye:0",
     },
-  },
-  [ "computercraft:computer:16384" ] = {
-    ingredients = {
-      "minecraft:gold_ingot:0",
-      "minecraft:gold_ingot:0",
-      "minecraft:gold_ingot:0",
-      [ 9 ] = "minecraft:gold_ingot:0",
-      [ 10 ] = "minecraft:glass_pane:0",
-      [ 11 ] = "minecraft:gold_ingot:0",
-      [ 5 ] = "minecraft:gold_ingot:0",
-      [ 6 ] = "minecraft:redstone:0",
-      [ 7 ] = "minecraft:gold_ingot:0",
-    },
-    count = 1,
   },
   [ "minecraft:dark_oak_door:0" ] = {
     count = 3,
@@ -2308,20 +2280,6 @@
       [ 6 ] = "minecraft:dye:8",
       [ 7 ] = "minecraft:glass:0",
     },
-  },
-  [ "computercraft:turtle_advanced:0" ] = {
-    ingredients = {
-      "minecraft:gold_ingot:0",
-      "minecraft:gold_ingot:0",
-      "minecraft:gold_ingot:0",
-      [ 9 ] = "minecraft:gold_ingot:0",
-      [ 10 ] = "minecraft:chest:0",
-      [ 11 ] = "minecraft:gold_ingot:0",
-      [ 5 ] = "minecraft:gold_ingot:0",
-      [ 6 ] = "computercraft:computer:16384",
-      [ 7 ] = "minecraft:gold_ingot:0",
-    },
-    count = 1,
   },
   [ "minecraft:brick_block:0" ] = {
     count = 1,

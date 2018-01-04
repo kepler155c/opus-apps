@@ -5,19 +5,10 @@ local Peripheral = require('peripheral')
 
 local ChestAdapter = class()
 
-local keys = Util.transpose({
-  'damage',
-  'displayName',
-  'maxCount',
-  'maxDamage',
-  'name',
-  'nbtHash',
-})
-
 function ChestAdapter:init(args)
   local defaults = {
     name      = 'chest',
-    direction = 'up',
+    direction = 'down',
     wrapSide  = 'bottom',
   }
   Util.merge(self, defaults)
@@ -35,13 +26,6 @@ function ChestAdapter:init(args)
 
   if chest then
     Util.merge(self, chest)
-
-    local sides = {
-      top = 'down',
-      bottom = 'up',
-    }
-
-    self.direction = sides[self.side] or self.direction
   end
 end
 
@@ -50,30 +34,19 @@ function ChestAdapter:isValid()
 end
 
 function ChestAdapter:getCachedItemDetails(item, k)
-  local detail = itemDB:get(item)
-  if not detail then
-    local s, m = pcall(function() detail = self.getItemMeta(k) end)
-    if not detail then
---      error('Inventory has changed')
-      return
-    end
--- NOT SUFFICIENT
-    if detail.name ~= item.name then
---      error('Inventory has changed')
-      return
-    end
-
-    for _,k in ipairs(Util.keys(detail)) do
-      if not keys[k] then
-        detail[k] = nil
-      end
-    end
-
-    itemDB:add(detail)
+  local cached = itemDB:get(item, true)
+  if cached then
+    return cached
   end
-  if detail then
-    return Util.shallowCopy(detail)
+
+  local s, detail = pcall(self.getItemMeta, k)
+  if not s or not detail or detail.name ~= item.name then
+    debug({ s, detail })
+--      error('Inventory has changed')
+    return
   end
+
+  return itemDB:add(item, detail)
 end
 
 function ChestAdapter:refresh(throttle)
@@ -96,6 +69,7 @@ function ChestAdapter:listItems(throttle)
         if not entry then
           return -- Inventory has changed
         end
+        entry = Util.shallowCopy(entry)
         entry.count = 0
         cache[key] = entry
         table.insert(items, entry)

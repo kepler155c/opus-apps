@@ -1,0 +1,44 @@
+{
+  [ "computercraft:turtle_advanced:0" ] = {
+    ingredients = {
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      [ 9 ] = "minecraft:gold_ingot:0",
+      [ 10 ] = "minecraft:chest:0",
+      [ 11 ] = "minecraft:gold_ingot:0",
+      [ 5 ] = "minecraft:gold_ingot:0",
+      [ 6 ] = "computercraft:computer:16384",
+      [ 7 ] = "minecraft:gold_ingot:0",
+    },
+    count = 1,
+  },
+  [ "computercraft:peripheral:4" ] = {
+    ingredients = {
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      [ 9 ] = "minecraft:gold_ingot:0",
+      [ 10 ] = "minecraft:gold_ingot:0",
+      [ 11 ] = "minecraft:gold_ingot:0",
+      [ 5 ] = "minecraft:gold_ingot:0",
+      [ 6 ] = "minecraft:glass_pane:0",
+      [ 7 ] = "minecraft:gold_ingot:0",
+    },
+    count = 4,
+  },
+  [ "computercraft:computer:16384" ] = {
+    ingredients = {
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      [ 9 ] = "minecraft:gold_ingot:0",
+      [ 10 ] = "minecraft:glass_pane:0",
+      [ 11 ] = "minecraft:gold_ingot:0",
+      [ 5 ] = "minecraft:gold_ingot:0",
+      [ 6 ] = "minecraft:redstone:0",
+      [ 7 ] = "minecraft:gold_ingot:0",
+    },
+    count = 1,
+  },
+}
