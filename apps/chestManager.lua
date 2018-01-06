@@ -23,24 +23,21 @@ local turtle     = _G.turtle
 multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 
 local config = {
+  computerFacing = 'north',
+
+  inventory      = 'back',
+  craftingChest  = 'top',
+  controller     = 'none',
+
   trashDirection = 'up',    -- trash /chest in relation to chest
-  computer = {
-    facing = 'north',
-    desc = 'Direction computer or turtle is facing',
-  },
-  inventory     = { wrapSide = 'back',
-    desc = 'Location of main inventory' },
-  craftingChest = { wrapSide = 'top',
-    desc = 'Vanilla chest used for crafting' },
-  controller    = { wrapSide = 'right',
-    desc = 'optional - AE or refined storage controller - can be same as main inventory' },
+  monitor        = 'type/monitor',
 }
 
 Config.loadWithCheck('inventoryManager', config)
 
-local inventoryAdapter = InventoryAdapter.wrap(config.inventory, config.computer)
-local turtleChestAdapter = InventoryAdapter.wrap(config.craftingChest, config.computer)
-local controllerAdapter = ControllerAdapter.wrap(config.controller, config.computer)
+local inventoryAdapter   = InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
+local turtleChestAdapter = InventoryAdapter.wrap({ side = config.craftingChest, facing = config.computerFacing })
+local controllerAdapter  = ControllerAdapter.wrap({ side = config.controller, facing = config.computerFacing })
 local duckAntenna
 
 if not inventoryAdapter then
@@ -359,7 +356,7 @@ local function craftItems(craftList, allItems)
 end
 
 local function jobMonitor()
-  local mon = Peripheral.getByType('monitor')
+  local mon = Peripheral.lookup(config.monitor)
 
   if mon then
     mon = UI.Device({
@@ -759,6 +756,8 @@ function itemPage:eventHandler(event)
     end
     resources[originalKey] = nil
     resources[uniqueKey(filtered)] = filtered
+
+    filtered.count = nil
     saveResources()
 
     UI:setPreviousPage()

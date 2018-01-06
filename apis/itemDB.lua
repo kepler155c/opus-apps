@@ -73,28 +73,14 @@ function itemDB:get(key, enforceNBT)
     end
   end
 
-  if key.nbtHash and not enforceNBT then
+  if key.nbtHash then
     item = self:get({ name = key.name, damage = key.damage })
-    if item and (item.maxDamage > 0 or item.damage == key.damage) then
+
+    if item and item.ignoreNBT then
       item = Util.shallowCopy(item)
       item.nbtHash = key.nbtHash
+      item.damage = key.damage
       return item
-    end
-
-    local damage = tonumber(key.damage)
-debug('scan: ' .. makeKey(key))
-    for _,item in pairs(self.data) do
-      if item.name == key.name and
-        ((not damage or item.maxDamage > 0) or damage == item.damage) and
-        item.nbtHash then
-        item = Util.shallowCopy(item)
-        item.damage = damage or item.damage
-        if item.maxDamage > 0 and item.damage and item.damage > 0 then
-          item.displayName = string.format('%s (damage: %s)', item.displayName, item.damage)
-        end
-        item.nbtHash = key.nbtHash
-        return item
-      end
     end
   end
 end
@@ -103,22 +89,54 @@ end
   If the base item contains an NBT hash, then the NBT hash uniquely
   identifies this item.
 ]]--
-function itemDB:add(item, detail)
-  local nItem = { name = item.name, damage = item.damage, nbtHash = item.nbtHash }
-  if detail.maxDamage > 0 then
-    nItem.damage = '*'
-  end
+function itemDB:add(baseItem, detail)
+  local nItem = {
+    name    = baseItem.name,
+    damage  = baseItem.damage,
+    nbtHash = baseItem.nbtHash,
+  }
+--  if detail.maxDamage > 0 then
+--    nItem.damage = '*'
+--  end
+debug('--')
+debug('adding ' .. makeKey(nItem))
 
   nItem.displayName = safeString(detail.displayName)
   nItem.maxCount = detail.maxCount
   nItem.maxDamage = detail.maxDamage
 
-  TableDB.add(self, makeKey(nItem), nItem)
-
-  if detail.maxDamage > 0 then
-    nItem = Util.shallowCopy(nItem)
-    nItem.damage = item.damage
+  for k,item in pairs(self.data) do
+    if nItem.name == item.name and
+       nItem.displayName == item.displayName then
+debug('found: ' .. makeKey(item))
+      if nItem.nbtHash ~= item.nbtHash and nItem.damage ~= item.damage then
+        nItem.damage = '*'
+        nItem.nbtHash = nil
+        nItem.ignoreNBT = true
+        self.data[k] = nil
+        debug('removing all ' .. makeKey(nItem))
+        break
+      elseif nItem.damage ~= item.damage then
+        nItem.damage = '*'
+        self.data[k] = nil
+        debug('removing damage ' .. makeKey(nItem))
+        break
+      elseif nItem.nbtHash ~= item.nbtHash then
+        nItem.nbtHash = nil
+        nItem.ignoreNBT = true
+        debug('removing nbt ' .. makeKey(nItem))
+        self.data[k] = nil
+        break
+      end
+    end
   end
+
+debug('final ' .. makeKey(nItem))
+
+  TableDB.add(self, makeKey(nItem), nItem)
+  nItem = Util.shallowCopy(nItem)
+  nItem.damage = baseItem.damage
+  nItem.nbtHash = baseItem.nbtHash
 
   return nItem
 end

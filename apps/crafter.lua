@@ -1,6 +1,6 @@
 _G.requireInjector()
 
-local ChestAdapter   = require('chestAdapter18')
+local InventoryAdapter = require('inventoryAdapter')
 local Config         = require('config')
 local Event          = require('event')
 local itemDB         = require('itemDB')
@@ -18,16 +18,26 @@ local turtle     = _G.turtle
 multishell.setTitle(multishell.getCurrent(), 'Crafter')
 
 local config = {
-  inventory = { direction = 'north', wrapSide = 'front' },
+  computerFacing = 'north',
+  monitor = 'monitor',
 }
 Config.load('crafter', config)
 
 repeat until not turtle.forward()
-local inventoryAdapter = ChestAdapter(config.inventory)
 
-local RESOURCE_FILE = 'usr/config/resources.db'
-local RECIPES_FILE  = 'usr/config/recipes2.db'
-local MACHINES_FILE  = 'usr/config/machines.db'
+local inventoryAdapter = InventoryAdapter.wrap({ side = 'front', facing = config.computerFacing })
+if not inventoryAdapter then
+  error('Invalid inventory configuration')
+end
+
+local RESOURCE_FILE    = 'usr/config/resources.db'
+local RECIPES_FILE     = 'usr/config/recipes2.db'
+local MACHINES_FILE    = 'usr/config/machines.db'
+
+local STATUS_ERROR   = 'error'
+local STATUS_INFO    = 'info'
+local STATUS_SUCCESS = 'success'
+local STATUS_WARNING = 'warning'
 
 local recipes = Util.readTable(RECIPES_FILE) or { }
 local resources
@@ -61,20 +71,6 @@ local function getItemQuantity(items, res)
     end
   end
   return count
-end
-
-local function getItemWithQty(items, res, ignoreNbtHash)
-  for _,v in pairs(items) do
-    if res.name == v.name and
-      ((not res.damage and v.maxDamage > 0) or res.damage == v.damage) and
-      ((ignoreNbtHash and v.nbtHash) or res.nbtHash == v.nbtHash) then
-      return v
-    end
-  end
-  local item = Util.shallowCopy(res)
-  item.count = 0
-  item.maxCount = 1
-  return item
 end
 
 local function mergeResources(t)
@@ -183,23 +179,41 @@ local function getItems()
   return items
 end
 
-local function craftItem(ikey, item, items)
+local function craftItem(ikey, item, items, machineStatus)
   dock()
 
   local resource = resources[ikey]
   if not resource or not resource.machine then
-    item.status = 'machine not selected'
+    item.statusCode = STATUS_ERROR
+    item.status = 'machine not defined'
     return
   end
 
   local machine = Util.find(machines, 'order', resource.machine)
   if not machine then
+    item.statusCode = STATUS_ERROR
     item.status = 'invalid machine'
     return
   end
 
+  local ms = machineStatus[machine.order]
+  if not ms then
+    ms = { count = 0 }
+    machineStatus[machine.order] = ms
+  end
+
   local slot = 1
   local maxCount = math.ceil(item.need / item.recipe.count)
+  maxCount = math.min(machine.maxCount or 64, maxCount)
+
+  if maxCount > 0 and maxCount - ms.count <= 0 then
+    item.statusCode = STATUS_INFO
+    item.status = 'machine busy'
+    return
+  end
+
+  maxCount = maxCount - ms.count
+
   for key,qty in pairs(item.recipe.ingredients) do
     local ingredient = itemDB:get(key)
     local c = math.min(maxCount * qty, getItemQuantity(items, ingredient))
@@ -208,11 +222,15 @@ local function craftItem(ikey, item, items)
     if c < maxCount then
       maxCount = c
     end
-    if maxCount == 0 then
+    if maxCount <= 0 then
       item.status = 'Missing ' .. ingredient.displayName
-      item.statusCode = 'missing'
+      item.statusCode = STATUS_WARNING
       return
     end
+  end
+
+  if machine.maxCount then
+    ms.count = ms.count + maxCount
   end
 
   for key,qty in pairs(item.recipe.ingredients) do
@@ -222,6 +240,7 @@ local function craftItem(ikey, item, items)
     inventoryAdapter:provide(ingredient, maxCount * qty, slot)
     if turtle.getItemCount(slot) ~= maxCount * qty then -- ~= maxCount then FIXXX !!!
       item.status = 'Extract failed: ' .. (ingredient.displayName or itemDB:getName(ingredient))
+      item.statusCode = STATUS_ERROR
 debug({ key, maxCount })
       return
     end
@@ -232,6 +251,7 @@ debug({ key, maxCount })
 
   if not gotoMachine(machine) then
     item.status = 'failed to find machine'
+    item.statusCode = STATUS_ERROR
   else
     if machine.empty then
       local s, l = pcall(Peripheral.call,
@@ -250,9 +270,11 @@ debug({ key, maxCount })
       end
 debug { s, l }
       if not s then
+        item.statusCode = STATUS_ERROR
         item.status = l
         return
       elseif not Util.empty(l) then
+        item.statusCode = STATUS_INFO
         item.status = 'machine busy'
         return
       end
@@ -264,8 +286,10 @@ debug { s, l }
       turtle.emptyInventory(turtle.dropDown)
     end
     if #turtle.getFilledSlots() ~= 0 then
+      item.statusCode = STATUS_INFO
       item.status = 'machine busy'
     else
+      item.statusCode = STATUS_SUCCESS
       item.status = 'crafting'
     end
   end
@@ -336,6 +360,7 @@ local function watchResources(items)
 end
 
 local function craftItems()
+  local machineStatus = { }
   local items = getItems()
   local craftList = watchResources(items)
   local list = expandList(craftList, items)
@@ -345,14 +370,17 @@ local function craftItems()
   jobListGrid:sync()
   for key, item in pairs(list) do
     if item.need > 0 and item.recipe then
-      craftItem(key, item, items)
+      craftItem(key, item, items, machineStatus)
       dock()
       items = getItems() -- should decrement count instead ...
-      jobListGrid:update()
-      jobListGrid:draw()
-      jobListGrid:sync()
       clearGrid()
+    elseif item.need > 0 then
+      item.status = 'no recipe'
+      item.statusCode = STATUS_WARNING
     end
+    jobListGrid:update()
+    jobListGrid:draw()
+    jobListGrid:sync()
   end
 end
 
@@ -434,12 +462,13 @@ local function findMachines()
       end
       m.empty = m2.empty
       m.ignore = m2.ignore
+      m.maxCount = m2.maxCount
     end
   end
 end
 
 local function jobMonitor()
-  local mon = Peripheral.getByType('monitor')
+  local mon = Peripheral.lookup(config.monitor)
 
   if mon then
     mon = UI.Device({
@@ -463,10 +492,12 @@ local function jobMonitor()
   })
 
   function jobListGrid:getRowTextColor(row, selected)
-    if row.status == '(no recipe)'then
+    if row.statusCode == STATUS_ERROR then
       return colors.red
-    elseif row.statusCode == 'missing' then
+    elseif row.statusCode == STATUS_WARNING then
       return colors.yellow
+    elseif row.statusCode == STATUS_SUCCESS then
+      return colors.lime
     end
 
     return UI.Grid:getRowTextColor(row, selected)
@@ -793,6 +824,10 @@ local machinesPage = UI.Page {
         },
         help = 'Check if machine is empty before crafting'
       },
+      [4] = UI.TextEntry {
+        formLabel = 'Max Craft', formKey = 'maxCount', help = '...',
+        limit = 4,
+      },
     },
     statusBar = UI.StatusBar(),
   },
@@ -839,6 +874,7 @@ function machinesPage:eventHandler(event)
   elseif event.type == 'form_complete' then
     self.detail.form.values.empty = self.detail.form.values.empty == true
     self.detail.form.values.ignore = self.detail.form.values.ignore == true
+    self.detail.form.values.maxCount = tonumber(self.detail.form.values.maxCount)
     Util.writeTable(MACHINES_FILE, machines)
     self.detail:hide()
 
@@ -1018,4 +1054,4 @@ Event.onInterval(30, function()
 end)
 
 UI:pullEvents()
---jobListGrid.parent:reset()
+jobListGrid.parent:reset()

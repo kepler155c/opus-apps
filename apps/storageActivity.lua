@@ -8,7 +8,7 @@ local Util             = require('util')
 local colors     = _G.colors
 local multishell = _ENV.multishell
 
-local storage = InventoryAdapter.wrap({ autoDetect = true })
+local storage = InventoryAdapter.wrap()
 if not storage then
   error('Not connected to a valid inventory')
 end

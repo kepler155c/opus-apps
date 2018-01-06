@@ -7,18 +7,16 @@ local ChestAdapter = class()
 
 function ChestAdapter:init(args)
   local defaults = {
-    name      = 'chest',
-    direction = 'down',
-    wrapSide  = 'bottom',
+    name = 'chest',
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
 
   local chest
-  if self.autoDetect then
+  if not self.side then
     chest = Peripheral.getByMethod('list')
   else
-    chest = Peripheral.getBySide(self.wrapSide)
+    chest = Peripheral.getBySide(self.side)
     if chest and not chest.list then
       chest = nil
     end
@@ -104,7 +102,7 @@ function ChestAdapter:craftItems()
 end
 
 function ChestAdapter:getPercentUsed()
-  if self.cache then
+  if self.cache and self.getDrawerCount then
     return math.floor(Util.size(self.cache) / self.getDrawerCount() * 100)
   end
   return 0
