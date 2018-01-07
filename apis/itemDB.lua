@@ -98,8 +98,6 @@ function itemDB:add(baseItem)
 --  if detail.maxDamage > 0 then
 --    nItem.damage = '*'
 --  end
-debug('--')
-debug('adding ' .. makeKey(nItem))
 
   nItem.displayName = safeString(baseItem.displayName)
   nItem.maxCount = baseItem.maxCount
@@ -108,30 +106,25 @@ debug('adding ' .. makeKey(nItem))
   for k,item in pairs(self.data) do
     if nItem.name == item.name and
        nItem.displayName == item.displayName then
-debug('found: ' .. makeKey(item))
+
       if nItem.nbtHash ~= item.nbtHash and nItem.damage ~= item.damage then
         nItem.damage = '*'
         nItem.nbtHash = nil
         nItem.ignoreNBT = true
         self.data[k] = nil
-        debug('removing all ' .. makeKey(nItem))
         break
       elseif nItem.damage ~= item.damage then
         nItem.damage = '*'
         self.data[k] = nil
-        debug('removing damage ' .. makeKey(nItem))
         break
       elseif nItem.nbtHash ~= item.nbtHash then
         nItem.nbtHash = nil
         nItem.ignoreNBT = true
-        debug('removing nbt ' .. makeKey(nItem))
         self.data[k] = nil
         break
       end
     end
   end
-
-debug('final ' .. makeKey(nItem))
 
   TableDB.add(self, makeKey(nItem), nItem)
   nItem = Util.shallowCopy(nItem)

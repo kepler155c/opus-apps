@@ -39,7 +39,7 @@ function ChestAdapter:getCachedItemDetails(item, k)
 
   local s, detail = pcall(self.getItemMeta, k)
   if not s or not detail or detail.name ~= item.name then
-    debug({ s, detail })
+--    debug({ s, detail })
 --      error('Inventory has changed')
     return
   end
@@ -126,9 +126,6 @@ function ChestAdapter:provide(item, qty, slot, direction)
       end
     end
   end)
-  if not s then
-    debug(m)
-  end
   return s, m
 end
 
@@ -141,8 +138,6 @@ function ChestAdapter:eject(item, qty, direction)
         (not item.damage or stack.damage == item.damage) and
         (not item.nbtHash or stack.nbtHash == item.nbtHash) then
         local amount = math.min(maxStack, math.min(qty, stack.count))
-debug({ key, amount })
-debug(stack)
         if amount > 0 then
           self.drop(key, amount, direction)
         end
@@ -153,9 +148,6 @@ debug(stack)
       end
     end
   end)
-  if not s then
-    debug(m)
-  end
   return s, m
 end
 

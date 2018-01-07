@@ -89,7 +89,7 @@ function page:runFunction(id, script)
   local fn, msg = loadstring(script, 'script')
   if not fn then
     self.notification:error('Error in script')
-    debug(msg)
+    --debug(msg)
     return
   end
 
