@@ -32,7 +32,7 @@ function ChestAdapter:isValid()
 end
 
 function ChestAdapter:getCachedItemDetails(item, k)
-  local cached = itemDB:get(item, true)
+  local cached = itemDB:get(item)
   if cached then
     return cached
   end
@@ -44,7 +44,7 @@ function ChestAdapter:getCachedItemDetails(item, k)
     return
   end
 
-  return itemDB:add(item, detail)
+  return itemDB:add(detail)
 end
 
 function ChestAdapter:refresh(throttle)
@@ -163,8 +163,8 @@ function ChestAdapter:extract(slot, qty, toSlot)
   self.pushItems(self.direction, slot, qty, toSlot)
 end
 
-function ChestAdapter:insert(slot, qty)
-  self.pullItems(self.direction, slot, qty)
+function ChestAdapter:insert(slot, qty, toSlot)
+  self.pullItems(self.direction, slot, qty, toSlot)
 end
 
 return ChestAdapter

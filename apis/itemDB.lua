@@ -50,7 +50,7 @@ function itemDB:splitKey(key, item)
   return item
 end
 
-function itemDB:get(key, enforceNBT)
+function itemDB:get(key)
   if type(key) == 'string' then
     key = self:splitKey(key)
   end
@@ -89,7 +89,7 @@ end
   If the base item contains an NBT hash, then the NBT hash uniquely
   identifies this item.
 ]]--
-function itemDB:add(baseItem, detail)
+function itemDB:add(baseItem)
   local nItem = {
     name    = baseItem.name,
     damage  = baseItem.damage,
@@ -101,9 +101,9 @@ function itemDB:add(baseItem, detail)
 debug('--')
 debug('adding ' .. makeKey(nItem))
 
-  nItem.displayName = safeString(detail.displayName)
-  nItem.maxCount = detail.maxCount
-  nItem.maxDamage = detail.maxDamage
+  nItem.displayName = safeString(baseItem.displayName)
+  nItem.maxCount = baseItem.maxCount
+  nItem.maxDamage = baseItem.maxDamage
 
   for k,item in pairs(self.data) do
     if nItem.name == item.name and

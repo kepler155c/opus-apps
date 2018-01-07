@@ -650,7 +650,6 @@ local itemPage = UI.Page {
 
 function itemPage:enable(item)
   self.item = item
-debug(self.item)
 
   self.form:setValues(item)
   self.titleBar.title = item.displayName or item.name
@@ -778,7 +777,7 @@ local listingPage = UI.Page {
     },
   },
   grid = UI.Grid {
-    y = 2, height = UI.term.height - 2,
+    y = 2, ey = -2,
     columns = {
       { heading = 'Name', key = 'displayName' , width = 22 },
       { heading = 'Qty',  key = 'count'       , width = 5  },
@@ -806,6 +805,7 @@ local listingPage = UI.Page {
   accelerators = {
     r = 'refresh',
     q = 'quit',
+    grid_select_right = 'craft',
   },
   displayMode = 0,
 }
@@ -866,7 +866,7 @@ function listingPage:eventHandler(event)
   elseif event.type == 'learn' then
     UI:setPage('learn')
 
-  elseif event.type == 'craft' then
+  elseif event.type == 'craft' or event.type == 'grid_select_right' then
     UI:setPage('craft', self.grid:getSelected())
 
   elseif event.type == 'forget' then
@@ -923,7 +923,6 @@ function listingPage:applyFilter()
 end
 
 local function getTurtleInventory()
-
   if duckAntenna then
     local list = duckAntenna.getAllStacks(false)
     for _,v in pairs(list) do
@@ -933,7 +932,11 @@ local function getTurtleInventory()
       v.count = v.qty
       v.maxDamage = v.max_dmg
       v.maxCount = v.max_size
+      if not itemDB:get(v) then
+        itemDB:add(v)
+      end
     end
+    itemDB:flush()
     return list
   end
 
@@ -1011,8 +1014,7 @@ local function learnRecipe(page)
         if recipe.maxCount ~= 64 then
           newRecipe.maxCount = recipe.maxCount
         end
-
-        for k,ingredient in pairs(ingredients) do
+        for k,ingredient in pairs(Util.shallowCopy(ingredients)) do
           if ingredient.maxDamage > 0 then
             ingredient.damage = '*'               -- I don't think this is right
           end
@@ -1256,7 +1258,7 @@ Event.onInterval(5, function()
           if item.count <= 0 then
             demandCrafting[key] = nil
             item.statusCode = 'success'
-            if item.eject then
+            if inventoryAdapter.eject and item.eject then
               inventoryAdapter:eject(item, item.ocount, inventoryAdapter.getMetadata().state.facing)
             end
           end

@@ -56,22 +56,23 @@ function MEAdapter:init(args)
     items = { },
     name = 'ME',
     jobList = { },
-    direction = 'up',
-    wrapSide = 'bottom',
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
 
-  if self.autoDetect then
-    local mep = Peripheral.getByMethod('getAvailableItems')
-    if mep then
-      Util.merge(self, mep)
-    end
+  local chest
+
+  if not self.side then
+    chest = Peripheral.getByMethod('getAvailableItems')
   else
-    local mep = peripheral.wrap(self.wrapSide)
-    if mep then
-      Util.merge(self, mep)
+    chest = Peripheral.getBySide(self.side)
+    if chest and not chest.getAvailableItems then
+      chest = nil
     end
+  end
+
+  if chest then
+    Util.merge(self, chest)
   end
 end
 
@@ -87,11 +88,7 @@ function MEAdapter:refresh()
     convertItem(v)
 
     if not itemDB:get(v) then
-      local t = { }
-      for _,k in pairs(keys) do
-        t[k] = v[k]
-      end
-      itemDB:add(t)
+      itemDB:add(v, v)
     end
   end
   itemDB:flush()

@@ -39,13 +39,6 @@ while true do
     end
   end)
 
-  -- ensure socket is connected
-  Event.onInterval(3, function(h)
-    if not socket:ping() then
-      Event.off(h)
-    end
-  end)
-
   while true do
     Event.pullEvent()
     if not socket.connected then

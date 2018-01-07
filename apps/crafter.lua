@@ -241,7 +241,6 @@ local function craftItem(ikey, item, items, machineStatus)
     if turtle.getItemCount(slot) ~= maxCount * qty then -- ~= maxCount then FIXXX !!!
       item.status = 'Extract failed: ' .. (ingredient.displayName or itemDB:getName(ingredient))
       item.statusCode = STATUS_ERROR
-debug({ key, maxCount })
       return
     end
 --      c = c - maxCount
@@ -268,7 +267,6 @@ debug({ key, maxCount })
           l = { true }
         end
       end
-debug { s, l }
       if not s then
         item.statusCode = STATUS_ERROR
         item.status = l
@@ -376,7 +374,7 @@ local function craftItems()
       clearGrid()
     elseif item.need > 0 then
       item.status = 'no recipe'
-      item.statusCode = STATUS_WARNING
+      item.statusCode = STATUS_ERROR
     end
     jobListGrid:update()
     jobListGrid:draw()

@@ -11,9 +11,12 @@ local name = args[1] or error('Syntax: termShare [device name] <title>')
 local title = args[2]
 
 device[name] = term.current()
+device[name].name = name
+device[name].side = name
+device[name].type = 'terminal'
 
 if title then
 	multishell.setTitle(multishell.getCurrent(), title)
 end
-os.pullEvent('char')
-device[name] = nil
+os.pullEvent('terminate')
+os.queueEvent('peripheral_detach', name)

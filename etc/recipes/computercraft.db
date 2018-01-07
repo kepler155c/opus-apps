@@ -13,6 +13,35 @@
     },
     count = 1,
   },
+  [ "computercraft:pocket_computer:1" ] = {
+    count = 1,
+    ingredients = {
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      [ 9 ] = "minecraft:gold_ingot:0",
+      [ 10 ] = "minecraft:glass_pane:0",
+      [ 11 ] = "minecraft:gold_ingot:0",
+      [ 5 ] = "minecraft:gold_ingot:0",
+      [ 6 ] = "minecraft:golden_apple:0",
+      [ 7 ] = "minecraft:gold_ingot:0",
+    },
+    maxCount = 1,
+  },
+  [ "computercraft:peripheral:0" ] = {
+    ingredients = {
+      "minecraft:stone:0",
+      "minecraft:stone:0",
+      "minecraft:stone:0",
+      [ 9 ] = "minecraft:stone:0",
+      [ 10 ] = "minecraft:redstone:0",
+      [ 11 ] = "minecraft:stone:0",
+      [ 5 ] = "minecraft:stone:0",
+      [ 6 ] = "minecraft:redstone:0",
+      [ 7 ] = "minecraft:stone:0",
+    },
+    count = 1,
+  },
   [ "computercraft:peripheral:4" ] = {
     ingredients = {
       "minecraft:gold_ingot:0",
@@ -26,6 +55,20 @@
       [ 7 ] = "minecraft:gold_ingot:0",
     },
     count = 4,
+  },
+  [ "computercraft:advanced_modem:0" ] = {
+    ingredients = {
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      "minecraft:gold_ingot:0",
+      [ 9 ] = "minecraft:gold_ingot:0",
+      [ 10 ] = "minecraft:gold_ingot:0",
+      [ 11 ] = "minecraft:gold_ingot:0",
+      [ 5 ] = "minecraft:gold_ingot:0",
+      [ 6 ] = "minecraft:ender_eye:0",
+      [ 7 ] = "minecraft:gold_ingot:0",
+    },
+    count = 1,
   },
   [ "computercraft:computer:16384" ] = {
     ingredients = {

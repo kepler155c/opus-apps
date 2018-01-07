@@ -70,7 +70,7 @@ local function turtleCraft(recipe, qty, inventoryAdapter)
     inventoryAdapter:provide(item, provideQty, k)
     if turtle.getItemCount(k) == 0 then -- ~= qty then
                                         -- FIX: ingredients cannot be stacked
-debug('failed ' .. v .. ' - ' .. provideQty)
+--debug('failed ' .. v .. ' - ' .. provideQty)
       return false
     end
   end

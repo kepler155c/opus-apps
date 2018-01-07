@@ -5,8 +5,9 @@ local Adapter = { }
 function Adapter.wrap(args)
 	local adapters = {
 		--'refinedAdapter',
-    --'meAdapter',
     'chestAdapter18',
+
+    'meAdapter',
     'chestAdapter',
   }
 
