@@ -1,0 +1,35 @@
+{
+	"blockDust": {
+		"name": "Dust"
+	},
+	"blockBarrel1": {
+		"name": "Stone Barrel"
+	},
+	"hammerStone": {
+		"name": "Stone Hammer"
+	},
+	"itemMaterial": {
+		"name": [
+			"",
+			"Porcelain Clay",
+			"Silkworm",
+			"Ancient Spores",
+			"Grass Seeds"
+		]
+	},
+	"blockCrucible": {
+		"name": [
+			"Unfired Crucible",
+			"Crucible"
+		]
+	},
+	"itemMesh": {
+		"name": [
+			"",
+			"String Mesh",
+			"Flint Stiffened Mesh",
+			"Iron Stiffened Mesh",
+			"Diamond Stiffened Mesh"
+		]
+	},
+}

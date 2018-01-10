@@ -1,0 +1,22 @@
+{
+	"goldDiamondUpgrade": {
+		"name": "Gold to Diamond Chest Upgrade"
+	},
+	"BlockIronChest": {
+		"name": [
+			"Iron Chest",
+			"Gold Chest",
+			"Diamond Chest",
+			"",
+			"",
+			"Crystal Chest",
+			"Obsidian Chest"
+		]
+	},
+	"woodIronUpgrade": {
+		"name": "Wood to Iron Chest Upgrade"
+	},
+	"ironGoldUpgrade": {
+		"name": "Iron to Gold Chest Upgrade"
+	}
+}

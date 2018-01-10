@@ -1,0 +1,37 @@
+{
+	"crafter1": {
+		"name": "Crafter Tier 1"
+	},
+	"modular_storage": {
+		"name": "Modular Storage"
+	},
+	"crafter3": {
+		"name": "Crafter Tier 3"
+	},
+	"machine_frame": {
+		"name": "Machine Frame"
+	},
+	"storage_module": {
+		"name": [
+			"Storage Module Tier 1",
+			"Storage Module Tier 2",
+			"Storage Module Tier 3",
+			"",
+			"",
+			"",
+			"Remote Storage Module"
+		]
+	},
+	"crafter2": {
+		"name": "Crafter Tier 2"
+	},
+	"machine_base": {
+		"name": "Machine Base"
+	},
+	"remote_storage": {
+		"name": "Remote Storage"
+	},
+	"timer_block": {
+		"name": "Timer"
+	}
+}

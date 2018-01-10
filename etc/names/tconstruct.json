@@ -1,0 +1,36 @@
+{
+	"materials": {
+		"name": [
+			"Seared Brick",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"Necrotic Bone"
+		]
+	},
+	"pattern": {
+		"name": "Blank Pattern"
+	},
+	"cast": {
+		"name": "Blank Cast"
+	},
+	"casting": {
+		"name": "Casting Table"
+	},
+	"soil": {
+		"name": "Grout"
+	}
+}

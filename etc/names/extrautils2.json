@@ -1,0 +1,70 @@
+{
+	"resonator": {
+		"name": "Resonator"
+	},
+	"endershard": {
+		"name": "Ender Shard"
+	},
+	"glasscutter": {
+		"name": "Glass Cutter"
+	},
+	"decorativesolid": {
+		"name": [
+			"",
+			"",
+			"Polished Stone",
+			"Stoneburnt"
+		]
+	},
+	"passivegenerator": {
+		"name": [
+			"",
+			"",
+			"",
+			"Water Mill",
+			"",
+			"",
+			"",
+			"Manual Mill"
+		]
+	},
+	"pipe": {
+		"name": "Transfer Pipe"
+	},
+	"user": {
+		"name": "Mechanical User"
+	},
+	"trashcan": {
+		"name": "Trash Can"
+	},
+	"ingredients": {
+		"name": [
+			"Resonating Redstone Crystal",
+			"Redstone Gear",
+			"Eye of Redstone",
+			"",
+			"",
+			"",
+			"Upgrade Speed",
+			"",
+			"",
+			"Upgrade Base",
+			"Drop of Evil"
+		]
+	},
+	"drum": {
+		"name": [
+			"",
+			"Iron Drum"
+		]
+	},
+	"grocket": {
+		"name": [
+			"",
+			"",
+			"Transfer Node (Fluids)",
+			"",
+			"Retrieval Node (Fluids)"
+		]
+	}
+}

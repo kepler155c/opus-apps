@@ -1,0 +1,226 @@
+{
+	"blockSolarPanel": {
+		"name": [
+			"Photovoltaic Cell",
+			"Advanced Photovoltaic Cell",
+			"Vibrant Photovoltaic Cell"
+		]
+	},
+	"blockFusedQuartz": {
+		"name": [
+			"Fused Quartz",
+			"Quite Clear Glass",
+			"Enlightened Fused Quartz",
+			"",
+			"Dark Fused Quartz",
+			"Dark Clear Glass"
+		]
+	},
+	"blockVacuumChest": {
+		"name": [
+			"Vacuum Chest"
+		]
+	},
+	"itemExtractSpeedUpgrade": {
+		"name": "Item Conduit Speed Upgrade"
+	},
+	"blockPainter": {
+		"name": "Painting Machine"
+	},
+	"blockTransceiver": {
+		"name": "Dimensional Transceiver"
+	},
+	"darkSteel_chestplate": {
+		"name": "Dark Plate"
+	},
+	"blockSliceAndSplice": {
+		"name": "Slice'N'Splice"
+	},
+	"itemConduitFacade": {
+		"name": "Conduit Facade"
+	},
+	"itemBasicFilterUpgrade": {
+		"name": [
+			"Basic Item Filter",
+			"Advanced Item Filter",
+			"Counting Item Filter"
+		]
+	},
+	"blockExperienceObelisk": {
+		"name": "Experience Obelisk"
+	},
+	"itemLiquidConduit": {
+		"name": [
+			"Fluid Conduit",
+			"Pressurized Fluid Conduit",
+			"Ender Fluid Conduit"
+		]
+	},
+	"blockFarmStation": {
+		"name": "Farming Station"
+	},
+	"blockEndermanSkull": {
+		"name": [
+			"Enderman Head",
+			"",
+			"Tormented Enderman Head"
+		]
+	},
+	"blockAlloySmelter": {
+		"name": "Alloy Smelter"
+	},
+	"itemRedstoneConduit": {
+		"name": "Redstone Conduit"
+	},
+	"itemPowerConduit": {
+		"name": [
+			"Energy Conduit",
+			"Enhanced Energy Conduit",
+			"Ender Energy Conduit"
+		]
+	},
+	"itemTravelStaff": {
+		"name": "Staff of Traveling"
+	},
+	"blockSagMill": {
+		"name": [
+			"SAG Mill (Configured)"
+		]
+	},
+	"itemItemConduit": {
+		"name": "Item Conduit"
+	},
+	"itemConduitProbe": {
+		"name": "Conduit Probe"
+	},
+	"itemPowderIngot": {
+		"name": [
+			"",
+			"",
+			"",
+			"",
+			"",
+			"",
+			"Enderium Base"
+		]
+	},
+	"blockBuffer": {
+		"name": [
+			"Item Buffer"
+		]
+	},
+	"blockPoweredSpawner": {
+		"name": "Powered Spawner"
+	},
+	"itemBasicCapacitor": {
+		"name": [
+			"Basic Capacitor",
+			"Double-Layer Capacitor",
+			"Octadic Capacitor",
+			"Modified Power Holding Device"
+		]
+	},
+	"blockCapBank": {
+		"name": [
+			"",
+			"Basic Capacitor Bank",
+			"Capacitor Bank",
+			"Vibrant Capacitor Bank"
+		]
+	},
+	"blockTank": {
+		"name": [
+			"Fluid Tank (Configured)"
+		]
+	},
+	"blockKillerJoe": {
+		"name": [
+			"Killer Joe"
+		]
+	},
+	"blockWirelessCharger": {
+		"name": "Wireless Charger"
+	},
+	"darkSteel_sword": {
+		"name": [
+			"The Ender"
+		]
+	},
+	"blockVat": {
+		"name": [
+			"The Vat"
+		]
+	},
+	"itemBrokenSpawner": {
+		"name": "Broken Spawner"
+	},
+	"blockSoulBinder": {
+		"name": "Soul Binder"
+	},
+	"itemMachinePart": {
+		"name": [
+			"Machine Chassis",
+			"Basic Gear"
+		]
+	},
+	"itemYetaWrench": {
+		"name": "Yeta Wrench"
+	},
+	"itemAlloy": {
+		"name": [
+			"Electrical Steel",
+			"Energetic Alloy",
+			"Vibrant Alloy",
+			"Redstone Alloy",
+			"Conductive Iron",
+			"Pulsating Iron",
+			"Dark Steel",
+			"Soularium"
+		]
+	},
+	"itemXpTransfer": {
+		"name": "Experience Rod"
+	},
+	"itemFrankenSkull": {
+		"name": [
+			"Zombie Electrode",
+			"Z-Logic Controller",
+			"Frank'N'Zombie",
+			"Ender Resonator",
+			"Sentient Ender",
+			"Skeletal Contractor"
+		]
+	},
+	"blockReservoir": {
+		"name": "Reservoir"
+	},
+	"itemSoulVessel": {
+		"name": [
+			"Soul Vial",
+			"Soul Vial"
+		]
+	},
+	"itemMaterial": {
+		"name": [
+			"Silicon",
+			"Conduit Binder",
+			"Binder Composite",
+			"Pulsating Iron Nugget",
+			"Vibrant Alloy Nugget",
+			"Pulsating Crystal",
+			"Vibrant Crystal",
+			"",
+			"Ender Crystal",
+			"Enticing Crystal",
+			"",
+			"",
+			"",
+			"Grains of the End",
+			"",
+			"Precient Crystal",
+			"",
+			"",
+			"Plant clippings and trimmings"
+		]
+	}
+}

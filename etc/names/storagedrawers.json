@@ -1,0 +1,33 @@
+{
+	"compDrawers": {
+		"name": "Compacting Drawer"
+	},
+	"upgradeTemplate": {
+		"name": "Upgrade Template"
+	},
+	"controller": {
+		"name": "Drawer Controller"
+	},
+	"basicDrawers": {
+		"name": [
+			"Basic Drawer",
+			"",
+			"Basic Drawers 2x2"
+		]
+	},
+	"upgradeVoid": {
+		"name": "Void Upgrade"
+	},
+	"upgradeStorage": {
+		"name": [
+			"",
+			"",
+			"",
+			"",
+			"Storage Upgrade (V)"
+		]
+	},
+	"controllerSlave": {
+		"name": "Controller Slave"
+	}
+}

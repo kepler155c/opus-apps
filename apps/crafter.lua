@@ -19,7 +19,7 @@ multishell.setTitle(multishell.getCurrent(), 'Crafter')
 
 local config = {
   computerFacing = 'north',
-  monitor = 'monitor',
+  monitor = 'type/monitor',
 }
 Config.load('crafter', config)
 

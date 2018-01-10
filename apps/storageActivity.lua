@@ -20,7 +20,7 @@ local changedPage = UI.Page {
   grid = UI.Grid {
     ey = -6,
     columns = {
-      { heading = 'Qty',    key = 'count',       width = 5 },
+      { heading = 'Qty',    key = 'count',       width = 6 },
       { heading = 'Change', key = 'change',      width = 6 },
       { heading = 'Rate',   key = 'rate',        width = 6 },
       { heading = 'Name',   key = 'displayName' },
@@ -64,6 +64,7 @@ function changedPage.grid:getDisplayValues(row)
 
   row.change = ind .. Util.toBytes(row.change)
   row.count = Util.toBytes(row.count)
+  row.rate = Util.toBytes(row.rate)
 
   return row
 end

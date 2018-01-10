@@ -19,4 +19,18 @@
     },
     count = 4,
   },
+  [ "tconstruct:soil:0" ] = {
+    ingredients = {
+      "minecraft:gravel:0",
+      "minecraft:sand:0",
+      "minecraft:gravel:0",
+      [ 9 ] = "minecraft:gravel:0",
+      [ 10 ] = "minecraft:sand:0",
+      [ 11 ] = "minecraft:gravel:0",
+      [ 5 ] = "minecraft:sand:0",
+      [ 6 ] = "minecraft:clay:0",
+      [ 7 ] = "minecraft:sand:0",
+    },
+    count = 8,
+  },
 }

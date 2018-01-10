@@ -1,0 +1,20 @@
+{
+	"peripheral": {
+		"name": [
+			"Disk Drive",
+			"",
+			"",
+			"",
+			"Advanced Monitor"
+		]
+	},
+	"advanced_modem": {
+		"name": "Ender Modem"
+	},
+	"pocket_computer": {
+		"name": [
+			"",
+			"Advanced Pocket Computer"
+		]
+	}
+}

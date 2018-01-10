@@ -1,4 +1,20 @@
 {
+  [ "minecraft:flint_and_steel:0" ] = {
+    count = 1,
+    ingredients = {
+      "minecraft:flint:0",
+      "minecraft:iron_ingot:0",
+    },
+    maxCount = 1,
+  },
+  [ "minecraft:glass_bottle:0" ] = {
+    ingredients = {
+      "minecraft:glass:0",
+      [ 6 ] = "minecraft:glass:0",
+      [ 3 ] = "minecraft:glass:0",
+    },
+    count = 3,
+  },
   [ "minecraft:writable_book:0" ] = {
     ingredients = {
       "minecraft:book:0",

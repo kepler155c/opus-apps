@@ -23,13 +23,13 @@ local turtle     = _G.turtle
 multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 
 local config = {
-  computerFacing = 'north',
+  computerFacing = 'north', -- direction turtle is facing
 
-  inventory      = 'back',
-  craftingChest  = 'top',
+  inventory      = 'top',
+  craftingChest  = 'bottom',
   controller     = 'none',
 
-  trashDirection = 'up',    -- trash /chest in relation to chest
+  trashDirection = 'up',    -- trash/chest in relation to inventory
   monitor        = 'type/monitor',
 }
 
@@ -49,7 +49,6 @@ if device.workbench then
     [ 'left'  ] = 'right',
     [ 'right' ] = 'left',
   }
-
   local duckAntennaSide = oppositeSide[device.workbench.side]
   duckAntenna = peripheral.wrap(duckAntennaSide)
   if not duckAntenna or not duckAntenna.getAllStacks then
@@ -57,11 +56,16 @@ if device.workbench then
   end
 end
 
+local STATUS_INFO    = 'info'
+local STATUS_WARNING = 'warning'
+local STATUS_ERROR   = 'error'
+
 local RESOURCE_FILE = 'usr/config/resources.db'
 local RECIPES_FILE  = 'usr/config/recipes.db'
 
 local craftingPaused = false
-local canCraft = not not duckAntenna or turtleChestAdapter
+local canCraft = not not (turtle and turtle.craft)
+local canLearn = not not duckAntenna or not not turtleChestAdapter
 local userRecipes = Util.readTable(RECIPES_FILE) or { }
 local jobList
 local resources
@@ -188,6 +192,7 @@ local function addCraftingRequest(item, craftList, count)
     craftList[key] = request
   end
   request.count = request.count + count
+  return request
 end
 
 local function craftItem(recipe, items, originalItem, craftList, count)
@@ -199,6 +204,7 @@ local function craftItem(recipe, items, originalItem, craftList, count)
   if not isGridClear() then
     if not clearGrid() then
       originalItem.status = 'Grid obstructed'
+      originalItem.statusCode = STATUS_ERROR
       return 0
     end
   end
@@ -207,7 +213,7 @@ local function craftItem(recipe, items, originalItem, craftList, count)
   local toCraft = Craft.getCraftableAmount(recipe, count, items, missing)
   if missing.name then
     originalItem.status = string.format('%s missing', itemDB:getName(missing.name))
-    originalItem.statusCode = 'missing'
+    originalItem.statusCode = STATUS_WARNING
   end
 
   local crafted = 0
@@ -222,9 +228,15 @@ local function craftItem(recipe, items, originalItem, craftList, count)
   if count > 0 and items then
     local ingredients = Craft.getResourceList4(recipe, items, count)
     for _,ingredient in pairs(ingredients) do
-      --if not ingredient.recipe and ingredient.count < 0 then
       if ingredient.need > 0 then
-        addCraftingRequest(ingredient, craftList, ingredient.need)
+        local item = addCraftingRequest(ingredient, craftList, ingredient.need)
+        if Craft.findRecipe(item) then
+          item.status = string.format('%s missing', itemDB:getName(ingredient))
+          item.statusCode = STATUS_WARNING
+        else
+          item.status = 'no recipe'
+          item.statusCode = STATUS_ERROR
+        end
       end
     end
   end
@@ -278,7 +290,6 @@ local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
           local c = sumItems(summedItem.recipe, need) -- 4
           craftable = math.min(craftable, math.floor((used + c) / iqty))
           summedItem.craftable = summedItem.craftable + c
-
         end
       end
     end
@@ -296,9 +307,14 @@ local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
   if count < inCount then
     for _,ingredient in pairs(summed) do
       if ingredient.need > 0 then
-        addCraftingRequest(ingredient, craftList, ingredient.need)
-        originalItem.status = string.format('%s missing', itemDB:getName(ingredient))
-        originalItem.statusCode = 'missing'
+        local item = addCraftingRequest(ingredient, craftList, ingredient.need)
+        if Craft.findRecipe(item) then
+          item.status = string.format('%s missing', itemDB:getName(ingredient))
+          item.statusCode = STATUS_WARNING
+        else
+          item.status = '(no recipe)'
+          item.statusCode = STATUS_ERROR
+        end
       end
     end
   end
@@ -306,43 +322,59 @@ local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
 end
 
 local function craftItems(craftList, allItems)
-  for _,key in pairs(Util.keys(craftList)) do
-    local item = craftList[key]
-    local recipe = Craft.recipes[key]
-    if recipe then
-      item.status = nil
-      item.statusCode = nil
-      if item.forceCrafting then
-        item.crafted = forceCraftItem(recipe, allItems, item, craftList, item.count)
-      else
-        item.crafted = craftItem(recipe, allItems, item, craftList, item.count)
+
+  -- turtle crafting
+  if canCraft then
+    for _,key in pairs(Util.keys(craftList)) do
+      local item = craftList[key]
+      local recipe = Craft.recipes[key]
+      if recipe then
+        item.status = nil
+        item.statusCode = nil
+        if item.forceCrafting then
+          item.crafted = forceCraftItem(recipe, allItems, item, craftList, item.count)
+        else
+          item.crafted = craftItem(recipe, allItems, item, craftList, item.count)
+        end
+        allItems = listItems() -- refresh counts
+        if not allItems then
+          break
+        end
+      elseif not controllerAdapter then
+        item.status = '(no recipe)'
+        item.statusCode = STATUS_ERROR
       end
-      allItems = listItems() -- refresh counts
-      if not allItems then
-        break
-      end
-    elseif item.rsControl then
-      item.status = 'Activated'
     end
   end
 
-  for key,item in pairs(craftList) do
-    if not Craft.recipes[key] and not item.rsControl then
-      if not controllerAdapter then
-        item.status = '(no recipe)'
-      else
+  -- redstone control
+  for _,item in pairs(craftList) do
+    if item.rsControl then
+      item.status = '(activated)'
+      item.statusCode = STATUS_INFO
+    end
+  end
+
+  -- controller
+  if controllerAdapter then
+    for key,item in pairs(craftList) do
+      if not Craft.recipes[key] and not item.rsControl then
         if controllerAdapter:isCrafting(item) then
           item.status = '(crafting)'
+          item.statusCode = STATUS_INFO
         else
           local count = item.count
           while count >= 1 do -- try to request smaller quantities until successful
             local s = pcall(function()
               item.status = '(no recipe)'
+              item.statusCode = STATUS_ERROR
               if not controllerAdapter:craft(item, count) then
                 item.status = '(missing ingredients)'
+                item.statusCode = STATUS_WARNING
                 error('failed')
               end
               item.status = '(crafting)'
+              item.statusCode = STATUS_INFO
             end)
             if s then
               break -- successfully requested crafting
@@ -350,6 +382,15 @@ local function craftItems(craftList, allItems)
             count = math.floor(count / 2)
           end
         end
+      end
+    end
+  end
+
+  if not controllerAdapter and not canCraft then
+    for _,item in pairs(craftList) do
+      if not item.rsControl then
+        item.status = 'Invalid setup'
+        item.statusCode = STATUS_INFO
       end
     end
   end
@@ -395,11 +436,11 @@ local function jobMonitor()
   end
 
   function jobList.grid:getRowTextColor(row, selected)
-    if row.status == '(no recipe)' then
+    if row.statusCode == STATUS_ERROR then
       return colors.red
-    elseif row.statusCode == 'missing' then
+    elseif row.statusCode == STATUS_WARNING then
       return colors.yellow
-    elseif row.statusCode == 'success' then
+    elseif row.statusCode == STATUS_INFO then
       return colors.lime
     end
     return UI.Grid:getRowTextColor(row, selected)
@@ -580,12 +621,14 @@ local itemPage = UI.Page {
       },
       help = 'Ignore NBT of item'
     },
+--[[
     [6] = UI.Button {
       x = 2, y = -2, width = 10,
       formLabel = 'Redstone',
       event = 'show_rs',
       text = 'Configure',
     },
+]]
     infoButton = UI.Button {
       x = 2, y = -2,
       event = 'show_info',
@@ -779,10 +822,10 @@ local listingPage = UI.Page {
   grid = UI.Grid {
     y = 2, ey = -2,
     columns = {
-      { heading = 'Name', key = 'displayName' , width = 22 },
-      { heading = 'Qty',  key = 'count'       , width = 5  },
-      { heading = 'Min',  key = 'low'         , width = 4  },
-      { heading = 'Max',  key = 'limit'       , width = 4  },
+      { heading = 'Name', key = 'displayName' },
+      { heading = 'Qty',  key = 'count'       , width = 4 },
+      { heading = 'Min',  key = 'low'         , width = 4 },
+      { heading = 'Max',  key = 'limit'       , width = 4 },
     },
     sortColumn = 'displayName',
   },
@@ -802,6 +845,7 @@ local listingPage = UI.Page {
       text = 'A',
     },
   },
+  notification = UI.Notification(),
   accelerators = {
     r = 'refresh',
     q = 'quit',
@@ -864,10 +908,18 @@ function listingPage:eventHandler(event)
     self.grid:draw()
 
   elseif event.type == 'learn' then
-    UI:setPage('learn')
+    if canLearn then
+      UI:setPage('learn')
+    else
+      self.notification:error('Missing a crafting chest\nCheck configuration')
+    end
 
   elseif event.type == 'craft' or event.type == 'grid_select_right' then
-    UI:setPage('craft', self.grid:getSelected())
+    if Craft.findRecipe(self.grid:getSelected()) then
+      UI:setPage('craft', self.grid:getSelected())
+    else
+      self.notification:error('No recipe defined')
+    end
 
   elseif event.type == 'forget' then
     local item = self.grid:getSelected()
@@ -885,7 +937,7 @@ function listingPage:eventHandler(event)
         saveResources()
       end
 
-      self.statusBar:timedStatus('Forgot: ' .. item.name, 3)
+      self.notification:info('Forgot: ' .. item.name)
       self:refresh()
       self.grid:draw()
     end
@@ -957,7 +1009,7 @@ local function learnRecipe(page)
   local ingredients = getTurtleInventory()
   if ingredients then
     turtle.select(1)
-    if canCraft and turtle.craft() then
+    if canLearn and turtle.craft() then
       local results = getTurtleInventory()
       if results and results[1] then
         clearGrid()
@@ -1029,7 +1081,7 @@ local function learnRecipe(page)
         local displayName = itemDB:getName(recipe)
 
         listingPage.statusBar.filter:setValue(displayName)
-        listingPage.statusBar:timedStatus('Learned: ' .. displayName, 3)
+        listingPage.notification:success('Learned: ' .. displayName)
         listingPage.filter = displayName
         listingPage:refresh()
         listingPage.grid:draw()
@@ -1037,10 +1089,10 @@ local function learnRecipe(page)
         return true
       end
     else
-      page.statusBar:timedStatus('Failed to craft', 3)
+      listingPage.notification:error('Failed to craft', 3)
     end
   else
-    page.statusBar:timedStatus('No recipe defined', 3)
+    listingPage.notification:error('No recipe defined', 3)
   end
 end
 
@@ -1208,7 +1260,9 @@ function craftPage:eventHandler(event)
 end
 
 loadResources()
-clearGrid()
+if canCraft then
+  clearGrid()
+end
 
 UI:setPages({
   listing = listingPage,

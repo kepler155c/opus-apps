@@ -14,15 +14,17 @@ local version = "Version 1.1.6"
 -- Original code by Bomb Bloke
 -- Modified to integrate with opus os
 
-requireInjector(getfenv(1))
+_G.requireInjector()
 
 local Util = require('util')
+
+local multishell = _ENV.multishell
+local os         = _G.os
 
 local recTerm, oldTerm, arg, showInput, skipLast, lastDelay, curInput = {}, Util.shallowCopy(multishell.term), {...}, false, false, 2, ""
 local curBlink, oldBlink, tTerm, buffer, colourNum, xPos, yPos, oldXPos, oldYPos, tCol, bCol, xSize, ySize = false, false, {}, {}, {}, 1, 1, 1, 1, colours.white, colours.black, oldTerm.getSize()
 local greys, buttons = {["0"] = true, ["7"] = true, ["8"] = true, ["f"] = true}, {"l", "r", "m"}
 local charW, charH, chars, resp
-local filename
 
 local calls = { }
 local curCalls = { delay = 0 }
@@ -39,7 +41,7 @@ end
 
 for i = #arg, 1, -1 do
 	local curArg = arg[i]:lower()
-	
+
 	if curArg == "-i" then
 		showInput, ySize = true, ySize + 1
 		table.remove(arg, i)
@@ -108,23 +110,23 @@ end
 
 local function safeString(text)
 	local newText = {}
-	
+
 	for i = 1, #text do
 		local val = text:byte(i)
 		newText[i] = (val > 31 and val < 127) and val or 63
 	end
-	
+
 	return string.char(unpack(newText))
 end
 
 local function safeCol(text, subst)
 	local newText = {}
-	
+
 	for i = 1, #text do
 		local val = text:sub(i, i)
 		newText[i] = greys[val] and val or subst
 	end
-	
+
 	return table.concat(newText)
 end
 
@@ -147,7 +149,7 @@ end
 
 local tabId = multishell.getCurrent()
 
-multishell.addHotkey('control-p', function()
+_G.device.keyboard.addHotkey('control-p', function()
   os.queueEvent('recorder_stop')
 end)
 
@@ -185,7 +187,7 @@ while true do
 	end
 end
 
-multishell.removeHotkey('control-p')
+_G.device.keyboard.removeHotkey('control-p')
 
 for k,fn in pairs(oldTerm) do
 	multishell.term[k] = fn
@@ -206,18 +208,18 @@ print(string.format("Encoding %d frames...", #calls))
 
 do
 	local callListCount, tempCalls, blink, oldBlink, curBlink, blinkDelay = 1, {}, false, false, true, 0
-	
+
 	for i = 1, #calls - 1 do
 		curCalls = calls[i]
 		tempCalls[callListCount] = curCalls
 		for j = 1, #curCalls do if curCalls[j][1] == "setCursorBlink" then blink = curCalls[j][2] end end
-		
+
 		if blink then
 			if blinkDelay == 0 then
 				curCalls[#curCalls + 1] = {"toggleCur", curBlink}
 				blinkDelay, curBlink = 0.4, not curBlink
 			end
-			
+
 			while tempCalls[callListCount].delay > blinkDelay do
 				local remainder = tempCalls[callListCount].delay - blinkDelay
 				tempCalls[callListCount].delay = blinkDelay
@@ -225,19 +227,19 @@ do
 				tempCalls[callListCount] = {{"toggleCur", curBlink}, ["delay"] = remainder}
 				blinkDelay, curBlink = 0.4, not curBlink
 			end
-			
+
 			blinkDelay = blinkDelay - tempCalls[callListCount].delay
 		else
 			if oldBlink then curCalls[#curCalls + 1] = {"toggleCur", false} end
 			blinkDelay = (curCalls.delay - blinkDelay) % 0.4
 		end
-		
+
 		callListCount, oldBlink = callListCount + 1, blink
 	end
-	
+
 	tempCalls[callListCount] = calls[#calls]
 	tempCalls[callListCount][#tempCalls[callListCount] + 1] = {"toggleCur", false}
-	
+
 	calls, curCalls = tempCalls, nil
 end
 
@@ -298,33 +300,33 @@ if showInput then for x = 1, xSize do buffer[ySize][x][3] = colourNum[colours.li
 
 tTerm.blit = function(text, fgCol, bgCol)
 	if xPos > xSize or xPos + #text - 1 < 1 or yPos < 1 or yPos > ySize then return end
-	
+
 	if not _HOST then text = safeString(text) end
-	
+
 	if not term.isColour() then
 		fgCol = safeCol(fgCol, "0")
 		bgCol = safeCol(bgCol, "f")
 	end
-	
+
 	if xPos < 1 then
 		text = text:sub(2 - xPos)
 		fgCol = fgCol:sub(2 - xPos)
 		bgCol = bgCol:sub(2 - xPos)
 		xPos = 1
 	end
-	
+
 	if xPos + #text - 1 > xSize then
 		text = text:sub(1, xSize - xPos + 1)
 		fgCol = fgCol:sub(1, xSize - xPos + 1)
 		bgCol = bgCol:sub(1, xSize - xPos + 1)
 	end
-	
+
 	for x = 1, #text do
 		buffer[yPos][xPos + x - 1][1] = text:sub(x, x)
 		buffer[yPos][xPos + x - 1][2] = fgCol:sub(x, x)
 		buffer[yPos][xPos + x - 1][3] = bgCol:sub(x, x)
 	end
-	
+
 	xPos = xPos + #text
 end
 
@@ -335,21 +337,21 @@ end
 
 tTerm.clearLine = function()
 	local oldXPos = xPos
-	
+
 	xPos = 1
 	tTerm.write(string.rep(" ", xSize))
-	
+
 	xPos = oldXPos
 end
 
 tTerm.clear = function()
 	local oldXPos, oldYPos = xPos, yPos
-	
+
 	for y = 1, ySize do
 		xPos, yPos = 1, y
 		tTerm.write(string.rep(" ", xSize))
 	end
-	
+
 	xPos, yPos = oldXPos, oldYPos
 end
 
@@ -376,7 +378,7 @@ end
 tTerm.scroll = function(lines)
 	if math.abs(lines) < ySize then
 		local oldXPos, oldYPos = xPos, yPos
-		
+
 		for y = 1, ySize do
 			if y + lines > 0 and y + lines <= ySize then
 				for x = 1, xSize do
@@ -388,7 +390,7 @@ tTerm.scroll = function(lines)
 				tTerm.clearLine()
 			end
 		end
-		
+
 		xPos, yPos = oldXPos, oldYPos
 	else tTerm.clear() end
 end
@@ -400,12 +402,12 @@ end
 tTerm.newInput = function(input)
 	local oldTC, oldBC, oldX, oldY = tCol, bCol, xPos, yPos
 	tCol, bCol, xPos, yPos, ySize, input = colours.grey, colours.lightGrey, 1, ySize + 1, ySize + 1, input .. " "
-	
+
 	while #curInput + #input + 1 > xSize do curInput = curInput:sub(curInput:find(" ") + 1) end
 	curInput = curInput .. input .. " "
 	tTerm.clearLine()
 	tTerm.write(curInput)
-	
+
 	tCol, bCol, xPos, yPos, ySize = oldTC, oldBC, oldX, oldY, ySize - 1
 end
 
@@ -422,18 +424,18 @@ local image = {["width"] = xSize * charW, ["height"] = ySize * charH}
 for i = 1, #calls do
 	local xMin, yMin, xMax, yMax, oldBuffer, curCalls, changed = xSize + 1, ySize + 1, 0, 0, {}, calls[i], false
 	calls[i] = nil
-	
+
 	for y = 1, ySize do
 		oldBuffer[y] = {}
 		for x = 1, xSize do oldBuffer[y][x] = {buffer[y][x][1], buffer[y][x][2], buffer[y][x][3], buffer[y][x][4]} end
 	end
-	
+
 	snooze()
-	
+
 	if showInput then ySize = ySize - 1 end
 	for j = 1, #curCalls do if tTerm[curCalls[j][1]] then tTerm[curCalls[j][1]](unpack(curCalls[j], 2)) end end
 	if showInput then ySize = ySize + 1 end
-	
+
 	if i > 1 then
 		for yy = 1, ySize do for xx = 1, xSize do if buffer[yy][xx][1] ~= oldBuffer[yy][xx][1] or (buffer[yy][xx][2] ~= oldBuffer[yy][xx][2] and buffer[yy][xx][1] ~= " ") or buffer[yy][xx][3] ~= oldBuffer[yy][xx][3] then
 			changed = true
@@ -443,7 +445,7 @@ for i = 1, #calls do
 			if yy > yMax then yMax = yy end
 		end end end
 	else xMin, yMin, xMax, yMax, changed = 1, 1, xSize, ySize, true end
-	
+
 	if oldBlink and (xPos ~= oldXPos or yPos ~= oldYPos or not curBlink) and oldXPos > 0 and oldYPos > 0 and oldXPos <= xSize and oldYPos <= ySize then
 		changed = true
 		if oldXPos < xMin then xMin = oldXPos end
@@ -452,7 +454,7 @@ for i = 1, #calls do
 		if oldYPos > yMax then yMax = oldYPos end
 		buffer[oldYPos][oldXPos][4] = false
 	end
-	
+
 	if curBlink and (xPos ~= oldXPos or yPos ~= oldYPos or not oldBlink) and xPos > 0 and yPos > 0 and xPos <= xSize and yPos <= ySize then
 		changed = true
 		if xPos < xMin then xMin = xPos end
@@ -461,9 +463,9 @@ for i = 1, #calls do
 		if yPos > yMax then yMax = yPos end
 		buffer[yPos][xPos][4] = true
 	end
-	
+
 	oldBlink, oldXPos, oldYPos = curBlink, xPos, yPos
-	
+
 	local thisFrame = {
 		["xstart"] = (xMin - 1) * charW,
 		["ystart"] = (yMin - 1) * charH,
@@ -472,18 +474,18 @@ for i = 1, #calls do
 		["delay"] = curCalls.delay,
 		["disposal"] = 1
 	}
-	
+
 	for y = 1, (yMax - yMin + 1) * charH do
 		local row = {}
 		for x = 1, (xMax - xMin + 1) * charW do row[x] = " " end
 		thisFrame[y] = row
 	end
-	
+
 	snooze()
-	
+
 	for yy = yMin, yMax do
 		local yBump = (yy - yMin) * charH
-		
+
 		for xx = xMin, xMax do if buffer[yy][xx][1] ~= oldBuffer[yy][xx][1] or (buffer[yy][xx][2] ~= oldBuffer[yy][xx][2] and buffer[yy][xx][1] ~= " ") or buffer[yy][xx][3] ~= oldBuffer[yy][xx][3] or buffer[yy][xx][4] ~= oldBuffer[yy][xx][4] or  i == 1 then
 			local thisChar, thisT, thisB, xBump = chars[buffer[yy][xx][1]:byte()], buffer[yy][xx][2], buffer[yy][xx][3], (xx - xMin) * charW
 if thisChar then
@@ -500,35 +502,35 @@ end
 				for y = 1, charH do for x = 1, charW do if thisChar[y][x] then thisFrame[y + yBump][x + xBump] = thisT end end end
 			end
 		end end
-		
+
 		for y = yBump + 1, yBump + charH do
 			local skip, chars, row = 0, {}, {}
-			
+
 			for x = 1, #thisFrame[y] do
 				if thisFrame[y][x] == " " then
 					if #chars > 0 then
 						row[#row + 1] = table.concat(chars)
 						chars = {}
 					end
-					
+
 					skip = skip + 1
 				else
 					if skip > 0 then
 						row[#row + 1] = skip
 						skip = 0
 					end
-					
+
 					chars[#chars + 1] = thisFrame[y][x]
 				end
 			end
-			
+
 			if #chars > 0 then row[#row + 1] = table.concat(chars) end
 			thisFrame[y] = row
 		end
-		
+
 		snooze()
 	end
-	
+
 	if changed then 
 		image[#image + 1] = thisFrame
 	else
