@@ -62,6 +62,7 @@ for i = #arg, 1, -1 do
 	end
 end
 
+print('Gif Recorder by Bomb Bloke\n')
 print('Press control-p to stop recording')
 
 local filename = arg[#arg]

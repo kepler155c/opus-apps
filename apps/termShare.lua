@@ -18,5 +18,5 @@ device[name].type = 'terminal'
 if title then
 	multishell.setTitle(multishell.getCurrent(), title)
 end
-os.pullEvent('terminate')
+os.pullEventRaw('terminate')
 os.queueEvent('peripheral_detach', name)
