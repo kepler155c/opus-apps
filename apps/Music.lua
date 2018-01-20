@@ -7,10 +7,6 @@ local colors = _G.colors
 local device = _G.device
 local turtle = _G.turtle
 
-local multishell = _ENV.multishell
-
-multishell.setTitle(multishell.getCurrent(), 'Music')
-
 if not turtle then
   error('This program can only be run on a turtle')
 end

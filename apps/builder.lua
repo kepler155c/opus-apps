@@ -15,7 +15,6 @@ local Util      = require('util')
 
 local colors     = _G.colors
 local fs         = _G.fs
-local multishell = _ENV.multishell
 
 local BUILDER_DIR = 'usr/builder'
 
@@ -747,8 +746,6 @@ Builder.itemAdapter = Adapter.wrap()
 if not Builder.itemAdapter then
   error('A chest or ME interface must be below turtle')
 end
-
-multishell.setTitle(multishell.getCurrent(), 'Builder')
 
 subDB:load()
 

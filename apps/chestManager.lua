@@ -20,7 +20,9 @@ local peripheral = _G.peripheral
 local term       = _G.term
 local turtle     = _G.turtle
 
-multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
+if multishell then
+  multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
+end
 
 local config = {
   computerFacing = 'north', -- direction turtle is facing

@@ -7,7 +7,6 @@ local Util  = require('util')
 local multishell = _ENV.multishell
 local os         = _G.os
 
-multishell.setTitle(multishell.getCurrent(), 'Events')
 UI:configure('Events', ...)
 
 local page = UI.Page {

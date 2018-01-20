@@ -8,14 +8,12 @@ local Util   = require('util')
 
 local colors     = _G.colors
 local fs         = _G.fs
-local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
 
 local GROUPS_PATH = 'usr/groups'
 local SCRIPTS_PATH = 'usr/etc/scripts'
 
-multishell.setTitle(multishell.getCurrent(), 'Script')
 UI:configure('script', ...)
 
 local config = {

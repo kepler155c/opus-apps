@@ -10,12 +10,9 @@ local Terminal       = require('terminal')
 local Util           = require('util')
 
 local colors     = _G.colors
-local multishell = _ENV.multishell
 local os         = _G.os
 local term       = _G.term
 local turtle     = _G.turtle
-
-multishell.setTitle(multishell.getCurrent(), 'Crafter')
 
 local config = {
   computerFacing = 'north',

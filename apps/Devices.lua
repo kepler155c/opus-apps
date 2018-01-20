@@ -6,10 +6,7 @@ local UI    = require('ui')
 local Util  = require('util')
 
 local colors = _G.colors
-local multishell = _ENV.multishell
 local peripheral = _G.peripheral
-
-multishell.setTitle(multishell.getCurrent(), 'Devices')
 
 --[[ -- PeripheralsPage  -- ]] --
 local peripheralsPage = UI.Page {
