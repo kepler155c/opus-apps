@@ -50,7 +50,8 @@ local complete  = { }
 local clipboard
 
 -- do we need a clipboard shim
-if not multishell or not multishell.hook then -- is this OpusOS ?
+if not multishell or not _G.kernel then -- is this OpusOS ?
+debug('nope')
   if _G.clipboard then -- has it been installed already
     clipboard = _G.clipboard
   else
@@ -143,7 +144,7 @@ local keyMapping = {
   -- copy/paste
   [ 'control-x'           ] = 'cut',
   [ 'control-c'           ] = 'copy',
-  [ 'shift-paste'         ] = 'paste_internal',
+  [ 'control-shift-paste' ] = 'paste_internal',
 
   -- file
   [ 'control-s'           ] = 'save',
@@ -1031,6 +1032,7 @@ local __actions = {
     if clipboard then
       clipboard.setData(text)
     else
+debug(text)
       os.queueEvent('clipboard_copy', text)
     end
     setStatus('shift-^v to paste')
