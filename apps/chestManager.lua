@@ -1233,20 +1233,21 @@ function craftPage.wizard:eventHandler(event)
   return UI.Wizard.eventHandler(self, event)
 end
 
+function craftPage.wizard.pags.resources:enable()
+  local items = listItems()
+  local count = tonumber(self.parent.quantity.count.value)
+  local recipe = Craft.findRecipe(self.item)
+  local ingredients = Craft.getResourceList4(recipe, items, count)
+  for _,v in pairs(ingredients) do
+    v.displayName = itemDB:getName(v)
+  end
+  self.grid:setValues(ingredients)
+  return UI.Window.enable(self)
+end
+
 function craftPage:eventHandler(event)
   if event.type == 'cancel' then
     UI:setPreviousPage()
-
-  elseif event.type == 'enable_view' and event.next then
-    local items = listItems()
-    local count = tonumber(self.wizard.pages.quantity.count.value)
-    local recipe = Craft.findRecipe(self.item)
-    local ingredients = Craft.getResourceList4(recipe, items, count)
-    for _,v in pairs(ingredients) do
-      v.displayName = itemDB:getName(v)
-    end
-    self.wizard.pages.resources.grid:setValues(ingredients)
-    return false
 
   elseif event.type == 'accept' then
     local key = uniqueKey(self.item)
