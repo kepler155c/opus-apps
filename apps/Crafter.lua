@@ -16,13 +16,17 @@ local turtle     = _G.turtle
 
 local config = {
   computerFacing = 'north',
+  inventorySide = 'front',
   monitor = 'type/monitor',
 }
 Config.load('crafter', config)
 
 repeat until not turtle.forward()
 
-local inventoryAdapter = InventoryAdapter.wrap({ side = 'front', facing = config.computerFacing })
+local inventoryAdapter = InventoryAdapter.wrap({
+  side = config.inventorySide,
+  facing = config.computerFacing
+})
 if not inventoryAdapter then
   error('Invalid inventory configuration')
 end

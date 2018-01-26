@@ -1237,7 +1237,7 @@ function craftPage:eventHandler(event)
   if event.type == 'cancel' then
     UI:setPreviousPage()
 
-  elseif event.type == 'enable_view' and event.view == self.wizard.pages.resources then
+  elseif event.type == 'enable_view' and event.next then
     local items = listItems()
     local count = tonumber(self.wizard.pages.quantity.count.value)
     local recipe = Craft.findRecipe(self.item)
@@ -1246,6 +1246,7 @@ function craftPage:eventHandler(event)
       v.displayName = itemDB:getName(v)
     end
     self.wizard.pages.resources.grid:setValues(ingredients)
+    return false
 
   elseif event.type == 'accept' then
     local key = uniqueKey(self.item)

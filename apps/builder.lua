@@ -742,7 +742,7 @@ if #args < 1 then
   error('supply file name')
 end
 
-Builder.itemAdapter = Adapter.wrap()
+Builder.itemAdapter = Adapter.wrap({ side = 'bottom', direction = 'up' })
 if not Builder.itemAdapter then
   error('A chest or ME interface must be below turtle')
 end

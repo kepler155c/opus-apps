@@ -443,7 +443,7 @@ function TurtleBuilder:inAirDropoff()
       turtle._goto(pt)
       os.sleep(.1)  -- random computer is not connected error
 
-      local chestAdapter = Adapter.wrap({ direction = 'down', wrapSide = 'top' })
+      local chestAdapter = Adapter.wrap({ direction = 'down', side = 'top' })
 
       if not chestAdapter then
         self:log('Chests above is not valid')
@@ -505,7 +505,7 @@ function TurtleBuilder:inAirResupply()
       turtle._goto(pt)
       os.sleep(.1)  -- random computer is not connected error
 
-      local chestAdapter = Adapter.wrap({ direction = 'down', wrapSide = 'top' })
+      local chestAdapter = Adapter.wrap({ direction = 'down', side = 'top' })
 
       if not chestAdapter then
         Util.print('not valid')
