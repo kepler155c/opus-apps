@@ -1233,7 +1233,7 @@ function craftPage.wizard:eventHandler(event)
   return UI.Wizard.eventHandler(self, event)
 end
 
-function craftPage.wizard.pags.resources:enable()
+function craftPage.wizard.pages.resources:enable()
   local items = listItems()
   local count = tonumber(self.parent.quantity.count.value)
   local recipe = Craft.findRecipe(self.item)
