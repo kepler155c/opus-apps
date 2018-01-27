@@ -1236,7 +1236,7 @@ end
 function craftPage.wizard.pages.resources:enable()
   local items = listItems()
   local count = tonumber(self.parent.quantity.count.value)
-  local recipe = Craft.findRecipe(self.item)
+  local recipe = Craft.findRecipe(craftPage.item)
   local ingredients = Craft.getResourceList4(recipe, items, count)
   for _,v in pairs(ingredients) do
     v.displayName = itemDB:getName(v)
