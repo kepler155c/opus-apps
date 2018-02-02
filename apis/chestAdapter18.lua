@@ -27,11 +27,7 @@ function ChestAdapter:init(args)
   end
 
   if chest.listAvailableItems then
-    chest.list = chest.listAvailableItems
-  end
-
-  if chest.list then
-    return chest
+    self.list = chest.listAvailableItems
   end
 end
 
