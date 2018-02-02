@@ -14,7 +14,10 @@ function ChestAdapter:init(args)
 
   local chest
   if not self.side then
-    chest = Peripheral.getByMethod('list')
+    chest = Peripheral.getByMethod('list') or Peripheral.getByMethod('listAvailableItems')
+    if not chest then
+      chest = Peripheral.getByMethod('list')
+    end
   else
     chest = Peripheral.getBySide(self.side)
     if chest and not chest.list then
@@ -31,20 +34,33 @@ function ChestAdapter:isValid()
   return not not self.list
 end
 
+-- handle both AE/RS and generic inventory
+function ChestAdapter:getItemDetails(index, item)
+  if self.getItemMeta then
+    local s, detail = pcall(self.getItemMeta, index)
+    if not s or not detail or detail.name ~= item.name then
+  --    debug({ s, detail })
+      return
+    end
+    return detail
+  else
+    local detail = self.findItem(item)
+    if detail then
+      return detail.getMetadata()
+    end
+  end
+end
+
 function ChestAdapter:getCachedItemDetails(item, k)
   local cached = itemDB:get(item)
   if cached then
     return cached
   end
 
-  local s, detail = pcall(self.getItemMeta, k)
-  if not s or not detail or detail.name ~= item.name then
---    debug({ s, detail })
---      error('Inventory has changed')
-    return
+  local detail = self:getItemDetails(k, item)
+  if detail then
+    return itemDB:add(detail)
   end
-
-  return itemDB:add(detail)
 end
 
 function ChestAdapter:refresh(throttle)
