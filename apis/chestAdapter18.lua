@@ -15,9 +15,6 @@ function ChestAdapter:init(args)
   local chest
   if not self.side then
     chest = Peripheral.getByMethod('list') or Peripheral.getByMethod('listAvailableItems')
-    if not chest then
-      chest = Peripheral.getByMethod('list')
-    end
   else
     chest = Peripheral.getBySide(self.side)
     if chest and not chest.list then
@@ -28,10 +25,14 @@ function ChestAdapter:init(args)
   if chest then
     Util.merge(self, chest)
   end
+
+  if chest.list or chest.listAvailableItems then
+    return chest
+  end
 end
 
 function ChestAdapter:isValid()
-  return not not self.list
+  return not not (self.list or self.listAvailableItems)
 end
 
 -- handle both AE/RS and generic inventory
