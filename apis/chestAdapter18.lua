@@ -45,7 +45,7 @@ function ChestAdapter:getItemDetails(index, item)
     end
     return detail
   else
-    local detail = self.findItem(item)
+    local detail = self.findItems(item)
     if detail then
       return detail.getMetadata()
     end
