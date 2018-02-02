@@ -26,13 +26,17 @@ function ChestAdapter:init(args)
     Util.merge(self, chest)
   end
 
-  if chest.list or chest.listAvailableItems then
+  if chest.listAvailableItems then
+    chest.list = chest.listAvailableItems
+  end
+
+  if chest.list then
     return chest
   end
 end
 
 function ChestAdapter:isValid()
-  return not not (self.list or self.listAvailableItems)
+  return not not self.list
 end
 
 -- handle both AE/RS and generic inventory
