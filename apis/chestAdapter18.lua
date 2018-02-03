@@ -24,10 +24,10 @@ function ChestAdapter:init(args)
 
   if chest then
     Util.merge(self, chest)
-  end
 
-  if chest.listAvailableItems then
-    self.list = chest.listAvailableItems
+    if chest.listAvailableItems then
+      self.list = chest.listAvailableItems
+    end
   end
 end
 
