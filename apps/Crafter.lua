@@ -234,10 +234,12 @@ local function craftItem(ikey, item, items, machineStatus)
     ms.count = ms.count + maxCount
   end
 
-  for key,qty in pairs(item.recipe.ingredients) do
+  turtle.setStatus('Craft: ' .. itemDB:getName(ikey))
+  for key,qty in ipairs(item.recipe.ingredients) do
     local ingredient = itemDB:get(key)
 --    local c = item.craftable * qty
 --    while c > 0 do
+--debug(key)
     inventoryAdapter:provide(ingredient, maxCount * qty, slot)
     if turtle.getItemCount(slot) ~= maxCount * qty then -- ~= maxCount then FIXXX !!!
       item.status = 'Extract failed: ' .. (ingredient.displayName or itemDB:getName(ingredient))
@@ -381,6 +383,7 @@ local function craftItems()
     jobListGrid:draw()
     jobListGrid:sync()
   end
+  turtle.setStatus('idle')
 end
 
 local function loadResources()
@@ -406,6 +409,8 @@ local function saveResources()
 end
 
 local function findMachines()
+  turtle.setStatus('Inspecting machines')
+
   dock()
 
   local function getName(side)
@@ -1052,5 +1057,6 @@ Event.onInterval(30, function()
   craftItems()
 end)
 
+turtle.setStatus('idle')
 UI:pullEvents()
 jobListGrid.parent:reset()
