@@ -235,7 +235,7 @@ local function craftItem(ikey, item, items, machineStatus)
   end
 
   turtle.setStatus('Craft: ' .. itemDB:getName(ikey))
-  for key,qty in ipairs(item.recipe.ingredients) do
+  for key,qty in pairs(item.recipe.ingredients) do
     local ingredient = itemDB:get(key)
 --    local c = item.craftable * qty
 --    while c > 0 do
