@@ -15,14 +15,6 @@
     title = "Scripts",
     run = "Script.lua",
   },
-  fb91e24fa52d8d2b32937bf04d843f730319a902 = {
-    title = "Update",
-    category = "System",
-    icon = "\0301\03171\03180\030 \031   \
-\0301\03181\030 \031    \
-\0301\03170\03180\03171\0307\031f>",
-    run = "http://pastebin.com/raw/sj4VMVJj",
-  },
   [ "7ef35cac539f84722b0a988caee03b2df734c56a" ] = {
     title = "AppStore",
     category = "System",
