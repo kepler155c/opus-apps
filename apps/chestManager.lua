@@ -67,7 +67,7 @@ local RECIPES_FILE  = 'usr/config/recipes.db'
 
 local craftingPaused = false
 local canCraft = not not (turtle and turtle.craft)
-local canLearn = not not duckAntenna or not not turtleChestAdapter
+local canLearn = not not (canCraft and (duckAntenna or turtleChestAdapter))
 local userRecipes = Util.readTable(RECIPES_FILE) or { }
 local jobList
 local resources

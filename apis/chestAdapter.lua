@@ -3,6 +3,8 @@ local itemDB     = require('itemDB')
 local Peripheral = require('peripheral')
 local Util       = require('util')
 
+local os = _G.os
+
 local ChestAdapter = class()
 
 local convertNames = {
@@ -12,14 +14,6 @@ local convertNames = {
   count = 'qty',
   displayName = 'display_name',
   maxDamage = 'max_dmg',
-}
-local keys = {
-  'damage',
-  'displayName',
-  'maxCount',
-  'maxDamage',
-  'name',
-  'nbtHash',
 }
 
 -- Strip off color prefix
@@ -50,19 +44,27 @@ end
 
 function ChestAdapter:init(args)
   local defaults = {
-    name      = 'chest',
-    direction = 'up',
-    wrapSide  = 'bottom',
+    name = 'chest',
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
 
-  local chest = Peripheral.getBySide(self.wrapSide)
-  if not chest then
+  local chest
+  if not self.side then
     chest = Peripheral.getByMethod('getAllStacks')
+  else
+    chest = Peripheral.getBySide(self.side)
+    if chest and not chest.getAllStacks then
+      chest = nil
+    end
   end
+
   if chest then
     Util.merge(self, chest)
+
+    if chest.listAvailableItems then
+      self.list = chest.listAvailableItems
+    end
   end
 end
 
@@ -75,30 +77,31 @@ function ChestAdapter:refresh(throttle)
 end
 
 -- provide a consolidated list of items
-function ChestAdapter:listItems(throttle)
-  self.cache = { }
+function ChestAdapter:listItems()
+  local cache = { }
+  local items = { }
 
   for _,v in pairs(self.getAllStacks(false)) do
     convertItem(v)
     local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
 
-    local entry = self.cache[key]
+    local entry = cache[key]
     if not entry then
-      self.cache[key] = v
+      cache[key] = v
 
       if not itemDB:get(v) then
-        local t = { }
-        for _,k in pairs(keys) do
-          t[k] = v[k]
-        end
-        itemDB:add(t)
+        itemDB:add(v)
       end
+      table.insert(items, v)
     else
       entry.count = entry.count + v.count
     end
   end
   itemDB:flush()
-  return self.cache
+  if not Util.empty(items) then
+    self.cache = cache
+    return items
+  end
 end
 
 function ChestAdapter:getItemInfo(item)
@@ -139,11 +142,12 @@ function ChestAdapter:extract(slot, qty, toSlot)
   end
 end
 
-function ChestAdapter:insert(slot, qty)
-  local s, m = pcall(function() self.pullItem(self.direction, slot, qty) end)
+function ChestAdapter:insert(slot, qty, toSlot)
+  -- toSlot not tested ...
+  local s, m = pcall(self.pullItem, self.direction, slot, qty, toSlot)
   if not s and m then
     os.sleep(1)
-    pcall(function() self.pullItem(self.direction, slot, qty) end)
+    pcall(self.pullItem, self.direction, slot, qty, toSlot)
   end
 end
 
