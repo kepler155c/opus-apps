@@ -81,27 +81,30 @@ function ChestAdapter:listItems()
   local cache = { }
   local items = { }
 
-  for _,v in pairs(self.getAllStacks(false)) do
-    convertItem(v)
-    local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
+    -- getAllStacks sometimes fails
+  pcall(function()
+    for _,v in pairs(self.getAllStacks(false)) do
+      convertItem(v)
+      local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
 
-    local entry = cache[key]
-    if not entry then
-      cache[key] = v
+      local entry = cache[key]
+      if not entry then
+        cache[key] = v
 
-      if not itemDB:get(v) then
-        itemDB:add(v)
+        if not itemDB:get(v) then
+          itemDB:add(v)
+        end
+        table.insert(items, v)
+      else
+        entry.count = entry.count + v.count
       end
-      table.insert(items, v)
-    else
-      entry.count = entry.count + v.count
     end
-  end
-  itemDB:flush()
-  if not Util.empty(items) then
-    self.cache = cache
-    return items
-  end
+    itemDB:flush()
+    if not Util.empty(items) then
+      self.cache = cache
+      return items
+    end
+  end)
 end
 
 function ChestAdapter:getItemInfo(item)
@@ -119,19 +122,21 @@ function ChestAdapter:craftItems()
 end
 
 function ChestAdapter:provide(item, qty, slot, direction)
-  for key,stack in pairs(self.getAllStacks(false)) do
-    if stack.id == item.name and
-       stack.dmg == item.damage and
-       stack.nbt_hash == item.nbtHash then
+  pcall(function()
+    for key,stack in Util.rpairs(self.getAllStacks(false)) do
+      if stack.id == item.name and
+         stack.dmg == item.damage and
+         stack.nbt_hash == item.nbtHash then
 
-      local amount = math.min(qty, stack.qty)
-      self.pushItemIntoSlot(direction or self.direction, key, amount, slot)
-      qty = qty - amount
-      if qty <= 0 then
-        break
+        local amount = math.min(qty, stack.qty)
+        self.pushItemIntoSlot(direction or self.direction, key, amount, slot)
+        qty = qty - amount
+        if qty <= 0 then
+          break
+        end
       end
     end
-  end
+  end)
 end
 
 function ChestAdapter:extract(slot, qty, toSlot)
