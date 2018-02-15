@@ -100,11 +100,11 @@ function ChestAdapter:listItems()
       end
     end
     itemDB:flush()
-    if not Util.empty(items) then
-      self.cache = cache
-      return items
-    end
   end)
+  if not Util.empty(items) then
+    self.cache = cache
+    return items
+  end
 end
 
 function ChestAdapter:getItemInfo(item)
