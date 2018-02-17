@@ -147,6 +147,10 @@ function ChestAdapter:provide(item, qty, slot, direction)
 end
 
 function ChestAdapter:eject(item, qty, direction)
+
+  -- fix
+  direction = self.getMetadata().state.facing
+
   local s, m = pcall(function()
     local stacks = self.list()
     local maxStack = itemDB:getMaxCount(item)

@@ -1316,8 +1316,8 @@ Event.onInterval(5, function()
           if item.count <= 0 then
             demandCrafting[key] = nil
             item.statusCode = 'success'
-            if inventoryAdapter.eject and item.eject then
-              inventoryAdapter:eject(item, item.ocount, inventoryAdapter.getMetadata().state.facing)
+            if item.eject then
+              inventoryAdapter:eject(item, item.ocount, 'front')
             end
           end
         end
