@@ -913,7 +913,7 @@ function listingPage:eventHandler(event)
     if canLearn then
       UI:setPage('learn')
     else
-      self.notification:error('Missing a crafting chest\nCheck configuration')
+      self.notification:error('Missing a crafting chest or workbench\nCheck configuration')
     end
 
   elseif event.type == 'craft' or event.type == 'grid_select_right' then

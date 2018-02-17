@@ -124,12 +124,13 @@ end
 function ChestAdapter:provide(item, qty, slot, direction)
   pcall(function()
     for key,stack in Util.rpairs(self.getAllStacks(false)) do
-      if stack.id == item.name and
-         stack.dmg == item.damage and
-         stack.nbt_hash == item.nbtHash then
-
+      if stack.name == item.name and
+        (not item.damage or stack.damage == item.damage) and
+        (not item.nbtHash or stack.nbtHash == item.nbtHash) then
         local amount = math.min(qty, stack.qty)
-        self.pushItemIntoSlot(direction or self.direction, key, amount, slot)
+        if amount > 0 then
+          self.pushItemIntoSlot(direction or self.direction, key, amount, slot)
+        end
         qty = qty - amount
         if qty <= 0 then
           break

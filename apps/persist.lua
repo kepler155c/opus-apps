@@ -12,7 +12,7 @@ local fileName = args[1] and
                  shell.resolve(args[1]) or
                  error('Syntax: persist <file name>')
 
-local c = Util.readFile() or error('Unable to read file')
+local c = Util.readFile(fileName) or error('Unable to read file')
 
 -- ensure it is writable - if not an error is thrown
 Util.writeFile(fileName, '')
