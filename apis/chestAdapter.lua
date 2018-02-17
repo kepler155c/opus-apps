@@ -124,9 +124,9 @@ end
 function ChestAdapter:provide(item, qty, slot, direction)
   pcall(function()
     for key,stack in Util.rpairs(self.getAllStacks(false)) do
-      if stack.name == item.name and
-        (not item.damage or stack.damage == item.damage) and
-        (not item.nbtHash or stack.nbtHash == item.nbtHash) then
+      if stack.id == item.name and
+        (not item.damage or stack.dmg == item.damage) and
+        (not item.nbtHash or stack.nbt_hash == item.nbtHash) then
         local amount = math.min(qty, stack.qty)
         if amount > 0 then
           self.pushItemIntoSlot(direction or self.direction, key, amount, slot)
@@ -138,6 +138,18 @@ function ChestAdapter:provide(item, qty, slot, direction)
       end
     end
   end)
+end
+
+function ChestAdapter:eject(item, qty, direction)
+  if not _G.turtle then
+    error('Only a turtle can eject')
+  end
+
+  local s, m = pcall(function()
+    self:provide(item, qty)
+    _G.turtle.emptyInventory()
+  end)
+  return s, m
 end
 
 function ChestAdapter:extract(slot, qty, toSlot)
