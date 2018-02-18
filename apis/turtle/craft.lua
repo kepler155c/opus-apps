@@ -212,7 +212,7 @@ function Craft.getResourceList(inRecipe, items, inCount)
 
   inCount = math.ceil(inCount / inRecipe.count)
   for ikey,iqty in pairs(Craft.sumIngredients(inRecipe)) do
-    sumItems(ikey, math.ceil(inCount * iqty))
+    sumItems(inRecipe, ikey, math.ceil(inCount * iqty))
   end
 
   return summed
