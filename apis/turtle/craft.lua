@@ -163,10 +163,10 @@ end
 
 -- determine the full list of ingredients needed to craft
 -- a quantity of a recipe.
-function Craft.getResourceList(recipe, items, inCount)
+function Craft.getResourceList(inRecipe, items, inCount)
   local summed = { }
 
-  local function sumItems(key, count)
+  local function sumItems(recipe, key, count)
     local item = itemDB:splitKey(key)
     local summedItem = summed[key]
     if not summedItem then
@@ -183,17 +183,15 @@ function Craft.getResourceList(recipe, items, inCount)
     local used = math.min(summedItem.count, total)
     local need = total - used
 
-    if summedItem.recipe and summedItem.recipe.craftingTools and summedItem.recipe.craftingTools[key] then
+    if recipe.craftingTools and recipe.craftingTools[key] then
       summedItem.total = 1
       if summedItem.count > 0 then
         summedItem.used = 1
         summedItem.need = 0
         need = 0
-      else
-        if not summedItem.recipe then
-          summedItem.need = 1
-          need = 1
-        end
+      elseif not summedItem.recipe then
+        summedItem.need = 1
+        need = 1
       end
     else
       summedItem.total = summedItem.total + total
@@ -207,13 +205,13 @@ function Craft.getResourceList(recipe, items, inCount)
     if need > 0 and summedItem.recipe then
       need = math.ceil(need / summedItem.recipe.count)
       for ikey,iqty in pairs(Craft.sumIngredients(summedItem.recipe)) do
-        sumItems(ikey, math.ceil(need * iqty))
+        sumItems(summedItem.recipe, ikey, math.ceil(need * iqty))
       end
     end
   end
 
-  inCount = math.ceil(inCount / recipe.count)
-  for ikey,iqty in pairs(Craft.sumIngredients(recipe)) do
+  inCount = math.ceil(inCount / inRecipe.count)
+  for ikey,iqty in pairs(Craft.sumIngredients(inRecipe)) do
     sumItems(ikey, math.ceil(inCount * iqty))
   end
 
