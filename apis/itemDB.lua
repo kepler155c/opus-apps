@@ -30,7 +30,7 @@ local function safeString(text)
   return text
 end
 
-local function makeKey(item)
+function itemDB:makeKey(item)
   return table.concat({ item.name, item.damage or '*', item.nbtHash }, ':')
 end
 
@@ -55,14 +55,14 @@ function itemDB:get(key)
     key = self:splitKey(key)
   end
 
-  local item = TableDB.get(self, makeKey(key))
+  local item = TableDB.get(self, self:makeKey(key))
   if item then
     return item
   end
 
   -- try finding an item that has damage values
   if type(key.damage) == 'number' then
-    item = TableDB.get(self, makeKey({ name = key.name, nbtHash = key.nbtHash }))
+    item = TableDB.get(self, self:makeKey({ name = key.name, nbtHash = key.nbtHash }))
     if item and item.maxDamage then
       item = Util.shallowCopy(item)
       item.damage = key.damage
@@ -126,7 +126,7 @@ function itemDB:add(baseItem)
     end
   end
 
-  TableDB.add(self, makeKey(nItem), nItem)
+  TableDB.add(self, self:makeKey(nItem), nItem)
   nItem = Util.shallowCopy(nItem)
   nItem.damage = baseItem.damage
   nItem.nbtHash = baseItem.nbtHash
