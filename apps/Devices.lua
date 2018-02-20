@@ -1,4 +1,4 @@
-_G.requireInjector()
+_G.requireInjector(_ENV)
 
 local Ansi  = require('ansi')
 local Event = require('event')

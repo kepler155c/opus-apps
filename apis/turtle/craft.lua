@@ -4,7 +4,8 @@ local Util   = require('util')
 local fs     = _G.fs
 local turtle = _G.turtle
 
-local RECIPES_DIR = 'usr/etc/recipes'
+local RECIPES_DIR  = 'usr/etc/recipes'
+local USER_RECIPES = 'usr/config/recipes.db'
 
 local Craft = { }
 
@@ -79,18 +80,17 @@ local function turtleCraft(recipe, qty, inventoryAdapter)
 end
 
 function Craft.loadRecipes()
-  Craft.recipes = Util.readTable(fs.combine(RECIPES_DIR, 'minecraft.db')) or { }
+  Craft.recipes = { }
 
-  local files = fs.list('usr/etc/recipes')
-  table.sort(files)
-  Util.removeByValue(files, 'minecraft.db')
+  Util.merge((Util.readTable(fs.combine(RECIPES_DIR, 'minecraft.db')) or { }).recipes)
 
-  for _,file in ipairs(files) do
-    local recipes = Util.readTable(fs.combine(RECIPES_DIR, file))
-    Util.merge(Craft.recipes, recipes)
+  local config = Util.readTable('usr/config/recipeBooks.db') or { }
+  for _, book in pairs(config) do
+    local recipeFile = Util.readTable(book)
+    Util.merge(Craft.recipes, recipeFile.recipes)
   end
 
-  local recipes = Util.readTable('usr/config/recipes.db') or { }
+  local recipes = Util.readTable(USER_RECIPES) or { }
   Util.merge(Craft.recipes, recipes)
 end
 

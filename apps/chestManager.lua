@@ -58,6 +58,9 @@ if device.workbench then
   end
 end
 
+--TODO : find out duck antenna type
+duckAntenna = nil
+
 local STATUS_INFO    = 'info'
 local STATUS_WARNING = 'warning'
 local STATUS_ERROR   = 'error'

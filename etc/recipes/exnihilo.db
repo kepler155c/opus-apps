@@ -1,43 +1,47 @@
 {
-  [ "exnihiloadscensio:blockBarrel1:0" ] = {
-    ingredients = {
-      "minecraft:stone:0",
-      [ 9 ] = "minecraft:stone:0",
-      [ 10 ] = "minecraft:stone_slab:0",
-      [ 11 ] = "minecraft:stone:0",
-      [ 3 ] = "minecraft:stone:0",
-      [ 5 ] = "minecraft:stone:0",
-      [ 7 ] = "minecraft:stone:0",
+  name = "Ex Nihilo",
+  version = "MC 1.8+",
+  recipes = {
+    [ "exnihiloadscensio:blockBarrel1:0" ] = {
+      ingredients = {
+        "minecraft:stone:0",
+        [ 9 ] = "minecraft:stone:0",
+        [ 10 ] = "minecraft:stone_slab:0",
+        [ 11 ] = "minecraft:stone:0",
+        [ 3 ] = "minecraft:stone:0",
+        [ 5 ] = "minecraft:stone:0",
+        [ 7 ] = "minecraft:stone:0",
+      },
+      count = 1,
     },
-    count = 1,
-  },
-  [ "exnihiloadscensio:blockCrucible:0" ] = {
-    ingredients = {
-      "exnihiloadscensio:itemMaterial:1",
-      [ 9 ] = "exnihiloadscensio:itemMaterial:1",
-      [ 10 ] = "exnihiloadscensio:itemMaterial:1",
-      [ 11 ] = "exnihiloadscensio:itemMaterial:1",
-      [ 3 ] = "exnihiloadscensio:itemMaterial:1",
-      [ 5 ] = "exnihiloadscensio:itemMaterial:1",
-      [ 7 ] = "exnihiloadscensio:itemMaterial:1",
+    [ "exnihiloadscensio:blockCrucible:0" ] = {
+      ingredients = {
+        "exnihiloadscensio:itemMaterial:1",
+        [ 9 ] = "exnihiloadscensio:itemMaterial:1",
+        [ 10 ] = "exnihiloadscensio:itemMaterial:1",
+        [ 11 ] = "exnihiloadscensio:itemMaterial:1",
+        [ 3 ] = "exnihiloadscensio:itemMaterial:1",
+        [ 5 ] = "exnihiloadscensio:itemMaterial:1",
+        [ 7 ] = "exnihiloadscensio:itemMaterial:1",
+      },
+      count = 1,
     },
-    count = 1,
-  },
-  [ "exnihiloadscensio:hammerStone:0" ] = {
-    maxCount = 1,
-    ingredients = {
-      [ 7 ] = "minecraft:cobblestone:0",
-      [ 9 ] = "minecraft:stick:0",
-      [ 2 ] = "minecraft:cobblestone:0",
-      [ 6 ] = "minecraft:stick:0",
+    [ "exnihiloadscensio:hammerStone:0" ] = {
+      maxCount = 1,
+      ingredients = {
+        [ 7 ] = "minecraft:cobblestone:0",
+        [ 9 ] = "minecraft:stick:0",
+        [ 2 ] = "minecraft:cobblestone:0",
+        [ 6 ] = "minecraft:stick:0",
+      },
+      count = 1,
     },
-    count = 1,
-  },
-  [ "exnihiloadscensio:itemMaterial:1" ] = {
-    ingredients = {
-      "minecraft:dye:15",
-      "minecraft:clay_ball:0",
+    [ "exnihiloadscensio:itemMaterial:1" ] = {
+      ingredients = {
+        "minecraft:dye:15",
+        "minecraft:clay_ball:0",
+      },
+      count = 1,
     },
-    count = 1,
   },
 }
