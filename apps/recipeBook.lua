@@ -63,7 +63,6 @@ local page = UI.Page {
 	accelerators = {
 		q = 'quit',
 		space = 'grid_select',
-		t = 'terminate',
 	},
 }
 
@@ -104,16 +103,19 @@ end
 
 function page:eventHandler(event)
 	if event.type == 'grid_select' then
-		local recipes = self.grid:getSelected()
-		recipes.enabled = not recipes.enabled
+		local book = self.grid:getSelected()
+		book.enabled = not book.enabled
 		self.info:draw()
 		self.grid:draw()
 		self:save()
+
 	elseif event.type == 'grid_focus_row' then
 		self.info:draw()
+
 	elseif event.type == 'quit' then
 		UI:exitPullEvents()
 	end
+
 	UI.Page.eventHandler(self, event)
 end
 
