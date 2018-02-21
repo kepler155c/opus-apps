@@ -146,7 +146,11 @@ function itemDB:getName(item)
   end
 
   -- fallback to nameDB
-  return nameDB:getName(item.name .. ':' .. (item.damage or '*'))
+  local name = nameDB:getName(item.name .. ':' .. (item.damage or '*'))
+  if not name and not item.damage then
+    return self:getName({ name = item.name, damage = 0, nbtHash = item.nbtHash })
+  end
+  return name
 end
 
 function itemDB:getMaxCount(item)

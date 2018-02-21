@@ -1320,34 +1320,6 @@
 				[ 6 ] = "minecraft:snowball:0",
 			},
 		},
-		[ "mysticalagriculture:tier1_inferium_seeds:0" ] = {
-			count = 1,
-			ingredients = {
-				"mysticalagriculture:inferium_essence:0",
-				"mysticalagriculture:inferium_essence:0",
-				"mysticalagriculture:inferium_essence:0",
-				[ 9 ] = "mysticalagriculture:inferium_essence:0",
-				[ 10 ] = "mysticalagriculture:inferium_essence:0",
-				[ 11 ] = "mysticalagriculture:inferium_essence:0",
-				[ 5 ] = "mysticalagriculture:inferium_essence:0",
-				[ 6 ] = "minecraft:wheat_seeds:0",
-				[ 7 ] = "mysticalagriculture:inferium_essence:0",
-			},
-		},
-		[ "mysticalagriculture:tier2_inferium_seeds:0" ] = {
-			count = 1,
-			ingredients = {
-				"mysticalagriculture:prudentium_essence:0",
-				"mysticalagriculture:prudentium_essence:0",
-				"mysticalagriculture:prudentium_essence:0",
-				[ 9 ] = "mysticalagriculture:prudentium_essence:0",
-				[ 10 ] = "mysticalagriculture:prudentium_essence:0",
-				[ 11 ] = "mysticalagriculture:prudentium_essence:0",
-				[ 5 ] = "mysticalagriculture:prudentium_essence:0",
-				[ 6 ] = "mysticalagriculture:tier1_inferium_seeds:0",
-				[ 7 ] = "mysticalagriculture:prudentium_essence:0",
-			},
-		},
 		[ "minecraft:stained_glass:0" ] = {
 			count = 8,
 			ingredients = {
@@ -1431,20 +1403,6 @@
 				[ 5 ] = "minecraft:hardened_clay:0",
 				[ 6 ] = "minecraft:dye:11",
 				[ 7 ] = "minecraft:hardened_clay:0",
-			},
-		},
-		[ "mysticalagriculture:tier3_inferium_seeds:0" ] = {
-			count = 1,
-			ingredients = {
-				"mysticalagriculture:intermedium_essence:0",
-				"mysticalagriculture:intermedium_essence:0",
-				"mysticalagriculture:intermedium_essence:0",
-				[ 9 ] = "mysticalagriculture:intermedium_essence:0",
-				[ 10 ] = "mysticalagriculture:intermedium_essence:0",
-				[ 11 ] = "mysticalagriculture:intermedium_essence:0",
-				[ 5 ] = "mysticalagriculture:intermedium_essence:0",
-				[ 6 ] = "mysticalagriculture:tier2_inferium_seeds:0",
-				[ 7 ] = "mysticalagriculture:intermedium_essence:0",
 			},
 		},
 		[ "minecraft:cobblestone_wall:0" ] = {
@@ -1712,7 +1670,7 @@
 		},
 		[ "minecraft:sticky_piston:0" ] = {
 			ingredients = {
-				"minefactoryreloaded:rubber_raw:0",
+				"minecraft:slime_ball:0",
 				[ 5 ] = "minecraft:piston:0",
 			},
 			count = 1,
