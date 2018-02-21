@@ -183,21 +183,23 @@ end
 local function isMachineEmpty(machine, item)
   local side = turtle.getAction(machine.dir).side
   local methods = Peripheral.getMethods(side)
-  local list = { }
+  local list = { true }
 
+debug(methods)
   if methods.getAllStacks then -- 1.7x
     list = Peripheral.call(side, 'getAllStacks', false)
   elseif methods.list then
     list = Peripheral.call(side, 'list')
   elseif methods.getProgress then
-    if Peripheral.call(side, 'getProgress') ~= 0 then
-      list = { true }
+    if Peripheral.call(side, 'getProgress') == 0 then
+      return true
     end
   else
     item.statusCode = STATUS_ERROR
     item.status = 'Unable to check empty status'
+    return
   end
-
+debug(list)
   if Util.empty(list) then
     return true
   end
@@ -280,10 +282,8 @@ local function craftItem(ikey, item, items, machineStatus)
     item.status = 'failed to find machine'
     item.statusCode = STATUS_ERROR
   else
-    if machine.empty then
-      if not isMachineEmpty(machine, item) then
-        return
-      end
+    if machine.empty and not isMachineEmpty(machine, item) then
+      return
     end
 
     if machine.dir == 'up' then
