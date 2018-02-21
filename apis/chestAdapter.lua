@@ -77,9 +77,10 @@ function ChestAdapter:refresh(throttle)
 end
 
 -- provide a consolidated list of items
-function ChestAdapter:listItems()
+function ChestAdapter:listItems(throttle)
   local cache = { }
   local items = { }
+  throttle = throttle or Util.throttle()
 
     -- getAllStacks sometimes fails
   pcall(function()
@@ -89,15 +90,14 @@ function ChestAdapter:listItems()
 
       local entry = cache[key]
       if not entry then
-        cache[key] = v
-
-        if not itemDB:get(v) then
-          itemDB:add(v)
-        end
-        table.insert(items, v)
-      else
-        entry.count = entry.count + v.count
+        entry = itemDB:get(v) or itemDB:add(v)
+        entry = Util.shallowCopy(entry)
+        entry.count = 0
+        cache[key] = entry
+        table.insert(items, entry)
       end
+      entry.count = entry.count + v.count
+      throttle()
     end
     itemDB:flush()
   end)

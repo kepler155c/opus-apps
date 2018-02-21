@@ -1091,6 +1091,7 @@ local function learnRecipe(page)
         listingPage:refresh()
         listingPage.grid:draw()
 
+        inventoryAdapter:eject(recipe, recipe.count, 'front')
         return true
       end
     else
