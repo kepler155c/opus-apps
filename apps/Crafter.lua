@@ -185,7 +185,6 @@ local function isMachineEmpty(machine, item)
   local methods = Util.transpose(Peripheral.getMethods(side))
   local list = { true }
 
-debug(methods)
   if methods.getAllStacks then -- 1.7x
     list = Peripheral.call(side, 'getAllStacks', false)
   elseif methods.list then
@@ -199,7 +198,11 @@ debug(methods)
     item.status = 'Unable to check empty status'
     return
   end
-debug(list)
+
+  if tonumber(machine.ignoreSlot) then
+    list[tonumber(machine.ignoreSlot)] = nil
+  end
+
   if Util.empty(list) then
     return true
   end
@@ -834,6 +837,10 @@ local machinesPage = UI.Page {
         help = 'Check if machine is empty before crafting'
       },
       [4] = UI.TextEntry {
+        formLabel = 'Ignore Slot', formKey = 'ignoreSlot', help = '...',
+        limit = 4,
+      },
+      [5] = UI.TextEntry {
         formLabel = 'Max Craft', formKey = 'maxCount', help = '...',
         limit = 4,
       },
@@ -883,6 +890,7 @@ function machinesPage:eventHandler(event)
   elseif event.type == 'form_complete' then
     self.detail.form.values.empty = self.detail.form.values.empty == true
     self.detail.form.values.ignore = self.detail.form.values.ignore == true
+    self.detail.form.values.ignoreSlot = tonumber(self.detail.form.values.ignoreSlot)
     self.detail.form.values.maxCount = tonumber(self.detail.form.values.maxCount)
     Util.writeTable(MACHINES_FILE, machines)
     self.detail:hide()
