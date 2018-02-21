@@ -168,9 +168,10 @@ function Craft.findRecipe(key)
 	end
 
 	-- handle cases where the request is like : IC2:reactorVent:*
-	for _,recipe in pairs(Craft.recipes) do
-		if item.name == recipe.name and
-			 (not item.nbtHash or recipe.nbtHash == item.nbtHash) then
+	for rkey,recipe in pairs(Craft.recipes) do
+		local r = itemDB:splitKey(rkey)
+		if item.name == r.name and
+			 (not item.nbtHash or r.nbtHash == item.nbtHash) then
 			 return recipe
 		end
 	end

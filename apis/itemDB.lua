@@ -146,11 +146,12 @@ function itemDB:getName(item)
   end
 
   -- fallback to nameDB
-  local name = nameDB:getName(item.name .. ':' .. (item.damage or '*'))
+  local strId = self:makeKey(item)
+  local name = nameDB.data[strId]
   if not name and not item.damage then
-    return self:getName({ name = item.name, damage = 0, nbtHash = item.nbtHash })
+    name = nameDB.data[self:makeKey({ name = item.name, damage = 0, nbtHash = item.nbtHash })]
   end
-  return name
+  return name or strId
 end
 
 function itemDB:getMaxCount(item)
