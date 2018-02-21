@@ -474,6 +474,7 @@ local function findMachines()
       end
       m.empty = m2.empty
       m.ignore = m2.ignore
+      m.ignoreSlot = m2.ignoreSlot
       m.maxCount = m2.maxCount
     end
   end
