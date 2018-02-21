@@ -182,7 +182,7 @@ end
 
 local function isMachineEmpty(machine, item)
   local side = turtle.getAction(machine.dir).side
-  local methods = Peripheral.getMethods(side)
+  local methods = Util.transpose(Peripheral.getMethods(side))
   local list = { true }
 
 debug(methods)
