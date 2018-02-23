@@ -85,7 +85,7 @@ function ChestAdapter:listItems(throttle)
     -- getAllStacks sometimes fails
   pcall(function()
     for _,v in pairs(self.getAllStacks(false)) do
-      if v.count > 0 then
+      if v.qty > 0 then
         convertItem(v)
         local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
 
