@@ -605,7 +605,7 @@ function itemPage.form.info:draw()
 end
 
 function itemPage.machines.grid:getRowTextColor(row, selected)
-  if itemPage.item.machine and self.item.machine.order == row.order then
+  if itemPage.item.machine and itemPage.item.machine.order == row.order then
     return colors.yellow
   end
   return UI.Grid:getRowTextColor(row, selected)
