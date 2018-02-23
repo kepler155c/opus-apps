@@ -447,11 +447,12 @@ local function findMachines()
 
   dock()
 
-  local function getName(side)
+  local function getName(dir)
+    local side = turtle.getAction(dir).side
     local methods = Peripheral.isPresent(side) and Util.transpose(Peripheral.getMethods(side))
     if methods then
       if methods.getMetadata then
-        local name = Peripheral.getMetadata().displayName
+        local name = Peripheral.call(side, 'getMetadata').displayName
         if name and not string.find(name, '.', 1, true) then
           return name
         end
@@ -459,30 +460,24 @@ local function findMachines()
         return Peripheral.call(side, 'getInventoryName')
       end
     end
+    local _, machine = turtle.getAction(dir).inspect()
+    if not machine or type(machine) ~= 'table' then
+      return 'Unknown'
+    end
+    return machine.name or 'Unknown'
   end
 
   local index = 0
 
   local function getMachine(dir)
-    local side = turtle.getAction(dir).side
-    local machine = Peripheral.getBySide(side)
-    if not machine then
-      local _
-      _, machine = turtle.getAction(dir).inspect()
-      if not machine or type(machine) ~= 'table' then
-        machine = { name = 'Unknown' }
-      end
-    end
-    if machine and type(machine) == 'table' then
-      local name = getName(side) or machine.name
-      table.insert(machines, {
-        name = name,
-        rawName = name,
-        index = index,
-        dir = dir,
-        order = #machines + 1
-      })
-    end
+    local name = getName(dir)
+    table.insert(machines, {
+      name = name,
+      rawName = name,
+      index = index,
+      dir = dir,
+      order = #machines + 1
+    })
   end
 
   repeat
