@@ -1,3 +1,29 @@
+--[[
+  Turtle/machine crafting.
+
+  Requirements:
+  Turtle must be restricted forward and back by some obstacle.
+  The turtle must have access to the main inventory at the most forward location.
+  Machines must be placed above or below the line along the turtle's backwards travel.
+
+  Optional:
+  Monitors can be placed touching the turtle at the most forward position to
+  display crafting status.
+
+  Sample setups:
+  M = machine, I = inventory, O = obstacle, T = turtle
+
+  Turtle facing <---
+
+   MMMM
+  IT   O
+   MMM
+
+   IMMMM
+  O      O
+   MMMMMM
+]]--
+
 _G.requireInjector()
 
 local InventoryAdapter = require('inventoryAdapter')
@@ -271,7 +297,7 @@ local function craftItem(ikey, item, items, machineStatus)
 --    while c > 0 do
 --debug(key)
     inventoryAdapter:provide(ingredient, maxCount * qty, slot)
-    if turtle.getItemCount(slot) ~= maxCount * qty then -- ~= maxCount then FIXXX !!!
+    if turtle.getItemCount(slot) ~= maxCount * qty then
       item.status = 'Extract failed: ' .. (ingredient.displayName or itemDB:getName(ingredient))
       item.statusCode = STATUS_ERROR
       return
@@ -381,7 +407,7 @@ local function craftItems()
     if item.need > 0 and item.recipe then
       craftItem(key, item, items, machineStatus)
       dock()
-      items = getItems() -- should decrement count instead ...
+      items = getItems()
       clearGrid()
     elseif item.need > 0 then
       item.status = 'no recipe'
@@ -428,6 +454,8 @@ local function findMachines()
       if name and not string.find(name, '.', 1, true) then
         return name
       end
+    elseif p and p.getInventoryName then -- 1.7x
+      return p.getInventoryName()
     end
   end
 
@@ -605,7 +633,7 @@ function itemPage.form.info:draw()
 end
 
 function itemPage.machines.grid:getRowTextColor(row, selected)
-  if itemPage.item.machine and itemPage.item.machine.order == row.order then
+  if itemPage.item.machine == row.order then
     return colors.yellow
   end
   return UI.Grid:getRowTextColor(row, selected)
