@@ -448,14 +448,16 @@ local function findMachines()
   dock()
 
   local function getName(side)
-    local p = Peripheral.getBySide(side)
-    if p and p.getMetadata then
-      local name = p.getMetadata().displayName
-      if name and not string.find(name, '.', 1, true) then
-        return name
+    local methods = Peripheral.isPresent(side) and Util.transpose(Peripheral.getMethods(side))
+    if methods then
+      if methods.getMetadata then
+        local name = Peripheral.getMetadata().displayName
+        if name and not string.find(name, '.', 1, true) then
+          return name
+        end
+      elseif methods.getInventoryName then -- 1.7x
+        return Peripheral.call(side, 'getInventoryName')
       end
-    elseif p and p.getInventoryName then -- 1.7x
-      return p.getInventoryName()
     end
   end
 
