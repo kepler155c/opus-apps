@@ -85,21 +85,23 @@ function ChestAdapter:listItems(throttle)
     -- getAllStacks sometimes fails
   pcall(function()
     for _,v in pairs(self.getAllStacks(false)) do
-      convertItem(v)
-      local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
+      if v.count > 0 then
+        convertItem(v)
+        local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
 
-      local entry = cache[key]
-      if not entry then
-        entry = itemDB:get(v) or itemDB:add(v)
-        entry = Util.shallowCopy(entry)
-        entry.count = 0
-        cache[key] = entry
-        table.insert(items, entry)
+        local entry = cache[key]
+        if not entry then
+          entry = itemDB:get(v) or itemDB:add(v)
+          entry = Util.shallowCopy(entry)
+          entry.count = 0
+          cache[key] = entry
+          table.insert(items, entry)
+        end
+        entry.count = entry.count + v.count
+        throttle()
       end
-      entry.count = entry.count + v.count
-      throttle()
+      itemDB:flush()
     end
-    itemDB:flush()
   end)
   if not Util.empty(items) then
     self.cache = cache

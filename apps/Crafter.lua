@@ -595,12 +595,20 @@ end
 
 function itemPage.form.info:draw()
   local recipe = recipes[uniqueKey(itemPage.item)]
+  self.value = ''
   if recipe and itemPage.item.machine then
     self.value = string.format('Crafts %d using the %s machine',
       recipe.count,
       machines[itemPage.item.machine].name)
   end
   UI.TextArea.draw(self)
+end
+
+function itemPage.machines.grid:getRowTextColor(row, selected)
+  if itemPage.item.machine and self.item.machine.order == row.order then
+    return colors.yellow
+  end
+  return UI.Grid:getRowTextColor(row, selected)
 end
 
 --[[
@@ -637,6 +645,8 @@ function itemPage:eventHandler(event)
       if index then
         self.machines.grid:setIndex(index)
       end
+    else
+      self.machines.grid:setIndex(1)
     end
     self.machines:show()
 
