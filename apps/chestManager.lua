@@ -1,3 +1,56 @@
+--[[
+  Provides: autocrafting, resource limits, on-demand crafting, storage stocker.
+
+  Using a turtle allows for crafting of items eliminating the need for AE/RS
+  molecular assemblers.
+
+  Inventory setup:
+    Turtle/computer must be touching at least one type of inventory
+
+    Generic inventory block such as:
+      Vanilla chest
+      RFTools modular storage
+      Storage drawers controller
+      and many others...
+
+    Applied energistics
+      AE cable or interface (depending upon AE/MC version)
+
+    Refined storage
+      TODO: add required block
+
+  Turtle crafting:
+    1. The turtle must have a crafting table equipped.
+    2. Requires a vanilla chest beside the turtle with the "craftingChest"
+      configuration variable defined.
+      -- or --
+      If using MC 1.7x, you can use a duck antenna instead.
+
+  Restocking:
+    If using a limited inventory block, such as RFTools modular storage, you
+    can have the main inventory automatically replenish items from the restocking
+    inventory. Each cycle, the restocking inventory will be checked and if the
+    main inventory has less than a stock of an item, it will pull that item
+    from the restocking inventory into the main inventory.
+
+  Configuration:
+    Note: computerFacing and inventory are required. All others are optional.
+
+    computerFacing : the direction turtle is facing
+    inventory      : side for the main inventory (can be the same as the controller)
+    craftingChest  : side for the chest used for crafting
+    controller     : side for AE / RS block
+    stock          : side for restocking inventory
+    trashDirection : direction of trash block (trashcan/inventory/etc) in
+                     relationship to the main inventory. This block does not
+                     need to touch the turtle, only the main inventory block.
+    monitor        : valid options include:
+                     type/monitor   - will use the first monitor found
+                     side/north     - specify a direction (top/bottom/east/etc)
+                     name/monitor_1 - specify the exact name of the peripheral
+
+]]--
+
 _G.requireInjector()
 
 local Ansi           = require('ansi')

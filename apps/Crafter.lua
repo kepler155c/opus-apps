@@ -1080,6 +1080,7 @@ end
 -- randomly errors in 1.7x with "you are not attached to this computer"
 local retryCount = 0
 for _ = 1, 3 do
+  machines = { }
   local s, m = pcall(findMachines)
   if not s and m then
     _G.printError(m)
