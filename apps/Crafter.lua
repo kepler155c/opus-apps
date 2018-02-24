@@ -1077,12 +1077,20 @@ function listingPage:applyFilter()
   self.grid:setValues(t)
 end
 
-local s, m = pcall(findMachines)
-
-if not s and m then
-  printError(m)
-  read()
-  return
+-- randomly errors in 1.7x with "you are not attached to this computer"
+local retryCount = 0
+for _ = 1, 3 do
+  local s, m = pcall(findMachines)
+  if not s and m then
+    _G.printError(m)
+  else
+    break
+  end
+  retryCount = retryCount + 1
+  if retryCount > 3 then
+    error(m)
+  end
+  print('retrying...')
 end
 
 loadResources()

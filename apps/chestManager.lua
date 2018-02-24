@@ -25,12 +25,12 @@ if multishell then
 end
 
 local config = {
-  computerFacing = 'north', -- direction turtle is facing
+  computerFacing = 'north',  -- direction turtle is facing
 
-  inventory      = 'top',
-  craftingChest  = 'bottom',
-  controller     = 'none',
-  stock          = 'none',
+  inventory      = 'top',    -- main inventory
+  craftingChest  = 'bottom', -- required in 1.8+ for crafting
+  controller     = 'none',   -- AE / RS controller
+  stock          = 'none',   -- another inventory for restocking main inventory
 
   trashDirection = 'up',    -- trash/chest in relation to inventory
   monitor        = 'type/monitor',
