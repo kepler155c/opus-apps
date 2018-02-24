@@ -38,10 +38,10 @@ local config = {
 
 Config.loadWithCheck('inventoryManager', config)
 
-local inventoryAdapter   = InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
-local turtleChestAdapter = InventoryAdapter.wrap({ side = config.craftingChest, facing = config.computerFacing })
 local controllerAdapter  = ControllerAdapter.wrap({ side = config.controller, facing = config.computerFacing })
-local stockAdapter       = ControllerAdapter.wrap({ side = config.stock, facing = config.computerFacing })
+local inventoryAdapter   = InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
+local stockAdapter       = InventoryAdapter.wrap({ side = config.stock, facing = config.computerFacing })
+local turtleChestAdapter = InventoryAdapter.wrap({ side = config.craftingChest, facing = config.computerFacing })
 local duckAntenna
 
 if not inventoryAdapter then
@@ -402,7 +402,7 @@ local function craftItems(craftList, allItems)
 end
 
 local function restock()
-  if turtle and stockAdapter:isValid() then
+  if turtle and stockAdapter then
     local items = inventoryAdapter:listItems()
     local stock = stockAdapter:listItems()
 
