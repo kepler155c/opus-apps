@@ -449,8 +449,8 @@ local function findMachines()
 
   local function getName(dir)
     local side = turtle.getAction(dir).side
-    local methods = Peripheral.isPresent(side) and Util.transpose(Peripheral.getMethods(side))
-    if methods then
+    if Peripheral.isPresent(side) then
+      local methods = Util.transpose(Peripheral.getMethods(side))
       if methods.getMetadata then
         local name = Peripheral.call(side, 'getMetadata').displayName
         if name and not string.find(name, '.', 1, true) then
@@ -459,6 +459,7 @@ local function findMachines()
       elseif methods.getInventoryName then -- 1.7x
         return Peripheral.call(side, 'getInventoryName')
       end
+      return Peripheral.getType(side)
     end
     local _, machine = turtle.getAction(dir).inspect()
     if not machine or type(machine) ~= 'table' then
@@ -1076,7 +1077,14 @@ function listingPage:applyFilter()
   self.grid:setValues(t)
 end
 
-findMachines()
+local s, m = pcall(findMachines)
+
+if not s and m then
+  printError(m)
+  read()
+  return
+end
+
 loadResources()
 dock()
 clearGrid()

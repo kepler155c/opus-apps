@@ -16,7 +16,7 @@ local InventoryAdapter  = require('inventoryAdapter')
 local colors     = _G.colors
 local device     = _G.device
 local multishell = _ENV.multishell
-local peripheral = _G.peripheral
+local os         = _G.os
 local term       = _G.term
 local turtle     = _G.turtle
 
@@ -52,14 +52,13 @@ if device.workbench then
     [ 'right' ] = 'left',
   }
   local duckAntennaSide = oppositeSide[device.workbench.side]
-  duckAntenna = peripheral.wrap(duckAntennaSide)
-  if not duckAntenna or not duckAntenna.getAllStacks then
-    duckAntenna = nil
+  if Peripheral.getType(duckAntennaSide) == os.getComputerLabel() then
+    duckAntenna = Peripheral.wrap(duckAntennaSide)
+    if duckAntenna and not duckAntenna.getAllStacks then
+      duckAntenna = nil
+    end
   end
 end
-
---TODO : find out duck antenna type
-duckAntenna = nil
 
 local STATUS_INFO    = 'info'
 local STATUS_WARNING = 'warning'
