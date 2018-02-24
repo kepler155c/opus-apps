@@ -30,6 +30,7 @@ local config = {
   inventory      = 'top',
   craftingChest  = 'bottom',
   controller     = 'none',
+  stock          = 'none',
 
   trashDirection = 'up',    -- trash/chest in relation to inventory
   monitor        = 'type/monitor',
@@ -40,6 +41,7 @@ Config.loadWithCheck('inventoryManager', config)
 local inventoryAdapter   = InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
 local turtleChestAdapter = InventoryAdapter.wrap({ side = config.craftingChest, facing = config.computerFacing })
 local controllerAdapter  = ControllerAdapter.wrap({ side = config.controller, facing = config.computerFacing })
+local stockAdapter       = ControllerAdapter.wrap({ side = config.stock, facing = config.computerFacing })
 local duckAntenna
 
 if not inventoryAdapter then
@@ -326,7 +328,6 @@ local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
 end
 
 local function craftItems(craftList, allItems)
-
   -- turtle crafting
   if canCraft then
     for _,key in pairs(Util.keys(craftList)) do
@@ -395,6 +396,24 @@ local function craftItems(craftList, allItems)
       if not item.rsControl then
         item.status = 'Invalid setup'
         item.statusCode = STATUS_INFO
+      end
+    end
+  end
+end
+
+local function restock()
+  if turtle and stockAdapter:isValid() then
+    local items = inventoryAdapter:listItems()
+    local stock = stockAdapter:listItems()
+
+    if items and stock then
+      for _,v in pairs(stock) do
+        local count = Craft.getItemCount(items, v)
+        if count < 64 then
+          count = 64 - count
+          stockAdapter:provide(v, count)
+          clearGrid()
+        end
       end
     end
   end
@@ -470,7 +489,6 @@ local function getAutocraftItems()
 end
 
 local function getItemWithQty(items, res, ignoreDamage, ignoreNbtHash)
-
   local item = getItem(items, res, ignoreDamage, ignoreNbtHash)
 
   if item and (ignoreDamage or ignoreNbtHash) then
@@ -1330,6 +1348,8 @@ Event.onInterval(5, function()
 
       craftList = getAutocraftItems(items) -- autocrafted items don't show on job monitor
       craftItems(craftList, items)
+
+      restock()
     end
   end
 end)
