@@ -2,7 +2,7 @@
   Provides: autocrafting, resource limits, on-demand crafting, storage stocker.
 
   Using a turtle allows for crafting of items eliminating the need for AE/RS
-  molecular assemblers.
+  molecular assemblers / crafters.
 
   Inventory setup:
     Turtle/computer must be touching at least one type of inventory
@@ -24,19 +24,25 @@
     2. Requires a vanilla chest beside the turtle with the "craftingChest"
       configuration variable defined.
       -- or --
-      If using MC 1.7x, you can use a duck antenna instead.
+      If using MC 1.7x, you can equip the turtle with a duck antenna.
 
   Restocking:
     If using a limited inventory block, such as RFTools modular storage, you
     can have the main inventory automatically replenish items from the restocking
     inventory. Each cycle, the restocking inventory will be checked and if the
-    main inventory has less than a stock of an item, it will pull that item
+    main inventory has less than a stack of an item, it will pull that item
     from the restocking inventory into the main inventory.
 
   Configuration:
     Note: computerFacing and inventory are required. All others are optional.
 
-    computerFacing : the direction turtle is facing
+    valid sides:
+      top, bottom, left, right, front, back
+
+    valid directions:
+      up, down, north, south, east, west
+
+    computerFacing : direction turtle is facing
     inventory      : side for the main inventory (can be the same as the controller)
     craftingChest  : side for the chest used for crafting
     controller     : side for AE / RS block
@@ -48,7 +54,6 @@
                      type/monitor   - will use the first monitor found
                      side/north     - specify a direction (top/bottom/east/etc)
                      name/monitor_1 - specify the exact name of the peripheral
-
 ]]--
 
 _G.requireInjector()
@@ -254,8 +259,8 @@ local function addCraftingRequest(item, craftList, count)
   return request
 end
 
+-- Craft 
 local function craftItem(recipe, items, originalItem, craftList, count)
-
   if craftingPaused or not canCraft then
     return 0
   end
@@ -302,6 +307,7 @@ local function craftItem(recipe, items, originalItem, craftList, count)
   return crafted
 end
 
+-- Craft as much as possible regardless if all ingredients are available
 local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
   local summed = { }
   local throttle = Util.throttle()
@@ -462,9 +468,8 @@ local function restock()
     if items and stock then
       for _,v in pairs(stock) do
         local count = Craft.getItemCount(items, v)
-        if count < 64 then
-          count = 64 - count
-          stockAdapter:provide(v, count)
+        if count < v.maxCount then
+          stockAdapter:provide(v, v.maxCount - count)
           clearGrid()
         end
       end
@@ -1357,6 +1362,7 @@ jobMonitor()
 Event.onInterval(5, function()
 
   if not craftingPaused then
+    restock()
     local items = listItems()
     if not items or Util.size(items) == 0 then
       jobList:showError('No items in system')
@@ -1401,8 +1407,6 @@ Event.onInterval(5, function()
 
       craftList = getAutocraftItems(items) -- autocrafted items don't show on job monitor
       craftItems(craftList, items)
-
-      restock()
     end
   end
 end)

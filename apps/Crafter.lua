@@ -1078,8 +1078,9 @@ function listingPage:applyFilter()
 end
 
 -- randomly errors in 1.7x with "you are not attached to this computer"
+print('Inspecting machines')
 local retryCount = 0
-for _ = 1, 3 do
+while true do
   Util.clear(machines)
   local s, m = pcall(findMachines)
   if not s and m then
