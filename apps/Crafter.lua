@@ -207,27 +207,30 @@ local function getItems()
 end
 
 local function isMachineEmpty(machine, item)
-  local side = turtle.getAction(machine.dir).side
-  local methods = Util.transpose(Peripheral.getMethods(side))
   local list = { true }
 
-  if methods.getAllStacks then -- 1.7x
-    list = Peripheral.call(side, 'getAllStacks', false)
-  elseif methods.list then
-    list = Peripheral.call(side, 'list')
-  elseif methods.getProgress then
-    if Peripheral.call(side, 'getProgress') == 0 then
-      return true
-    end
-  else
-    item.statusCode = STATUS_ERROR
-    item.status = 'Unable to check empty status'
-    return
-  end
+  pcall(function() -- fails randomly in 1.7x
+    local side = turtle.getAction(machine.dir).side
+    local methods = Util.transpose(Peripheral.getMethods(side))
 
-  if tonumber(machine.ignoreSlot) then
-    list[tonumber(machine.ignoreSlot)] = nil
-  end
+    if methods.getAllStacks then -- 1.7x
+      list = Peripheral.call(side, 'getAllStacks', false)
+    elseif methods.list then
+      list = Peripheral.call(side, 'list')
+    elseif methods.getProgress then
+      if Peripheral.call(side, 'getProgress') == 0 then
+        return true
+      end
+    else
+      item.statusCode = STATUS_ERROR
+      item.status = 'Unable to check empty status'
+      return
+    end
+
+    if tonumber(machine.ignoreSlot) then
+      list[tonumber(machine.ignoreSlot)] = nil
+    end
+  end)
 
   if Util.empty(list) then
     return true

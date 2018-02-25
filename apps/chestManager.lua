@@ -34,16 +34,17 @@
     from the restocking inventory into the main inventory.
 
   Configuration:
-    Note: computerFacing and inventory are required. All others are optional.
-
     valid sides:
       top, bottom, left, right, front, back
 
     valid directions:
       up, down, north, south, east, west
 
+    Required:
     computerFacing : direction turtle is facing
     inventory      : side for the main inventory (can be the same as the controller)
+
+    Optional:
     craftingChest  : side for the chest used for crafting
     controller     : side for AE / RS block
     stock          : side for restocking inventory
@@ -261,18 +262,6 @@ end
 
 -- Craft 
 local function craftItem(recipe, items, originalItem, craftList, count)
-  if craftingPaused or not canCraft then
-    return 0
-  end
-
-  if not isGridClear() then
-    if not clearGrid() then
-      originalItem.status = 'Grid obstructed'
-      originalItem.statusCode = STATUS_ERROR
-      return 0
-    end
-  end
-
   local missing = { }
   local toCraft = Craft.getCraftableAmount(recipe, count, items, missing)
   if missing.name then
@@ -386,6 +375,28 @@ local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
   return count
 end
 
+local function craft(recipe, items, item, craftList)
+  item.status = nil
+  item.statusCode = nil
+  item.crafted = 0
+
+  if craftingPaused or not canCraft then
+    return
+  end
+
+  if not clearGrid() then
+    item.status = 'Grid obstructed'
+    item.statusCode = STATUS_ERROR
+    return
+  end
+
+  if item.forceCrafting then
+    item.crafted = forceCraftItem(recipe, items, item, craftList, item.count)
+  else
+    item.crafted = craftItem(recipe, items, item, craftList, item.count)
+  end
+end
+
 local function craftItems(craftList, allItems)
   -- turtle crafting
   if canCraft then
@@ -393,13 +404,7 @@ local function craftItems(craftList, allItems)
       local item = craftList[key]
       local recipe = Craft.recipes[key]
       if recipe then
-        item.status = nil
-        item.statusCode = nil
-        if item.forceCrafting then
-          item.crafted = forceCraftItem(recipe, allItems, item, craftList, item.count)
-        else
-          item.crafted = craftItem(recipe, allItems, item, craftList, item.count)
-        end
+        craft(recipe, allItems, item, craftList)
         allItems = listItems() -- refresh counts
         if not allItems then
           break

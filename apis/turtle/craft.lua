@@ -208,6 +208,9 @@ function Craft.getResourceList(inRecipe, items, inCount)
 			elseif not summedItem.recipe then
 				summedItem.need = 1
 				need = 1
+			else
+				summedItem.need = 1
+				need = 1
 			end
 		else
 			summedItem.total = summedItem.total + total
