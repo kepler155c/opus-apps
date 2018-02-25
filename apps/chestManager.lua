@@ -326,9 +326,12 @@ local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
       if recipe.craftingTools and recipe.craftingTools[key] then
         if summedItem.count > 0 then
           summedItem.used = 1
+          summedItem.need = 0
           need = 0
-        else
+        elseif not summedItem.recipe then
           summedItem.need = 1
+          need = 1
+        else
           need = 1
         end
       else
