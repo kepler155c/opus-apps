@@ -14,6 +14,7 @@ local convertNames = {
   count = 'qty',
   displayName = 'display_name',
   maxDamage = 'max_dmg',
+  nbtHash = 'nbt_hash',
 }
 
 -- Strip off color prefix
