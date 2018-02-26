@@ -72,14 +72,12 @@ local machines = { }
 local jobListGrid
 local listing, docked = false, false
 
-local function getItem(items, inItem, ignoreDamage)
+local function getItem(items, inItem, ignoreDamage, ignoreNbtHash)
   for _,item in pairs(items) do
-    if item.name == inItem.name then
-      if ignoreDamage then
-        return item
-      elseif item.damage == inItem.damage and item.nbtHash == inItem.nbtHash then
-        return item
-      end
+    if item.name == inItem.name and
+      (ignoreDamage or item.damage == inItem.damage) and
+      (ignoreNbtHash or item.nbtHash == inItem.nbtHash) then
+      return item
     end
   end
 end

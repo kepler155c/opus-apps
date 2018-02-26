@@ -243,7 +243,7 @@ function Craft.getResourceList4(inRecipe, items, count)
 end
 
 -- given a certain quantity, return how many of those can be crafted
-function Craft.getCraftableAmount(recipe, count, items, missing)
+function Craft.getCraftableAmount(inRecipe, count, items, missing)
 	local function sumItems(recipe, summedItems, count)
 		local canCraft = 0
 
@@ -256,7 +256,7 @@ function Craft.getCraftableAmount(recipe, count, items, missing)
 					summedItem = summedItem + sumItems(irecipe, summedItems, 1)
 				end
 				if summedItem <= 0 then
-					if missing then
+					if missing and not irecipe then
 						missing.name = item
 					end
 					return canCraft
@@ -271,7 +271,7 @@ function Craft.getCraftableAmount(recipe, count, items, missing)
 		return canCraft
 	end
 
-	return sumItems(recipe, { }, math.ceil(count / recipe.count))
+	return sumItems(inRecipe, { }, math.ceil(count / inRecipe.count))
 end
 
 function Craft.canCraft(item, count, items)
