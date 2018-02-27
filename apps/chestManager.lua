@@ -19,14 +19,30 @@
     Refined storage
       TODO: add required block
 
-  Turtle crafting:
+  Turtle crafting (optional):
     1. The turtle must have a crafting table equipped.
     2. Requires a vanilla chest beside the turtle with the "craftingChest"
       configuration variable defined.
       -- or --
       If using MC 1.7x, you can equip the turtle with a duck antenna.
 
-  Restocking:
+  Controller (optional):
+    Provides the ability to request crafting from AE / RS
+
+    Applied Energistics
+      In versions 1.7x, AE can be used for both inventory access and crafting
+      requests.
+
+      In versions 1.8+, AE can only be used to request crafting.
+
+    Refined Storage
+      In versions 1.8x, inventory access works depending upon version.
+
+      Turtle/computer must be touching controller for inventory access. If only
+      requesting crafting, the controller must be either be touching or connected
+      via CC cables.
+
+  Restocking (optional):
     If using a limited inventory block, such as RFTools modular storage, you
     can have the main inventory automatically replenish items from the restocking
     inventory. Each cycle, the restocking inventory will be checked and if the
@@ -34,6 +50,8 @@
     from the restocking inventory into the main inventory.
 
   Configuration:
+    Configuration file is usr/config/inventoryManager
+
     valid sides:
       top, bottom, left, right, front, back
 
@@ -46,7 +64,7 @@
 
     Optional:
     craftingChest  : side for the chest used for crafting
-    controller     : side for AE / RS block
+    controller     : side for AE cable/interface or RS controller
     stock          : side for restocking inventory
     trashDirection : direction of trash block (trashcan/inventory/etc) in
                      relationship to the main inventory. This block does not
@@ -223,15 +241,6 @@ local function filterItems(t, filter, displayMode)
   return t
 end
 
-local function isGridClear()
-  for i = 1, 16 do
-    if turtle.getItemCount(i) ~= 0 then
-      return false
-    end
-  end
-  return true
-end
-
 local function clearGrid()
   local function clear()
     for i = 1, 16 do
@@ -260,7 +269,7 @@ local function addCraftingRequest(item, craftList, count)
   return request
 end
 
--- Craft 
+-- Craft
 local function craftItem(recipe, items, originalItem, craftList, count)
   local missing = { }
   local toCraft = Craft.getCraftableAmount(recipe, count, items, missing)
@@ -360,7 +369,6 @@ local function forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
 
   local count = sumItems(inRecipe, inCount)
 
---  local count, summed = Craft.getResourceList3(inRecipe, items, inCount, inventoryAdapter)
   if count < inCount then
     for _,ingredient in pairs(summed) do
       if ingredient.need > 0 then
@@ -1072,6 +1080,7 @@ local function getTurtleInventory()
       v.count = v.qty
       v.maxDamage = v.max_dmg
       v.maxCount = v.max_size
+      v.nbtHash = v.nbt_hash
       if not itemDB:get(v) then
         itemDB:add(v)
       end
