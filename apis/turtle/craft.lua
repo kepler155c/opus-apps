@@ -122,13 +122,16 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
 
 	for key,icount in pairs(Craft.sumIngredients(recipe)) do
 		local itemCount = Craft.getItemCount(items, key)
-		if itemCount < icount * count then
-			local irecipe = Craft.recipes[key]
+		local need = icount * count
+		if recipe.craftingTools and recipe.craftingTools[key] then
+			need = 1
+		end
+		if itemCount < need then
+			local irecipe = Craft.findRecipe(key)
 			if irecipe then
-				local iqty = icount * count - itemCount
+				local iqty = need - itemCount
 				local crafted = Craft.craftRecipe(irecipe, iqty, inventoryAdapter)
 				if crafted ~= iqty then
-
 					turtle.select(1)
 					return 0
 				end
@@ -251,7 +254,7 @@ function Craft.getCraftableAmount(inRecipe, count, items, missing)
 			for _,item in pairs(recipe.ingredients) do
 				local summedItem = summedItems[item] or Craft.getItemCount(items, item)
 
-				local irecipe = Craft.recipes[item]
+				local irecipe = Craft.findRecipe(item)
 				if irecipe and summedItem <= 0 then
 					summedItem = summedItem + sumItems(irecipe, summedItems, 1)
 				end

@@ -4,7 +4,6 @@ local Peripheral = require('peripheral')
 local Util       = require('util')
 
 local os         = _G.os
-local peripheral = _G.peripheral
 
 local convertNames = {
   name = 'id',
@@ -13,14 +12,7 @@ local convertNames = {
   count = 'qty',
   displayName = 'display_name',
   maxDamage = 'max_dmg',
-}
-local keys = {
-  'damage',
-  'displayName',
-  'maxCount',
-  'maxDamage',
-  'name',
-  'nbtHash',
+  nbtHash = 'nbt_hash',
 }
 
 -- Strip off color prefix
@@ -81,7 +73,6 @@ function MEAdapter:isValid()
 end
 
 function MEAdapter:refresh()
-
   self.items = self.getAvailableItems('all')
   for _,v in pairs(self.items) do
     Util.merge(v, v.item)
@@ -103,7 +94,9 @@ end
 
 function MEAdapter:getItemInfo(item)
    for _,i in pairs(self.items) do
-    if item.name == i.name and item.damage == i.damage and item.nbtHash == i.nbtHash then
+    if item.name == i.name and
+       item.damage == i.damage and
+       item.nbtHash == i.nbtHash then
       return i
     end
   end
@@ -124,7 +117,6 @@ function MEAdapter:isCPUAvailable()
 end
 
 function MEAdapter:craft(item, count)
-
   if not self:isCPUAvailable() then
     return false
   end
@@ -220,7 +212,8 @@ function MEAdapter:provide(item, count, slot, direction)
       local qty = math.min(count, 64)
       local s = self.exportItem({
         id = item.name,
-        dmg = item.damage
+        dmg = item.damage,
+        nbt_hash = item.nbtHash,
       }, direction or self.direction, qty, slot)
 
       if not s or s.size ~= qty then
