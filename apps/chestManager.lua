@@ -552,8 +552,8 @@ local function getAutocraftItems()
   local craftList = { }
 
   for _,res in pairs(resources) do
-
     if res.auto then
+      res = Util.shallowCopy(res)
       res.count = 256  -- this could be higher to increase autocrafting speed
       local key = uniqueKey(res)
       craftList[key] = res
