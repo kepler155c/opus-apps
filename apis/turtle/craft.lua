@@ -126,6 +126,7 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
 		if recipe.craftingTools and recipe.craftingTools[key] then
 			need = 1
 		end
+		maxCount = math.min(maxCount, itemDB:getMaxCount(key))
 		if itemCount < need then
 			local irecipe = Craft.findRecipe(key)
 			if irecipe then

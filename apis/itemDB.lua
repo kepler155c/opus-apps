@@ -156,11 +156,7 @@ end
 
 function itemDB:getMaxCount(item)
   local detail = self:get(item)
-  if detail then
-    return detail.maxCount
-  end
-
-  return 64
+  return detail and detail.maxCount or 64
 end
 
 function itemDB:load()
