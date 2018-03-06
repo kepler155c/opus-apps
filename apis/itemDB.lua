@@ -73,6 +73,19 @@ function itemDB:get(key)
     end
   end
 
+  if not key.damage then
+    for k,item in pairs(self.data) do
+      if key.name == item.name and
+         key.displayName == item.displayName and
+         key.nbtHash == key.nbtHash and
+         item.maxDamage > 0 then
+        item = Util.shallowCopy(item)
+        item.nbtHash = key.nbtHash
+        return item
+      end
+    end
+  end
+
   if key.nbtHash then
     item = self:get({ name = key.name, damage = key.damage })
 
