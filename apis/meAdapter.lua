@@ -224,6 +224,18 @@ function MEAdapter:provide(item, count, slot, direction)
   end)
 end
 
+function MEAdapter:eject(item, qty, direction)
+  if not _G.turtle then
+    error('Only a turtle can eject')
+  end
+
+  local s, m = pcall(function()
+    self:provide(item, qty)
+    _G.turtle.emptyInventory()
+  end)
+  return s, m
+end
+
 function MEAdapter:insert(slot, count)
   local s, m = pcall(function() self.pullItem(self.direction, slot, count) end)
   if not s and m then

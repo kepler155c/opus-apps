@@ -6,7 +6,7 @@ function Adapter.wrap(args)
     'chestAdapter18',
 
     -- adapters for version 1.7
-    --'meAdapter',
+    'meAdapter',
     'chestAdapter',
   }
 
