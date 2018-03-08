@@ -106,6 +106,7 @@ local config = {
 
   inventory      = 'top',    -- main inventory
   craftingChest  = 'bottom', -- required in 1.8+ for crafting
+  duckAntenna    = false,
   controller     = 'none',   -- AE / RS controller
   stock          = 'none',   -- another inventory for restocking main inventory
 
@@ -125,17 +126,15 @@ if not inventoryAdapter then
   error('Invalid inventory configuration')
 end
 
-if device.workbench then
+if device.workbench and config.duckAntenna then
   local oppositeSide = {
     [ 'left'  ] = 'right',
     [ 'right' ] = 'left',
   }
   local duckAntennaSide = oppositeSide[device.workbench.side]
-  if Peripheral.getType(duckAntennaSide) == os.getComputerLabel() then
-    duckAntenna = Peripheral.wrap(duckAntennaSide)
-    if duckAntenna and not duckAntenna.getAllStacks then
-      duckAntenna = nil
-    end
+  duckAntenna = Peripheral.wrap(duckAntennaSide)
+  if duckAntenna and not duckAntenna.getAllStacks then
+    duckAntenna = nil
   end
 end
 

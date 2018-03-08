@@ -208,13 +208,13 @@ end
 
 function MEAdapter:provide(item, qty, slot, direction)
   return pcall(function()
-    for _,stack in Util.rpairs(self.getAllStacks(false)) do
-      if stack.id == item.name and
-        (not item.damage or stack.dmg == item.damage) and
-        (not item.nbtHash or stack.nbt_hash == item.nbtHash) then
-        local amount = math.min(qty, stack.qty)
+    for _,stack in pairs(self.getAllStacks(false)) do
+      if stack.item.id == item.name and
+        (not item.damage or stack.item.dmg == item.damage) and
+        (not item.nbtHash or stack.item.nbt_hash == item.nbtHash) then
+        local amount = math.min(qty, stack.item.qty)
         if amount > 0 then
-          self.exportItem(stack, direction or self.direction, amount, slot)
+          self.exportItem(stack.item, direction or self.direction, amount, slot)
         end
         qty = qty - amount
         if qty <= 0 then
