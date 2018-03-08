@@ -73,7 +73,12 @@ function ChestAdapter:init(args)
       end
     else
       self._getAllStacks = function()
-        return self.getAvailableItems()
+        local t = { }
+        for _,v in pairs(self.getAvailableItems('all')) do
+          v.item.is_craftable = v.is_craftable
+          table.insert(t, v.item)
+        end
+        return t
       end
     end
   end
