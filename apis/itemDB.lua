@@ -71,12 +71,9 @@ function itemDB:get(key)
       end
       return item
     end
-  end
-
-  if not key.damage then
+  else
     for k,item in pairs(self.data) do
       if key.name == item.name and
-         key.displayName == item.displayName and
          key.nbtHash == key.nbtHash and
          item.maxDamage > 0 then
         item = Util.shallowCopy(item)
