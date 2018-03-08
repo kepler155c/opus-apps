@@ -208,7 +208,7 @@ end
 
 function MEAdapter:provide(item, qty, slot, direction)
   return pcall(function()
-    for _,stack in pairs(self.getAllStacks(false)) do
+    for _,stack in pairs(self.getAvailableItems('all')) do
       if stack.item.id == item.name and
         (not item.damage or stack.item.dmg == item.damage) and
         (not item.nbtHash or stack.item.nbt_hash == item.nbtHash) then
