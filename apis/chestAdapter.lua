@@ -52,10 +52,10 @@ function ChestAdapter:init(args)
 
   local chest
   if not self.side then
-    chest = Peripheral.getByMethod('getAllStacks') or Peripheral.getByMethod('getAvailableItems')
+    chest = Peripheral.getByMethod('getAllStacks')
   else
     chest = Peripheral.getBySide(self.side)
-    if chest and not chest.getAllStacks and not chest.getAvailableItems then
+    if chest and not chest.getAllStacks then
       chest = nil
     end
   end
@@ -66,26 +66,11 @@ function ChestAdapter:init(args)
     if chest.listAvailableItems then
       self.list = chest.listAvailableItems
     end
-
-    if chest.getAllStacks then
-      self._getAllStacks = function()
-        return self.getAllStacks(false)
-      end
-    else
-      self._getAllStacks = function()
-        local t = { }
-        for _,v in pairs(self.getAvailableItems('all')) do
-          v.item.is_craftable = v.is_craftable
-          table.insert(t, v.item)
-        end
-        return t
-      end
-    end
   end
 end
 
 function ChestAdapter:isValid()
-  return not not self._getAllStacks
+  return not not self.getAllStacks
 end
 
 function ChestAdapter:refresh(throttle)
@@ -100,7 +85,7 @@ function ChestAdapter:listItems(throttle)
 
     -- getAllStacks sometimes fails
   pcall(function()
-    for _,v in pairs(self._getAllStacks()) do
+    for _,v in pairs(self.getAllStacks(false)) do
       if v.qty > 0 then
         convertItem(v)
         local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
@@ -141,7 +126,7 @@ end
 
 function ChestAdapter:provide(item, qty, slot, direction)
   pcall(function()
-    for key,stack in Util.rpairs(self._getAllStacks()) do
+    for key,stack in Util.rpairs(self.getAllStacks(false)) do
       if stack.id == item.name and
         (not item.damage or stack.dmg == item.damage) and
         (not item.nbtHash or stack.nbt_hash == item.nbtHash) then

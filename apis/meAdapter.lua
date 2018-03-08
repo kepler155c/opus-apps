@@ -206,20 +206,21 @@ function MEAdapter:craftItems(items)
   end
 end
 
-function MEAdapter:provide(item, count, slot, direction)
+function MEAdapter:provide(item, qty, slot, direction)
   return pcall(function()
-    while count > 0 do
-      local qty = math.min(count, 64)
-      local s = self.exportItem({
-        id = item.name,
-        dmg = item.damage,
-        nbt_hash = item.nbtHash,
-      }, direction or self.direction, qty, slot)
-
-      if not s or s.size ~= qty then
-        break
+    for _,stack in Util.rpairs(self.getAllStacks(false)) do
+      if stack.id == item.name and
+        (not item.damage or stack.dmg == item.damage) and
+        (not item.nbtHash or stack.nbt_hash == item.nbtHash) then
+        local amount = math.min(qty, stack.qty)
+        if amount > 0 then
+          self.exportItem(stack, direction or self.direction, amount, slot)
+        end
+        qty = qty - amount
+        if qty <= 0 then
+          break
+        end
       end
-      count = count - 64
     end
   end)
 end
