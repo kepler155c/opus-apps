@@ -114,7 +114,7 @@ local config = {
   monitor        = 'type/monitor',
 }
 
-Config.loadWithCheck('inventtoryManager', config)
+Config.loadWithCheck('inventoryManager', config)
 
 local controllerAdapter  = ControllerAdapter.wrap({ side = config.controller, facing = config.computerFacing })
 local inventoryAdapter   = InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
