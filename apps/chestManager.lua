@@ -1023,7 +1023,7 @@ function listingPage:eventHandler(event)
 
   elseif event.type == 'craft' or event.type == 'grid_select_right' then
     local item = self.grid:getSelected()
-    if Craft.findRecipe(item) or item.has_recipe then
+    if Craft.findRecipe(item) or item.is_craftable then
       UI:setPage('craft', self.grid:getSelected())
     else
       self.notification:error('No recipe defined')
