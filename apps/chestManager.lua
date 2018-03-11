@@ -114,12 +114,13 @@ local config = {
   monitor        = 'type/monitor',
 }
 
-Config.loadWithCheck('inventoryManager', config)
+Config.loadWithCheck('inventtoryManager', config)
 
 local controllerAdapter  = ControllerAdapter.wrap({ side = config.controller, facing = config.computerFacing })
 local inventoryAdapter   = InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
 local stockAdapter       = InventoryAdapter.wrap({ side = config.stock, facing = config.computerFacing })
 local turtleChestAdapter = InventoryAdapter.wrap({ side = config.craftingChest, facing = config.computerFacing })
+local modem              = device.modem
 local duckAntenna
 
 if not inventoryAdapter then
@@ -434,15 +435,25 @@ local function craftItems(craftList, allItems)
     end
   end
 
+  -- remote processing
+  if modem then
+    for key,item in pairs(craftList) do
+      if Craft.recipes[key] and item.crafted < item.count then
+
+      end
+    end
+  end
+
   -- controller
   if controllerAdapter then
     for key,item in pairs(craftList) do
-      if not Craft.recipes[key] and not item.rsControl then
+      if not canCraft or not Craft.recipes[key] and not item.rsControl then
         if controllerAdapter:isCrafting(item) then
           item.status = '(crafting)'
           item.statusCode = STATUS_INFO
         else
           local count = item.count
+          item.crafted = 0
           while count >= 1 do -- try to request smaller quantities until successful
             local s = pcall(function()
               item.status = '(no recipe)'
@@ -454,6 +465,7 @@ local function craftItems(craftList, allItems)
               end
               item.status = '(crafting)'
               item.statusCode = STATUS_INFO
+              item.crafted = count
             end)
             if s then
               break -- successfully requested crafting
@@ -957,7 +969,7 @@ function listingPage.grid:getRowTextColor(row, selected)
   if row.is_craftable then
     return colors.yellow
   end
-  if row.has_recipe then
+  if canCraft and row.has_recipe then
     return colors.cyan
   end
   return UI.Grid:getRowTextColor(row, selected)
@@ -1010,7 +1022,8 @@ function listingPage:eventHandler(event)
     end
 
   elseif event.type == 'craft' or event.type == 'grid_select_right' then
-    if Craft.findRecipe(self.grid:getSelected()) then
+    local item = self.grid:getSelected()
+    if Craft.findRecipe(item) or item.has_recipe then
       UI:setPage('craft', self.grid:getSelected())
     else
       self.notification:error('No recipe defined')
@@ -1332,11 +1345,15 @@ function craftPage.wizard.pages.resources:enable()
   local items = listItems()
   local count = tonumber(self.parent.quantity.count.value)
   local recipe = Craft.findRecipe(craftPage.item)
-  local ingredients = Craft.getResourceList4(recipe, items, count)
-  for _,v in pairs(ingredients) do
-    v.displayName = itemDB:getName(v)
+  if recipe then
+    local ingredients = Craft.getResourceList4(recipe, items, count)
+    for _,v in pairs(ingredients) do
+      v.displayName = itemDB:getName(v)
+    end
+    self.grid:setValues(ingredients)
+  else
+    self.grid:setValues({ })
   end
-  self.grid:setValues(ingredients)
   return UI.Window.enable(self)
 end
 
