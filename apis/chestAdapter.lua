@@ -84,7 +84,7 @@ function ChestAdapter:listItems(throttle)
   throttle = throttle or Util.throttle()
 
     -- getAllStacks sometimes fails
-  pcall(function()
+  local s, m = pcall(function()
     for _,v in pairs(self.getAllStacks(false)) do
       if v.qty > 0 then
         convertItem(v)
@@ -104,9 +104,13 @@ function ChestAdapter:listItems(throttle)
       itemDB:flush()
     end
   end)
-  if not Util.empty(items) then
-    self.cache = cache
-    return items
+  if s then
+    if not Util.empty(items) then
+      self.cache = cache
+      return items
+    end
+  else
+    debug(m)
   end
 end
 
