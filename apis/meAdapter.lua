@@ -69,22 +69,34 @@ function MEAdapter:init(args)
 end
 
 function MEAdapter:isValid()
-  return self.getAvailableItems and self.getAvailableItems()
+  pcall(function()
+    return self.getAvailableItems and self.getAvailableItems()
+  end)
 end
 
 function MEAdapter:refresh()
-  self.items = self.getAvailableItems('all')
-  for _,v in pairs(self.items) do
-    Util.merge(v, v.item)
-    convertItem(v)
+  self.items = nil
 
-    if not itemDB:get(v) then
-      itemDB:add(v, v)
+  local s, m = pcall(function()
+    self.items = self.getAvailableItems('all')
+    for _,v in pairs(self.items) do
+      Util.merge(v, v.item)
+      convertItem(v)
+
+      if not itemDB:get(v) then
+        itemDB:add(v, v)
+      end
     end
-  end
+  end)
   itemDB:flush()
 
-  return self.items
+  if not s and m then
+    debug(m)
+  end
+
+  if s and not Util.empty(self.items) then
+    return self.items
+  end
 end
 
 function MEAdapter:listItems()
