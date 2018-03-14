@@ -69,9 +69,7 @@ function MEAdapter:init(args)
 end
 
 function MEAdapter:isValid()
-  pcall(function()
-    return self.getAvailableItems and self.getAvailableItems()
-  end)
+  return self.getAvailableItems and self.getAvailableItems()
 end
 
 function MEAdapter:refresh()
