@@ -451,6 +451,9 @@ local function craftItems(craftList, allItems)
         if controllerAdapter:isCrafting(item) then
           item.status = '(crafting)'
           item.statusCode = STATUS_INFO
+        elseif not controllerAdapter:isCPUAvailable() then
+          item.status = '(waiting)'
+          item.statusCode = STATUS_WARNING
         else
           local count = item.count
           item.crafted = 0
