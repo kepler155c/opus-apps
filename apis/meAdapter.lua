@@ -145,18 +145,12 @@ function MEAdapter:craft(item, count)
             nbt_hash = item.nbtHash,
           },
           count or 1,
-          cpu
+          cpu.name                     -- CPUs must be named ! use anvil
         )
 
-        os.sleep(0) -- tell it to craft, yet it doesn't show busy - try waiting a cycle...
+        os.sleep(0) -- needed ?
         cpus = self.getCraftingCPUs() or { }
-        if not cpus[cpu].busy then
-          -- print('sleeping again')
-          os.sleep(.1) -- sigh
-          cpus = self.getCraftingCPUs() or { }
-        end
 
-        -- not working :(
         if cpus[cpu].busy then
           self.jobList[cpu] = {
             name = item.name,

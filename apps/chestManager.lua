@@ -1086,35 +1086,39 @@ function listingPage:applyFilter()
 end
 
 local function getTurtleInventory()
+  local list = { }
+
   if duckAntenna then
-    local list = duckAntenna.getAllStacks(false)
-    for _,v in pairs(list) do
-      v.name = v.id
-      v.damage = v.dmg
-      v.displayName = v.display_name
-      v.count = v.qty
-      v.maxDamage = v.max_dmg
-      v.maxCount = v.max_size
-      v.nbtHash = v.nbt_hash
-      if not itemDB:get(v) then
-        itemDB:add(v)
+    for _,v in pairs(duckAntenna.getAllStacks(false)) do
+      if v.qty > 0 then
+        v.name = v.id
+        v.damage = v.dmg
+        v.displayName = v.display_name
+        v.count = v.qty
+        v.maxDamage = v.max_dmg
+        v.maxCount = v.max_size
+        v.nbtHash = v.nbt_hash
+        if not itemDB:get(v) then
+          itemDB:add(v)
+        end
+        table.insert(list, v)
       end
     end
     itemDB:flush()
-    return list
-  end
-
-  local inventory = { }
-  for i = 1,16 do
-    local qty = turtle.getItemCount(i)
-    if qty > 0 then
-      turtleChestAdapter:insert(i, qty)
-      local items = turtleChestAdapter:listItems()
-      _, inventory[i] = next(items)
-      turtleChestAdapter:extract(1, qty, i)
+  else
+    for i = 1,16 do
+      local qty = turtle.getItemCount(i)
+      if qty > 0 then
+        turtleChestAdapter:insert(i, qty)
+        local items = turtleChestAdapter:listItems()
+        local _, item = next(items)
+        turtleChestAdapter:extract(1, qty, i)
+        table.insert(list, item)
+      end
     end
   end
-  return inventory
+
+  return list
 end
 
 local function learnRecipe(page)
@@ -1131,32 +1135,35 @@ local function learnRecipe(page)
           ingredients = ingredients,
         }
 
-        for _,v1 in pairs(results) do
-          for _,v2 in pairs(ingredients) do
-            if v1.name == v2.name and
-              v1.nbtHash == v2.nbtHash and
-              (v1.damage == v2.damage or
-                (v1.maxDamage > 0 and v2.maxDamage > 0 and
-                 v1.damage ~= v2.damage)) then
-              if not newRecipe.crafingTools then
-                newRecipe.craftingTools = { }
-              end
-              local tool = Util.shallowCopy(v2)
-              if tool.maxDamage > 0 then
-                tool.damage = '*'
-              end
+        if #results > 1 then
+          for _,v1 in pairs(results) do
+            for _,v2 in pairs(ingredients) do
+              if v1.name == v2.name and
+                v1.nbtHash == v2.nbtHash and
+                (v1.damage == v2.damage or
+                  (v1.maxDamage > 0 and v2.maxDamage > 0 and
+                   v1.damage ~= v2.damage)) then
+                if not newRecipe.crafingTools then
+                  newRecipe.craftingTools = { }
+                end
+                local tool = Util.shallowCopy(v2)
+                if tool.maxDamage > 0 then
+                  tool.damage = '*'
+                end
 
-              --[[
-              Turtles can only craft one item at a time using a tool :(
-              ]]--
-              maxCount = 1
+                --[[
+                Turtles can only craft one item at a time using a tool :(
+                ]]--
+                maxCount = 1
 
-              newRecipe.craftingTools[uniqueKey(tool)] = true
-              v1.craftingTool = true
-              break
+                newRecipe.craftingTools[uniqueKey(tool)] = true
+                v1.craftingTool = true
+                break
+              end
             end
           end
         end
+
         local recipe
         for _,v in pairs(results) do
           if not v.craftingTool then
@@ -1169,6 +1176,8 @@ local function learnRecipe(page)
         end
 
         if not recipe then
+          debug(results)
+          debug(newRecipe)
           error('Failed')
         end
 
