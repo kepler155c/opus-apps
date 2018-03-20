@@ -1191,7 +1191,7 @@ local function learnRecipe(page)
         end
         for k,ingredient in pairs(Util.shallowCopy(ingredients)) do
           if ingredient.maxDamage > 0 then
-            ingredient.damage = '*'               -- I don't think this is right
+            -- ingredient.damage = '*'               -- I don't think this is right
           end
           ingredients[k] = uniqueKey(ingredient)
         end
