@@ -449,7 +449,7 @@ local function craftItems(craftList, allItems)
   -- controller
   if controllerAdapter then
     for key,item in pairs(craftList) do
-      if not canCraft or not Craft.recipes[key] and not item.rsControl then
+      if (not canCraft or not Craft.recipes[key]) and not item.rsControl then
         if controllerAdapter:isCrafting(item) then
           item.status = '(crafting)'
           item.statusCode = STATUS_INFO

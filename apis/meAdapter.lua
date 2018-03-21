@@ -159,7 +159,7 @@ function MEAdapter:craft(item, count)
             nbt_hash = item.nbtHash,
           },
           count or 1,
-          cpu.name                     -- CPUs must be named ! use anvil
+          v.name                     -- CPUs must be named ! use anvil
         )
 
         os.sleep(0) -- needed ?
