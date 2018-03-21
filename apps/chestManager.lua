@@ -1180,7 +1180,7 @@ local function learnRecipe(page)
         if not recipe then
           debug(results)
           debug(newRecipe)
-          error('Failed')
+          error('Failed - view system log')
         end
 
         newRecipe.count = recipe.count

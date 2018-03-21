@@ -74,12 +74,20 @@ end
 
 function MEAdapter:refresh()
   self.items = nil
+  local hasItems
 
   local s, m = pcall(function()
     self.items = self.getAvailableItems('all')
     for _,v in pairs(self.items) do
       Util.merge(v, v.item)
       convertItem(v)
+
+      -- if power has been interrupted, the list will still be returned
+      -- but all items will have a 0 quantity
+      -- ensure that the list is valid
+      if not hasItems then
+        hasItems = v.qty > 0
+      end
 
       if not itemDB:get(v) then
         itemDB:add(v, v)
@@ -92,9 +100,10 @@ function MEAdapter:refresh()
     debug(m)
   end
 
-  if s and not Util.empty(self.items) then
+  if s and hasItems and not Util.empty(self.items) then
     return self.items
   end
+  self.items = nil
 end
 
 function MEAdapter:listItems()
