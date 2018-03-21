@@ -74,7 +74,7 @@ end
 
 function MEAdapter:refresh()
   self.items = nil
-  local hasItems
+  local hasItems, failed
 
   local s, m = pcall(function()
     self.items = self.getAvailableItems('all')
@@ -86,7 +86,12 @@ function MEAdapter:refresh()
       -- but all items will have a 0 quantity
       -- ensure that the list is valid
       if not hasItems then
-        hasItems = v.qty > 0
+        hasItems = v.count > 0
+      end
+
+      if not v.fingerprint then
+        failed = true
+        break
       end
 
       if not itemDB:get(v) then
@@ -100,7 +105,7 @@ function MEAdapter:refresh()
     debug(m)
   end
 
-  if s and hasItems and not Util.empty(self.items) then
+  if s and not failed and hasItems and self.items and not Util.empty(self.items) then
     return self.items
   end
   self.items = nil

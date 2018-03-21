@@ -206,11 +206,13 @@ local function listItems()
     if items then
       break
     end
-    os.sleep(.25)
+    jobList:showError('Error - retrying in 3 seconds')
+    os.sleep(3)
   end
   if not items then
 --    error('could not check inventory')
 term.clear()
+jobList:showError('Error - rebooting in 5 seconds')
 print('Communication failure')
 print('rebooting in 5 secs')
 os.sleep(5)
