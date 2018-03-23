@@ -6,13 +6,11 @@ local turtle     = _G.turtle
 local CRAFTING_TABLE = 'minecraft:crafting_table'
 
 local function clearGrid(inventory)
-print('clearing')
   for i = 1, 16 do
     local count = turtle.getItemCount(i)
     if count > 0 then
       inventory:insert(i, count)
       if turtle.getItemCount(i) ~= 0 then
-print('failed to insert')
         return false
       end
     end

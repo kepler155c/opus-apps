@@ -124,7 +124,7 @@ local function craftItem(item, qty)
 
     Util.print('Crafting %d %s', (qty or 1), item)
     success, msg = turtle.craftItem(item, qty or 1, {
-        wrapSide = 'top',
+        side = 'top',
         direction = 'down',
       })
     repeat until not turtle.suckUp()
