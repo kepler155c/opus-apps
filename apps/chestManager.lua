@@ -1028,7 +1028,7 @@ function listingPage:eventHandler(event)
 
   elseif event.type == 'craft' or event.type == 'grid_select_right' then
     local item = self.grid:getSelected()
-    if Craft.findRecipe(item) or item.is_craftable then
+    if Craft.findRecipe(item) or true then -- or item.is_craftable then
       UI:setPage('craft', self.grid:getSelected())
     else
       self.notification:error('No recipe defined')
@@ -1403,10 +1403,9 @@ UI:setPages({
   craft = craftPage,
 })
 
+jobMonitor()
 UI:setPage(listingPage)
 listingPage:setFocus(listingPage.statusBar.filter)
-
-jobMonitor()
 
 Event.onInterval(5, function()
 
@@ -1438,6 +1437,15 @@ Event.onInterval(5, function()
         end
       end
 
+      local function eject(item, qty)
+        if _G.turtle then
+          local s, m = pcall(function()
+            inventoryAdapter:provide(item, qty)
+            _G.turtle.emptyInventory()
+          end)
+        end
+      end
+
       for _,key in pairs(Util.keys(demandCrafting)) do
         local item = demandCrafting[key]
         if item.crafted then
@@ -1446,7 +1454,7 @@ Event.onInterval(5, function()
             demandCrafting[key] = nil
             item.statusCode = 'success'
             if item.eject then
-              inventoryAdapter:eject(item, item.ocount, 'front')
+              eject(item, item.ocount)
             end
           end
         end

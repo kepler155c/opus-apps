@@ -147,18 +147,6 @@ function ChestAdapter:provide(item, qty, slot, direction)
   end)
 end
 
-function ChestAdapter:eject(item, qty, direction)
-  if not _G.turtle then
-    error('Only a turtle can eject')
-  end
-
-  local s, m = pcall(function()
-    self:provide(item, qty)
-    _G.turtle.emptyInventory()
-  end)
-  return s, m
-end
-
 function ChestAdapter:extract(slot, qty, toSlot)
   if toSlot then
     self.pushItemIntoSlot(self.direction, slot, qty, toSlot)

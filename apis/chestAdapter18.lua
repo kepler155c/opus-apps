@@ -146,32 +146,6 @@ function ChestAdapter:provide(item, qty, slot, direction)
   return s, m
 end
 
-function ChestAdapter:eject(item, qty, direction)
-
-  -- fix
-  direction = self.getMetadata().state.facing
-
-  local s, m = pcall(function()
-    local stacks = self.list()
-    local maxStack = itemDB:getMaxCount(item)
-    for key,stack in Util.rpairs(stacks) do
-      if stack.name == item.name and
-        (not item.damage or stack.damage == item.damage) and
-        (not item.nbtHash or stack.nbtHash == item.nbtHash) then
-        local amount = math.min(maxStack, math.min(qty, stack.count))
-        if amount > 0 then
-          self.drop(key, amount, direction)
-        end
-        qty = qty - amount
-        if qty <= 0 then
-          break
-        end
-      end
-    end
-  end)
-  return s, m
-end
-
 function ChestAdapter:extract(slot, qty, toSlot)
   self.pushItems(self.direction, slot, qty, toSlot)
 end
