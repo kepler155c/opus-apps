@@ -202,6 +202,28 @@ function MEAdapter:isCrafting(item)
   end
 end
 
+function MEAdapter:craftItems(items)
+  local cpus = self.getCraftingCPUs() or { }
+  local count = 0
+
+  for _,cpu in pairs(cpus) do
+    if cpu.busy then
+      return
+    end
+  end
+
+  for _,item in pairs(items) do
+    if count >= #cpus then
+      break
+    end
+    if not self:isCrafting(item) then
+      if self:craft(item, item.count) then
+        count = count + 1
+      end
+    end
+  end
+end
+
 function MEAdapter:provide(item, qty, slot, direction)
   return pcall(function()
     for _,stack in pairs(self.getAvailableItems('all')) do
