@@ -509,6 +509,15 @@ local function restock()
   end
 end
 
+local function eject(item, qty)
+  if _G.turtle then
+    local s, m = pcall(function()
+      inventoryAdapter:provide(item, qty)
+      _G.turtle.emptyInventory()
+    end)
+  end
+end
+
 local function jobMonitor()
   local mon = Peripheral.lookup(config.monitor)
 
@@ -1211,7 +1220,7 @@ local function learnRecipe(page)
         listingPage:refresh()
         listingPage.grid:draw()
 
-        inventoryAdapter:eject(recipe, recipe.count, 'front')
+        eject(recipe, recipe.count)
         return true
       end
     else
@@ -1434,15 +1443,6 @@ Event.onInterval(5, function()
       if demandCrafted and craftList then
         for k,v in pairs(demandCrafted) do
           craftList[k] = v
-        end
-      end
-
-      local function eject(item, qty)
-        if _G.turtle then
-          local s, m = pcall(function()
-            inventoryAdapter:provide(item, qty)
-            _G.turtle.emptyInventory()
-          end)
         end
       end
 
