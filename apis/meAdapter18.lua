@@ -81,7 +81,6 @@ _G._p = self.jobList
     if job.name == item.name and
        job.damage == item.damage and
        job.nbtHash == item.nbtHash then
-debug('still crafting')
       return true
     end
   end

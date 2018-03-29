@@ -243,14 +243,11 @@ function MEAdapter:provide(item, qty, slot, direction)
   end)
 end
 
-function MEAdapter:insert(slot, count)
-  local s, m = pcall(function() self.pullItem(self.direction, slot, count) end)
+function MEAdapter:insert(slot, qty, toSlot)
+  local s, m = pcall(self.pullItem, self.direction, slot, qty, toSlot)
   if not s and m then
     os.sleep(1)
-    s, m = pcall(function() self.pullItem(self.direction, slot, count) end)
-    if not s and m then
-      error(m)
-    end
+    pcall(self.pullItem, self.direction, slot, qty, toSlot)
   end
 end
 
