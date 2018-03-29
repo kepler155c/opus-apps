@@ -5,6 +5,8 @@ local Util       = require('util')
 
 local MEAdapter = class(RSAdapter)
 
+local DEVICE_TYPE = 'appliedenergistics2:interface'
+
 function MEAdapter:init(args)
   local defaults = {
     name    = 'appliedEnergistics',
@@ -15,12 +17,9 @@ function MEAdapter:init(args)
 
   local controller
   if not self.side then
-    controller = Peripheral.getByMethod('getCraftingCPUs')
+    controller = Peripheral.getByType(DEVICE_TYPE)
   else
     controller = Peripheral.getBySide(self.side)
-    if controller and not controller.getCraftingCPUs then
-      controller = nil
-    end
   end
 
   if controller then
@@ -29,68 +28,60 @@ function MEAdapter:init(args)
 end
 
 function MEAdapter:isValid()
-  return not not self.getCraftingCPUs
+  return self.type == DEVICE_TYPE and not not self.findItems
+end
+
+function MEAdapter:clearFinished()
+  for _,key in pairs(Util.keys(self.jobList)) do
+    local job = self.jobList[key]
+    if job.info.status() == 'finished' then
+      self.jobList[key] = nil
+    end
+  end
 end
 
 function MEAdapter:isCPUAvailable()
   local cpus = self.getCraftingCPUs() or { }
-  local available = false
+  local busy = 0
 
-  for cpu,v in pairs(cpus) do
-    if not v.busy then
-      available = true
-    elseif not self.jobList[cpu] then -- something else is crafting something (don't know what)
-      return false                  -- return false since we are in an unknown state
+  for _,cpu in pairs(cpus) do
+    if cpu.busy then
+      busy = busy + 1
     end
   end
-  return available
+  self:clearFinished()
+  return busy == Util.size(self.jobList) and busy < #cpus
 end
 
-function MEAdapter:craft(item, qty)
+function MEAdapter:craft(item, count)
   if not self:isCPUAvailable() then
     return false
   end
 
   local detail = self.findItem(item)
   if detail and detail.craft then
-
-    local cpus = self.getCraftingCPUs() or { }
-    for cpu,v in pairs(cpus) do
-      if not v.busy then
-        self.requestCrafting({
-            id = item.name,
-            dmg = item.damage,
-            nbt_hash = item.nbtHash,
-          },
-          count or 1,
-          v.name                     -- CPUs must be named ! use anvil
-        )
-
-        os.sleep(0) -- needed ?
-        cpus = self.getCraftingCPUs() or { }
-
-        if cpus[cpu].busy then
-          self.jobList[cpu] = {
-            name = item.name,
-            damage = item.damage,
-            nbtHash = item.nbtHash,
-            count = count,
-          }
-          return true
-        end
-        break -- only need to try the first available cpu
-      end
+    local info = detail.craft(count or 1)
+    if info.status() == 'unknown' then
+      self.jobList[info.getId()] = {
+        name = item.name,
+        damage = item.damage,
+        nbtHash = item.nbtHash,
+        info = info,
+      }
+      return true
     end
     return false
   end
 end
 
 function MEAdapter:isCrafting(item)
-  for _,task in pairs(self.getCraftingTasks()) do
-    local output = task.getPattern().outputs[1]
-    if output.name == item.name and
-       output.damage == item.damage and
-       output.nbtHash == item.nbtHash then
+  self:clearFinished()
+_G._p = self.jobList
+  for _,job in pairs(self.jobList) do
+    if job.name == item.name and
+       job.damage == item.damage and
+       job.nbtHash == item.nbtHash then
+debug('still crafting')
       return true
     end
   end

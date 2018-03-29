@@ -17,9 +17,6 @@ function RefinedAdapter:init(args)
     controller = Peripheral.getByMethod('getCraftingTasks')
   else
     controller = Peripheral.getBySide(self.side)
-    if controller and not controller.getCraftingTasks then
-      controller = nil
-    end
   end
 
   if controller then
