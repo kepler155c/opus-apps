@@ -3,6 +3,7 @@ local Adapter = { }
 function Adapter.wrap(args)
 	local adapters = {
 		'refinedAdapter',
+		'meAdapter18',
     'chestAdapter18',
 
     -- adapters for version 1.7

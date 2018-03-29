@@ -14,10 +14,10 @@ function RefinedAdapter:init(args)
 
   local controller
   if not self.side then
-    controller = Peripheral.getByMethod('listAvailableItems')
+    controller = Peripheral.getByMethod('getCraftingTasks')
   else
     controller = Peripheral.getBySide(self.side)
-    if controller and not controller.listAvailableItems then
+    if controller and not controller.getCraftingTasks then
       controller = nil
     end
   end
@@ -28,7 +28,7 @@ function RefinedAdapter:init(args)
 end
 
 function RefinedAdapter:isValid()
-  return not not self.listAvailableItems
+  return not not self.getCraftingTasks
 end
 
 function RefinedAdapter:getItemDetails(item)
