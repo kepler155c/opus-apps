@@ -14,10 +14,10 @@ function RefinedAdapter:init(args)
 
   local controller
   if not self.side then
-    controller = Peripheral.getByType('refinedstorage:controller')
+    controller = Peripheral.getByMethod('listAvailableItems')
   else
     controller = Peripheral.getBySide(self.side)
-    if controller and not controller.getCraftingTasks then
+    if controller and not controller.listAvailableItems then
       controller = nil
     end
   end
@@ -131,7 +131,12 @@ function RefinedAdapter:provide(item, qty, slot, direction)
   end)
 end
 
-function RefinedAdapter:insert()
+function RefinedAdapter:extract(slot, qty, toSlot)
+  self.pushItems(self.direction, slot, qty, toSlot)
+end
+
+function RefinedAdapter:insert(slot, qty, toSlot)
+  self.pullItems(self.direction, slot, qty, toSlot)
 end
 
 return RefinedAdapter

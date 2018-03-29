@@ -24,7 +24,11 @@
     2. Requires a vanilla chest beside the turtle with the "craftingChest"
       configuration variable defined.
       -- or --
-      If using MC 1.7x, you can equip the turtle with a duck antenna.
+      If using MC 1.7x, you can equip the turtle with a duck antenna and
+      set the duckAntenna configuration value to true.
+      -- or --
+      If plethora mod is available, equip the turtle with an introspection
+      module.
 
   Controller (optional):
     Provides the ability to request crafting from AE / RS
@@ -38,7 +42,7 @@
     Refined Storage
       In versions 1.8x, inventory access works depending upon version.
 
-      Turtle/computer must be touching controller for inventory access. If only
+      Turtle/computer must be touching an interface for inventory access. If only
       requesting crafting, the controller must be either be touching or connected
       via CC cables.
 
@@ -66,6 +70,7 @@
     craftingChest  : side for the chest used for crafting
     controller     : side for AE cable/interface or RS controller
     stock          : side for restocking inventory
+    duckAntenna    : true/false if the 1.7 openperipherals duck antenna is equipped
     trashDirection : direction of trash block (trashcan/inventory/etc) in
                      relationship to the main inventory. This block does not
                      need to touch the turtle, only the main inventory block.
@@ -116,11 +121,12 @@ local config = {
 
 Config.loadWithCheck('inventoryManager', config)
 
-local controllerAdapter  = ControllerAdapter.wrap({ side = config.controller, facing = config.computerFacing })
-local inventoryAdapter   = InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
-local stockAdapter       = InventoryAdapter.wrap({ side = config.stock, facing = config.computerFacing })
-local turtleChestAdapter = InventoryAdapter.wrap({ side = config.craftingChest, facing = config.computerFacing })
-local modem              = device.modem
+local controllerAdapter   = ControllerAdapter.wrap({ side = config.controller, facing = config.computerFacing })
+local inventoryAdapter    = InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
+local stockAdapter        = InventoryAdapter.wrap({ side = config.stock, facing = config.computerFacing })
+local turtleChestAdapter  = InventoryAdapter.wrap({ side = config.craftingChest, facing = config.computerFacing })
+local modem               = device.modem
+local introspectionModule = device['plethora:introspection']
 local duckAntenna
 
 if not inventoryAdapter then
@@ -148,7 +154,7 @@ local RECIPES_FILE  = 'usr/config/recipes.db'
 
 local craftingPaused = false
 local canCraft = not not (turtle and turtle.craft)
-local canLearn = not not (canCraft and (duckAntenna or turtleChestAdapter))
+local canLearn = not not (canCraft and (duckAntenna or turtleChestAdapter or introspectionModule))
 local userRecipes = Util.readTable(RECIPES_FILE) or { }
 local jobList
 local resources
@@ -1112,6 +1118,14 @@ local function getTurtleInventory()
       end
     end
     itemDB:flush()
+    return list
+  end
+
+  if introspectionModule then
+    local list = { }
+    for i = 1,16 do
+      list[i] = introspectionModule.getInventory().getItemMeta(i)
+    end
     return list
   end
 

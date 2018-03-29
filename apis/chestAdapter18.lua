@@ -14,10 +14,11 @@ function ChestAdapter:init(args)
 
   local chest
   if not self.side then
-    chest = Peripheral.getByMethod('list') or Peripheral.getByMethod('listAvailableItems')
+    chest = Peripheral.getByMethod('list')
+    -- or Peripheral.getByMethod('listAvailableItems')
   else
     chest = Peripheral.getBySide(self.side)
-    if chest and not chest.list and not chest.listAvailableItems then
+    if chest and not chest.list then -- and not chest.listAvailableItems then
       chest = nil
     end
   end
