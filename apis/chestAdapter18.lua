@@ -113,12 +113,6 @@ function ChestAdapter:getItemInfo(item)
   return self.cache[key]
 end
 
-function ChestAdapter:craft()
-end
-
-function ChestAdapter:craftItems()
-end
-
 function ChestAdapter:getPercentUsed()
   if self.cache and self.getDrawerCount then
     return math.floor(Util.size(self.cache) / self.getDrawerCount() * 100)

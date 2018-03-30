@@ -348,23 +348,25 @@ function TurtleBuilder:dumpInventoryWithCheck()
 end
 
 function TurtleBuilder:autocraft(supplies)
-  local t = { }
+  if self.itemAdapter.craftItems then
+    local t = { }
 
-  for _,s in pairs(supplies) do
-    local key = s.id .. ':' .. s.dmg
-    local item = t[key]
-    if not item then
-      item = {
-        id = s.id,
-        dmg = s.dmg,
-        qty = 0,
-      }
-      t[key] = item
+    for _,s in pairs(supplies) do
+      local key = s.id .. ':' .. s.dmg
+      local item = t[key]
+      if not item then
+        item = {
+          id = s.id,
+          dmg = s.dmg,
+          qty = 0,
+        }
+        t[key] = item
+      end
+      item.qty = item.qty + (s.need - s.qty)
     end
-    item.qty = item.qty + (s.need - s.qty)
-  end
 
-  self.itemAdapter:craftItems(convertForward(t))
+    self.itemAdapter:craftItems(convertForward(t))
+  end
 end
 
 function TurtleBuilder:getSupplies()

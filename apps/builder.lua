@@ -377,7 +377,7 @@ function listingPage:eventHandler(event)
     if item and item.is_craftable then
       local qty = math.max(0, s.need - item.qty)
 
-      if item then
+      if item and Builder.itemAdapter.craftItems then
         Builder.itemAdapter:craftItems({{ name = s.id, damage = s.dmg, nbtHash = s.nbt_hash, count = qty }})
         local name = s.display_name or s.id
         self.statusBar:timedStatus('Requested ' .. qty .. ' ' .. name, 3)

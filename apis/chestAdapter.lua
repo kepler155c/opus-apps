@@ -122,12 +122,6 @@ function ChestAdapter:getItemInfo(item)
   return self.cache[key]
 end
 
-function ChestAdapter:craft()
-end
-
-function ChestAdapter:craftItems()
-end
-
 function ChestAdapter:provide(item, qty, slot, direction)
   pcall(function()
     for key,stack in Util.rpairs(self.getAllStacks(false)) do
