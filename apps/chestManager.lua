@@ -448,15 +448,6 @@ local function craftItems(craftList, allItems)
     end
   end
 
-  -- remote processing
-  if modem then
-    for key,item in pairs(craftList) do
-      if Craft.recipes[key] and item.crafted < item.count then
-
-      end
-    end
-  end
-
   -- controller
   if controllerAdapter then
     for key,item in pairs(craftList) do
@@ -489,6 +480,15 @@ local function craftItems(craftList, allItems)
             count = math.floor(count / 2)
           end
         end
+      end
+    end
+  end
+
+  -- remote processing
+  if modem then
+    for key,item in pairs(craftList) do
+      if not Craft.recipes[key] and item.crafted < item.count then
+        modem.transmit(205, 0, item)
       end
     end
   end
@@ -618,7 +618,6 @@ local function getItemWithQty(items, res, ignoreDamage, ignoreNbtHash)
 end
 
 local function watchResources(items)
-
   local craftList = { }
   local outputs   = { }
 
@@ -1434,6 +1433,17 @@ UI:setPages({
 jobMonitor()
 UI:setPage(listingPage)
 listingPage:setFocus(listingPage.statusBar.filter)
+
+Event.on('modem_message', function(e, side, sport, dport, item)
+  debug({ e, side, sport, dport, item })
+  if dport == 205 and type(item) == 'table' then
+    inventoryAdapter:provide(
+      item,
+      item.count - item.crafted,
+      nil,
+      config.trashDirection)
+  end
+end)
 
 Event.onInterval(5, function()
 
