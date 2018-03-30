@@ -485,6 +485,7 @@ local function craftItems(craftList, allItems)
   end
 
   -- remote processing
+--[[
   if modem then
     for key,item in pairs(craftList) do
       if not Craft.recipes[key] and item.crafted < item.count then
@@ -492,6 +493,7 @@ local function craftItems(craftList, allItems)
       end
     end
   end
+--]]
 
   if not controllerAdapter and not canCraft then
     for _,item in pairs(craftList) do
@@ -1434,6 +1436,7 @@ jobMonitor()
 UI:setPage(listingPage)
 listingPage:setFocus(listingPage.statusBar.filter)
 
+--[[
 Event.on('modem_message', function(e, side, sport, dport, item)
   debug({ e, side, sport, dport, item })
   if dport == 205 and type(item) == 'table' then
@@ -1444,6 +1447,7 @@ Event.on('modem_message', function(e, side, sport, dport, item)
       config.trashDirection)
   end
 end)
+--]]
 
 Event.onInterval(5, function()
 
