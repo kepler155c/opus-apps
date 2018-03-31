@@ -122,6 +122,7 @@ local function craftItem(item, qty)
 
   if safePlaceBlock(CHEST) then
 
+    os.sleep(.2) -- needed for minecraft 1.12
     Util.print('Crafting %d %s', (qty or 1), item)
     success, msg = turtle.craftItem(item, qty or 1, {
         side = 'top',

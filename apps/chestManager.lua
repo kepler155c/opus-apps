@@ -549,6 +549,7 @@ local function jobMonitor()
     parent = mon,
     grid = UI.Grid {
       sortColumn = 'displayName',
+      backgroundFocusColor = colors.black,
       columns = {
         { heading = 'Qty',      key = 'count',       width = 6                  },
         { heading = 'Crafting', key = 'displayName', width = mon.width / 2 - 10 },
