@@ -43,7 +43,7 @@ local page = UI.Page {
 	info = UI.Window {
 		x = 2, ex = -2, y = 2, ey = 5,
 		button = UI.Button {
-			ex = -1, y = 2, width = 9,
+			ex = -1, y = 3, width = 9,
 			text = 'Enable',
 			event = 'grid_select',
 		}
