@@ -1,6 +1,6 @@
 local function summon(id)
 
-  requireInjector(getfenv(1))
+  _G.requireInjector(_ENV)
 
   local GPS    = require('gps')
   local Point  = require('point')

@@ -1,6 +1,6 @@
 turtle.run(function()
 
-  requireInjector(getfenv(1))
+  _G.requireInjector(_ENV)
 
   local GPS    = require('gps')
   local Socket = require('socket')

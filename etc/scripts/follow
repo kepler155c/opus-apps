@@ -3,7 +3,7 @@ local turtle = _G.turtle
 
 local function follow(id)
 
-  _G.requireInjector()
+  _G.requireInjector(_ENV)
 
   local Event  = require('event')
   local Point  = require('point')
