@@ -110,7 +110,8 @@ function ChestAdapter:getItemInfo(item)
     self:listItems()
   end
   local key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
-  return self.cache[key]
+  local items = self.cache or { }
+  return items[key]
 end
 
 function ChestAdapter:getPercentUsed()

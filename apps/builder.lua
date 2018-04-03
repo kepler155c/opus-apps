@@ -723,6 +723,7 @@ function startPage:eventHandler(event)
 
   elseif event.type == 'begin' then
     UI:setPage('blank')
+    self:sync()
 
     print('Reloading schematic')
     Builder:reloadSchematic(Util.throttle())

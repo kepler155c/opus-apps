@@ -119,12 +119,8 @@ function supplyPage:enable(builder)
 
   Event.addNamedTimer('supplyRefresh', 6, true, function()
     if self.enabled then
-debug('timer')
       self.builder:autocraft(self.builder:getSupplies())
-      pcall(function()
-        debug('refreshing')
-        self:refresh()
-      end)
+      self:refresh()
       self.statusBar:timedStatus('Refreshed ', 2)
       self:sync()
     end
@@ -133,7 +129,6 @@ debug('timer')
 end
 
 function supplyPage:disable()
-  debug('canceling')
   Event.cancelNamedTimer('supplyRefresh')
 end
 
@@ -158,6 +153,8 @@ function supplyPage:refresh()
   self.statusBar:timedStatus('Refreshed ', 3)
   local supplies = self.builder:getSupplies()
   if #supplies == 0 then
+    UI:setPage('blank')
+    self:sync()
     self.builder:build()
   else
     self:setSupplies(supplies)
