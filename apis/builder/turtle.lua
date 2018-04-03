@@ -92,6 +92,8 @@ local supplyPage = UI.Page {
 
 function supplyPage:eventHandler(event)
   if event.type == 'build' then
+    UI:setPage('start')
+    self:sync()
     self.builder:build()
 
   elseif event.type == 'menu' then
