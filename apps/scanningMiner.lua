@@ -96,7 +96,7 @@ local page = UI.Page {
     sortColumn = 'name',
     columns = {
       { heading = 'Resource', key = 'displayName'   },
-      { heading = 'Count',    key = 'count', width = 6 },
+      { heading = 'Count',    key = 'count', width = 5 },
     },
   },
   statusBar = UI.StatusBar {
@@ -167,6 +167,15 @@ local function getCornerOf(c)
   return math.floor(c.x / 16) * 16, math.floor(c.z / 16) * 16
 end
 
+local function isFinished()
+  if mining.chunks ~= -1 then
+    local chunks = math.pow(mining.diameter-2, 2) + mining.chunkIndex
+    if chunks >= mining.chunks then
+      return true
+    end
+  end
+end
+
 local function nextChunk()
   local x, z = getCornerOf({ x = mining.x, z = mining.z })
   local points = math.pow(mining.diameter, 2) - math.pow(mining.diameter-2, 2)
@@ -177,13 +186,6 @@ local function nextChunk()
     mining.chunkIndex = 0
   end
 
-  if mining.chunks ~= -1 then
-    local chunks = math.pow(mining.diameter-2, 2) + mining.chunkIndex
-    if chunks >= mining.chunks then
-      return false
-    end
-  end
-
   local nc = getChunkCoordinates(mining.diameter, mining.chunkIndex, x, z)
 
   -- enter next chunk
@@ -192,7 +194,7 @@ local function nextChunk()
 
   Util.writeTable(PROGRESS_FILE, mining)
 
-  return true
+  return not isFinished()
 end
 
 local function status(newStatus)
@@ -389,10 +391,10 @@ local function scan()
   local i = #blocks
   Point.eachClosest(turtle.point, blocks, function(b)
     if turtle.isAborted() then
-      return
+      error('aborted')
     end
 
-    page.grid.nextBlock = b.displayName
+    page.grid.nextBlock = b.name .. ':' .. b.metadata
 
     -- Get the action again in case the user has ignored via UI
     b.action = dictionary:get(b.name, b.metadata) or 'mine'
@@ -441,20 +443,13 @@ local function mineChunk()
   while true do
     status('scanning')
     turtle.select(1)
-    turtle._goto({ x = mining.x + 8, z = mining.z + 8, y = y })
+    safeGoto(mining.x + 8, mining.z + 8, y)
     scan()
-    if turtle.isAborted() then
-      status('aborting')
-      return false
-    end
     if turtle.getFuelLevel() < LOW_FUEL then
       refuel()
       local veryMinFuel = Point.turtleDistance(turtle.point, { x = 0, y = 0, z = 0}) + 512
       if turtle.getFuelLevel() < veryMinFuel then
-        page.statusBar:setValue('Not enough fuel to continue')
-        page.statusBar:draw()
-        page:sync()
-        return false
+        error('Not enough fuel to continue')
       end
     end
     inc()
@@ -463,8 +458,6 @@ local function mineChunk()
       break
     end
   end
-
-  return true
 end
 
 local function addTrash()
@@ -515,82 +508,96 @@ end
 
 local function main()
   repeat
-    if not mineChunk() then
-      return
-    end
-    Util.writeTable(PROGRESS_FILE, mining)
+    mineChunk()
   until not nextChunk()
 end
 
+local success, msg
+
 Event.addRoutine(function()
-  turtle.run(function()
-    turtle.reset()
+  turtle.reset()
 
-    if not fs.exists(DICTIONARY_FILE) or options.setTrash.value then
-      print('Add blocks to ignore, press enter when ready')
-      read()
-      addTrash()
-    end
+  if not fs.exists(DICTIONARY_FILE) or options.setTrash.value then
+    print('Add blocks to ignore, press enter when ready')
+    read()
+    addTrash()
+  end
 
-    ejectTrash()
+  ejectTrash()
 
-    turtle.initialize {
-      right = 'computercraft:advanced_modem',
-      left  = 'minecraft:diamond_pickaxe',
-      required = {
-        'minecraft:bucket',
-        'plethora:module',
-      },
-      GPS = true,
-      minFuel = 100,
-      -- searchFor = 'ironchest:iron_shulker_box_white'
-    }
+  turtle.initialize {
+    right = 'computercraft:advanced_modem',
+    left  = 'minecraft:diamond_pickaxe',
+    required = {
+      'minecraft:bucket',
+      'plethora:module',
+    },
+    GPS = true,
+    minFuel = 100,
+    -- searchFor = 'ironchest:iron_shulker_box_white'
+  }
 
-    turtle.setMoveCallback(function()
-      page.statusBar:setValue('fuel', Util.toBytes(turtle.getFuelLevel()))
-      page.statusBar:draw()
-      page:sync()
-    end)
-
-    mining = Util.readTable(PROGRESS_FILE) or {
-      diameter = 1,
-      chunkIndex = 0,
-      x = 0, z = 0,
-      chunks = options.chunks.value,
-      home = Point.copy(turtle.point),
-      heading = turtle.point.heading, -- always using east for now
-    }
-
-    -- use coordinates relative to initial starting point
-    turtle.setPoint({
-      x = turtle.point.x - mining.home.x,
-      y = turtle.point.y - mining.home.y,
-      z = turtle.point.z - mining.home.z,
-    })
-
-    if not fs.exists(PROGRESS_FILE) then
-      Util.writeTable(PROGRESS_FILE, mining)
-    end
-
-    turtle.setPolicy(turtle.policies.digAttack)
-    turtle.setDigPolicy(turtle.digPolicies.turtleSafe)
-    turtle.setMovementStrategy('goto')
-    status('mining')
-
-    local s, m = pcall(main)
-
-    status(s and 'finished' or 'error')
-    turtle._goto({ x = 0, y = 0, z = 0 })
-    turtle.reset()
-
-    if not s and m then
-      _G.printError(m)
-    end
-
-    Event.exitPullEvents()
+  turtle.setMoveCallback(function()
+    page.statusBar:setValue('fuel', Util.toBytes(turtle.getFuelLevel()))
+    page.statusBar:draw()
+    page:sync()
   end)
+
+  mining = Util.readTable(PROGRESS_FILE) or {
+    diameter = 1,
+    chunkIndex = 0,
+    x = 0, z = 0,
+    chunks = options.chunks.value,
+    home = Point.copy(turtle.point),
+    heading = turtle.point.heading, -- always using east for now
+  }
+
+  if options.chunks.value ~= -1 then
+    mining.chunks = options.chunks.value
+  end
+
+  -- use coordinates relative to initial starting point
+  turtle.setPoint({
+    x = turtle.point.x - mining.home.x,
+    y = turtle.point.y - mining.home.y,
+    z = turtle.point.z - mining.home.z,
+  })
+
+  if not fs.exists(PROGRESS_FILE) then
+    Util.writeTable(PROGRESS_FILE, mining)
+  end
+
+  turtle.setPolicy(turtle.policies.digAttack)
+  turtle.setDigPolicy(turtle.digPolicies.turtleSafe)
+  turtle.setMovementStrategy('goto')
+  status('mining')
+
+  if isFinished() then
+    success = false
+    msg = 'Mining complete'
+  else
+    success, msg = pcall(main)
+  end
+
+  status(success and 'finished' or turtle.isAborted() and 'aborting' or 'error')
+  if turtle._goto({ x = 0, y = 0, z = 0 }) then
+    unload()
+  end
+  turtle.reset()
+
+  Event.exitPullEvents()
+end)
+
+Event.onTerminate(function()
+  turtle.abort(true)
 end)
 
 UI:setPage(page)
 UI:pullEvents()
 UI.term:reset()
+
+turtle.reset()
+
+if not success and msg then
+  _G.printError(msg)
+end
