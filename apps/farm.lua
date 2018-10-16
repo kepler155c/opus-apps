@@ -44,11 +44,8 @@ local function harvest(blocks)
 end
 
 turtle.reset()
-local directions = { [5] = 2, [3] = 3, [4] = 0, [2] = 1, }
-turtle.placeUp('minecraft:chest') or error('Missing chest')
-local _, bi = turtle.inspectUp()
-turtle.digUp()
-turtle.point.heading = directions[bi.metadata]
+local facing = scanner.getBlockMeta(0, 0, 0).state.facing
+pt.heading = Point.facings[facing].heading
 
 turtle.setPolicy('digOnly')
 

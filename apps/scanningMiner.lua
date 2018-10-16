@@ -95,8 +95,8 @@ local page = UI.Page {
     y = 2, ey = -2,
     sortColumn = 'name',
     columns = {
-      { heading = 'Resource', key = 'displayName'   },
       { heading = 'Count',    key = 'count', width = 5 },
+      { heading = 'Resource', key = 'displayName' },
     },
   },
   statusBar = UI.StatusBar {
@@ -228,7 +228,7 @@ local function safeGoto(x, z, y, h)
   local oldStatus = turtle.getStatus()
 
   while not turtle._goto({ x = x, z = z, y = y or turtle.point.y, heading = h }) do
-    --status('stuck')
+    status('stuck')
     if turtle.isAborted() then
       return false
     end
@@ -434,30 +434,35 @@ local function scan()
 end
 
 local function mineChunk()
-  local topDown = turtle.point.y > -mining.home.y / 2
-  local y = topDown and -8 or -mining.home.y + 8
-  local inc = topDown and
-    function() y = y - 16 end or
-    function() y = y + 16 end
+  local pts = { }
 
-  while true do
-    status('scanning')
+  for i = 1, math.ceil(mining.home.y / 16) do
+    pts[i] = { x = mining.x + 8, z = mining.z + 8, y = (i - 1) * 16 + 8 }
+    if pts[i].y > mining.home.y - 8 then
+      pts[i].y = mining.home.y - 8
+    end
+    pts[i].y = pts[i].y - mining.home.y -- abs to rel
+    debug(pts[i])
+  end
+
+  Point.eachClosest(turtle.point, pts, function(pt)
+    if turtle.isAborted() then
+      error('aborted')
+    end
+    status('scanning ' .. pt.y + mining.home.y - 8 .. ' - ' .. pt.y + mining.home.y + 8)
+
     turtle.select(1)
-    safeGoto(mining.x + 8, mining.z + 8, y)
+    safeGoto(pt.x, pt.z, pt.y)
     scan()
+
     if turtle.getFuelLevel() < LOW_FUEL then
       refuel()
-      local veryMinFuel = Point.turtleDistance(turtle.point, { x = 0, y = 0, z = 0}) + 512
+      local veryMinFuel = Point.turtleDistance(turtle.point, { x = 0, y = 0, z = 0 }) + 512
       if turtle.getFuelLevel() < veryMinFuel then
         error('Not enough fuel to continue')
       end
     end
-    inc()
-
-    if y > 0 or y < -mining.home.y then
-      break
-    end
-  end
+  end)
 end
 
 local function addTrash()
