@@ -3,7 +3,13 @@ _G.requireInjector(_ENV)
 local Point = require('point')
 local Util  = require('util')
 
-local scanner = device['plethora:scanner'] or error('Plethora scanner required')
+local device = _G.device
+local os     = _G.os
+local turtle = _G.turtle
+
+local scanner = device['plethora:scanner'] or
+  turtle.equip('right', 'plethora:module:2') or
+  error('Plethora scanner required')
 
 local crops = {
   ['minecraft:wheat'] =
@@ -25,27 +31,31 @@ local function scan()
     return crops[v.name] and
       scanner.getBlockMeta(v.x, v.y, v.z).metadata == crops[v.name].mature
     end)
-  
+
   return blocks
 end
 
 local function harvest(blocks)
+  turtle.equip('right', 'minecraft:diamond_pickaxe')
+
   Point.eachClosest(turtle.point, blocks, function(b)
     Util.print(b)
     if b.name == 'minecraft:reeds' then
-      turtle.goto(b)
+      turtle._goto(b)
     else
-      turtle.goto(Point.above(b))
+      turtle._goto(Point.above(b))
       turtle.digDown()
       turtle.placeDown(crops[b.name].seed)
       turtle.select(1)
     end
   end)
+
+  turtle.equip('right', 'plethora:module:2')
 end
 
 turtle.reset()
 local facing = scanner.getBlockMeta(0, 0, 0).state.facing
-pt.heading = Point.facings[facing].heading
+turtle.point.heading = Point.facings[facing].heading
 
 turtle.setPolicy('digOnly')
 

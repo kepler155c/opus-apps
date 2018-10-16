@@ -414,7 +414,9 @@ local function scan()
         page.statusBar:setValue('status', m)
         page.statusBar:draw()
         page:sync()
-        os.sleep(5)
+        os.sleep(3)
+      else
+        page.statusBar:setValue('mining', m)
       end
       dirty = true
     elseif b.action == 'liquid_fuel' then
@@ -442,14 +444,13 @@ local function mineChunk()
       pts[i].y = mining.home.y - 8
     end
     pts[i].y = pts[i].y - mining.home.y -- abs to rel
-    debug(pts[i])
   end
 
   Point.eachClosest(turtle.point, pts, function(pt)
     if turtle.isAborted() then
       error('aborted')
     end
-    status('scanning ' .. pt.y + mining.home.y - 8 .. ' - ' .. pt.y + mining.home.y + 8)
+    status('scanning ' .. pt.y + mining.home.y - 8 .. '-' .. pt.y + mining.home.y + 8)
 
     turtle.select(1)
     safeGoto(pt.x, pt.z, pt.y)
