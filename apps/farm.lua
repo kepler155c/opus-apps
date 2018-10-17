@@ -14,7 +14,7 @@ local scanner = device['plethora:scanner'] or
   turtle.equip('right', 'plethora:module:2') and device['plethora:scanner'] or
   error('Plethora scanner required')
 
-local crops = Util.readFile(CONFIG_FILE) or {
+local crops = Util.readTable(CONFIG_FILE) or {
   ['minecraft:wheat'] =
     { seed = 'minecraft:wheat_seeds', mature = 7 },
   ['minecraft:carrots'] =
