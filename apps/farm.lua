@@ -56,9 +56,9 @@ end
 local function harvest(blocks)
   turtle.equip('right', 'minecraft:diamond_pickaxe')
   turtle.setPoint({ x = 0, y = 0, z = 0, heading = turtle.point.heading })
-  turtle.select(1)
 
   Point.eachClosest(turtle.point, blocks, function(b)
+    turtle.select(1)
     if b.name == 'minecraft:reeds' then
       turtle._goto(b)
     elseif b.name == 'minecraft:chest' then
