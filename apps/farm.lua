@@ -64,11 +64,11 @@ local function harvest(blocks)
     elseif b.name == 'minecraft:chest' then
       local summed = turtle.getSummedInventory()
       for _,v in pairs(summed) do
-        if v.count > 32 then
+        if v.count > 48 then
           if turtle._goto(Point.above(b)) then
             for k,v2 in pairs(summed) do
-              if v2.count > 32 then
-                turtle.dropDown(k, v2.count - 32)
+              if v2.count > 16 then
+                turtle.dropDown(k, v2.count - 16)
               end
             end
           end

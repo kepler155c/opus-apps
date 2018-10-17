@@ -24,6 +24,8 @@ local peripheral = _G.peripheral
 local read       = _G.read
 local turtle     = _G.turtle
 
+UI:configure('scanningMiner', ...)
+
 local args = { ... }
 local options = {
   chunks      = { arg = 'c', type = 'number', value = -1,
