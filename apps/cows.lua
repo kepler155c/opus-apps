@@ -5,6 +5,7 @@ local Util   = require('util')
 
 local device = _G.device
 local os     = _G.os
+local term   = _G.term
 local turtle = _G.turtle
 
 local config = {
@@ -19,11 +20,19 @@ local sensor = device['plethora:sensor'] or
 local function getCowCount()
   local blocks = sensor.sense()
 
+  local grown = 0
+  local babies = 0
+
   Util.filterInplace(blocks, function(v)
     if v.name == 'Cow' then
+      grown = grown + (v.y > -.5) and 1 or 0
+      babies = babies + (v.y < -.5) and 1 or 0
       return v.y > -.5
     end
   end)
+
+  term.clearLine()
+  Util.print('%d grown, %d babies', grown, babies)
 
   return #blocks
 end
