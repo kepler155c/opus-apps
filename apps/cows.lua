@@ -25,8 +25,8 @@ local function getCowCount()
 
   Util.filterInplace(blocks, function(v)
     if v.name == 'Cow' then
-      grown = grown + (v.y > -.5) and 1 or 0
-      babies = babies + (v.y < -.5) and 1 or 0
+      if v.y > -.5 then grown  = grown  + 1 end
+      if v.y < -.5 then babies = babies + 1 end
       return v.y > -.5
     end
   end)
