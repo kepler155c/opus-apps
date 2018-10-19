@@ -5,7 +5,6 @@ local Util   = require('util')
 
 local device = _G.device
 local os     = _G.os
-local term   = _G.term
 local turtle = _G.turtle
 
 local config = {
@@ -31,7 +30,6 @@ local function getCowCount()
     end
   end)
 
-  term.clearLine()
   Util.print('%d grown, %d babies', grown, babies)
 
   return #blocks

@@ -522,14 +522,15 @@ end
 
 local success, msg
 
+if not fs.exists(DICTIONARY_FILE) or options.setTrash.value then
+  print('Place blocks into the turtles inventor to ignore, such as cobble, stone, gravel, etc.')
+  print('\nPress enter when ready')
+  read()
+  addTrash()
+end
+
 Event.addRoutine(function()
   turtle.reset()
-
-  if not fs.exists(DICTIONARY_FILE) or options.setTrash.value then
-    print('Add blocks to ignore, press enter when ready')
-    read()
-    addTrash()
-  end
 
   ejectTrash()
 
