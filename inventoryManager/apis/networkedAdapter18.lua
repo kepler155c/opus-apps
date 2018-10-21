@@ -10,6 +10,7 @@ function NetworkedAdapter:init(args)
     name = 'Networked Adapter',
     remotes = { },
     remoteDefaults = { },
+    dirty = true,
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
@@ -53,17 +54,25 @@ function NetworkedAdapter:isValid()
 end
 
 function NetworkedAdapter:refresh(throttle)
+  self.dirty = true
   return self:listItems(throttle)
 end
 
 -- provide a consolidated list of items
 function NetworkedAdapter:listItems(throttle)
+  if not self.dirty then
+    return self.items
+  end
+
   local cache = { }
   local items = { }
   throttle = throttle or Util.throttle()
 
   for _, remote in pairs(self.remotes) do
-    remote:listItems(throttle)
+    if not remote:listItems(throttle) then
+      debug('no List')
+      error('Listing failed: ', remote.name)
+    end
     local rcache = remote.cache or { }
 
 -- TODO: add a method in each adapter that only updates a passed cache
@@ -84,10 +93,10 @@ function NetworkedAdapter:listItems(throttle)
     end
   end
 
-  if not Util.empty(items) then
-    self.cache = cache
-    return items
-  end
+  self.dirty = false
+  self.cache = cache
+  self.items = items
+  return items
 end
 
 function NetworkedAdapter:getItemInfo(item)
@@ -99,19 +108,16 @@ function NetworkedAdapter:getItemInfo(item)
   return items[key]
 end
 
-function NetworkedAdapter:getPercentUsed()
-  if self.cache and self.getDrawerCount then
-    return math.floor(Util.size(self.cache) / self.getDrawerCount() * 100)
-  end
-  return 0
-end
-
 function NetworkedAdapter:provide(item, qty, slot, direction)
   local total = 0
 
   for _, remote in ipairs(self.remotes) do
 debug('%s -> slot %d: %d %s', remote.side, slot or -1, qty, item.name)
     local amount = remote:provide(item, qty, slot, direction)
+    if amount > 0 then
+      self.dirty = true
+      remote.dirty = true
+    end
     qty = qty - amount
     total = total + amount
     if qty <= 0 then
@@ -158,6 +164,10 @@ debug('attempting to insert ' .. item.name)
   local function insert(remote)
 debug('slot %d -> %s: %s', slot, remote.side, qty)
     local amount = remote:insert(slot, qty, toSlot)
+    if amount > 0 then
+      self.dirty = true
+      remote.dirty = true
+    end
     qty = qty - amount
     total = total + amount
   end
