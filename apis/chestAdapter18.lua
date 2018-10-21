@@ -8,6 +8,7 @@ local ChestAdapter = class()
 function ChestAdapter:init(args)
   local defaults = {
     name = 'chest',
+    adapter = 'ChestAdapter18'
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
@@ -124,7 +125,7 @@ end
 function ChestAdapter:provide(item, qty, slot, direction)
   local total = 0
 
-  local s, m = pcall(function()
+  local _, m = pcall(function()
     local stacks = self.list()
     for key,stack in Util.rpairs(stacks) do
       if stack.name == item.name and

@@ -1,7 +1,6 @@
 local class      = require('class')
 local Util       = require('util')
 local InventoryAdapter  = require('inventoryAdapter')
-local itemDB     = require('itemDB')
 local Peripheral = require('peripheral')
 
 local NetworkedAdapter = class()
@@ -10,19 +9,23 @@ function NetworkedAdapter:init(args)
   local defaults = {
     name = 'Networked Adapter',
     remotes = { },
+    remoteDefaults = { },
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
 
   if not self.side or self.side == 'network' then
-    self.chests = { }
     self.modem = Peripheral.get('wired_modem')
 
     if self.modem and self.modem.getNameLocal then
       self.localName = self.modem.getNameLocal()
       for _, v in pairs(self.modem.getNamesRemote()) do
         local remote = Peripheral.get({ name = v })
-        if remote and remote.size and remote.size() >= 27 and remote.list then
+        if remote and
+           remote.size and
+           remote.size() >= 27 and
+           remote.list and
+           not (self.remoteDefaults[v] and self.remoteDefaults[v].ignore) then
 
           local adapter = InventoryAdapter.wrap({ side = v, direction = self.localName })
           if adapter then
@@ -31,9 +34,22 @@ function NetworkedAdapter:init(args)
         end
       end
     end
+
+    for _, remote in pairs(self.remotes) do
+      Util.merge(remote, self.remoteDefaults[remote.side])
+    end
+
+    table.sort(self.remotes, function(a, b)
+      if not a.priority then
+        return false
+      elseif not b.priority then
+        return true
+      end
+      return a.priority < b.priority
+    end)
   end
 
-  _G._p = self
+_G._p = self  --------------------------------------------- DEBUG
 end
 
 function NetworkedAdapter:isValid()
@@ -50,13 +66,13 @@ function NetworkedAdapter:listItems(throttle)
   local items = { }
   throttle = throttle or Util.throttle()
 
-  for _, v in pairs(self.remotes) do
-    v.__cache = v:listItems(throttle)
+  for _, remote in pairs(self.remotes) do
+    remote:listItems(throttle)
+    local rcache = remote.cache or { }
 
-    for k,v in pairs(v.__cache) do
+-- TODO: add a method in each adapter that only updates a passed cache
+    for key,v in pairs(rcache) do
       if v.count > 0 then
-        local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
-
         local entry = cache[key]
         if not entry then
           entry = Util.shallowCopy(v)
@@ -97,9 +113,9 @@ end
 function NetworkedAdapter:provide(item, qty, slot, direction)
   local total = 0
 
-  for _, remote in pairs(self.remotes) do
-debug('%s -> slot %d: %d %s', remote.side, slot, qty, item.name)
-    local amount = remote:provide(item, qty, slot)
+  for _, remote in ipairs(self.remotes) do
+debug('%s -> slot %d: %d %s', remote.side, slot or -1, qty, item.name)
+    local amount = remote:provide(item, qty, slot, direction)
     qty = qty - amount
     total = total + amount
     if qty <= 0 then
@@ -127,16 +143,45 @@ debug('extract %d slot:%d', qty, slot)
   return total
 end
 
-function NetworkedAdapter:insert(slot, qty, toSlot)
+function NetworkedAdapter:insert(slot, qty, toSlot, item)
   local total = 0
-  for _, remote in pairs(self.remotes) do
+
+  -- toSlot is not really valid with this adapter
+  if toSlot then
+    error('NetworkedAdapter: toSlot is not valid')
+  end
+
+  local key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
+
+  if not self.cache then
+    self:listItems()
+  end
+
+  local function insert(remote)
 debug('slot %d -> %s: %s', slot, remote.side, qty)
     local amount = remote:insert(slot, qty, toSlot)
     qty = qty - amount
     total = total + amount
+  end
+
+  if self.cache[key] then -- is this item in some chest
+    -- low to high priority if the chest already contains that item
+    for _, remote in Util.rpairs(self.remotes) do
+      if qty <= 0 then
+        break
+      end
+      if remote.cache and remote.cache[key] then
+        insert(remote)
+      end
+    end
+  end
+
+  -- high to low priority
+  for _, remote in ipairs(self.remotes) do
     if qty <= 0 then
       break
     end
+    insert(remote)
   end
 
   return total

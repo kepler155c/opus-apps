@@ -76,7 +76,6 @@ local Terminal       = require('terminal')
 local UI             = require('ui')
 local Util           = require('util')
 
-local ControllerAdapter = require('controllerAdapter')
 local InventoryAdapter  = require('inventoryAdapter')
 
 local colors     = _G.colors
@@ -94,7 +93,6 @@ local config = {
   computerFacing = 'north',   -- direction turtle is facing
 
   inventory      = 'network', -- main inventory
-  controller     = 'none',    -- AE / RS controller
 
   trashDirection = 'up',     -- trash/chest in relation to inventory
   monitor        = 'type/monitor',
@@ -102,9 +100,8 @@ local config = {
 
 Config.loadWithCheck('inventoryManager', config)
 
---local controllerAdapter   = ControllerAdapter.wrap({ side = config.controller, facing = config.computerFacing })
 local inventoryAdapter = config.inventory == 'network' and
-  InventoryAdapter.wrap() or
+  InventoryAdapter.wrap({ remoteDefaults = config.remoteDefaults }) or
   InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
 
 if not inventoryAdapter then
@@ -116,6 +113,20 @@ local introspectionModule = device['plethora:introspection']
 local controllerAdapter
 if inventoryAdapter.craft then
   controllerAdapter = inventoryAdapter
+end
+
+local feederAdapter
+
+if config.remoteDefaults then
+  for k, v in pairs(config.remoteDefaults) do
+    if v.feeder then
+      local modem = Peripheral.get('wired_modem')
+      if modem and modem.getNameLocal then
+        feederAdapter = InventoryAdapter.wrap({ side = k, direction = modem.getNameLocal() })
+      end
+      break
+    end
+  end
 end
 
 local STATUS_INFO    = 'info'
@@ -224,13 +235,13 @@ end
 
 local function clearGrid()
   local function clear()
+    turtle.eachFilledSlot(function(slot)
+      inventoryAdapter:insert(slot.index, slot.count, nil, slot)
+    end)
+
     for i = 1, 16 do
-      local count = turtle.getItemCount(i)
-      if count > 0 then
-        inventoryAdapter:insert(i, count)
-        if turtle.getItemCount(i) ~= 0 then
-          return false
-        end
+      if turtle.getItemCount(i) ~= 0 then
+        return false
       end
     end
     return true
@@ -468,6 +479,9 @@ local function eject(item, qty)
       inventoryAdapter:provide(item, qty)
       _G.turtle.emptyInventory()
     end)
+    if not s and m then
+      debug(m)
+    end
   end
 end
 
@@ -618,6 +632,17 @@ local function watchResources(items)
   end
 
   return craftList
+end
+
+local function emptyFeederChest()
+_G._p2 =feederAdapter
+  if feederAdapter then
+    local list = feederAdapter.list() -- raw list !
+    for k,v in pairs(list) do
+      feederAdapter:extract(k, v.count, 1)
+      inventoryAdapter:insert(1, v.count, nil, v)
+    end
+  end
 end
 
 local function loadResources()
@@ -1346,6 +1371,8 @@ UI:setPage(listingPage)
 listingPage:setFocus(listingPage.statusBar.filter)
 
 Event.onInterval(5, function()
+
+  emptyFeederChest()
 
   if not craftingPaused then
     local items = listItems()

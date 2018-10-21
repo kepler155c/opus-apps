@@ -10,17 +10,17 @@ local USER_RECIPES = 'usr/config/recipes.db'
 local Craft = { }
 
 local function clearGrid(inventoryAdapter)
-	for i = 1, 16 do
-		local count = turtle.getItemCount(i)
-		if count > 0 then
-			inventoryAdapter:insert(i, count)
-			if turtle.getItemCount(i) ~= 0 then
-				-- inventory is possibly full
-				return false
-			end
-		end
-	end
-	return true
+  turtle.eachFilledSlot(function(slot)
+    inventoryAdapter:insert(slot.index, slot.count, nil, slot)
+  end)
+
+  for i = 1, 16 do
+    if turtle.getItemCount(i) ~= 0 then
+      return false
+    end
+  end
+
+  return true
 end
 
 local function splitKey(key)
