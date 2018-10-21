@@ -949,6 +949,8 @@ local listingPage = UI.Page {
     r = 'refresh',
     q = 'quit',
     grid_select_right = 'craft',
+    [ 'control-e' ] = 'eject',
+    [ 'control-s' ] = 'eject_stack',
   },
   displayMode = 0,
 }
@@ -982,6 +984,18 @@ end
 function listingPage:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
+
+  elseif event.type == 'eject' then
+    local item = self.grid:getSelected()
+    if item then
+      eject(item, 1)
+    end
+
+  elseif event.type == 'eject_stack' then
+    local item = self.grid:getSelected()
+    if item then
+      eject(item, itemDB:getMaxCount(item))
+    end
 
   elseif event.type == 'grid_select' then
     local selected = event.selected
