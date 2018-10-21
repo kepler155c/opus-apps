@@ -90,41 +90,53 @@ if multishell then
 end
 
 local config = {
-  computerFacing = 'north',   -- direction turtle is facing
-
-  inventory      = 'network', -- main inventory
-
-  trashDirection = 'up',     -- trash/chest in relation to inventory
-  monitor        = 'type/monitor',
+  monitor = 'type/monitor',
+  remoteDefaults = { },
 }
+Config.load('inventoryManager', config)
 
-Config.loadWithCheck('inventoryManager', config)
+local modem = Peripheral.get('wired_modem')
+if not modem or not modem.getNameLocal then
+  error('Wired modem is not connected')
+end
 
-local inventoryAdapter = config.inventory == 'network' and
-  InventoryAdapter.wrap({ remoteDefaults = config.remoteDefaults }) or
-  InventoryAdapter.wrap({ side = config.inventory, facing = config.computerFacing })
+local feederAdapter
+local controllerAdapter
 
+local storage = { }
+for k,v in pairs(config.remoteDefaults) do
+  if v.mtype == 'storage' then
+    storage[k] = v
+  elseif v.mtype == 'input' then
+    feederAdapter = InventoryAdapter.wrap({ side = k, direction = modem.getNameLocal() })
+  elseif v.mtype == 'controller' then
+    -- TODO: look for controller
+  end
+end
+debug(storage)
+
+local inventoryAdapter = InventoryAdapter.wrap({ remoteDefaults = storage })
 if not inventoryAdapter then
   error('Invalid inventory configuration')
 end
 
-local introspectionModule = device['plethora:introspection']
+local introspectionModule = device['plethora:introspection'] or
+  error('introspection module not found')
 
-local controllerAdapter
-if inventoryAdapter.craft then
-  controllerAdapter = inventoryAdapter
-end
-
-local feederAdapter
-
-if config.remoteDefaults then
-  for k, v in pairs(config.remoteDefaults) do
-    if v.feeder then
-      local modem = Peripheral.get('wired_modem')
-      if modem and modem.getNameLocal then
-        feederAdapter = InventoryAdapter.wrap({ side = k, direction = modem.getNameLocal() })
-      end
-      break
+-- TODO: cleanup
+for _, v in pairs(modem.getNamesRemote()) do
+  local remote = Peripheral.get({ name = v })
+  if remote.pullItems then
+    if not config.remoteDefaults[v] then
+      config.remoteDefaults[v] = {
+        name  = v,
+        mtype = 'ignore',
+      }
+    else
+      config.remoteDefaults[v].name = v
+    end
+    if not config.remoteDefaults[v].mtype then
+      config.remoteDefaults[v].mtype = 'ignore'
     end
   end
 end
@@ -473,6 +485,13 @@ local function craftItems(craftList, allItems)
   end
 end
 
+local function queue(fn)
+  while craftingPaused do
+    os.sleep(1)
+  end
+  fn()
+end
+
 local function eject(item, qty)
   if _G.turtle then
     local s, m = pcall(function()
@@ -672,6 +691,143 @@ local function saveResources()
   end
 
   Util.writeTable(RESOURCE_FILE, t)
+end
+
+local machinesPage = UI.Page {
+  titleBar = UI.TitleBar {
+    previousPage = true,
+    title = 'Machines',
+  },
+  grid = UI.ScrollingGrid {
+    y = 2, ey = -2,
+    values = config.remoteDefaults,
+    columns = {
+      { heading = 'Name',     key = 'displayName' },
+      { heading = 'Priority', key = 'priority', width = 5  },
+      { heading = 'Type',     key = 'mtype',    width = 5  },
+    },
+    sortColumn = 'name',
+  },
+  detail = UI.SlideOut {
+    backgroundColor = colors.cyan,
+    form = UI.Form {
+      x = 1, y = 2, ex = -1, ey = -2,
+      [7] = UI.Text {
+        x = 12, y = 1,
+        width = 20,
+        value = 'test',
+      },
+      [1] = UI.TextEntry {
+        formLabel = 'Name', formKey = 'displayName', help = '...',
+        limit = 64,
+      },
+      [2] = UI.Chooser {
+        width = 15,
+        formLabel = 'Type', formKey = 'mtype',
+        nochoice = 'Storage',
+        choices = {
+          { name = 'Storage',     value = 'storage'  },
+          { name = 'Trashcan',    value = 'trashcan' },
+          { name = 'Input chest', value = 'input'    },
+          { name = 'Ignore',      value = 'ignore'   },
+        },
+        help = 'Check if machine is empty before crafting'
+      },
+      [3] = UI.Chooser {
+        width = 7,
+        formLabel = 'Empty', formKey = 'empty',
+        nochoice = 'No',
+        choices = {
+          { name = 'Yes', value = true },
+          { name = 'No', value = false },
+        },
+        help = 'Check if machine is empty before crafting'
+      },
+      [4] = UI.TextEntry {
+        formLabel = 'Priority', formKey = 'priority', help = '...',
+        limit = 4,
+      },
+      [5] = UI.TextEntry {
+        formLabel = 'Max Craft', formKey = 'maxCount', help = '...',
+        limit = 4,
+      },
+      [6] = UI.TextEntry {
+        formLabel = 'Lock to', formKey = 'lockWith', help = '...',
+        limit = 64,
+      },
+    },
+    statusBar = UI.StatusBar(),
+  },
+  statusBar = UI.StatusBar {
+    values = 'Select Machine',
+  },
+  accelerators = {
+    h = 'toggle_hidden',
+  }
+}
+
+function machinesPage:enable()
+  self.grid:update()
+  UI.Page.enable(self)
+end
+
+function machinesPage.detail:eventHandler(event)
+  if event.type == 'focus_change' then
+    self.statusBar:setStatus(event.focused.help)
+  end
+  return UI.SlideOut.eventHandler(self, event)
+end
+
+function machinesPage.grid:getDisplayValues(row)
+  row = Util.shallowCopy(row)
+  row.displayName = row.displayName or row.name
+  return row
+end
+
+function machinesPage.grid:getRowTextColor(row, selected)
+  if row.mtype == 'ignore' then
+    return colors.lightGray
+  end
+  return UI.Grid:getRowTextColor(row, selected)
+end
+
+function machinesPage:eventHandler(event)
+  if event.type == 'grid_select' then
+    self.detail.form:setValues(event.selected)
+    self.detail.form[7].value = event.selected.name
+debug(event.selected)
+    self.detail:show()
+
+  elseif event.type == 'toggle_hidden' then
+    local selected = self.grid:getSelected()
+    if selected then
+      selected.ignore = not selected.ignore
+--      Util.writeTable(MACHINES_FILE, machines)
+      self:draw()
+    end
+
+  elseif event.type == 'form_complete' then
+    self.detail.form.values.empty = self.detail.form.values.empty == true or nil
+    self.detail.form.values.ignore = self.detail.form.values.ignore == true or nil
+    self.detail.form.values.priority = tonumber(self.detail.form.values.priority)
+    self.detail.form.values.maxCount = tonumber(self.detail.form.values.maxCount)
+    if #self.detail.form.values.displayName == 0 then
+      self.detail.form.values.displayName = nil
+    end
+    if #self.detail.form.values.lockWith == 0 then
+      self.detail.form.values.lockWith = nil
+    end
+    Config.update('inventoryManager', config)
+    self.detail:hide()
+    self.grid:update()
+
+  elseif event.type == 'form_cancel' then
+    self.detail:hide()
+
+  else
+    UI.Page.eventHandler(self, event)
+  end
+  return true
 end
 
 local itemPage = UI.Page {
@@ -951,6 +1107,7 @@ local listingPage = UI.Page {
     grid_select_right = 'craft',
     [ 'control-e' ] = 'eject',
     [ 'control-s' ] = 'eject_stack',
+    [ 'control-m' ] = 'machines',
   },
   displayMode = 0,
 }
@@ -988,14 +1145,17 @@ function listingPage:eventHandler(event)
   elseif event.type == 'eject' then
     local item = self.grid:getSelected()
     if item then
-      eject(item, 1)
+      queue(function() eject(item, 1) end)
     end
 
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
-      eject(item, itemDB:getMaxCount(item))
+      queue(function() eject(item, itemDB:getMaxCount(item)) end)
     end
+
+  elseif event.type == 'machines' then
+    UI:setPage('machines')
 
   elseif event.type == 'grid_select' then
     local selected = event.selected
@@ -1378,6 +1538,7 @@ UI:setPages({
   item = itemPage,
   learn = learnPage,
   craft = craftPage,
+  machines = machinesPage,
 })
 
 jobMonitor()

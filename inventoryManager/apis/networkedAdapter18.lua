@@ -19,15 +19,11 @@ function NetworkedAdapter:init(args)
 
     if self.modem and self.modem.getNameLocal then
       self.localName = self.modem.getNameLocal()
-      for _, v in pairs(self.modem.getNamesRemote()) do
-        local remote = Peripheral.get({ name = v })
-        if remote and
-           remote.size and
-           remote.size() >= 27 and
-           remote.list and
-           not (self.remoteDefaults[v] and self.remoteDefaults[v].ignore) then
 
-          local adapter = InventoryAdapter.wrap({ side = v, direction = self.localName })
+      for k in pairs(self.remoteDefaults) do
+        local remote = Peripheral.get({ name = k })
+        if remote and remote.size and remote.list then
+          local adapter = InventoryAdapter.wrap({ side = k, direction = self.localName })
           if adapter then
             table.insert(self.remotes, adapter)
           end
@@ -157,11 +153,21 @@ function NetworkedAdapter:insert(slot, qty, toSlot, item)
     self:listItems()
   end
 
+debug('attempting to insert ' .. item.name)
+
   local function insert(remote)
 debug('slot %d -> %s: %s', slot, remote.side, qty)
     local amount = remote:insert(slot, qty, toSlot)
     qty = qty - amount
     total = total + amount
+  end
+
+  -- found a chest locked with this item
+  for _, remote in pairs(self.remotes) do
+    if remote.lockWith == key or remote.lockWith == item.name then
+      insert(remote)
+      return total
+    end
   end
 
   if self.cache[key] then -- is this item in some chest
@@ -170,7 +176,7 @@ debug('slot %d -> %s: %s', slot, remote.side, qty)
       if qty <= 0 then
         break
       end
-      if remote.cache and remote.cache[key] then
+      if remote.cache and remote.cache[key] and not remote.lockWith then
         insert(remote)
       end
     end
@@ -181,7 +187,9 @@ debug('slot %d -> %s: %s', slot, remote.side, qty)
     if qty <= 0 then
       break
     end
-    insert(remote)
+    if not remote.lockWith then
+      insert(remote)
+    end
   end
 
   return total

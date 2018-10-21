@@ -219,7 +219,16 @@ local function safeGoto(x, z, y, h)
   local oldStatus = turtle.getStatus()
 
   -- only pathfind above or around other turtles (never down)
-  Pathing.setBox({ x = turtle.point.x, y = turtle.point.y, z = turtle.point.z, ex = x, ey = y, ez = z })
+  local box = Point.normalizeBox({ x = turtle.point.x, y = turtle.point.y, z = turtle.point.z,
+                ex = x, ey = y, ez = z })
+  box.x = box.x - 1
+  box.z = box.z - 1
+  box.ex = box.ex + 1
+  box.ey = box.ey + 1
+  box.ez = box.ez + 1
+
+  Pathing.setBox(box)
+
   while not turtle.pathfind({ x = x, z = z, y = y or turtle.point.y, heading = h }) do
     --status('stuck')
     if turtle.isAborted() then
