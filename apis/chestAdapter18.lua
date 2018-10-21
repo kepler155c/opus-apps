@@ -122,6 +122,8 @@ function ChestAdapter:getPercentUsed()
 end
 
 function ChestAdapter:provide(item, qty, slot, direction)
+  local total = 0
+
   local s, m = pcall(function()
     local stacks = self.list()
     for key,stack in Util.rpairs(stacks) do
@@ -130,24 +132,25 @@ function ChestAdapter:provide(item, qty, slot, direction)
         (not item.nbtHash or stack.nbtHash == item.nbtHash) then
         local amount = math.min(qty, stack.count)
         if amount > 0 then
-          self.pushItems(direction or self.direction, key, amount, slot)
+          amount = self.pushItems(direction or self.direction, key, amount, slot)
         end
         qty = qty - amount
+        total = total + amount
         if qty <= 0 then
           break
         end
       end
     end
   end)
-  return s, m
+  return total, m
 end
 
 function ChestAdapter:extract(slot, qty, toSlot)
-  self.pushItems(self.direction, slot, qty, toSlot)
+  return self.pushItems(self.direction, slot, qty, toSlot)
 end
 
 function ChestAdapter:insert(slot, qty, toSlot)
-  self.pullItems(self.direction, slot, qty, toSlot)
+  return self.pullItems(self.direction, slot, qty, toSlot)
 end
 
 return ChestAdapter

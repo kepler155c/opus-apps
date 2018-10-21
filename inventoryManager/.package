@@ -1,0 +1,12 @@
+{
+	required = {
+		'opus-inventory-manager',
+	},
+	title = 'Inventory manager for Opus OS',
+	description = [[
+Unstable Branch
+]],
+	licence = 'MIT',
+	--location = '',
+	--mount = 'packages/opus-neural gitfs kepler155c/opus-neural/master',
+}
