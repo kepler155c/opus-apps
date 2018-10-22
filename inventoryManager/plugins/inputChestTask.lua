@@ -1,5 +1,5 @@
-local InventoryAdapter  = require('inventoryAdapter')
-local Lora              = require('lora/lora')
+local InventoryAdapter = require('inventoryAdapter')
+local Lora             = require('lora/lora')
 
 local device = _G.device
 local modem  = device.wired_modem
@@ -21,6 +21,7 @@ function InputChest:init(context)
 end
 
 -- TODO: clear grid
+-- TODO: extract directly to target
 
 function InputChest:cycle(context)
 	for _, adapter in pairs(self.adapters) do

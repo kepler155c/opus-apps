@@ -71,7 +71,6 @@ local fs         = _G.fs
 local multishell = _ENV.multishell
 local shell      = _ENV.shell
 
-
 if multishell then
   multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
 end

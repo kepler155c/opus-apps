@@ -1,8 +1,8 @@
 local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
-local Lora  = require('lora/lora')
-local UI    = require('ui')
-local Util  = require('util')
+local Lora   = require('lora/lora')
+local UI     = require('ui')
+local Util   = require('util')
 
 local colors = _G.colors
 local os     = _G.os

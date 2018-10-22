@@ -146,12 +146,12 @@ function ChestAdapter:provide(item, qty, slot, direction)
   return total, m
 end
 
-function ChestAdapter:extract(slot, qty, toSlot)
-  return self.pushItems(self.direction, slot, qty, toSlot)
+function ChestAdapter:extract(slot, qty, toSlot, direction)
+  return self.pushItems(direction or self.direction, slot, qty, toSlot)
 end
 
-function ChestAdapter:insert(slot, qty, toSlot)
-  return self.pullItems(self.direction, slot, qty, toSlot)
+function ChestAdapter:insert(slot, qty, toSlot, direction)
+  return self.pullItems(direction or self.direction, slot, qty, toSlot)
 end
 
 return ChestAdapter

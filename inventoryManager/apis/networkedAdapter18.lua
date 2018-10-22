@@ -11,6 +11,7 @@ function NetworkedAdapter:init(args)
     remotes = { },
     remoteDefaults = { },
     dirty = true,
+listCount = 0,
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
@@ -63,15 +64,16 @@ function NetworkedAdapter:listItems(throttle)
   if not self.dirty then
     return self.items
   end
-
+self.listCount = self.listCount + 1
+debug(self.listCount)
   local cache = { }
   local items = { }
   throttle = throttle or Util.throttle()
 
   for _, remote in pairs(self.remotes) do
     if not remote:listItems(throttle) then
-      debug('no List')
-      error('Listing failed: ', remote.name)
+      debug('no List: ' .. remote.name)
+      --error('Listing failed: ' .. remote.name)
     end
     local rcache = remote.cache or { }
 
@@ -145,7 +147,7 @@ debug('extract %d slot:%d', qty, slot)
   return total
 end
 
-function NetworkedAdapter:insert(slot, qty, toSlot, item)
+function NetworkedAdapter:insert(slot, qty, toSlot, item, source)
   local total = 0
 
   -- toSlot is not really valid with this adapter
@@ -159,12 +161,10 @@ function NetworkedAdapter:insert(slot, qty, toSlot, item)
     self:listItems()
   end
 
-debug('attempting to insert ' .. item.name)
-
   local function insert(remote)
-debug('slot %d -> %s: %s', slot, remote.side, qty)
-    local amount = remote:insert(slot, qty, toSlot)
+    local amount = remote:insert(slot, qty, toSlot, source or self.direction)
     if amount > 0 then
+debug('%s(%d) -> %s: %d', source or self.direction, slot, remote.side, amount)
       self.dirty = true
       remote.dirty = true
     end
