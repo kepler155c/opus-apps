@@ -1,10 +1,10 @@
-local Craft          = require('turtle.craft')
-local itemDB         = require('itemDB')
-local Lora           = require('lora/lora')
-local UI             = require('ui')
-local Util           = require('util')
+local Craft  = require('turtle.craft')
+local itemDB = require('itemDB')
+local Lora   = require('lora')
+local UI     = require('ui')
+local Util   = require('util')
 
-local colors     = _G.colors
+local colors = _G.colors
 
 local demandCrafting = { }
 
@@ -135,25 +135,35 @@ local demandCraftingTask = {
   priority = 20,
 }
 
-function demandCraftingTask:cycle()
-  if Util.size(demandCrafting) > 0 then
-    local demandCrafted = Util.shallowCopy(demandCrafting)
-    Lora:craftItems(demandCrafted)
+function demandCraftingTask:cycle(context)
+  local demandCrafted = { }
 
-    for _, item in pairs(demandCrafting) do
-      if item.crafted then
-        item.count = math.max(0, item.count - item.crafted)
-        if item.count <= 0 then
-          item.statusCode = 'success'
-        end
-      end
+  -- look directly at the adapter import activity to determine
+  -- if the item was imported into storage from any source.
+  -- The item does NOT need to come from the machine that did
+  -- the crafting.
+  for _,key in pairs(Util.keys(demandCrafting)) do
+    local item = demandCrafting[key]
+
+    local imported = context.inventoryAdapter.activity[key]
+    if imported then
+      item.crafted = math.min(imported, item.count)
+      item.count = math.max(0, item.count - item.crafted)
+      context.inventoryAdapter.activity[key] = imported - item.crafted
     end
+    demandCrafted[key] = item
+  end
 
-    Lora:updateCraftingStatus(demandCrafted)
+  if Util.size(demandCrafted) > 0 then
+    Lora:craftItems(demandCrafted)
+  end
 
-    for _,key in pairs(Util.keys(demandCrafting)) do
-      local item = demandCrafting[key]
-      if item.crafted and item.count <= 0 then
+  for _,key in pairs(Util.keys(demandCrafting)) do
+    local item = demandCrafting[key]
+    if item.crafted then
+      item.count = math.max(0, item.count - item.crafted)
+      if item.count <= 0 then
+        item.statusCode = 'success'
         demandCrafting[key] = nil
         if item.eject then
           Lora:eject(item, item.ocount)

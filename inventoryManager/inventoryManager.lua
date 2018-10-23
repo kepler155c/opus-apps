@@ -46,6 +46,12 @@
                      type/monitor   - will use the first monitor found
                      side/north     - specify a direction (top/bottom/east/etc)
                      name/monitor_1 - specify the exact name of the peripheral
+
+
+
+  -- Internal
+  Imports are at < 20
+
 ]]--
 
 --[[
@@ -60,7 +66,7 @@ _G.requireInjector()
 local Config         = require('config')
 local Event          = require('event')
 local itemDB         = require('itemDB')
-local Lora           = require('lora/lora')
+local Lora           = require('lora')
 local Peripheral     = require('peripheral')
 local UI             = require('ui')
 local Util           = require('util')
@@ -136,15 +142,18 @@ local context = {
 
 Lora:init(context)
 
-local programDir = fs.getDir(shell.getRunningProgram())
-local pluginDir = fs.combine(programDir, 'plugins')
-
-for _, file in pairs(fs.list(pluginDir)) do
-  local s, m = Util.run(_ENV, fs.combine(pluginDir, file))
-  if not s and m then
-    error(m or 'Unknown error')
+local function loadDirectory(dir)
+  for _, file in pairs(fs.list(dir)) do
+    local s, m = Util.run(_ENV, fs.combine(dir, file))
+    if not s and m then
+      error(m or 'Unknown error')
+    end
   end
 end
+
+local programDir = fs.getDir(shell.getRunningProgram())
+loadDirectory(fs.combine(programDir, 'core'))
+loadDirectory(fs.combine(programDir, 'plugins'))
 
 table.sort(Lora.tasks, function(a, b)
   return a.priority < b.priority
@@ -162,7 +171,11 @@ Event.onInterval(5, function()
     context.inventoryAdapter:refresh()
 
     for _, task in ipairs(Lora.tasks) do
-      task:cycle(context)
+      local s, m = pcall(function() task:cycle(context) end)
+      if not s and m then
+        Util.print(task)
+        error(m)
+      end
     end
   end
 end)

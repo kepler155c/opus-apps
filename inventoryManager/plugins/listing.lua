@@ -1,50 +1,19 @@
 local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
-local Lora   = require('lora/lora')
+local Lora   = require('lora')
 local UI     = require('ui')
 local Util   = require('util')
 
 local colors = _G.colors
 local os     = _G.os
 
-local context     = Lora:getContext()
+local context = Lora:getContext()
 
 local function queue(fn)
   while Lora:isCraftingPaused() do
     os.sleep(1)
   end
   fn()
-end
-
-local function mergeResources(t)
-  for _,v in pairs(context.resources) do
-    local item = Lora:getItem(t, v)
-    if item then
-      Util.merge(item, v)
-    else
-      item = Util.shallowCopy(v)
-      item.count = 0
-      table.insert(t, item)
-    end
-  end
-
-  for k in pairs(Craft.recipes) do
-    local v = itemDB:splitKey(k)
-    local item = Lora:getItem(t, v)
-    if not item then
-      item = Util.shallowCopy(v)
-      item.count = 0
-      table.insert(t, item)
-    end
-    item.has_recipe = true
-  end
-
-  for _,v in pairs(t) do
-    if not v.displayName then
-      v.displayName = itemDB:getName(v)
-    end
-    v.lname = v.displayName:lower()
-  end
 end
 
 local function filterItems(t, filter, displayMode)
@@ -80,8 +49,8 @@ local listingPage = UI.Page {
   grid = UI.Grid {
     y = 2, ey = -2,
     columns = {
+      { heading = ' Qty',  key = 'count'       , width = 4, justify = 'right' },
       { heading = 'Name', key = 'displayName' },
-      { heading = 'Qty',  key = 'count'       , width = 4 },
       { heading = 'Min',  key = 'low'         , width = 4 },
       { heading = 'Max',  key = 'limit'       , width = 4 },
     },
@@ -95,6 +64,9 @@ local listingPage = UI.Page {
       shadowTextColor = colors.gray,
       backgroundColor = colors.cyan,
       backgroundFocusColor = colors.cyan,
+      accelerators = {
+        [ 'enter' ] = 'craft',
+      },
     },
     display = UI.Button {
       x = -3,
@@ -107,7 +79,6 @@ local listingPage = UI.Page {
   accelerators = {
     r = 'refresh',
     q = 'quit',
-    grid_select_right = 'craft',
     [ 'control-e' ] = 'eject',
     [ 'control-s' ] = 'eject_stack',
     [ 'control-m' ] = 'machines',
@@ -131,7 +102,7 @@ end
 
 function listingPage.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
-  row.count = Util.toBytes(row.count)
+  row.count = row.count > 0 and Util.toBytes(row.count) or ''
   if row.low then
     row.low = Util.toBytes(row.low)
   end
@@ -142,6 +113,7 @@ function listingPage.grid:getDisplayValues(row)
 end
 
 function listingPage:eventHandler(event)
+debug(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
 
@@ -160,9 +132,11 @@ function listingPage:eventHandler(event)
   elseif event.type == 'machines' then
     UI:setPage('machines')
 
-  elseif event.type == 'grid_select' then
-    local selected = event.selected
-    UI:setPage('item', selected)
+  elseif event.type == 'details' or event.type == 'grid_select_right' then
+    local item = self.grid:getSelected()
+    if item then
+      UI:setPage('item', item)
+    end
 
   elseif event.type == 'refresh' then
     self:refresh()
@@ -186,7 +160,7 @@ function listingPage:eventHandler(event)
   elseif event.type == 'learn' then
     UI:setPage('learn')
 
-  elseif event.type == 'craft' or event.type == 'grid_select_right' then
+  elseif event.type == 'craft' or event.type == 'grid_select' then
     local item = self.grid:getSelected()
     if Craft.findRecipe(item) or true then -- or item.is_craftable then
       UI:setPage('craft', self.grid:getSelected())
@@ -238,7 +212,7 @@ end
 
 function listingPage:refresh()
   self.allItems = Lora:listItems()
-  mergeResources(self.allItems)
+  Lora:mergeResources(self.allItems)
   self:applyFilter()
 end
 

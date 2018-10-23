@@ -1,5 +1,5 @@
 local itemDB = require('itemDB')
-local Lora   = require('lora/lora')
+local Lora   = require('lora')
 
 local ReplenishTask = {
   priority = 30,
@@ -41,7 +41,6 @@ function ReplenishTask:cycle(context)
   end
 
   Lora:craftItems(craftList)
-  Lora:updateCraftingStatus(craftList)
 end
 
 Lora:registerTask(ReplenishTask)

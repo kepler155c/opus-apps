@@ -1,4 +1,4 @@
-local Lora       = require('lora/lora')
+local Lora       = require('lora')
 local Peripheral = require('peripheral')
 local UI         = require('ui')
 

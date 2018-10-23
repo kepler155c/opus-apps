@@ -1,4 +1,4 @@
-local Lora = require('lora/lora')
+local Lora = require('lora')
 local Util = require('util')
 
 local Autocraft = {
@@ -17,8 +17,8 @@ function Autocraft:cycle(context)
   end
 
   if not Util.empty(list) then
-	  Lora:craftItems(list)
-	end
+    Lora:craftItems(list)
+  end
 end
 
 Lora:registerTask(Autocraft)

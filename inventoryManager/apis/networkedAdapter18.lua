@@ -12,6 +12,7 @@ function NetworkedAdapter:init(args)
     remoteDefaults = { },
     dirty = true,
 listCount = 0,
+    activity = { },
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
@@ -43,11 +44,9 @@ listCount = 0,
       elseif not b.priority then
         return true
       end
-      return a.priority < b.priority
+      return a.priority > b.priority
     end)
   end
-
-_G._p = self  --------------------------------------------- DEBUG
 end
 
 function NetworkedAdapter:isValid()
@@ -66,6 +65,10 @@ function NetworkedAdapter:listItems(throttle)
   end
 self.listCount = self.listCount + 1
 debug(self.listCount)
+
+  -- todo: only listItems from dirty remotes
+  -- todo: better handling of empty inventories
+
   local cache = { }
   local items = { }
   throttle = throttle or Util.throttle()
@@ -111,6 +114,7 @@ function NetworkedAdapter:getItemInfo(item)
 end
 
 function NetworkedAdapter:provide(item, qty, slot, direction)
+  local key   = table.concat({ item.name, item.damage, item.nbtHash }, ':')
   local total = 0
 
   for _, remote in ipairs(self.remotes) do
@@ -119,6 +123,8 @@ debug('%s -> slot %d: %d %s', remote.side, slot or -1, qty, item.name)
     if amount > 0 then
       self.dirty = true
       remote.dirty = true
+      local entry = self.activity[key] or 0
+      self.activity[key] = entry + amount
     end
     qty = qty - amount
     total = total + amount
@@ -164,9 +170,11 @@ function NetworkedAdapter:insert(slot, qty, toSlot, item, source)
   local function insert(remote)
     local amount = remote:insert(slot, qty, toSlot, source or self.direction)
     if amount > 0 then
-debug('%s(%d) -> %s: %d', source or self.direction, slot, remote.side, amount)
+debug('%s(%d) -> %s: %d', source or self.localName, slot, remote.side, amount)
       self.dirty = true
       remote.dirty = true
+      local entry = self.activity[key] or 0
+      self.activity[key] = entry + amount
     end
     qty = qty - amount
     total = total + amount

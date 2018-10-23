@@ -1,4 +1,4 @@
-local Lora   = require('lora/lora')
+local Lora = require('lora')
 
 local device = _G.device
 
@@ -21,7 +21,7 @@ function ImportTask:cycle(context)
 				debug('Invalid import source: ' .. source)
 			end
 		end
-  end
+	end
 end
 
 Lora:registerTask(ImportTask)

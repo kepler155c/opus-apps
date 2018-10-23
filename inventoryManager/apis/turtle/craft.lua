@@ -1,11 +1,13 @@
 local itemDB = require('itemDB')
 local Util   = require('util')
 
+local device = _G.device
 local fs     = _G.fs
 local turtle = _G.turtle
 
-local RECIPES_DIR  = 'usr/etc/recipes'
-local USER_RECIPES = 'usr/config/recipes.db'
+local RECIPES_DIR    = 'usr/etc/recipes'
+local USER_RECIPES   = 'usr/config/recipes.db'
+local MACHINE_LOOKUP = 'usr/config/machine_crafting.db'
 
 local Craft = { }
 
@@ -53,6 +55,26 @@ function Craft.getItemCount(items, item)
 	return count
 end
 
+local function machineCraft(recipe, qty, inventoryAdapter, machineName)
+	local machine = device[machineName]
+	if not machine then
+		debug('machine not found')
+	else
+		for k in pairs(recipe.ingredients) do
+			if machine.getItemMeta(k) then
+				debug('machine in use: ' .. k)
+				return false
+			end
+		end
+
+		for k,v in pairs(recipe.ingredients) do
+			inventoryAdapter:provide(splitKey(v), qty, k, machineName)
+		end
+	end
+
+	return false
+end
+
 local function turtleCraft(recipe, qty, inventoryAdapter)
 	if not clearGrid(inventoryAdapter) then
 		return false
@@ -92,6 +114,12 @@ function Craft.loadRecipes()
 
 	local recipes = Util.readTable(USER_RECIPES) or { }
 	Util.merge(Craft.recipes, recipes)
+
+	for k,v in pairs(Craft.recipes) do
+		v.result = k
+	end
+
+	Craft.machineLookup = Util.readTable(MACHINE_LOOKUP) or { }
 end
 
 function Craft.sumIngredients(recipe)
@@ -102,6 +130,13 @@ function Craft.sumIngredients(recipe)
 	end
 -- need a check for crafting tool
 	return t
+end
+
+local function makeRecipeKey(item)
+	if type(item) == 'string' then
+		item = splitKey(item)
+	end
+	return table.concat({ item.name, item.damage or 0, item.nbtHash }, ':')
 end
 
 function Craft.craftRecipe(recipe, count, inventoryAdapter)
@@ -142,7 +177,11 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
 
 	local crafted = 0
 	repeat
-		if not turtleCraft(recipe, math.min(count, maxCount), inventoryAdapter) then
+-- fix
+		if Craft.machineLookup[recipe.result] then
+			machineCraft(recipe, math.min(count, maxCount), inventoryAdapter, Craft.machineLookup[recipe.result])
+			break
+		elseif not turtleCraft(recipe, math.min(count, maxCount), inventoryAdapter) then
 			turtle.select(1)
 			break
 		end
@@ -152,13 +191,6 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
 
 	turtle.select(1)
 	return crafted * recipe.count
-end
-
-local function makeRecipeKey(item)
-	if type(item) == 'string' then
-		item = splitKey(item)
-	end
-	return table.concat({ item.name, item.damage or 0, item.nbtHash }, ':')
 end
 
 function Craft.findRecipe(key)

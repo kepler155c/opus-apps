@@ -1,5 +1,5 @@
 local Ansi = require('ansi')
-local Lora = require('lora/lora')
+local Lora = require('lora')
 local UI   = require('ui')
 local Util = require('util')
 
@@ -24,6 +24,7 @@ local itemPage = UI.Page {
       width = 7,
       formLabel = 'Max', formKey = 'limit', help = 'Eject if above max'
     },
+--[[
     [3] = UI.Chooser {
       width = 7,
       formLabel = 'Autocraft', formKey = 'auto',
@@ -34,6 +35,7 @@ local itemPage = UI.Page {
       },
       help = 'Craft until out of ingredients'
     },
+]]
     [4] = UI.Chooser {
       width = 7,
       formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
@@ -125,9 +127,9 @@ local itemPage = UI.Page {
 }
 
 function itemPage:enable(item)
-  self.item = item
+  self.item = Util.shallowCopy(item)
 
-  self.form:setValues(item)
+  self.form:setValues(self.item)
   self.titleBar.title = item.displayName or item.name
 
   UI.Page.enable(self)
