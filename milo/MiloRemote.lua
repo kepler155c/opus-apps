@@ -5,11 +5,7 @@ local UI     = require('ui')
 local Util   = require('util')
 
 local colors = _G.colors
-
-local socket, msg = Socket.connect(1, 4242)
-if not socket then
-  error(msg)
-end
+local socket
 
 local page = UI.Page {
   menuBar = UI.MenuBar {
@@ -89,6 +85,26 @@ local function filterItems(t, filter, displayMode)
   return t
 end
 
+function page:sendRequest(data)
+  local msg
+
+  for _ = 1, 2 do
+    if not socket or not socket.connected then
+      socket, msg = Socket.connect(1, 4242)
+    end
+    if socket then
+      if socket:write(data) then
+        local response = socket:read(2)
+        if response then
+          return response
+        end
+      end
+      socket:close()
+    end
+  end
+  self.notification:error(msg or 'Failed to connect')
+end
+
 function page.statusBar:draw()
   return UI.Window.draw(self)
 end
@@ -122,13 +138,23 @@ function page:eventHandler(event)
   elseif event.type == 'eject' then
     local item = self.grid:getSelected()
     if item then
-      socket:write({ request = 'transfer', item = item, count = 1 })
+      local items = self:sendRequest({ request = 'transfer', item = item, count = 1 })
+      if items then
+        self.items = items
+        self:applyFilter()
+        self.grid:draw()
+      end
     end
 
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
-      socket:write({ request = 'transfer', item = item, count = 64 })
+      local items = self:sendRequest({ request = 'transfer', item = item, count = 64 })
+      if items then
+        self.items = items
+        self:applyFilter()
+        self.grid:draw()
+      end
     end
 
   elseif event.type == 'refresh' then
@@ -172,12 +198,10 @@ function page:enable()
 end
 
 function page:refresh()
-  socket:write({ request = 'list' })
-  self.items = socket:read()
+  local items = self:sendRequest({ request = 'list' })
 
-  if not self.items then
-    UI:exitPullEvents()
-  else
+  if items then
+    self.items = items
     self:applyFilter()
   end
 end
@@ -190,4 +214,6 @@ end
 UI:setPage(page)
 UI:pullEvents()
 
-socket:close()
+if socket then
+  socket:close()
+end
