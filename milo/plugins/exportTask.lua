@@ -16,9 +16,20 @@ function ExportTask:cycle(context)
 					local slot = machine.getItemMeta(entry.slot) or { count = 0 }
 					local maxCount = slot.maxCount or itemDB:getMaxCount(entry.name)
 					local count = maxCount - slot.count
+
+					-- something else is in this slot
+					if slot.count > 0 and slot.name ~= entry.name then
+						count = 0
+					end
 					if count > 0 then
-						context.inventoryAdapter:provide(
-							itemDB:splitKey(entry.name), count, entry.slot, target)
+						local item = Milo:getItemWithQty(entry)
+						if item.count > 0 then
+							context.inventoryAdapter:provide(
+								itemDB:splitKey(entry.name),
+								math.min(count, item.count),
+								entry.slot,
+								target)
+						end
 					end
 				end
 			else
