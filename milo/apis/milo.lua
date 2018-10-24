@@ -4,7 +4,6 @@ local itemDB = require('itemDB')
 local Util   = require('util')
 
 local os     = _G.os
-local term   = _G.term
 local turtle = _G.turtle
 
 local Milo = {
@@ -81,12 +80,7 @@ function Milo:registerTask(task)
 end
 
 function Milo:showError(msg)
-	--term.clear()
 	self.context.jobList:showError(msg)
-	--print(msg)
-	--print('rebooting in 5 secs')
-	--os.sleep(5)
-	--os.reboot()
 end
 
 function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)

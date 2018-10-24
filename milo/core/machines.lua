@@ -230,7 +230,17 @@ function machineWizard:eventHandler(event)
 				v:save(self.machine)
 			end
 		end
-		context.config.remoteDefaults[self.machine.name] = self.machine
+		context.config.remoteDefaults[self.machine.name] =
+			Util.prune(self.machine, function(v)
+				if type(v) == 'boolean' then
+					return v
+				elseif type(v) == 'string' then
+					return #v > 0
+				elseif type(v) == 'table' then
+					return not Util.empty(v)
+				end
+				return true
+			end)
 		Config.update('milo', context.config)
 
 		UI:setPreviousPage()

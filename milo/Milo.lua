@@ -61,7 +61,7 @@ replenish
 autocraft
 ]]
 
-_G.requireInjector()
+_G.requireInjector(_ENV)
 
 local Config         = require('config')
 local Event          = require('event')
@@ -108,17 +108,39 @@ local context = {
   userRecipes = Util.readTable(Milo.RECIPES_FILE) or { },
   learnTypes = { },
   machineTypes = { },
+  localName = modem.getNameLocal(),
 }
 
-local function initStorage()
+local function initStorage(detachedDevice)
   debug('Initializing storage')
   local storage = { }
+  local storageOffline
+
+  -- check to see if any of the storage chests are disconnected
   for k,v in pairs(config.remoteDefaults) do
-    if v.mtype == 'storage' and device[v.name] then
-      storage[k] = v
+    if v.mtype == 'storage' then
+      if not device[v.name] or v.name == detachedDevice then
+        storageOffline = true
+      else
+        storage[k] = v
+      end
     end
   end
 debug(storage)
+
+  if storageOffline then
+    Milo:pauseCrafting()
+    debug('Crafting paused')
+    Milo:showError('A storage chest has gone offline, ctrl-l to continue')
+
+-- todo: just can't resume crafting - need to use offline flag instead
+-- in the case where crafting was paused already when storage went offline
+-- ie. in crafting process
+  elseif Milo:isCraftingPaused() then
+    debug('resuming')
+    Milo:resumeCrafting()
+  end
+
   context.inventoryAdapter = InventoryAdapter.wrap({ remoteDefaults = storage })
 
   if not context.inventoryAdapter then
@@ -138,12 +160,7 @@ Event.on({ 'device_detach' }, function(_, dev)
   debug('detach: ' .. dev)
   if config.remoteDefaults[dev] and
      config.remoteDefaults[dev].mtype == 'storage' then
-
-Milo:pauseCrafting()
-debug('Crafting paused')
-Milo:showError('Check log')
-
-    initStorage()
+    initStorage(dev)
   end
 end)
 

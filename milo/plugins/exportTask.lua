@@ -25,7 +25,7 @@ function ExportTask:cycle(context)
 							item = Milo:getItemWithQty(item)
 							if item and count > 0 then
 								context.inventoryAdapter:provide(
-									itemDB:splitKey(entry.name),
+									item,
 									math.min(count, item.count),
 									entry.slot,
 									target)

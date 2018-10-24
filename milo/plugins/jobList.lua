@@ -32,10 +32,12 @@ function jobList:showError(msg)
 end
 
 function jobList:updateList(craftList)
-  self.grid:setValues(craftList)
-  self.grid:update()
-  self:draw()
-  self:sync()
+  if not Milo:isCraftingPaused() then
+    self.grid:setValues(craftList)
+    self.grid:update()
+    self:draw()
+    self:sync()
+  end
 end
 
 function jobList.grid:getRowTextColor(row, selected)

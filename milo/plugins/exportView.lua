@@ -92,9 +92,9 @@ function itemSlideout.grid:enable()
 	UI.Grid.enable(self)
 end
 
-function itemSlideout:show(machine, entry)
-	self.machine = machine
+function itemSlideout:show(machine, entry, callback)
 	self.entry = entry
+	self.callback = callback
 
 	self.form.choices = { }
 	local m = device[machine.name]
@@ -131,8 +131,9 @@ function itemSlideout:eventHandler(event)
 		else
 			self.form:save()
 			self.form.values.name = itemDB:makeKey(selected)
-			table.insert(self.machine.exports, self.form.values)
 			self:hide()
+			debug('calling cllbck')
+			self.callback()
 		end
 
 	elseif event.type == 'cancel' then
@@ -194,10 +195,18 @@ end
 
 function exportView:eventHandler(event)
 	if event.type == 'grid_select' then
-		itemSlideout:show(self.machine, self.grid:getSelected())
+		itemSlideout:show(self.machine, self.grid:getSelected(), function()
+			self.grid:update()
+			self.grid:draw()
+		end)
 
 	elseif event.type == 'add_export' then
-		itemSlideout:show(self.machine, { })
+		local export = { }
+		itemSlideout:show(self.machine, export, function()
+			table.insert(self.machine.exports, export)
+			self.grid:update()
+			self.grid:draw()
+		end)
 
 	elseif event.type == 'remove_export' then
 		local row = self.grid:getSelected()
