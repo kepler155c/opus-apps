@@ -64,7 +64,7 @@ function NetworkedAdapter:listItems(throttle)
     return self.items
   end
 self.listCount = self.listCount + 1
-debug(self.listCount)
+--debug(self.listCount)
 
   -- todo: only listItems from dirty remotes
   -- todo: better handling of empty inventories

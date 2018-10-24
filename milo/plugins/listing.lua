@@ -82,6 +82,7 @@ local listingPage = UI.Page {
     [ 'control-e' ] = 'eject',
     [ 'control-s' ] = 'eject_stack',
     [ 'control-m' ] = 'machines',
+    [ 'control-l' ] = 'resume',
   },
   displayMode = 0,
 }
@@ -113,9 +114,11 @@ function listingPage.grid:getDisplayValues(row)
 end
 
 function listingPage:eventHandler(event)
-debug(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
+
+  elseif event.type == 'resume' then
+    Milo:resumeCrafting()
 
   elseif event.type == 'eject' then
     local item = self.grid:getSelected()

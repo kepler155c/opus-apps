@@ -1,4 +1,5 @@
 local Config = require('config')
+local Event  = require('event')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
 local UI     = require('ui')
@@ -29,9 +30,35 @@ local machinesPage = UI.Page {
 	},
 }
 
+function machinesPage:getList()
+	-- TODO: remove dedupe naming in perf code ?
+	for _, v in pairs(device) do
+		if v.pullItems then
+			if not context.config.remoteDefaults[v.name] then
+				context.config.remoteDefaults[v.name] = {
+					name  = v.name,
+					mtype = 'ignore',
+				}
+			end
+		end
+	end
+end
+
 function machinesPage:enable()
+	self:getList()
 	self.grid:update()
 	UI.Page.enable(self)
+	self.handler = Event.on({ 'device_attach', 'device_detach'}, function()
+		self:getList()
+		self.grid:update()
+		self.grid:draw()
+		self.grid:sync()
+	end)
+end
+
+function machinesPage:disable()
+	UI.Page.disable(self)
+	Event.off(self.handler)
 end
 
 function machinesPage.grid:getDisplayValues(row)
@@ -41,6 +68,9 @@ function machinesPage.grid:getDisplayValues(row)
 end
 
 function machinesPage.grid:getRowTextColor(row, selected)
+	if not device[row.name] then
+		return colors.red
+	end
 	if row.mtype == 'ignore' then
 		return colors.lightGray
 	end
@@ -204,9 +234,6 @@ function machineWizard:eventHandler(event)
 		Config.update('milo', context.config)
 
 		UI:setPreviousPage()
-
-	elseif event.type == 'collapse' then
-		self.items:hide()
 
 	elseif event.type == 'enable_view' then
 		local current = event.next or event.prev

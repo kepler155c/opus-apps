@@ -29,6 +29,7 @@ end
 
 function Milo:pauseCrafting()
 	self.craftingPaused = true
+	Milo:showError('Crafting Paused')
 end
 
 function Milo:resumeCrafting()
@@ -80,12 +81,12 @@ function Milo:registerTask(task)
 end
 
 function Milo:showError(msg)
-	term.clear()
-	self.context.jobList:showError()
-	print(msg)
-	print('rebooting in 5 secs')
-	os.sleep(5)
-	os.reboot()
+	--term.clear()
+	self.context.jobList:showError(msg)
+	--print(msg)
+	--print('rebooting in 5 secs')
+	--os.sleep(5)
+	--os.reboot()
 end
 
 function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)
@@ -381,7 +382,7 @@ function Milo:craftItems(craftList)
 	end
 	self:updateCraftingStatus(craftList)
 	for _,v in pairs(craftList) do
-		debug(v)
+		--debug(v)
 	end
 end
 

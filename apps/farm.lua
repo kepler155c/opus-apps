@@ -22,7 +22,7 @@ local crops = Util.readTable(CONFIG_FILE) or {
   ['minecraft:potatoes'] =
     { seed = 'minecraft:potato', mature = 7, action = 'plant' },
   ['minecraft:beetroots'] =
-    { seed = 'minecraft:beetroot_seeds', mature = 3, 'plant' },
+    { seed = 'minecraft:beetroot_seeds', mature = 3, action = 'plant' },
   ['minecraft:reeds'] = { action = 'bash' },
   ['minecraft:melon_block'] = { action = 'smash' },
   ['minecraft:pumpkin'] = { action = 'smash' },

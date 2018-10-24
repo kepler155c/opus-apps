@@ -73,6 +73,7 @@ local Util           = require('util')
 
 local InventoryAdapter  = require('inventoryAdapter')
 
+local device     = _G.device
 local fs         = _G.fs
 local multishell = _ENV.multishell
 local shell      = _ENV.shell
@@ -92,38 +93,6 @@ if not modem or not modem.getNameLocal then
   error('Wired modem is not connected')
 end
 
-local storage = { }
-for k,v in pairs(config.remoteDefaults) do
-  if v.mtype == 'storage' then
-    storage[k] = v
-  elseif v.mtype == 'controller' then
-    -- TODO: look for controller
-  end
-end
-
-local inventoryAdapter = InventoryAdapter.wrap({ remoteDefaults = storage })
-if not inventoryAdapter then
-  error('Invalid inventory configuration')
-end
-
--- TODO: cleanup
-for _, v in pairs(modem.getNamesRemote()) do
-  local remote = Peripheral.get({ name = v })
-  if remote.pullItems then
-    if not config.remoteDefaults[v] then
-      config.remoteDefaults[v] = {
-        name  = v,
-        mtype = 'ignore',
-      }
-    else
-      config.remoteDefaults[v].name = v
-    end
-    if not config.remoteDefaults[v].mtype then
-      config.remoteDefaults[v].mtype = 'ignore'
-    end
-  end
-end
-
 local function loadResources()
   local resources = Util.readTable(Milo.RESOURCE_FILE) or { }
   for k,v in pairs(resources) do
@@ -135,13 +104,50 @@ end
 
 local context = {
   config = config,
-  inventoryAdapter = inventoryAdapter,
   resources = loadResources(),
   userRecipes = Util.readTable(Milo.RECIPES_FILE) or { },
   learnTypes = { },
   machineTypes = { },
 }
 
+local function initStorage()
+  debug('Initializing storage')
+  local storage = { }
+  for k,v in pairs(config.remoteDefaults) do
+    if v.mtype == 'storage' and device[v.name] then
+      storage[k] = v
+    end
+  end
+debug(storage)
+  context.inventoryAdapter = InventoryAdapter.wrap({ remoteDefaults = storage })
+
+  if not context.inventoryAdapter then
+    error('Invalid inventory configuration')
+  end
+end
+
+Event.on({ 'device_attach' }, function(_, dev)
+  debug('attach: ' .. dev)
+  if config.remoteDefaults[dev] and
+    config.remoteDefaults[dev].mtype == 'storage' then
+    initStorage()
+  end
+end)
+
+Event.on({ 'device_detach' }, function(_, dev)
+  debug('detach: ' .. dev)
+  if config.remoteDefaults[dev] and
+     config.remoteDefaults[dev].mtype == 'storage' then
+
+Milo:pauseCrafting()
+debug('Crafting paused')
+Milo:showError('Check log')
+
+    initStorage()
+  end
+end)
+
+initStorage()
 Milo:init(context)
 
 local function loadDirectory(dir)
@@ -165,9 +171,7 @@ Milo:clearGrid()
 
 local page = UI:getPage('listing')
 UI:setPage(page)
-page:setFocus(page.statusBar.filter)
-
--- TODO: Event.on('device_detach', function() end)
+page:setFocus(page.statusBar.filter) -- todo: move this line into listing code
 
 Event.onInterval(5, function()
   if not Milo:isCraftingPaused() then
