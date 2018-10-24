@@ -1,4 +1,4 @@
-local Lora = require('lora')
+local Milo = require('milo')
 
 local device = _G.device
 
@@ -21,4 +21,4 @@ function InputChest:cycle(context)
 	end
 end
 
-Lora:registerTask(InputChest)
+Milo:registerTask(InputChest)

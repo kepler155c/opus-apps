@@ -40,7 +40,7 @@
       via CC cables.
 
   Configuration:
-    Configuration file is usr/config/inventoryManager
+    Configuration file is usr/config/milo
 
     monitor        : valid options include:
                      type/monitor   - will use the first monitor found
@@ -66,7 +66,7 @@ _G.requireInjector()
 local Config         = require('config')
 local Event          = require('event')
 local itemDB         = require('itemDB')
-local Lora           = require('lora')
+local Milo           = require('milo')
 local Peripheral     = require('peripheral')
 local UI             = require('ui')
 local Util           = require('util')
@@ -78,14 +78,14 @@ local multishell = _ENV.multishell
 local shell      = _ENV.shell
 
 if multishell then
-  multishell.setTitle(multishell.getCurrent(), 'Resource Manager')
+  multishell.setTitle(multishell.getCurrent(), 'Milo')
 end
 
 local config = {
   monitor = 'type/monitor',
   remoteDefaults = { },
 }
-Config.load('inventoryManager', config)
+Config.load('milo', config)
 
 local modem = Peripheral.get('wired_modem')
 if not modem or not modem.getNameLocal then
@@ -125,7 +125,7 @@ for _, v in pairs(modem.getNamesRemote()) do
 end
 
 local function loadResources()
-  local resources = Util.readTable(Lora.RESOURCE_FILE) or { }
+  local resources = Util.readTable(Milo.RESOURCE_FILE) or { }
   for k,v in pairs(resources) do
     Util.merge(v, itemDB:splitKey(k))
   end
@@ -137,10 +137,12 @@ local context = {
   config = config,
   inventoryAdapter = inventoryAdapter,
   resources = loadResources(),
-  userRecipes = Util.readTable(Lora.RECIPES_FILE) or { },
+  userRecipes = Util.readTable(Milo.RECIPES_FILE) or { },
+  learnTypes = { },
+  machineTypes = { },
 }
 
-Lora:init(context)
+Milo:init(context)
 
 local function loadDirectory(dir)
   for _, file in pairs(fs.list(dir)) do
@@ -155,22 +157,24 @@ local programDir = fs.getDir(shell.getRunningProgram())
 loadDirectory(fs.combine(programDir, 'core'))
 loadDirectory(fs.combine(programDir, 'plugins'))
 
-table.sort(Lora.tasks, function(a, b)
+table.sort(Milo.tasks, function(a, b)
   return a.priority < b.priority
 end)
 
-Lora:clearGrid()
+Milo:clearGrid()
 
 local page = UI:getPage('listing')
 UI:setPage(page)
 page:setFocus(page.statusBar.filter)
 
+-- TODO: Event.on('device_detach', function() end)
+
 Event.onInterval(5, function()
-  if not Lora:isCraftingPaused() then
-    Lora:resetCraftingStatus()
+  if not Milo:isCraftingPaused() then
+    Milo:resetCraftingStatus()
     context.inventoryAdapter:refresh()
 
-    for _, task in ipairs(Lora.tasks) do
+    for _, task in ipairs(Milo.tasks) do
       local s, m = pcall(function() task:cycle(context) end)
       if not s and m then
         Util.print(task)

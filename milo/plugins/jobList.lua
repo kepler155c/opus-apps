@@ -1,10 +1,10 @@
-local Lora       = require('lora')
+local Milo       = require('milo')
 local Peripheral = require('peripheral')
 local UI         = require('ui')
 
 local colors     = _G.colors
 
-local context = Lora:getContext()
+local context = Milo:getContext()
 local mon     = Peripheral.lookup(context.config.monitor) or
                 error('Monitor is not attached')
 local display = UI.Device {
@@ -39,11 +39,11 @@ function jobList:updateList(craftList)
 end
 
 function jobList.grid:getRowTextColor(row, selected)
-  if row.statusCode == Lora.STATUS_ERROR then
+  if row.statusCode == Milo.STATUS_ERROR then
     return colors.red
-  elseif row.statusCode == Lora.STATUS_WARNING then
+  elseif row.statusCode == Milo.STATUS_WARNING then
     return colors.yellow
-  elseif row.statusCode == Lora.STATUS_INFO then
+  elseif row.statusCode == Milo.STATUS_INFO then
     return colors.lime
   end
   return UI.Grid:getRowTextColor(row, selected)
@@ -58,8 +58,8 @@ local JobListTask = {
 }
 
 function JobListTask:cycle()
-  jobList:updateList(Lora:getCraftingStatus())
+  jobList:updateList(Milo:getCraftingStatus())
 end
 
-Lora:registerTask(JobListTask)
+Milo:registerTask(JobListTask)
 context.jobList = jobList

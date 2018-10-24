@@ -1,5 +1,5 @@
 local itemDB = require('itemDB')
-local Lora   = require('lora')
+local Milo   = require('milo')
 
 local device = _G.device
 
@@ -28,4 +28,4 @@ function ExportTask:cycle(context)
 	end
 end
 
-Lora:registerTask(ExportTask)
+Milo:registerTask(ExportTask)

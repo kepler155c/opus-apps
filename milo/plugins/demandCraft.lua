@@ -1,6 +1,6 @@
 local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
-local Lora   = require('lora')
+local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
 
@@ -98,7 +98,7 @@ function craftPage.wizard:eventHandler(event)
 end
 
 function craftPage.wizard.pages.resources:enable()
-  local items = Lora:listItems()
+  local items = Milo:listItems()
   local count = tonumber(self.parent.quantity.count.value)
   local recipe = Craft.findRecipe(craftPage.item)
   if recipe then
@@ -118,7 +118,7 @@ function craftPage:eventHandler(event)
     UI:setPreviousPage()
 
   elseif event.type == 'accept' then
-    local key = Lora:uniqueKey(self.item)
+    local key = Milo:uniqueKey(self.item)
     demandCrafting[key] = Util.shallowCopy(self.item)
     demandCrafting[key].count = tonumber(self.wizard.pages.quantity.count.value)
     demandCrafting[key].ocount = demandCrafting[key].count
@@ -155,7 +155,7 @@ function demandCraftingTask:cycle(context)
   end
 
   if Util.size(demandCrafted) > 0 then
-    Lora:craftItems(demandCrafted)
+    Milo:craftItems(demandCrafted)
   end
 
   for _,key in pairs(Util.keys(demandCrafting)) do
@@ -166,7 +166,7 @@ function demandCraftingTask:cycle(context)
         item.statusCode = 'success'
         demandCrafting[key] = nil
         if item.eject then
-          Lora:eject(item, item.ocount)
+          Milo:eject(item, item.ocount)
         end
       end
     end
@@ -174,4 +174,4 @@ function demandCraftingTask:cycle(context)
 end
 
 UI:addPage('craft', craftPage)
-Lora:registerTask(demandCraftingTask)
+Milo:registerTask(demandCraftingTask)

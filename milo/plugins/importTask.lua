@@ -1,4 +1,4 @@
-local Lora = require('lora')
+local Milo = require('milo')
 
 local device = _G.device
 
@@ -8,7 +8,7 @@ local ImportTask = {
 
 function ImportTask:cycle(context)
 	for source, v in pairs(context.config.remoteDefaults) do
-		if v.exports then
+		if v.imports then
 			local machine = device[source]
 			if machine and machine.getItemMeta then
 				for slotNo in pairs(v.imports) do
@@ -24,4 +24,4 @@ function ImportTask:cycle(context)
 	end
 end
 
-Lora:registerTask(ImportTask)
+Milo:registerTask(ImportTask)

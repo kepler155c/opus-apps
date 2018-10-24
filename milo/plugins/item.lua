@@ -1,12 +1,12 @@
 local Ansi = require('ansi')
-local Lora = require('lora')
+local Milo = require('milo')
 local UI   = require('ui')
 local Util = require('util')
 
 local colors = _G.colors
 local device = _G.device
 
-local context = Lora:getContext()
+local context = Milo:getContext()
 
 local itemPage = UI.Page {
   titleBar = UI.TitleBar {
@@ -204,7 +204,7 @@ function itemPage:eventHandler(event)
 
   elseif event.type == 'form_complete' then
     local values = self.form.values
-    local originalKey = Lora:uniqueKey(self.item)
+    local originalKey = Milo:uniqueKey(self.item)
 
     local filtered = Util.shallowCopy(values)
     filtered.low = tonumber(filtered.low)
@@ -232,10 +232,10 @@ function itemPage:eventHandler(event)
       filtered.ignoreNbtHash = nil
     end
     context.resources[originalKey] = nil
-    context.resources[Lora:uniqueKey(filtered)] = filtered
+    context.resources[Milo:uniqueKey(filtered)] = filtered
 
     filtered.count = nil
-    Lora:saveResources()
+    Milo:saveResources()
 
     UI:setPreviousPage()
 

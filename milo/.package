@@ -1,6 +1,6 @@
 {
 	required = {
-		'opus-inventory-manager',
+		'opus-develop-1.8',
 	},
 	title = 'Inventory manager for Opus OS',
 	description = [[

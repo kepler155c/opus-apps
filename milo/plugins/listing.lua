@@ -1,16 +1,16 @@
 local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
-local Lora   = require('lora')
+local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
 
 local colors = _G.colors
 local os     = _G.os
 
-local context = Lora:getContext()
+local context = Milo:getContext()
 
 local function queue(fn)
-  while Lora:isCraftingPaused() do
+  while Milo:isCraftingPaused() do
     os.sleep(1)
   end
   fn()
@@ -120,13 +120,13 @@ debug(event)
   elseif event.type == 'eject' then
     local item = self.grid:getSelected()
     if item then
-      queue(function() Lora:eject(item, 1) end)
+      queue(function() Milo:eject(item, 1) end)
     end
 
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
-      queue(function() Lora:eject(item, itemDB:getMaxCount(item)) end)
+      queue(function() Milo:eject(item, itemDB:getMaxCount(item)) end)
     end
 
   elseif event.type == 'machines' then
@@ -171,17 +171,17 @@ debug(event)
   elseif event.type == 'forget' then
     local item = self.grid:getSelected()
     if item then
-      local key = Lora:uniqueKey(item)
+      local key = Milo:uniqueKey(item)
 
       if context.userRecipes[key] then
         context.userRecipes[key] = nil
-        Util.writeTable(Lora.RECIPES_FILE, context.userRecipes)
+        Util.writeTable(Milo.RECIPES_FILE, context.userRecipes)
         Craft.loadRecipes()
       end
 
       if context.resources[key] then
         context.resources[key] = nil
-        Lora:saveResources()
+        Milo:saveResources()
       end
 
       self.notification:info('Forgot: ' .. item.name)
@@ -211,8 +211,8 @@ function listingPage:enable()
 end
 
 function listingPage:refresh()
-  self.allItems = Lora:listItems()
-  Lora:mergeResources(self.allItems)
+  self.allItems = Milo:listItems()
+  Milo:mergeResources(self.allItems)
   self:applyFilter()
 end
 

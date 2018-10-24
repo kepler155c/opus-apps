@@ -1,4 +1,4 @@
-local Lora = require('lora')
+local Milo = require('milo')
 
 local LimitTask = {
 	priority = 10,
@@ -20,7 +20,7 @@ function LimitTask:cycle(context)
 
 	for _,res in pairs(context.resources) do
 		if res.limit then
-			local item = Lora:getItemWithQty(res, res.ignoreDamage, res.ignoreNbtHash)
+			local item = Milo:getItemWithQty(res, res.ignoreDamage, res.ignoreNbtHash)
 			if item and item.count > res.limit then
 				context.inventoryAdapter:provide(
 					{ name = item.name, damage = item.damage, nbtHash = item.nbtHash },
@@ -32,4 +32,4 @@ function LimitTask:cycle(context)
 	end
 end
 
-Lora:registerTask(LimitTask)
+Milo:registerTask(LimitTask)

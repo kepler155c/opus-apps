@@ -1,4 +1,4 @@
-local Lora = require('lora')
+local Milo = require('milo')
 local Util = require('util')
 
 local Autocraft = {
@@ -12,13 +12,13 @@ function Autocraft:cycle(context)
     if res.auto then
       res = Util.shallowCopy(res)
       res.count = 256
-      list[Lora:uniqueKey(res)] = res
+      list[Milo:uniqueKey(res)] = res
     end
   end
 
   if not Util.empty(list) then
-    Lora:craftItems(list)
+    Milo:craftItems(list)
   end
 end
 
-Lora:registerTask(Autocraft)
+Milo:registerTask(Autocraft)

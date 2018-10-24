@@ -1,11 +1,13 @@
 local Config = require('config')
-local Lora   = require('lora')
+local itemDB = require('itemDB')
+local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
 
 local colors = _G.colors
+local device = _G.device
 
-local context = Lora:getContext()
+local context = Milo:getContext()
 
 local machinesPage = UI.Page {
 	titleBar = UI.TitleBar {
@@ -57,13 +59,13 @@ end
 local machineWizard = UI.Page {
 	titleBar = UI.TitleBar { title = 'Configure' },
 	wizard = UI.Wizard {
-		y = 2, ey = -3,
+		y = 2, ey = -2,
 		pages = {
 			general = UI.Window {
 				index = 1,
 				backgroundColor = colors.cyan,
 				form = UI.Form {
-					x = 1, y = 2, ex = -1, ey = -2,
+					x = 1, y = 1, ex = -1, ey = 3,
 					manualControls = true,
 					[1] = UI.TextEntry {
 						formLabel = 'Name', formKey = 'displayName',
@@ -84,11 +86,21 @@ local machineWizard = UI.Page {
 						help = 'Select type',
 					},
 				},
+				grid = UI.ScrollingGrid {
+					y = 5, ey = -2, x = 2, ex = -2,
+					columns = {
+						{ heading = 'Slot', key = 'slot',        width = 4 },
+						{ heading = 'Name', key = 'displayName',           },
+						{ heading = 'Qty',  key = 'count'      , width = 3 },
+					},
+					sortColumn = 'slot',
+					help = 'Contents of inventory',
+				},
 			},
 			confirmation = UI.Window {
 				title = 'Confirm changes',
 				index = 2,
-				grid = UI.TextArea {
+				notice = UI.TextArea {
 					x = 2, ex = -2, y = 2, ey = -2,
 					value =
 [[Press accept to save the changes.
@@ -98,13 +110,34 @@ The settings will take effect immediately!]],
 			},
 		},
 	},
-	statusBar = UI.StatusBar(),
+	statusBar = UI.StatusBar {
+		backgroundColor = colors.cyan,
+	},
 	notification = UI.Notification { },
 }
 
 function machineWizard.wizard.pages.general:enable()
 	UI.Window.enable(self)
 	self:focusFirst()
+end
+
+function machineWizard.wizard.pages.general:setMachine(machine)
+	local inventory
+
+	if device[machine.name] and device[machine.name].list then
+		inventory = device[machine.name].list()
+		for k,v in pairs(inventory) do
+			v.slot = k
+		end
+	end
+
+	self.grid:setValues(inventory or { })
+end
+
+function machineWizard.wizard.pages.general.grid:getDisplayValues(row)
+	row = Util.shallowCopy(row)
+	row.displayName = itemDB:getName(row)
+	return row
 end
 
 function machineWizard.wizard.pages.general:validate()
@@ -168,7 +201,7 @@ function machineWizard:eventHandler(event)
 			end
 		end
 		context.config.remoteDefaults[self.machine.name] = self.machine
-		Config.update('inventoryManagerX', context.config)
+		Config.update('milo', context.config)
 
 		UI:setPreviousPage()
 

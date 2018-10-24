@@ -1,5 +1,5 @@
 local itemDB = require('itemDB')
-local Lora   = require('lora')
+local Milo   = require('milo')
 
 local ReplenishTask = {
   priority = 30,
@@ -10,7 +10,7 @@ function ReplenishTask:cycle(context)
 
   for _,res in pairs(context.resources) do
     if res.low then
-      local item = Lora:getItemWithQty(res, res.ignoreDamage, res.ignoreNbtHash)
+      local item = Milo:getItemWithQty(res, res.ignoreDamage, res.ignoreNbtHash)
       if not item then
         item = {
           damage = res.damage,
@@ -25,7 +25,7 @@ function ReplenishTask:cycle(context)
         if res.ignoreDamage then
           item.damage = 0
         end
-        local key = Lora:uniqueKey(res)
+        local key = Milo:uniqueKey(res)
 
         craftList[key] = {
           damage = item.damage,
@@ -40,7 +40,7 @@ function ReplenishTask:cycle(context)
     end
   end
 
-  Lora:craftItems(craftList)
+  Milo:craftItems(craftList)
 end
 
-Lora:registerTask(ReplenishTask)
+Milo:registerTask(ReplenishTask)

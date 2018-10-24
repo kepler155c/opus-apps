@@ -1,3 +1,4 @@
+local Config = require('config')
 local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
 local Util   = require('util')
@@ -6,7 +7,7 @@ local os     = _G.os
 local term   = _G.term
 local turtle = _G.turtle
 
-local Lora = {
+local Milo = {
 	RECIPES_FILE  = 'usr/config/recipes.db',
 	RESOURCE_FILE = 'usr/config/resources.db',
 
@@ -18,50 +19,67 @@ local Lora = {
 	craftingStatus = { },
 }
 
-function Lora:init(context)
+function Milo:init(context)
 	self.context = context
 end
 
-function Lora:getContext()
+function Milo:getContext()
 	return self.context
 end
 
-function Lora:pauseCrafting()
+function Milo:pauseCrafting()
 	self.craftingPaused = true
 end
 
-function Lora:resumeCrafting()
+function Milo:resumeCrafting()
 	self.craftingPaused = false
 end
 
-function Lora:isCraftingPaused()
+function Milo:isCraftingPaused()
 	return self.craftingPaused
 end
 
-function Lora:uniqueKey(item)
+function Milo:getState(key)
+	if not self.state then
+		self.state = { }
+		Config.load('milo.state', self.state)
+	end
+	return self.state[key]
+end
+
+function Milo:setState(key, value)
+	if not self.state then
+		self.state = { }
+		Config.load('milo.state', self.state)
+	end
+	self.state[key] = value
+	Config.update('milo.state', self.state)
+end
+
+function Milo:uniqueKey(item)
 	return table.concat({ item.name, item.damage, item.nbtHash }, ':')
 end
 
-function Lora:getCraftingStatus()
+function Milo:getCraftingStatus()
 	return self.craftingStatus
 end
 
-function Lora:resetCraftingStatus()
+function Milo:resetCraftingStatus()
 	self.craftingStatus = { }
 	self.context.inventoryAdapter.activity = { }
 end
 
-function Lora:updateCraftingStatus(list)
+function Milo:updateCraftingStatus(list)
 	for k,v in pairs(list) do
 		self.craftingStatus[k] = v
 	end
 end
 
-function Lora:registerTask(task)
+function Milo:registerTask(task)
 	table.insert(self.tasks, task)
 end
 
-function Lora:showError(msg)
+function Milo:showError(msg)
 	term.clear()
 	self.context.jobList:showError()
 	print(msg)
@@ -70,7 +88,7 @@ function Lora:showError(msg)
 	os.reboot()
 end
 
-function Lora:getItem(items, inItem, ignoreDamage, ignoreNbtHash)
+function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)
 	for _,item in pairs(items) do
 		if item.name == inItem.name and
 			(ignoreDamage or item.damage == inItem.damage) and
@@ -80,7 +98,7 @@ function Lora:getItem(items, inItem, ignoreDamage, ignoreNbtHash)
 	end
 end
 
-function Lora:getItemWithQty(res, ignoreDamage, ignoreNbtHash)
+function Milo:getItemWithQty(res, ignoreDamage, ignoreNbtHash)
 	local items = self:listItems()
 	local item = self:getItem(items, res, ignoreDamage, ignoreNbtHash)
 
@@ -100,7 +118,7 @@ function Lora:getItemWithQty(res, ignoreDamage, ignoreNbtHash)
 	return item
 end
 
-function Lora:clearGrid()
+function Milo:clearGrid()
 	local function clear()
 		turtle.eachFilledSlot(function(slot)
 			self.context.inventoryAdapter:insert(slot.index, slot.count, nil, slot)
@@ -116,7 +134,7 @@ function Lora:clearGrid()
 	return clear() or clear()
 end
 
-function Lora:eject(item, qty)
+function Milo:eject(item, qty)
 	local s, m = pcall(function()
 		self.context.inventoryAdapter:provide(item, qty)
 		turtle.emptyInventory()
@@ -126,9 +144,9 @@ function Lora:eject(item, qty)
 	end
 end
 
-function Lora:mergeResources(t)
+function Milo:mergeResources(t)
 	for _,v in pairs(self.context.resources) do
-		local item = Lora:getItem(t, v)
+		local item = self:getItem(t, v)
 		if item then
 			Util.merge(item, v)
 		else
@@ -140,7 +158,7 @@ function Lora:mergeResources(t)
 
 	for k in pairs(Craft.recipes) do
 		local v = itemDB:splitKey(k)
-		local item = Lora:getItem(t, v)
+		local item = self:getItem(t, v)
 		if not item then
 			item = Util.shallowCopy(v)
 			item.count = 0
@@ -157,7 +175,7 @@ function Lora:mergeResources(t)
 	end
 end
 
-function Lora:saveResources()
+function Milo:saveResources()
 	local t = { }
 
 	for k,v in pairs(self.context.resources) do
@@ -176,11 +194,11 @@ function Lora:saveResources()
 		end
 	end
 
-	Util.writeTable(Lora.RESOURCE_FILE, t)
+	Util.writeTable(self.RESOURCE_FILE, t)
 end
 
 -- Return a list of everything in the system
-function Lora:listItems()
+function Milo:listItems()
 	for _ = 1, 5 do
 		self.items = self.context.inventoryAdapter:listItems()
 		if self.items then
@@ -196,7 +214,7 @@ function Lora:listItems()
 	return self.items
 end
 
-function Lora:addCraftingRequest(item, craftList, count)
+function Milo:addCraftingRequest(item, craftList, count)
 	local key = self:uniqueKey(item)
 	local request = craftList[key]
 	if not craftList[key] then
@@ -209,7 +227,7 @@ function Lora:addCraftingRequest(item, craftList, count)
 end
 
 -- Craft
-function Lora:craftItem(recipe, items, originalItem, craftList, count)
+function Milo:craftItem(recipe, items, originalItem, craftList, count)
 	local missing = { }
 	local toCraft = Craft.getCraftableAmount(recipe, count, items, missing)
 	if missing.name then
@@ -245,7 +263,7 @@ function Lora:craftItem(recipe, items, originalItem, craftList, count)
 end
 
 -- Craft as much as possible regardless if all ingredients are available
-function Lora:forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
+function Milo:forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
 	local summed = { }
 	local throttle = Util.throttle()
 
@@ -326,7 +344,7 @@ function Lora:forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
 	return count
 end
 
-function Lora:craft(recipe, items, item, craftList)
+function Milo:craft(recipe, items, item, craftList)
 	item.status = nil
 	item.statusCode = nil
 	item.crafted = 0
@@ -348,7 +366,7 @@ function Lora:craft(recipe, items, item, craftList)
 	end
 end
 
-function Lora:craftItems(craftList)
+function Milo:craftItems(craftList)
 	for _,key in pairs(Util.keys(craftList)) do
 		local item = craftList[key]
 		if item.count > 0 then
@@ -367,4 +385,4 @@ function Lora:craftItems(craftList)
 	end
 end
 
-return Lora
+return Milo
