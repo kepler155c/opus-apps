@@ -1,28 +1,30 @@
+local Craft      = require('turtle.craft')
+local itemDB     = require('itemDB')
 local Milo       = require('milo')
 local Peripheral = require('peripheral')
 local UI         = require('ui')
+local Util       = require('util')
 
 local colors     = _G.colors
 
 local context = Milo:getContext()
 local mon     = Peripheral.lookup(context.config.monitor) or
                 error('Monitor is not attached')
-local display = UI.Device {
-  device = mon,
-  textScale = .5,
-}
 
 local jobList = UI.Page {
-  parent = display,
+  parent = UI.Device {
+    device = mon,
+    textScale = .5,
+  },
   grid = UI.Grid {
     sortColumn = 'index',
     backgroundFocusColor = colors.black,
     columns = {
-      { heading = 'Qty',      key = 'count',       width = 6                      },
-      { heading = 'Crafting', key = 'displayName', }, -- width = display.width / 2 - 10 },
-      { heading = 'Status',   key = 'status',     }, -- width = display.width - 10     },
-      { heading = 'Req',      key = 'requested',       width = 6                      },
-      { heading = 'Cra',      key = 'crafted',       width = 6                      },
+      { heading = 'Qty',      key = 'remaining',   width = 6 },
+      { heading = 'Crafting', key = 'displayName', },
+      { heading = 'Status',   key = 'status',      },
+      { heading = 'Req',      key = 'count',       width = 3 },
+      { heading = 'Cra',      key = 'crafted',     width = 3 },
     },
   },
 }
@@ -36,16 +38,16 @@ end
 function jobList:updateList(craftList)
   if not Milo:isCraftingPaused() then
     local t = { }
-    local index = 1
-    for k,v in pairs(craftList) do
-      t[k] = v
-      v.index = index
-      index = index + 1
-      for k2,v2 in pairs(v.processing) do
-        t[k2] = v2
-        v2.displayName = k2
-        v2.index = index
-        index = index + 1
+    for _,v in pairs(craftList) do
+      table.insert(t, v)
+      v.index = #t
+      v.showRemining = true
+      for k2,v2 in pairs(v.ingredients) do
+        table.insert(t, v2)
+        if not v2.displayName then
+          v2.displayName = itemDB:getName(k2)
+        end
+        v2.index = #t
       end
     end
     self.grid:setValues(t)
@@ -55,15 +57,23 @@ function jobList:updateList(craftList)
   end
 end
 
-function jobList.grid:getRowTextColor(row, selected)
-  if row.statusCode == Milo.STATUS_ERROR then
-    return colors.red
-  elseif row.statusCode == Milo.STATUS_WARNING then
-    return colors.yellow
-  elseif row.statusCode == Milo.STATUS_INFO then
-    return colors.lime
+function jobList.grid:getDisplayValues(row)
+  row = Util.shallowCopy(row)
+  if row.showRemining then
+    row.remaining = row.count - row.crafted
   end
-  return UI.Grid:getRowTextColor(row, selected)
+  return row
+end
+
+function jobList.grid:getRowTextColor(row, selected)
+  local statusColor = {
+    [ Craft.STATUS_ERROR ] = colors.red,
+    [ Craft.STATUS_WARNING ] = colors.orange,
+    [ Craft.STATUS_INFO ] = colors.yellow,
+    [ Craft.STATUS_SUCCESS ] = colors.green,
+  }
+  return row.statusCode and statusColor[row.statusCode] or
+    UI.Grid:getRowTextColor(row, selected)
 end
 
 jobList:enable()

@@ -9,7 +9,12 @@ local RECIPES_DIR    = 'usr/etc/recipes'
 local USER_RECIPES   = 'usr/config/recipes.db'
 local MACHINE_LOOKUP = 'usr/config/machine_crafting.db'
 
-local Craft = { }
+local Craft = {
+	STATUS_INFO    = 'info',
+	STATUS_WARNING = 'warning',
+	STATUS_ERROR   = 'error',
+	STATUS_SUCCESS = 'success',
+}
 
 local function clearGrid(inventoryAdapter)
 	turtle.eachFilledSlot(function(slot)
@@ -57,11 +62,24 @@ end
 
 local function machineCraft(recipe, qty, inventoryAdapter, machineName, oitem)
 	local key = recipe.result
-	local request = oitem.processing[key]
-	if request then
+	local request = oitem.ingredients[key]
+
+debug('requested: ' .. key)
+	if not request then
+		request = {
+			count = qty,
+			crafted = 0,
+		}
+		oitem.ingredients[recipe.result] = request
+	end
+
+	if request.pending then
 		request.crafted = request.crafted + (inventoryAdapter.activity[key] or 0)
-		if request.crafted >= request.requested then
-			oitem.processing[key] = nil -- TODO: check...
+debug({ request.crafted, request.count })
+		if request.crafted >= request.count then
+			request.pending = nil -- TODO: check...
+			request.statusCode = Craft.STATUS_SUCCESS
+			request.status = nil
 			return true
 		end
 		return
@@ -69,42 +87,50 @@ local function machineCraft(recipe, qty, inventoryAdapter, machineName, oitem)
 
 	local machine = device[machineName]
 	if not machine then
-		debug('machine not found')
-		oitem.processing[recipe.result] = {
-			status = 'machine not found'
-		}
-	else
-		for k in pairs(recipe.ingredients) do
-			if machine.getItemMeta(k) then
-				oitem.processing[recipe.result] = {
-					status = 'machine in use'
-				}
-				debug('machine in use: ' .. k)
-			end
-		end
-
-		debug('processing ' .. recipe.result)
-		for k,v in pairs(recipe.ingredients) do
-			if inventoryAdapter:provide(splitKey(v), qty, k, machineName) ~= qty then
-				-- TODO: suck em back out
-				oitem.processing[recipe.result] = {
-					status = 'unknown error'
-				}
-			end
-		end
-		oitem.processing[recipe.result] = {
-			status = 'processing',
-			requested = qty,
-			crafted = 0,
-		}
+		request.status = 'machine not found'
+		request.statusCode = Craft.STATUS_ERROR
+		return
 	end
+
+	for k in pairs(recipe.ingredients) do
+		if machine.getItemMeta(k) then
+			request.status = 'machine in use'
+			request.statusCode = Craft.STATUS_WARNING
+			return
+		end
+	end
+
+debug('processing %s %d', key, qty)
+
+	for k,v in pairs(recipe.ingredients) do
+		if inventoryAdapter:provide(splitKey(v), qty, k, machineName) ~= qty then
+			-- TODO: suck em back out
+			request.status = 'unknown error'
+			request.statusCode = Craft.STATUS_ERROR
+			return
+		end
+	end
+	request.status = 'processing'
+	request.statusCode = Craft.STATUS_INFO
+	request.pending = true
 end
 
 local function turtleCraft(recipe, qty, inventoryAdapter, oitem)
-	if not clearGrid(inventoryAdapter) then
-		oitem.processing[recipe.result] = {
-			status = 'grid in use',
+	local key = recipe.result
+	local request = oitem.ingredients[key]
+
+debug('requested: ' .. key)
+	if not request then
+		request = {
+			count = qty,
+			crafted = 0,
 		}
+		oitem.ingredients[recipe.result] = request
+	end
+
+	if not clearGrid(inventoryAdapter) then
+		request.status = 'grid in use'
+		request.statusCode = Craft.STATUS_ERROR
 		return
 	end
 
@@ -121,19 +147,19 @@ local function turtleCraft(recipe, qty, inventoryAdapter, oitem)
 		if inventoryAdapter:provide(item, provideQty, k) ~= provideQty then
 																				-- FIX: ingredients cannot be stacked
 --debug('failed ' .. v .. ' - ' .. provideQty)
-			oitem.processing[recipe.result] = {
-				status = 'unknown error',
-			}
+			request.status = 'unknown error'
+			request.statusCode = Craft.STATUS_ERROR
 			return
 		end
 	end
 
 	if turtle.craft() then
+		request.status = nil
+		request.statusCode = Craft.STATUS_SUCCESS
 		return true
 	end
-	oitem.processing[recipe.result] = {
-		status = 'processing',
-	}
+	request.status = 'failed to craft'
+	request.statusCode = Craft.STATUS_ERROR
 end
 
 function Craft.loadRecipes()
@@ -178,8 +204,9 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
 	if type(recipe) == 'string' then
 		recipe = Craft.recipes[recipe]
 		if not recipe then
-			origItem.processing[recipe.result] = {
+			origItem.ingredients[recipe.result] = {
 				status = 'no recipe',
+				statusCode = Craft.STATUS_ERROR,
 			}
 			return 0, 'No recipe'
 		end
@@ -187,8 +214,9 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
 
 	local items = inventoryAdapter:listItems()
 	if not items then
-		origItem.processing[recipe.result] = {
+		origItem.ingredients[recipe.result] = {
 			status = 'Inventory changed',
+			statusCode = Craft.STATUS_ERROR,
 		}
 		return 0, 'Inventory changed'
 	end
@@ -225,7 +253,7 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
 				break
 			end
 		else
-			if not turtleCraft(recipe, requested, inventoryAdapter) then
+			if not turtleCraft(recipe, requested, inventoryAdapter, origItem) then
 				break
 			end
 		end

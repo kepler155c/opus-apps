@@ -12,13 +12,7 @@ local craftTask = {
 
 -- Craft
 function craftTask:craftItem(recipe, originalItem, count)
-  local missing = { }
-  local toCraft = Craft.getCraftableAmount(recipe, count, Milo:listItems(), missing)
-  if missing.name then
-    originalItem.status = string.format('%s missing', itemDB:getName(missing.name))
-    originalItem.statusCode = Milo.STATUS_WARNING
-  end
-
+  local toCraft = Craft.getCraftableAmount(recipe, count, Milo:listItems(), { })
   local crafted = 0
 
   if toCraft > 0 then
@@ -99,23 +93,15 @@ end
 function craftTask:craft(recipe, item)
   item.status = nil
   item.statusCode = nil
-  item.crafted = 0
 
   if Milo:isCraftingPaused() then
     return
   end
 
-  -- todo: is this needed ?
-  if not Milo:clearGrid() then
-    item.status = 'Grid obstructed'
-    item.statusCode = Milo.STATUS_ERROR
-    return
-  end
-
   if item.forceCrafting then
-    item.crafted = self:forceCraftItem(recipe, item, item.count)
+    item.crafted = item.crafted + self:forceCraftItem(recipe, item, item.count - item.crafted)
   else
-    item.crafted = self:craftItem(recipe, item, item.count)
+    item.crafted = item.crafted + self:craftItem(recipe, item, item.count - item.crafted)
   end
 end
 
@@ -126,12 +112,12 @@ function craftTask:cycle()
       local recipe = Craft.recipes[key]
       if recipe then
         self:craft(recipe, item)
-        if item.eject and item.crafted >= item.requested then
-          Milo:eject(item, item.requested)
+        if item.eject and item.crafted >= item.count then
+          Milo:eject(item, item.count)
         end
       elseif not context.controllerAdapter then
         item.status = '(no recipe)'
-        item.statusCode = Milo.STATUS_ERROR
+        item.statusCode = Craft.STATUS_ERROR
         item.crafted = 0
       end
     end

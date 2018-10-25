@@ -8,10 +8,6 @@ local turtle = _G.turtle
 local Milo = {
 	RECIPES_FILE  = 'usr/config/recipes.db',
 	RESOURCE_FILE = 'usr/config/resources.db',
-
-	STATUS_INFO    = 'info',
-	STATUS_WARNING = 'warning',
-	STATUS_ERROR   = 'error',
 }
 
 function Milo:init(context)
@@ -26,8 +22,11 @@ function Milo:requestCrafting(item)
 	local key = Milo:uniqueKey(item)
 
 	if not self.context.craftingQueue[key] then
-		item.processing = { }
-		item.requested = item.count
+		item.ingredients = { }
+		--[[
+			count   = requested amount,
+			crafted = amount that has been crafted
+		]]
 		item.crafted = 0
 
 		self.context.craftingQueue[key] = item
@@ -77,7 +76,7 @@ function Milo:resetCraftingStatus()
 
 	for _,key in pairs(Util.keys(self.context.craftingQueue)) do
 		local item = self.context.craftingQueue[key]
-		if item.crafted >= item.requested then
+		if item.crafted >= item.count then
 			debug('removing:')
 			debug(item)
 			self.context.craftingQueue[key] = nil
