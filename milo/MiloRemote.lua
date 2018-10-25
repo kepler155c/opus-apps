@@ -7,6 +7,27 @@ local Util   = require('util')
 local colors = _G.colors
 local socket
 
+local options = {
+  user   = { arg = 'u', type = 'string',
+             desc = 'User name associated with bound manipulator' },
+  server = { arg = 's', type = 'number',
+             desc = 'ID of Milo server' },
+  help   = { arg = 'h', type = 'flag', value = false,
+             desc = 'Displays the options' },
+}
+
+local args = { ... }
+if not Util.getOptions(options, args) then
+  print()
+  error('Invalid arguments')
+end
+
+if not options.user.value or not options.server.value then
+  Util.showOptions(options)
+  print()
+  error('Invalid arguments')
+end
+
 local page = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
@@ -90,7 +111,10 @@ function page:sendRequest(data)
 
   for _ = 1, 2 do
     if not socket or not socket.connected then
-      socket, msg = Socket.connect(1, 4242)
+      socket, msg = Socket.connect(options.server.value, 4242)
+      if socket then
+        socket:write(options.user.value)
+      end
     end
     if socket then
       if socket:write(data) then

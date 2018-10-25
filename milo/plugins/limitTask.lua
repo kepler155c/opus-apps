@@ -1,7 +1,8 @@
 local Milo = require('milo')
 
 local LimitTask = {
-	priority = 10,
+	name = 'limiter',
+	priority = 50,
 }
 
 function LimitTask:cycle(context)

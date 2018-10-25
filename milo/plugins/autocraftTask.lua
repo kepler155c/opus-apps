@@ -2,6 +2,7 @@ local Milo = require('milo')
 local Util = require('util')
 
 local Autocraft = {
+  name = 'autocraft',
   priority = 100,
 }
 

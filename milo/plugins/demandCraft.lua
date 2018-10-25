@@ -132,7 +132,8 @@ function craftPage:eventHandler(event)
 end
 
 local demandCraftingTask = {
-  priority = 20,
+  name = 'demand crafting',
+  priority = 60,
 }
 
 function demandCraftingTask:cycle(context)

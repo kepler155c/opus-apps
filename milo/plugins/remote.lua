@@ -2,14 +2,31 @@ local Event  = require('event')
 local Milo   = require('milo')
 local Socket = require('socket')
 
-local device      = _G.device
-local manipulator = device.manipulator_1
-local turtle      = _G.turtle
+local device = _G.device
+local turtle = _G.turtle
 
 local context = Milo:getContext()
 
+local function getManipulatorForUser(user)
+	for _,v in pairs(device) do
+		if v.type == 'manipulator' and v.getName and v.getName() == user then
+			return v
+		end
+	end
+end
+
 local function client(socket)
 	debug('connection from ' .. socket.dhost)
+
+	local user = socket:read(2)
+	if not user then
+		return
+	end
+
+	local manipulator = getManipulatorForUser(user)
+	if not manipulator then
+		return
+	end
 
 	repeat
 		local data = socket:read()
@@ -51,6 +68,7 @@ if device.wireless_modem then
 			local socket = Socket.server(4242)
 			Event.addRoutine(function()
 				client(socket)
+				socket:close()
 			end)
 		end
 	end)

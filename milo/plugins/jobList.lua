@@ -56,6 +56,7 @@ jobList:draw()
 jobList:sync()
 
 local JobListTask = {
+  name = 'job status',
   priority = 80,
 }
 

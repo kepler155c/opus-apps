@@ -4,7 +4,8 @@ local Milo   = require('milo')
 local device = _G.device
 
 local ExportTask = {
-	priority = 5,
+	name = 'exporter',
+	priority = 40,
 }
 
 function ExportTask:cycle(context)

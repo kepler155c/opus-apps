@@ -3,7 +3,8 @@ local Milo = require('milo')
 local device = _G.device
 
 local PotionImportTask = {
-	priority = 3,
+	name = 'potions',
+	priority = 30,
 }
 
 function PotionImportTask:cycle(context)

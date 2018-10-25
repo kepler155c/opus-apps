@@ -3,7 +3,8 @@ local Milo = require('milo')
 local device = _G.device
 
 local ImportTask = {
-	priority = 3,
+	name = 'importer',
+	priority = 20,
 }
 
 function ImportTask:cycle(context)

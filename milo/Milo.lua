@@ -184,6 +184,11 @@ table.sort(Milo.tasks, function(a, b)
   return a.priority < b.priority
 end)
 
+debug('Tasks\n-----')
+for _, task in ipairs(Milo.tasks) do
+  debug('%d: %s', task.priority, task.name)
+end
+
 Milo:clearGrid()
 
 local page = UI:getPage('listing')

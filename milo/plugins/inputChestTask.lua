@@ -3,7 +3,8 @@ local Milo = require('milo')
 local device = _G.device
 
 local InputChest = {
-	priority = 1,
+	name = 'input',
+	priority = 10,
 }
 
 function InputChest:cycle(context)

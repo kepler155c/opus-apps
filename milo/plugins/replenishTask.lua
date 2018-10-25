@@ -2,7 +2,8 @@ local itemDB = require('itemDB')
 local Milo   = require('milo')
 
 local ReplenishTask = {
-  priority = 30,
+  name = 'replenish',
+  priority = 70,
 }
 
 function ReplenishTask:cycle(context)
