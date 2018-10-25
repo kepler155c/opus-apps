@@ -3,7 +3,6 @@ local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
 local Util   = require('util')
 
-local os     = _G.os
 local turtle = _G.turtle
 
 local Milo = {
@@ -13,9 +12,6 @@ local Milo = {
 	STATUS_INFO    = 'info',
 	STATUS_WARNING = 'warning',
 	STATUS_ERROR   = 'error',
-
-	tasks = { },
-	craftingStatus = { },
 }
 
 function Milo:init(context)
@@ -24,6 +20,18 @@ end
 
 function Milo:getContext()
 	return self.context
+end
+
+function Milo:requestCrafting(item)
+	local key = Milo:uniqueKey(item)
+
+	if not self.context.craftingQueue[key] then
+		item.processing = { }
+		item.requested = item.count
+		item.crafted = 0
+
+		self.context.craftingQueue[key] = item
+	end
 end
 
 function Milo:pauseCrafting()
@@ -60,23 +68,25 @@ function Milo:uniqueKey(item)
 	return table.concat({ item.name, item.damage, item.nbtHash }, ':')
 end
 
-function Milo:getCraftingStatus()
-	return self.craftingStatus
-end
-
 function Milo:resetCraftingStatus()
-	self.craftingStatus = { }
-	self.context.inventoryAdapter.activity = { }
-end
 
-function Milo:updateCraftingStatus(list)
-	for k,v in pairs(list) do
-		self.craftingStatus[k] = v
+	-- todo: move to end of processing tasks ?
+	-- what if someone hoppers in items ? -- this shouldnt be allowed
+	-- all items must come in via pullItems
+	self.context.inventoryAdapter.activity = { }
+
+	for _,key in pairs(Util.keys(self.context.craftingQueue)) do
+		local item = self.context.craftingQueue[key]
+		if item.crafted >= item.requested then
+			debug('removing:')
+			debug(item)
+			self.context.craftingQueue[key] = nil
+		end
 	end
 end
 
 function Milo:registerTask(task)
-	table.insert(self.tasks, task)
+	table.insert(self.context.tasks, task)
 end
 
 function Milo:showError(msg)
@@ -194,190 +204,8 @@ end
 
 -- Return a list of everything in the system
 function Milo:listItems()
-	for _ = 1, 5 do
-		self.items = self.context.inventoryAdapter:listItems()
-		if self.items then
-			break
-		end
---	    jobList:showError('Error - retrying in 3 seconds')
-		os.sleep(3)
-	end
-	if not self.items then
-		self:showError('Error - rebooting in 5 seconds')
-	end
-
+	self.items = self.context.inventoryAdapter:listItems()
 	return self.items
-end
-
-function Milo:addCraftingRequest(item, craftList, count)
-	local key = self:uniqueKey(item)
-	local request = craftList[key]
-	if not craftList[key] then
-		request = { name = item.name, damage = item.damage, nbtHash = item.nbtHash, count = 0 }
-		request.displayName = itemDB:getName(request)
-		craftList[key] = request
-	end
-	request.count = request.count + count
-	return request
-end
-
--- Craft
-function Milo:craftItem(recipe, items, originalItem, craftList, count)
-	local missing = { }
-	local toCraft = Craft.getCraftableAmount(recipe, count, items, missing)
-	if missing.name then
-		originalItem.status = string.format('%s missing', itemDB:getName(missing.name))
-		originalItem.statusCode = self.STATUS_WARNING
-	end
-
-	local crafted = 0
-
-	if toCraft > 0 then
-		crafted = Craft.craftRecipe(recipe, toCraft, self.context.inventoryAdapter)
-		self:clearGrid()
-		items = self:listItems()
-		count = count - crafted
-	end
-
-	if count > 0 and items then
-		local ingredients = Craft.getResourceList4(recipe, items, count)
-		for _,ingredient in pairs(ingredients) do
-			if ingredient.need > 0 then
-				local item = self:addCraftingRequest(ingredient, craftList, ingredient.need)
-				if Craft.findRecipe(item) then
-					item.status = string.format('%s missing', itemDB:getName(ingredient))
-					item.statusCode = self.STATUS_WARNING
-				else
-					item.status = 'no recipe'
-					item.statusCode = self.STATUS_ERROR
-				end
-			end
-		end
-	end
-	return crafted
-end
-
--- Craft as much as possible regardless if all ingredients are available
-function Milo:forceCraftItem(inRecipe, items, originalItem, craftList, inCount)
-	local summed = { }
-	local throttle = Util.throttle()
-
-	local function sumItems(recipe, count)
-		count = math.ceil(count / recipe.count)
-		local craftable = count
-
-		for key,iqty in pairs(Craft.sumIngredients(recipe)) do
-			throttle()
-			local item = itemDB:splitKey(key)
-			local summedItem = summed[key]
-			if not summedItem then
-				summedItem = Util.shallowCopy(item)
-				summedItem.recipe = Craft.findRecipe(item)
-				summedItem.count = Craft.getItemCount(items, key)
-				summedItem.need = 0
-				summedItem.used = 0
-				summedItem.craftable = 0
-				summed[key] = summedItem
-			end
-
-			local total = count * iqty                           -- 4 * 2
-			local used = math.min(summedItem.count, total)       -- 5
-			local need = total - used                            -- 3
-
-			if recipe.craftingTools and recipe.craftingTools[key] then
-				if summedItem.count > 0 then
-					summedItem.used = 1
-					summedItem.need = 0
-					need = 0
-				elseif not summedItem.recipe then
-					summedItem.need = 1
-					need = 1
-				else
-					need = 1
-				end
-			else
-				summedItem.count = summedItem.count - used
-				summedItem.used = summedItem.used + used
-			end
-
-			if need > 0 then
-				if not summedItem.recipe then
-					craftable = math.min(craftable, math.floor(used / iqty))
-					summedItem.need = summedItem.need + need
-				else
-					local c = sumItems(summedItem.recipe, need) -- 4
-					craftable = math.min(craftable, math.floor((used + c) / iqty))
-					summedItem.craftable = summedItem.craftable + c
-				end
-			end
-		end
-		if craftable > 0 then
-			craftable = Craft.craftRecipe(recipe, craftable * recipe.count,
-				self.context.inventoryAdapter) / recipe.count
-			self:clearGrid()
-		end
-
-		return craftable * recipe.count
-	end
-
-	local count = sumItems(inRecipe, inCount)
-
-	if count < inCount then
-		for _,ingredient in pairs(summed) do
-			if ingredient.need > 0 then
-				local item = self:addCraftingRequest(ingredient, craftList, ingredient.need)
-				if Craft.findRecipe(item) then
-					item.status = string.format('%s missing', itemDB:getName(ingredient))
-					item.statusCode = self.STATUS_WARNING
-				else
-					item.status = '(no recipe)'
-					item.statusCode = self.STATUS_ERROR
-				end
-			end
-		end
-	end
-	return count
-end
-
-function Milo:craft(recipe, items, item, craftList)
-	item.status = nil
-	item.statusCode = nil
-	item.crafted = 0
-
-	if self:isCraftingPaused() then
-		return
-	end
-
-	if not self:clearGrid() then
-		item.status = 'Grid obstructed'
-		item.statusCode = self.STATUS_ERROR
-		return
-	end
-
-	if item.forceCrafting then
-		item.crafted = self:forceCraftItem(recipe, items, item, craftList, item.count)
-	else
-		item.crafted = self:craftItem(recipe, items, item, craftList, item.count)
-	end
-end
-
-function Milo:craftItems(craftList)
-	for _,key in pairs(Util.keys(craftList)) do
-		local item = craftList[key]
-		if item.count > 0 then
-			local recipe = Craft.recipes[key]
-			if recipe then
-				self:craft(recipe, self:listItems(), item, craftList)
-			elseif not self.context.controllerAdapter then
-				item.status = '(no recipe)'
-				item.statusCode = self.STATUS_ERROR
-			end
-		end
-	end
-	self:updateCraftingStatus(craftList)
-	for _,v in pairs(craftList) do
-		--debug(v)
-	end
 end
 
 return Milo

@@ -12,17 +12,17 @@ local MACHINE_LOOKUP = 'usr/config/machine_crafting.db'
 local Craft = { }
 
 local function clearGrid(inventoryAdapter)
-  turtle.eachFilledSlot(function(slot)
-    inventoryAdapter:insert(slot.index, slot.count, nil, slot)
-  end)
+	turtle.eachFilledSlot(function(slot)
+		inventoryAdapter:insert(slot.index, slot.count, nil, slot)
+	end)
 
-  for i = 1, 16 do
-    if turtle.getItemCount(i) ~= 0 then
-      return false
-    end
-  end
+	for i = 1, 16 do
+		if turtle.getItemCount(i) ~= 0 then
+			return false
+		end
+	end
 
-  return true
+	return true
 end
 
 local function splitKey(key)
@@ -55,29 +55,57 @@ function Craft.getItemCount(items, item)
 	return count
 end
 
-local function machineCraft(recipe, qty, inventoryAdapter, machineName)
+local function machineCraft(recipe, qty, inventoryAdapter, machineName, oitem)
+	local key = recipe.result
+	local request = oitem.processing[key]
+	if request then
+		request.crafted = request.crafted + (inventoryAdapter.activity[key] or 0)
+		if request.crafted >= request.requested then
+			oitem.processing[key] = nil -- TODO: check...
+			return true
+		end
+		return
+	end
+
 	local machine = device[machineName]
 	if not machine then
 		debug('machine not found')
+		oitem.processing[recipe.result] = {
+			status = 'machine not found'
+		}
 	else
 		for k in pairs(recipe.ingredients) do
 			if machine.getItemMeta(k) then
+				oitem.processing[recipe.result] = {
+					status = 'machine in use'
+				}
 				debug('machine in use: ' .. k)
-				return false
 			end
 		end
 
+		debug('processing ' .. recipe.result)
 		for k,v in pairs(recipe.ingredients) do
-			inventoryAdapter:provide(splitKey(v), qty, k, machineName)
+			if inventoryAdapter:provide(splitKey(v), qty, k, machineName) ~= qty then
+				-- TODO: suck em back out
+				oitem.processing[recipe.result] = {
+					status = 'unknown error'
+				}
+			end
 		end
+		oitem.processing[recipe.result] = {
+			status = 'processing',
+			requested = qty,
+			crafted = 0,
+		}
 	end
-
-	return false
 end
 
-local function turtleCraft(recipe, qty, inventoryAdapter)
+local function turtleCraft(recipe, qty, inventoryAdapter, oitem)
 	if not clearGrid(inventoryAdapter) then
-		return false
+		oitem.processing[recipe.result] = {
+			status = 'grid in use',
+		}
+		return
 	end
 
 	for k,v in pairs(recipe.ingredients) do
@@ -90,15 +118,22 @@ local function turtleCraft(recipe, qty, inventoryAdapter)
 			provideQty = 1
 		end
 		]]--
-		inventoryAdapter:provide(item, provideQty, k)
-		if turtle.getItemCount(k) == 0 then -- ~= qty then
+		if inventoryAdapter:provide(item, provideQty, k) ~= provideQty then
 																				-- FIX: ingredients cannot be stacked
 --debug('failed ' .. v .. ' - ' .. provideQty)
-			return false
+			oitem.processing[recipe.result] = {
+				status = 'unknown error',
+			}
+			return
 		end
 	end
 
-	return turtle.craft()
+	if turtle.craft() then
+		return true
+	end
+	oitem.processing[recipe.result] = {
+		status = 'processing',
+	}
 end
 
 function Craft.loadRecipes()
@@ -139,16 +174,22 @@ local function makeRecipeKey(item)
 	return table.concat({ item.name, item.damage or 0, item.nbtHash }, ':')
 end
 
-function Craft.craftRecipe(recipe, count, inventoryAdapter)
+function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
 	if type(recipe) == 'string' then
 		recipe = Craft.recipes[recipe]
 		if not recipe then
+			origItem.processing[recipe.result] = {
+				status = 'no recipe',
+			}
 			return 0, 'No recipe'
 		end
 	end
 
 	local items = inventoryAdapter:listItems()
 	if not items then
+		origItem.processing[recipe.result] = {
+			status = 'Inventory changed',
+		}
 		return 0, 'Inventory changed'
 	end
 
@@ -166,7 +207,7 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
 			local irecipe = Craft.findRecipe(key)
 			if irecipe then
 				local iqty = need - itemCount
-				local crafted = Craft.craftRecipe(irecipe, iqty, inventoryAdapter)
+				local crafted = Craft.craftRecipe(irecipe, iqty, inventoryAdapter, origItem)
 				if crafted ~= iqty then
 					turtle.select(1)
 					return 0
@@ -177,15 +218,19 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
 
 	local crafted = 0
 	repeat
--- fix
+		local requested = math.min(count, maxCount)
+
 		if Craft.machineLookup[recipe.result] then
-			machineCraft(recipe, math.min(count, maxCount), inventoryAdapter, Craft.machineLookup[recipe.result])
-			break
-		elseif not turtleCraft(recipe, math.min(count, maxCount), inventoryAdapter) then
-			turtle.select(1)
-			break
+			if not machineCraft(recipe, requested, inventoryAdapter, Craft.machineLookup[recipe.result], origItem) then
+				break
+			end
+		else
+			if not turtleCraft(recipe, requested, inventoryAdapter) then
+				break
+			end
 		end
-		crafted = crafted + math.min(count, maxCount)
+
+		crafted = crafted + requested
 		count = count - maxCount
 	until count <= 0
 

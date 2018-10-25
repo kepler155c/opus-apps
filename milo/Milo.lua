@@ -109,6 +109,8 @@ local context = {
   learnTypes = { },
   machineTypes = { },
   localName = modem.getNameLocal(),
+  tasks = { },
+  craftingQueue = { },
 }
 
 local function initStorage(detachedDevice)
@@ -180,12 +182,12 @@ local programDir = fs.getDir(shell.getRunningProgram())
 loadDirectory(fs.combine(programDir, 'core'))
 loadDirectory(fs.combine(programDir, 'plugins'))
 
-table.sort(Milo.tasks, function(a, b)
+table.sort(context.tasks, function(a, b)
   return a.priority < b.priority
 end)
 
 debug('Tasks\n-----')
-for _, task in ipairs(Milo.tasks) do
+for _, task in ipairs(context.tasks) do
   debug('%d: %s', task.priority, task.name)
 end
 
@@ -200,7 +202,7 @@ Event.onInterval(5, function()
     Milo:resetCraftingStatus()
     context.inventoryAdapter:refresh()
 
-    for _, task in ipairs(Milo.tasks) do
+    for _, task in ipairs(context.tasks) do
       local s, m = pcall(function() task:cycle(context) end)
       if not s and m then
         Util.print(task)

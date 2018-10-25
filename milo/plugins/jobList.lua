@@ -15,12 +15,14 @@ local display = UI.Device {
 local jobList = UI.Page {
   parent = display,
   grid = UI.Grid {
-    sortColumn = 'displayName',
+    sortColumn = 'index',
     backgroundFocusColor = colors.black,
     columns = {
       { heading = 'Qty',      key = 'count',       width = 6                      },
-      { heading = 'Crafting', key = 'displayName', width = display.width / 2 - 10 },
-      { heading = 'Status',   key = 'status',      width = display.width - 10     },
+      { heading = 'Crafting', key = 'displayName', }, -- width = display.width / 2 - 10 },
+      { heading = 'Status',   key = 'status',     }, -- width = display.width - 10     },
+      { heading = 'Req',      key = 'requested',       width = 6                      },
+      { heading = 'Cra',      key = 'crafted',       width = 6                      },
     },
   },
 }
@@ -33,7 +35,20 @@ end
 
 function jobList:updateList(craftList)
   if not Milo:isCraftingPaused() then
-    self.grid:setValues(craftList)
+    local t = { }
+    local index = 1
+    for k,v in pairs(craftList) do
+      t[k] = v
+      v.index = index
+      index = index + 1
+      for k2,v2 in pairs(v.processing) do
+        t[k2] = v2
+        v2.displayName = k2
+        v2.index = index
+        index = index + 1
+      end
+    end
+    self.grid:setValues(t)
     self.grid:update()
     self:draw()
     self:sync()
@@ -61,7 +76,7 @@ local JobListTask = {
 }
 
 function JobListTask:cycle()
-  jobList:updateList(Milo:getCraftingStatus())
+  jobList:updateList(context.craftingQueue)
 end
 
 Milo:registerTask(JobListTask)

@@ -6,8 +6,6 @@ local Util   = require('util')
 
 local colors = _G.colors
 
-local demandCrafting = { }
-
 local craftPage = UI.Page {
   titleBar = UI.TitleBar { },
   wizard = UI.Wizard {
@@ -118,12 +116,11 @@ function craftPage:eventHandler(event)
     UI:setPreviousPage()
 
   elseif event.type == 'accept' then
-    local key = Milo:uniqueKey(self.item)
-    demandCrafting[key] = Util.shallowCopy(self.item)
-    demandCrafting[key].count = tonumber(self.wizard.pages.quantity.count.value)
-    demandCrafting[key].ocount = demandCrafting[key].count
-    demandCrafting[key].forceCrafting = true
-    demandCrafting[key].eject = self.wizard.pages.quantity.eject.value == true
+    local item = Util.shallowCopy(self.item)
+    item.count = tonumber(self.wizard.pages.quantity.count.value)
+    item.forceCrafting = true
+    item.eject = self.wizard.pages.quantity.eject.value == true
+    Milo:requestCrafting(item)
     UI:setPreviousPage()
   else
     return UI.Page.eventHandler(self, event)
@@ -131,48 +128,4 @@ function craftPage:eventHandler(event)
   return true
 end
 
-local demandCraftingTask = {
-  name = 'demand crafting',
-  priority = 60,
-}
-
-function demandCraftingTask:cycle(context)
-  local demandCrafted = { }
-
-  -- look directly at the adapter import activity to determine
-  -- if the item was imported into storage from any source.
-  -- The item does NOT need to come from the machine that did
-  -- the crafting.
-  for _,key in pairs(Util.keys(demandCrafting)) do
-    local item = demandCrafting[key]
-
-    local imported = context.inventoryAdapter.activity[key]
-    if imported then
-      item.crafted = math.min(imported, item.count)
-      item.count = math.max(0, item.count - item.crafted)
-      context.inventoryAdapter.activity[key] = imported - item.crafted
-    end
-    demandCrafted[key] = item
-  end
-
-  if Util.size(demandCrafted) > 0 then
-    Milo:craftItems(demandCrafted)
-  end
-
-  for _,key in pairs(Util.keys(demandCrafting)) do
-    local item = demandCrafting[key]
-    if item.crafted then
-      item.count = math.max(0, item.count - item.crafted)
-      if item.count <= 0 then
-        item.statusCode = 'success'
-        demandCrafting[key] = nil
-        if item.eject then
-          Milo:eject(item, item.ocount)
-        end
-      end
-    end
-  end
-end
-
 UI:addPage('craft', craftPage)
-Milo:registerTask(demandCraftingTask)

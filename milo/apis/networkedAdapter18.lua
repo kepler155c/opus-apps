@@ -67,17 +67,13 @@ self.listCount = self.listCount + 1
 --debug(self.listCount)
 
   -- todo: only listItems from dirty remotes
-  -- todo: better handling of empty inventories
 
   local cache = { }
   local items = { }
   throttle = throttle or Util.throttle()
 
   for _, remote in pairs(self.remotes) do
-    if not remote:listItems(throttle) then
-      debug('no List: ' .. remote.name)
-      --error('Listing failed: ' .. remote.name)
-    end
+    remote:listItems(throttle)
     local rcache = remote.cache or { }
 
 -- TODO: add a method in each adapter that only updates a passed cache
