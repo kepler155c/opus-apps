@@ -64,7 +64,6 @@ local function machineCraft(recipe, qty, inventoryAdapter, machineName, oitem)
 	local key = recipe.result
 	local request = oitem.ingredients[key]
 
-debug('requested: ' .. key)
 	if not request then
 		request = {
 			count = qty,
@@ -75,7 +74,6 @@ debug('requested: ' .. key)
 
 	if request.pending then
 		request.crafted = request.crafted + (inventoryAdapter.activity[key] or 0)
-debug({ request.crafted, request.count })
 		if request.crafted >= request.count then
 			request.pending = nil -- TODO: check...
 			request.statusCode = Craft.STATUS_SUCCESS
@@ -100,8 +98,6 @@ debug({ request.crafted, request.count })
 		end
 	end
 
-debug('processing %s %d', key, qty)
-
 	for k,v in pairs(recipe.ingredients) do
 		if inventoryAdapter:provide(splitKey(v), qty, k, machineName) ~= qty then
 			-- TODO: suck em back out
@@ -119,7 +115,6 @@ local function turtleCraft(recipe, qty, inventoryAdapter, oitem)
 	local key = recipe.result
 	local request = oitem.ingredients[key]
 
-debug('requested: ' .. key)
 	if not request then
 		request = {
 			count = qty,

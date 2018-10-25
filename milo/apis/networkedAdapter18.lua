@@ -13,7 +13,6 @@ function NetworkedAdapter:init(args)
     dirty = true,
 listCount = 0,
     activity = { },
-    nameArray = { },
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
@@ -30,7 +29,6 @@ listCount = 0,
           local adapter = InventoryAdapter.wrap({ side = k, direction = self.localName })
           if adapter then
             table.insert(self.remotes, adapter)
-            self.nameArray[adapter.direction] = true
           end
         end
       end
@@ -49,7 +47,6 @@ listCount = 0,
       return a.priority > b.priority
     end)
   end
-  debug(self.nameArray)
 end
 
 function NetworkedAdapter:isValid()
@@ -113,7 +110,6 @@ function NetworkedAdapter:getItemInfo(item)
 end
 
 function NetworkedAdapter:provide(item, qty, slot, direction)
-  local key   = table.concat({ item.name, item.damage, item.nbtHash }, ':')
   local total = 0
 
   for _, remote in ipairs(self.remotes) do
@@ -124,10 +120,6 @@ debug('EXT: %s(%d): %s -> %s%s',
   slot and string.format('[%d]', slot) or '')
       self.dirty = true
       remote.dirty = true
-      --if self.nameArray[direction or self.localName] then
-      --  local entry = self.activity[key] or 0
-      --  self.activity[key] = entry + amount
-      --end
     end
     qty = qty - amount
     total = total + amount
@@ -179,10 +171,8 @@ debug('INS: %s(%d): %s[%d] -> %s',
       self.dirty = true
       remote.dirty = true
 debug('insert: ' .. (source or self.localName))
-      --if self.nameArray[source or self.localName] then
-        local entry = self.activity[key] or 0
-        self.activity[key] = entry + amount
-      --end
+      local entry = self.activity[key] or 0
+      self.activity[key] = entry + amount
     end
     qty = qty - amount
     total = total + amount
