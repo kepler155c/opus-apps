@@ -197,7 +197,11 @@ function machineWizard.wizard:eventHandler(event)
 end
 
 function machineWizard:enable(machine)
+	local adapter = machine.adapter
+	machine.adapter = nil	-- don't deep copy the adapter
 	self.machine = Util.deepCopy(machine)
+	machine.adapter = adapter
+
 	self.wizard.pages.general.form:setValues(self.machine)
 	self.wizard.pages.general.form[1].shadowText = machine.name
 
@@ -224,12 +228,26 @@ function machineWizard:eventHandler(event)
 
 	elseif event.type == 'accept' then
 
+_G._p2 = self.machine
+debug(1)
+
 		-- todo: no need for calling this function - use validate instead
 		for _, v in pairs(self.wizard.pages) do
 			if v.save and v.index then  -- only save if the page was valid for this mtype
 				v:save(self.machine)
 			end
 		end
+debug(2)
+
+		local adapter = self.machine.adapter
+		self.machine.adapter = nil
+
+local t = { }
+for k,v  in pairs(context.config.remoteDefaults) do
+	t[k] = v.adapter
+	v.adapter = nil
+end
+
 		context.config.remoteDefaults[self.machine.name] =
 			Util.prune(self.machine, function(v)
 				if type(v) == 'boolean' then
@@ -242,6 +260,17 @@ function machineWizard:eventHandler(event)
 				return true
 			end)
 		Config.update('milo', context.config)
+
+for k,v  in pairs(t) do
+	context.config.remoteDefaults[k].adapter = v
+end
+
+debug(3)
+		Util.clear(context.config.remoteDefaults[self.machine.name])
+debug(4)
+		Util.merge(context.config.remoteDefaults[self.machine.name], self.machine)
+debug(5)
+		context.config.remoteDefaults[self.machine.name].adapter = adapter
 
 		UI:setPreviousPage()
 
