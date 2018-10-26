@@ -22,13 +22,11 @@ function Milo:requestCrafting(item)
 	local key = Milo:uniqueKey(item)
 
 	if not self.context.craftingQueue[key] then
-		item.ingredients = { }
-		--[[
-			count   = requested amount,
-			crafted = amount that has been crafted
-		]]
+		item.ingredients = {
+			[ key ] = item
+		}
+--		item.ingredients[key] = item
 		item.crafted = 0
-
 		self.context.craftingQueue[key] = item
 	end
 end

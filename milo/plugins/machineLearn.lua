@@ -116,6 +116,8 @@ function pages.confirmation:validate()
 		end
 	end
 
+	-- TODO: maxCount needs to be entered by user ? ie. brewing station can only do 1 at a time
+
 	local recipe = {
 		count       = result.count,
 		ingredients = { },
@@ -131,11 +133,12 @@ function pages.confirmation:validate()
 	-- save the recipe
 	context.userRecipes[key] = recipe
 	Util.writeTable(Milo.RECIPES_FILE, context.userRecipes)
-	Craft.loadRecipes()
 
 	-- save the machine association
 	Craft.machineLookup[key] = machine.name
 	Util.writeTable(MACHINE_LOOKUP, Craft.machineLookup)
+
+	Craft.loadRecipes()
 
 	local listingPage = UI:getPage('listing')
 	local displayName = itemDB:getName(result)

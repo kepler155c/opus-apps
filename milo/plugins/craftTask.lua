@@ -10,17 +10,9 @@ local craftTask = {
   priority = 70,
 }
 
--- Craft
-function craftTask:craftItem(recipe, originalItem, count)
-  local toCraft = Craft.getCraftableAmount(recipe, count, Milo:listItems(), { })
-  local crafted = 0
-
-  if toCraft > 0 then
-    crafted = Craft.craftRecipe(recipe, toCraft, context.inventoryAdapter, originalItem)
-    Milo:clearGrid()
-  end
-
-  return crafted
+function craftTask:craftItem(recipe, item, count)
+  Craft.craftRecipe(recipe, count, context.inventoryAdapter, item)
+  Milo:clearGrid()
 end
 
 -- Craft as much as possible regardless if all ingredients are available
@@ -91,24 +83,21 @@ function craftTask:forceCraftItem(inRecipe, originalItem, inCount)
 end
 
 function craftTask:craft(recipe, item)
-  item.status = nil
-  item.statusCode = nil
-
   if Milo:isCraftingPaused() then
     return
   end
 
   if item.forceCrafting then
-    item.crafted = item.crafted + self:forceCraftItem(recipe, item, item.count - item.crafted)
+    self:forceCraftItem(recipe, item, item.count - item.crafted)
   else
-    item.crafted = item.crafted + self:craftItem(recipe, item, item.count - item.crafted)
+    self:craftItem(recipe, item, item.count - item.crafted)
   end
 end
 
 function craftTask:cycle()
   for _,key in pairs(Util.keys(context.craftingQueue)) do
     local item = context.craftingQueue[key]
-    if item.count > 0 then
+    if item.count - item.crafted > 0 then
       local recipe = Craft.recipes[key]
       if recipe then
         self:craft(recipe, item)

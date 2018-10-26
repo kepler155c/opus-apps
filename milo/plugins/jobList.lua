@@ -20,7 +20,7 @@ local jobList = UI.Page {
     sortColumn = 'index',
     backgroundFocusColor = colors.black,
     columns = {
-      { heading = 'Qty',      key = 'remaining',   width = 6 },
+      { heading = 'Qty',      key = 'remaining',   width = 4 },
       { heading = 'Crafting', key = 'displayName', },
       { heading = 'Status',   key = 'status',      },
       { heading = 'Req',      key = 'count',       width = 3 },
@@ -41,13 +41,15 @@ function jobList:updateList(craftList)
     for _,v in pairs(craftList) do
       table.insert(t, v)
       v.index = #t
-      v.showRemining = true
+      v.showRemaining = true
       for k2,v2 in pairs(v.ingredients) do
-        table.insert(t, v2)
-        if not v2.displayName then
-          v2.displayName = itemDB:getName(k2)
+        if v2 ~= v then
+          table.insert(t, v2)
+          if not v2.displayName then
+            v2.displayName = itemDB:getName(k2)
+          end
+          v2.index = #t
         end
-        v2.index = #t
       end
     end
     self.grid:setValues(t)
@@ -59,8 +61,10 @@ end
 
 function jobList.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
-  if row.showRemining then
+  if row.showRemaining then
     row.remaining = row.count - row.crafted
+  else
+    row.displayName = '  ' .. row.displayName
   end
   return row
 end

@@ -115,9 +115,9 @@ function NetworkedAdapter:provide(item, qty, slot, direction)
   for _, remote in ipairs(self.remotes) do
     local amount = remote:provide(item, qty, slot, direction)
     if amount > 0 then
-debug('EXT: %s(%d): %s -> %s%s',
-  item.name, amount, remote.side, direction or self.localName,
-  slot and string.format('[%d]', slot) or '')
+--debug('EXT: %s(%d): %s -> %s%s',
+--  item.name, amount, remote.side, direction or self.localName,
+--  slot and string.format('[%d]', slot) or '')
       self.dirty = true
       remote.dirty = true
     end
@@ -165,12 +165,11 @@ function NetworkedAdapter:insert(slot, qty, toSlot, item, source)
   local function insert(remote)
     local amount = remote:insert(slot, qty, toSlot, source or self.direction)
     if amount > 0 then
-debug('INS: %s(%d): %s[%d] -> %s',
-  item.name, amount,
-  source or self.localName, slot, remote.side)
+--debug('INS: %s(%d): %s[%d] -> %s',
+--  item.name, amount,
+--  source or self.localName, slot, remote.side)
       self.dirty = true
       remote.dirty = true
-debug('insert: ' .. (source or self.localName))
       local entry = self.activity[key] or 0
       self.activity[key] = entry + amount
     end

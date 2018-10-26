@@ -113,6 +113,8 @@ local context = {
   craftingQueue = { },
 }
 
+_G._p = context--debug
+
 local function initStorage(detachedDevice)
   debug('Initializing storage')
   local storage = { }
@@ -142,7 +144,9 @@ debug(storage)
     debug('resuming')
     Milo:resumeCrafting()
   end
-
+--TODO: cannot do this, must be able to add and mark inactive
+-- due to activity table
+-- add an networkAdapter:scan()
   context.inventoryAdapter = InventoryAdapter.wrap({ remoteDefaults = storage })
 
   if not context.inventoryAdapter then
@@ -151,7 +155,7 @@ debug(storage)
 end
 
 Event.on({ 'device_attach' }, function(_, dev)
-  debug('attach: ' .. dev)
+  --debug('attach: ' .. dev)
   if config.remoteDefaults[dev] and
     config.remoteDefaults[dev].mtype == 'storage' then
     initStorage()
@@ -159,7 +163,7 @@ Event.on({ 'device_attach' }, function(_, dev)
 end)
 
 Event.on({ 'device_detach' }, function(_, dev)
-  debug('detach: ' .. dev)
+  --debug('detach: ' .. dev)
   if config.remoteDefaults[dev] and
      config.remoteDefaults[dev].mtype == 'storage' then
     initStorage(dev)
