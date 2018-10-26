@@ -1,18 +1,24 @@
 _G.requireInjector(_ENV)
 
+local Event  = require('event')
 local Socket = require('socket')
+local sync   = require('sync')
 local UI     = require('ui')
 local Util   = require('util')
 
 local colors = _G.colors
+local device = _G.device
 local socket
+local neural = device.neuralInterface
 
 local options = {
   user   = { arg = 'u', type = 'string',
              desc = 'User name associated with bound manipulator' },
-  server = { arg = 's', type = 'number',
+  slot   = { arg = 's', type = 'number',
+             desc = 'Optional inventory slot to use to transfer to milo' },
+  server = { arg = 'm', type = 'number',
              desc = 'ID of Milo server' },
-  help   = { arg = 'h', type = 'flag', value = false,
+             help   = { arg = 'h', type = 'flag', value = false,
              desc = 'Displays the options' },
 }
 
@@ -107,26 +113,31 @@ local function filterItems(t, filter, displayMode)
 end
 
 function page:sendRequest(data)
-  local msg
+  local response
 
-  for _ = 1, 2 do
-    if not socket or not socket.connected then
-      socket, msg = Socket.connect(options.server.value, 4242)
-      if socket then
-        socket:write(options.user.value)
-      end
-    end
-    if socket then
-      if socket:write(data) then
-        local response = socket:read(2)
-        if response then
-          return response
+  sync(self, function()
+    local msg
+    for _ = 1, 2 do
+      if not socket or not socket.connected then
+        socket, msg = Socket.connect(options.server.value, 4242)
+        if socket then
+          socket:write(options.user.value)
         end
       end
-      socket:close()
+      if socket then
+        if socket:write(data) then
+          response = socket:read(2)
+          if response then
+            return
+          end
+        end
+        socket:close()
+      end
     end
-  end
-  self.notification:error(msg or 'Failed to connect')
+    self.notification:error(msg or 'Failed to connect')
+  end)
+
+  return response
 end
 
 function page.statusBar:draw()
@@ -162,23 +173,17 @@ function page:eventHandler(event)
   elseif event.type == 'eject' then
     local item = self.grid:getSelected()
     if item then
-      local items = self:sendRequest({ request = 'transfer', item = item, count = 1 })
-      if items then
-        self.items = items
-        self:applyFilter()
-        self.grid:draw()
-      end
+      local response = self:sendRequest({ request = 'transfer', item = item, count = 1 })
+      item.count = item.count - response.count
+      self.grid:draw()
     end
 
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
-      local items = self:sendRequest({ request = 'transfer', item = item, count = 64 })
-      if items then
-        self.items = items
-        self:applyFilter()
-        self.grid:draw()
-      end
+      local response = self:sendRequest({ request = 'transfer', item = item, count = 64 })
+      item.count = item.count - response.count
+      self.grid:draw()
     end
 
   elseif event.type == 'refresh' then
@@ -233,6 +238,18 @@ end
 function page:applyFilter()
   local t = filterItems(self.items, self.filter, self.displayMode)
   self.grid:setValues(t)
+end
+
+if neural and options.slot.value and neural.getInventory then
+  Event.onInterval(1, function()
+    local inv = neural.getInventory()
+    if inv and inv.getItem(options.slot.value) then
+      page:sendRequest({ request = 'deposit', slot = options.slot.value })
+      -- local item =
+      -- TODO: update count for this one item
+      -- page.grid:draw() page:sync()
+    end
+  end)
 end
 
 UI:setPage(page)

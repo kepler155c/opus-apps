@@ -23,8 +23,7 @@ local jobList = UI.Page {
       { heading = 'Qty',      key = 'remaining',   width = 4 },
       { heading = 'Crafting', key = 'displayName', },
       { heading = 'Status',   key = 'status',      },
-      { heading = 'Req',      key = 'count',       width = 3 },
-      { heading = 'Cra',      key = 'crafted',     width = 3 },
+      { heading = 'Progress', key = 'progress',    width = 8 },
     },
   },
 }
@@ -66,6 +65,7 @@ function jobList.grid:getDisplayValues(row)
   else
     row.displayName = '  ' .. row.displayName
   end
+  row.progress = string.format('%d/%d', row.crafted, row.count)
   return row
 end
 

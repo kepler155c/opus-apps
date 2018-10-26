@@ -132,7 +132,6 @@ function itemSlideout:eventHandler(event)
 			self.form:save()
 			self.form.values.name = itemDB:makeKey(selected)
 			self:hide()
-			debug('calling cllbck')
 			self.callback()
 		end
 

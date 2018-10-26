@@ -36,24 +36,12 @@ local itemPage = UI.Page {
       help = 'Craft until out of ingredients'
     },
 ]]
-    [4] = UI.Chooser {
-      width = 7,
+    [4] = UI.Checkbox {
       formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
-      nochoice = 'No',
-      choices = {
-        { name = 'Yes', value = true },
-        { name = 'No', value = false },
-      },
       help = 'Ignore damage of item'
     },
-    [5] = UI.Chooser {
-      width = 7,
+    [5] = UI.Checkbox {
       formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
-      nochoice = 'No',
-      choices = {
-        { name = 'Yes', value = true },
-        { name = 'No', value = false },
-      },
       help = 'Ignore NBT of item'
     },
 --[[

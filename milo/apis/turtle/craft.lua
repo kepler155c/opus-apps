@@ -188,6 +188,7 @@ function Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
 	if canCraft == 0 then
 
 		local resourceList = Craft.getResourceList(recipe, items, count)
+_G._p2 = resourceList
 		for k,v in pairs(resourceList) do
 			if v.need > 0 then
 				if not origItem.ingredients[k] then

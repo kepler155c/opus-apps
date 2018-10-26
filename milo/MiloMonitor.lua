@@ -6,7 +6,7 @@ local colors = _G.colors
 local device = _G.device
 
 local args = { ... }
-local mon = device[args[1] or 'monitor'] or error('Syntax: debug <monitor>')
+local mon = device[args[1] or 'monitor'] or error('Syntax: MiloMonitor <monitor>')
 local config = Util.readTable('/usr/config/milo') or error('Milo is not configured')
 
 local row

@@ -70,6 +70,7 @@ function craftTask:forceCraftItem(inRecipe, originalItem, inCount)
         end
       end
     end
+
     if craftable > 0 then
       craftable = Craft.craftRecipe(recipe, craftable * recipe.count,
         context.inventoryAdapter, originalItem) / recipe.count

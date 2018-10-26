@@ -253,7 +253,7 @@ function machineWizard:eventHandler(event)
 	elseif event.type == 'focus_change' then
 		self.statusBar:setStatus(event.focused.help)
 
-	elseif event.type  == 'form_invalid' then
+	elseif event.type  == 'form_invalid' or event.type == 'general_error' then
 		self.notification:error(event.message)
 		self:setFocus(event.field)
 

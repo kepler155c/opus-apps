@@ -1,6 +1,8 @@
+local itemDB = require('itemDB')
 local UI = require('ui')
 
 local colors = _G.colors
+local device = _G.device
 
 local storageView = UI.Window {
 	mtype = 'storage',
@@ -16,14 +18,24 @@ local storageView = UI.Window {
 			limit = 4,
 			validate = 'numeric', pruneEmpty = true,
 		},
-		[2] = UI.TextEntry {
-			formLabel = 'Lock to', formKey = 'lockWith',
+		[2] = UI.Checkbox {
+			formLabel = 'Locked', formKey = 'lockWith',
 			help = 'Locks chest to a single item type',
-			width = 18, limit = 64, pruneEmpty = true,
+			pruneEmpty = true,
 		},
-		[3] = UI.Button {
-			x = -9, ey = -4,
-			text = 'Detect', help = 'Determine what is currently present',
+		[3] = UI.Text {
+			x = 16, ex = -2, y = 3,
+			value = 'minecraft:xxxxx:0'
+		},
+		[4] = UI.Checkbox {
+			formLabel = 'Void', formKey = 'voidExcess',
+			help = 'Void excess if locked - TODO',
+			pruneEmpty = true,
+		},
+		[5] = UI.Checkbox {
+			formLabel = 'Partition', formKey = 'voidExcess',
+			help = 'TODO',
+			pruneEmpty = true,
 		},
 	},
 }
@@ -38,7 +50,33 @@ function storageView:validate()
 end
 
 function storageView:setMachine(machine)
+	self.machine = machine
 	self.form:setValues(machine)
+	self.form[3].value = machine.lock and itemDB:getName(machine.lock) or ''
+end
+
+function storageView:eventHandler(event)
+	if event.type == 'checkbox_change' and event.element.formKey == 'lockWith' then
+		if event.checked then
+			if device[self.machine.name] and device[self.machine.name].list then
+				local _, slot = next(device[self.machine.name].list())
+				if slot then
+					self.machine.lock = itemDB:makeKey(slot)
+					self.form[3].value = itemDB:getName(slot)
+				else
+					self:emit({
+						type = 'general_error',
+						field = event.element,
+						message = 'The chest must contain the item to lock' })
+					self.form[3].value = false
+				end
+			end
+		else
+			self.machine.lock = nil
+			self.form[3].value = ''
+		end
+		self.form[3]:draw()
+	end
 end
 
 UI:getPage('machineWizard').wizard:add({ storage = storageView })

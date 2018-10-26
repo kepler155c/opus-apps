@@ -25,7 +25,6 @@ function Milo:requestCrafting(item)
 		item.ingredients = {
 			[ key ] = item
 		}
---		item.ingredients[key] = item
 		item.crafted = 0
 		self.context.craftingQueue[key] = item
 	end
@@ -66,17 +65,11 @@ function Milo:uniqueKey(item)
 end
 
 function Milo:resetCraftingStatus()
-
-	-- todo: move to end of processing tasks ?
-	-- what if someone hoppers in items ? -- this shouldnt be allowed
-	-- all items must come in via pullItems
 	self.context.inventoryAdapter.activity = { }
 
 	for _,key in pairs(Util.keys(self.context.craftingQueue)) do
 		local item = self.context.craftingQueue[key]
 		if item.crafted >= item.count then
-			debug('removing:')
-			debug(item)
 			self.context.craftingQueue[key] = nil
 		end
 	end
@@ -202,6 +195,11 @@ end
 -- Return a list of everything in the system
 function Milo:listItems()
 	return self.context.inventoryAdapter:listItems()
+end
+
+-- force a full rescan of chests
+function Milo:refreshItems()
+	return self.context.inventoryAdapter:refresh()
 end
 
 return Milo

@@ -30,7 +30,13 @@ function ReplenishTask:cycle(context)
           count = res.low - item.count,
           name = item.name,
           displayName = item.displayName,
+          replenish = true,
         })
+      else
+        local request = context.craftingQueue[Milo:uniqueKey(item)]
+        if request and request.replenish then
+          request.count = request.crafted
+        end
       end
     end
   end

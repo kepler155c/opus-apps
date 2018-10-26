@@ -40,9 +40,10 @@ end
 local listingPage = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
-      { text = 'Learn',   event = 'learn'   },
-      { text = 'Forget',  event = 'forget'  },
-      { text = 'Craft',   event = 'craft'   },
+      { text = 'Learn',   event = 'learn'    },
+      { text = 'Forget',  event = 'forget'   },
+      { text = 'Craft',   event = 'craft'    },
+      { text = '...',     event = 'machines' },
       { text = 'Refresh', event = 'refresh', x = -9 },
     },
   },
@@ -134,7 +135,12 @@ function listingPage:eventHandler(event)
   elseif event.type == 'eject' then
     local item = self.grid:getSelected()
     if item then
-      queue(function() Milo:eject(item, 1) end)
+      queue(function()
+        Milo:eject(item, 1)
+        local updated = Milo:getItem(Milo:listItems(), item)
+        item.count = updated and updated.count or 0
+        self.grid:draw()
+      end)
     end
 
   elseif event.type == 'eject_stack' then
@@ -225,7 +231,7 @@ function listingPage:enable()
 end
 
 function listingPage:refresh()
-  self.allItems = context.inventoryAdapter:refresh()
+  self.allItems = Milo:refreshItems()
   Milo:mergeResources(self.allItems)
   self:applyFilter()
 end

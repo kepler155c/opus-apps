@@ -34,12 +34,20 @@ local function client(socket)
 			break
 		end
 		if data.request == 'list' then
-			local items = Milo:listItems()
+			local items = Milo:refreshItems()
 			Milo:mergeResources(items)
 			socket:write(items)
 
+		elseif data.request == 'deposit' then
+			local count = manipulator.getInventory().pushItems(
+				context.localName,
+				data.slot,
+				64)
+			socket:write({ count = count })
+			Milo:clearGrid()
+
 		elseif data.request == 'transfer' then
-			context.inventoryAdapter:provide(
+			local count = context.inventoryAdapter:provide(
 				data.item,
 				data.count,
 				nil,
@@ -52,9 +60,7 @@ local function client(socket)
 					slot.count)
 			end)
 
-			local items = Milo:listItems()
-			Milo:mergeResources(items)
-			socket:write(items)
+			socket:write({ count = count })
 		end
 	until not socket.connected
 
