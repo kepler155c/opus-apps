@@ -225,7 +225,7 @@ function listingPage:enable()
 end
 
 function listingPage:refresh()
-  self.allItems = Milo:listItems()
+  self.allItems = context.inventoryAdapter:refresh()
   Milo:mergeResources(self.allItems)
   self:applyFilter()
 end

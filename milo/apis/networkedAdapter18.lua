@@ -1,6 +1,6 @@
 local class      = require('class')
 local Util       = require('util')
-local InventoryAdapter  = require('inventoryAdapter')
+local InventoryAdapter = require('inventoryAdapter')
 local Peripheral = require('peripheral')
 
 local NetworkedAdapter = class()

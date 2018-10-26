@@ -201,8 +201,7 @@ end
 
 -- Return a list of everything in the system
 function Milo:listItems()
-	self.items = self.context.inventoryAdapter:listItems()
-	return self.items
+	return self.context.inventoryAdapter:listItems()
 end
 
 return Milo

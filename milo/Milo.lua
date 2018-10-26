@@ -67,11 +67,10 @@ local Config         = require('config')
 local Event          = require('event')
 local itemDB         = require('itemDB')
 local Milo           = require('milo')
+local NetworkAdapter = require('networkedAdapter18')
 local Peripheral     = require('peripheral')
 local UI             = require('ui')
 local Util           = require('util')
-
-local InventoryAdapter  = require('inventoryAdapter')
 
 local device     = _G.device
 local fs         = _G.fs
@@ -147,7 +146,7 @@ debug(storage)
 --TODO: cannot do this, must be able to add and mark inactive
 -- due to activity table
 -- add an networkAdapter:scan()
-  context.inventoryAdapter = InventoryAdapter.wrap({ remoteDefaults = storage })
+  context.inventoryAdapter = NetworkAdapter({ remoteDefaults = storage })
 
   if not context.inventoryAdapter then
     error('Invalid inventory configuration')
@@ -201,7 +200,7 @@ local page = UI:getPage('listing')
 UI:setPage(page)
 page:setFocus(page.statusBar.filter) -- todo: move this line into listing code
 
-Event.onInterval(5, function()
+Event.onInterval(500, function()
   if not Milo:isCraftingPaused() then
     Milo:resetCraftingStatus()
     context.inventoryAdapter:refresh()

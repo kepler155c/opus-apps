@@ -72,6 +72,16 @@ end
 
 -- provide a consolidated list of items
 function ChestAdapter:listItems(throttle)
+  for _ = 1, 5 do
+    local list = self:listItemsInternal(throttle)
+    if list then
+      return list
+    end
+  end
+  error('Error accessing inventory: ' .. self.direction)
+end
+
+function ChestAdapter:listItemsInternal(throttle)
   local cache = { }
   local items = { }
   throttle = throttle or Util.throttle()
@@ -100,10 +110,8 @@ function ChestAdapter:listItems(throttle)
   end
   itemDB:flush()
 
-  if not Util.empty(items) then
-    self.cache = cache
-    return items
-  end
+  self.cache = cache
+  return items
 end
 
 function ChestAdapter:getItemInfo(item)
