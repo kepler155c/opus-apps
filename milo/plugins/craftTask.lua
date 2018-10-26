@@ -11,7 +11,7 @@ local craftTask = {
 }
 
 function craftTask:craftItem(recipe, item, count)
-  Craft.craftRecipe(recipe, count, context.inventoryAdapter, item)
+  Craft.craftRecipe(recipe, count, context.storage, item)
   Milo:clearGrid()
 end
 
@@ -73,7 +73,7 @@ function craftTask:forceCraftItem(inRecipe, originalItem, inCount)
 
     if craftable > 0 then
       craftable = Craft.craftRecipe(recipe, craftable * recipe.count,
-        context.inventoryAdapter, originalItem) / recipe.count
+        context.storage, originalItem) / recipe.count
       Milo:clearGrid()
     end
 

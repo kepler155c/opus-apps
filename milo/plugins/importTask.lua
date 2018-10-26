@@ -10,12 +10,12 @@ local ImportTask = {
 function ImportTask:cycle(context)
 	for source, v in pairs(context.config.remoteDefaults) do
 		if v.imports then
-			local machine = device[source]
-			if machine and machine.getItemMeta then
-				for slotNo in pairs(v.imports) do
-					local slot = machine.getItemMeta(slotNo)
-					if slot then
-						context.inventoryAdapter:insert(slotNo, slot.count, nil, slot, source)
+			local inventory = device[source]
+			if inventory and inventory.getItemMeta then
+				for slot in pairs(v.imports) do
+					local item = inventory.getItemMeta(slot)
+					if item then
+						context.storage:import(source, slot, item.count, item)
 					end
 				end
 			else

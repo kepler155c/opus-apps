@@ -23,11 +23,11 @@ function LimitTask:cycle(context)
 		if res.limit then
 			local item = Milo:getItemWithQty(res, res.ignoreDamage, res.ignoreNbtHash)
 			if item and item.count > res.limit then
-				context.inventoryAdapter:provide(
-					{ name = item.name, damage = item.damage, nbtHash = item.nbtHash },
-					item.count - res.limit,
+				context.storage:export(
+					trashcan,
 					nil,
-					trashcan)
+					item.count - res.limit,
+					item)
 			end
 		end
 	end

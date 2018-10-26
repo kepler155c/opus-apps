@@ -54,25 +54,17 @@
 
 ]]--
 
---[[
-limit
-organize
-replenish
-autocraft
-]]
-
 _G.requireInjector(_ENV)
 
-local Config         = require('config')
-local Event          = require('event')
-local itemDB         = require('itemDB')
-local Milo           = require('milo')
-local NetworkAdapter = require('networkedAdapter18')
-local Peripheral     = require('peripheral')
-local UI             = require('ui')
-local Util           = require('util')
+local Config     = require('config')
+local Event      = require('event')
+local itemDB     = require('itemDB')
+local Milo       = require('milo')
+local Peripheral = require('peripheral')
+local Storage    = require('storage')
+local UI         = require('ui')
+local Util       = require('util')
 
-local device     = _G.device
 local fs         = _G.fs
 local multishell = _ENV.multishell
 local shell      = _ENV.shell
@@ -110,67 +102,18 @@ local context = {
   localName = modem.getNameLocal(),
   tasks = { },
   craftingQueue = { },
+  storage = Storage(config),
 }
 
-_G._p = context--debug
+_G._p = context --debug
 
-local function initStorage(detachedDevice)
-  debug('Initializing storage')
-  local storage = { }
-  local storageOffline
-
-  -- check to see if any of the storage chests are disconnected
-  for k,v in pairs(config.remoteDefaults) do
-    if v.mtype == 'storage' then
-      if not device[v.name] or v.name == detachedDevice then
-        storageOffline = true
-      else
-        storage[k] = v
-      end
-    end
-  end
-debug(storage)
-
-  if storageOffline then
-    Milo:pauseCrafting()
-    debug('Crafting paused')
-    Milo:showError('A storage chest has gone offline, ctrl-l to continue')
-
--- todo: just can't resume crafting - need to use offline flag instead
--- in the case where crafting was paused already when storage went offline
--- ie. in crafting process
-  elseif Milo:isCraftingPaused() then
-    debug('resuming')
-    Milo:resumeCrafting()
-  end
---TODO: cannot do this, must be able to add and mark inactive
--- due to activity table
--- add an networkAdapter:scan()
-  context.inventoryAdapter = NetworkAdapter({ remoteDefaults = storage })
-
-  if not context.inventoryAdapter then
-    error('Invalid inventory configuration')
-  end
-end
-
-Event.on({ 'device_attach' }, function(_, dev)
-  --debug('attach: ' .. dev)
-  if config.remoteDefaults[dev] and
-    config.remoteDefaults[dev].mtype == 'storage' then
-    initStorage()
-  end
+Event.on('storage_offline', function()
+  Milo:showError('A storage chest has gone offline, ctrl-l to continue')
 end)
 
-Event.on({ 'device_detach' }, function(_, dev)
-  --debug('detach: ' .. dev)
-  if config.remoteDefaults[dev] and
-     config.remoteDefaults[dev].mtype == 'storage' then
-    initStorage(dev)
-  end
-end)
-
-initStorage()
 Milo:init(context)
+context.storage:initStorage()
+context.storage:initTrashcan()
 
 local function loadDirectory(dir)
   for _, file in pairs(fs.list(dir)) do
@@ -200,14 +143,14 @@ local page = UI:getPage('listing')
 UI:setPage(page)
 
 Event.onInterval(5, function()
-  if not Milo:isCraftingPaused() then
+  if not Milo:isCraftingPaused() and context.storage:isOnline() then
     Milo:resetCraftingStatus()
     Milo:refreshItems()
 
     for _, task in ipairs(context.tasks) do
       local s, m = pcall(function() task:cycle(context) end)
       if not s and m then
-        Util.print(task)
+        Util.print(task.name)
         error(m)
       end
     end

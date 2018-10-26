@@ -47,11 +47,11 @@ local function client(socket)
 			Milo:clearGrid()
 
 		elseif data.request == 'transfer' then
-			local count = context.inventoryAdapter:provide(
-				data.item,
-				data.count,
+			local count = context.storage:export(
+				context.localName,
 				nil,
-				context.localName)
+				data.count,
+				data.item)
 
 			turtle.eachFilledSlot(function(slot)
 				manipulator.getInventory().pullItems(

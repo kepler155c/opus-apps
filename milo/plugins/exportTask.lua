@@ -25,11 +25,11 @@ function ExportTask:cycle(context)
 						if count > 0 then
 							item = Milo:getItemWithQty(item)
 							if item and count > 0 then
-								context.inventoryAdapter:provide(
-									item,
-									math.min(count, item.count),
+								context.storage:export(
+									target,
 									entry.slot,
-									target)
+									math.min(count, item.count),
+									item)
 							end
 						end
 					end

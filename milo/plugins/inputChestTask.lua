@@ -8,14 +8,14 @@ local InputChest = {
 }
 
 function InputChest:cycle(context)
-	for name,v in pairs(context.config.remoteDefaults) do
+	for source,v in pairs(context.config.remoteDefaults) do
 		if v.mtype == 'input' then
-			local inventory = device[name]
+			local inventory = device[source]
 
 			local list = inventory and inventory.list and inventory.list()
 			if list then
-				for slotNo, slot in pairs(list) do
-					context.inventoryAdapter:insert(slotNo, slot.count, nil, slot, name)
+				for slot, item in pairs(list) do
+					context.storage:import(source, slot, item.count, item)
 				end
 			end
 		end

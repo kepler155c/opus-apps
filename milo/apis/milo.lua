@@ -65,7 +65,7 @@ function Milo:uniqueKey(item)
 end
 
 function Milo:resetCraftingStatus()
-	self.context.inventoryAdapter.activity = { }
+	self.context.storage.activity = { }
 
 	for _,key in pairs(Util.keys(self.context.craftingQueue)) do
 		local item = self.context.craftingQueue[key]
@@ -116,7 +116,7 @@ end
 function Milo:clearGrid()
 	local function clear()
 		turtle.eachFilledSlot(function(slot)
-			self.context.inventoryAdapter:insert(slot.index, slot.count, nil, slot)
+			self.context.storage:insert(slot.index, slot.count, nil, slot)
 		end)
 
 		for i = 1, 16 do
@@ -131,7 +131,7 @@ end
 
 function Milo:eject(item, qty)
 	local s, m = pcall(function()
-		self.context.inventoryAdapter:provide(item, qty)
+		self.context.storage:provide(item, qty)
 		turtle.emptyInventory()
 	end)
 	if not s and m then
@@ -194,12 +194,12 @@ end
 
 -- Return a list of everything in the system
 function Milo:listItems()
-	return self.context.inventoryAdapter:listItems()
+	return self.context.storage:listItems()
 end
 
 -- force a full rescan of chests
 function Milo:refreshItems()
-	return self.context.inventoryAdapter:refresh()
+	return self.context.storage:refresh()
 end
 
 return Milo
