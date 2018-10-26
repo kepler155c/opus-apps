@@ -43,9 +43,6 @@ if options.resize.value then
 	term.current().getSize = mon.getSize
 end
 
-debug(args)
-debug(options)
-
 if options.execute.value then
 	-- TODO: allow args to be passed
 	shell.run(options.execute.value) -- unpack(args))

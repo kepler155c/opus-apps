@@ -200,7 +200,7 @@ local page = UI:getPage('listing')
 UI:setPage(page)
 page:setFocus(page.statusBar.filter) -- todo: move this line into listing code
 
-Event.onInterval(500, function()
+Event.onInterval(5, function()
   if not Milo:isCraftingPaused() then
     Milo:resetCraftingStatus()
     context.inventoryAdapter:refresh()
