@@ -24,54 +24,26 @@ listCount = 0,
   self.localName = modem.getNameLocal()
 
   Event.on({ 'device_attach' }, function(_, dev)
-    if self.remoteDefaults[dev] then
-      if self.remoteDefaults[dev].mtype == 'storage' then
-        self:initStorage()
-      end
-      if self.remoteDefaults[dev].mtype == 'trashcan' then
-        self:initTrashcan()
-      end
-    end
+debug('attach: ' .. dev)
+    self:initStorage()
   end)
 
   Event.on({ 'device_detach' }, function(_, dev)
-    if self.remoteDefaults[dev] then
-      if self.remoteDefaults[dev].mtype == 'storage' then
-        self:initStorage(dev)
-      end
-      if self.remoteDefaults[dev].mtype == 'trashcan' then
-        self:initTrashcan(dev)
-      end
-    end
+debug('detach: ' .. dev)
+    self:initStorage(dev)
   end)
 end
 
 function NetworkedAdapter:setOnline(online)
   if online ~= self.storageOnline then
     self.storageOnline = online
-    os.queueEvent(self.storageOnline and 'storage_online' or 'storage_offline')
+    os.queueEvent(self.storageOnline and 'storage_online' or 'storage_offline', online)
     debug('Storage: %s', self.storageOnline and 'online' or 'offline')
   end
 end
 
 function NetworkedAdapter:isOnline()
   return self.storageOnline
-end
-
-function NetworkedAdapter:initTrashcan(detachedDevice)
-  local trashcan = Util.find(self.remoteDefaults, 'mtype', 'trashcan')
-
-  if (detachedDevice and self.trashcan and self.trashcan.name == detachedDevice) or
-     (trashcan and not device[trashcan.name]) then
-    self.trashcan = nil
-debug(' Trashcan: none')
-
-  elseif trashcan and device[trashcan.name] then
-    if not self.trashcan or (self.trashcan and self.trashcan.name ~= trashcan.name) then
-debug(' Trashcan: ' .. trashcan.name)
-      self.trashcan = device[trashcan.name]
-    end
-  end
 end
 
 function NetworkedAdapter:initStorage()
@@ -81,15 +53,13 @@ function NetworkedAdapter:initStorage()
   for k,v in pairs(self.remoteDefaults) do
     if v.adapter then
       v.adapter.online = not not device[k]
-      if v.mtype == 'storage' then
-        online = online and v.adapter.online
-      end
-    elseif v.mtype == 'storage' then
+    elseif device[k] and device[k].list and device[k].size and device[k].pullItems then
       v.adapter = InventoryAdapter.wrap({ side = k })
       v.adapter.online = true
     end
     if v.mtype == 'storage' then
-      debug('  %s: %s', v.adapter.online and ' online' or 'offline', k)
+      online = online and not not (v.adapter and v.adapter.online)
+      debug('  %s: %s', v.adapter and v.adapter.online and ' online' or 'offline', k)
     end
   end
 
@@ -184,11 +154,11 @@ function NetworkedAdapter:provide(item, qty, slot, direction)
   local total = 0
 
   for _, adapter in self:onlineAdapters() do
-    local amount = adapter:provide(item, qty, slot, direction)
+    local amount = adapter:provide(item, qty, slot, direction or self.localName)
     if amount > 0 then
---debug('EXT: %s(%d): %s -> %s%s',
---  item.name, amount, remote.side, direction or self.localName,
---  slot and string.format('[%d]', slot) or '')
+debug('EXT: %s(%d): %s -> %s%s',
+  item.name, amount, adapter.name, direction or self.localName,
+  slot and string.format('[%d]', slot) or '')
       self.dirty = true
       adapter.dirty = true
     end
@@ -203,9 +173,10 @@ function NetworkedAdapter:provide(item, qty, slot, direction)
 end
 
 function NetworkedAdapter:trash(source, slot, count)
-  if self.trashcan then
-  debug('TRA: %s[%d] (%d)', source, slot, count)
-    return self.trashcan.pullItems(source, slot, count)
+  local trashcan = Util.find(self.remoteDefaults, 'mtype', 'trashcan')
+  if trashcan and trashcan.adapter and trashcan.adapter.online then
+debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)
+    return trashcan.adapter.pullItems(source or self.localName, slot, count)
   end
   return 0
 end
@@ -233,7 +204,7 @@ function NetworkedAdapter:insert(slot, qty, toSlot, item, source)
     if amount > 0 then
 debug('INS: %s(%d): %s[%d] -> %s',
   item.name, amount,
-  source or self.localName, slot, adapter.side)
+  source, slot, adapter.name)
       self.dirty = true
       adapter.dirty = true
       local entry = self.activity[key] or 0
@@ -261,7 +232,7 @@ debug('INS: %s(%d): %s[%d] -> %s',
       if qty <= 0 then
         break
       end
-      if adapter.cache and adapter.cache[key] and not adapter.lockWith then
+      if adapter.cache and adapter.cache[key] and not adapter.lock then
         insert(adapter)
       end
     end
@@ -272,7 +243,7 @@ debug('INS: %s(%d): %s[%d] -> %s',
     if qty <= 0 then
       break
     end
-    if not remote.lockWith then
+    if not remote.lock then
       insert(remote.adapter)
     end
   end

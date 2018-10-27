@@ -67,6 +67,7 @@ local Util       = require('util')
 
 local fs         = _G.fs
 local multishell = _ENV.multishell
+local os         = _G.os
 local shell      = _ENV.shell
 
 if multishell then
@@ -113,7 +114,6 @@ end)
 
 Milo:init(context)
 context.storage:initStorage()
-context.storage:initTrashcan()
 
 local function loadDirectory(dir)
   for _, file in pairs(fs.list(dir)) do
@@ -156,5 +156,9 @@ Event.onInterval(5, function()
     end
   end
 end)
+
+os.queueEvent(
+  context.storage:isOnline() and 'storage_online' or 'storage_offline',
+  context.storage:isOnline())
 
 UI:pullEvents()

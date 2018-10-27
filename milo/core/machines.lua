@@ -10,6 +10,20 @@ local device = _G.device
 
 local context = Milo:getContext()
 
+local function saveConfig()
+	local t = { }
+	for k,v  in pairs(context.config.remoteDefaults) do
+		t[k] = v.adapter
+		v.adapter = nil
+	end
+
+	Config.update('milo', context.config)
+
+	for k,v  in pairs(t) do
+		context.config.remoteDefaults[k].adapter = v
+	end
+end
+
 local machinesPage = UI.Page {
 	titleBar = UI.TitleBar {
 		previousPage = true,
@@ -19,14 +33,21 @@ local machinesPage = UI.Page {
 		y = 2, ey = -2,
 		values = context.config.remoteDefaults,
 		columns = {
+			{                       key = 'priority',   width = 3  },
 			{ heading = 'Name',     key = 'displayName' },
-			{ heading = 'Priority', key = 'priority', width = 5  },
-			{ heading = 'Type',     key = 'mtype',    width = 5  },
+			{ heading = 'Type',     key = 'mtype',      width = 5  },
 		},
 		sortColumn = 'displayName',
+		help = 'Select Machine',
+	},
+	remove = UI.Button {
+		y = -1, x = -4,
+		text = '-', event = 'remove_machine',
+		help = 'Remove Machine',
 	},
 	statusBar = UI.StatusBar {
-		values = 'Select Machine',
+		ex = -7,
+		backgroundColor = colors.cyan,
 	},
 }
 
@@ -80,6 +101,19 @@ end
 function machinesPage:eventHandler(event)
 	if event.type == 'grid_select' then
 		UI:setPage('machineWizard', event.selected)
+
+	elseif event.type == 'remove_machine' then
+		local machine = self.grid:getSelected()
+		if machine then
+			context.config.remoteDefaults[machine.name] = nil
+			saveConfig()
+		end
+		self.grid:update()
+		self.grid:draw()
+
+	elseif event.type == 'focus_change' then
+		self.statusBar:setStatus(event.focused.help)
+
 	else
 		UI.Page.eventHandler(self, event)
 	end
@@ -200,10 +234,11 @@ function machineWizard:enable(machine)
 	local adapter = machine.adapter
 	machine.adapter = nil	-- don't deep copy the adapter
 	self.machine = Util.deepCopy(machine)
+	self.machine.adapter = adapter
 	machine.adapter = adapter
 
 	self.wizard.pages.general.form:setValues(self.machine)
-	self.wizard.pages.general.form[1].shadowText = machine.name
+	self.wizard.pages.general.form[1].shadowText = self.machine.name
 
 	-- restore indices
 	for _, page in pairs(self.wizard.pages) do
@@ -227,50 +262,27 @@ function machineWizard:eventHandler(event)
 		UI:setPreviousPage()
 
 	elseif event.type == 'accept' then
-
-_G._p2 = self.machine
-debug(1)
-
 		-- todo: no need for calling this function - use validate instead
 		for _, v in pairs(self.wizard.pages) do
 			if v.save and v.index then  -- only save if the page was valid for this mtype
 				v:save(self.machine)
 			end
 		end
-debug(2)
 
-		local adapter = self.machine.adapter
-		self.machine.adapter = nil
+		Util.prune(self.machine, function(v)
+			if type(v) == 'boolean' then
+				return v
+			elseif type(v) == 'string' then
+				return #v > 0
+			elseif type(v) == 'table' then
+				return not Util.empty(v)
+			end
+			return true
+		end)
 
-local t = { }
-for k,v  in pairs(context.config.remoteDefaults) do
-	t[k] = v.adapter
-	v.adapter = nil
-end
-
-		context.config.remoteDefaults[self.machine.name] =
-			Util.prune(self.machine, function(v)
-				if type(v) == 'boolean' then
-					return v
-				elseif type(v) == 'string' then
-					return #v > 0
-				elseif type(v) == 'table' then
-					return not Util.empty(v)
-				end
-				return true
-			end)
-		Config.update('milo', context.config)
-
-for k,v  in pairs(t) do
-	context.config.remoteDefaults[k].adapter = v
-end
-
-debug(3)
 		Util.clear(context.config.remoteDefaults[self.machine.name])
-debug(4)
 		Util.merge(context.config.remoteDefaults[self.machine.name], self.machine)
-debug(5)
-		context.config.remoteDefaults[self.machine.name].adapter = adapter
+		saveConfig()
 
 		UI:setPreviousPage()
 

@@ -116,7 +116,7 @@ end
 function Milo:clearGrid()
 	local function clear()
 		turtle.eachFilledSlot(function(slot)
-			self.context.storage:insert(slot.index, slot.count, nil, slot)
+			self.context.storage:import(self.context.localName, slot.index, slot.count, slot)
 		end)
 
 		for i = 1, 16 do

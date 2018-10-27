@@ -1,5 +1,6 @@
 local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
+local Event  = require('event')
 local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
@@ -59,7 +60,7 @@ local listingPage = UI.Page {
   },
   statusBar = UI.StatusBar {
     filter = UI.TextEntry {
-      x = 1, ex = -4,
+      x = 1, ex = -13,
       limit = 50,
       shadowText = 'filter',
       shadowTextColor = colors.gray,
@@ -68,6 +69,13 @@ local listingPage = UI.Page {
       accelerators = {
         [ 'enter' ] = 'craft',
       },
+    },
+    storageStatus = UI.Button {
+      x = -12, ex = -4,
+      event = 'toggle_online',
+      backgroundColor = colors.cyan,
+      textColor = colors.lime,
+      text = '',
     },
     display = UI.Button {
       x = -3,
@@ -130,7 +138,7 @@ function listingPage:eventHandler(event)
     UI:exitPullEvents()
 
   elseif event.type == 'resume' then
-    Milo:resumeCrafting()
+    context.storage:setOnline(true)
 
   elseif event.type == 'eject' then
     local item = self.grid:getSelected()
@@ -240,5 +248,14 @@ function listingPage:applyFilter()
   local t = filterItems(self.allItems, self.filter, self.displayMode)
   self.grid:setValues(t)
 end
+
+Event.on({ 'storage_offline', 'storage_online' }, function(e, isOnline)
+  listingPage.statusBar.storageStatus.text =
+    isOnline and 'online' or 'offline'
+  listingPage.statusBar.storageStatus.textColor =
+    isOnline and colors.lime or colors.red
+  listingPage.statusBar.storageStatus:draw()
+  listingPage:sync()
+end)
 
 UI:addPage('listing', listingPage)
