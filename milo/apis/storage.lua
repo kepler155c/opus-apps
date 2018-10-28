@@ -36,7 +36,9 @@ function NetworkedAdapter:showStorage()
   debug('Storage:')
   for k,v in pairs(self.remoteDefaults) do
     local online = v.adapter and v.adapter.online
-    debug(' %s: %s', online and ' online' or 'offline', k)
+    if not online then
+      debug(' %s: %s', online and ' online' or 'offline', k)
+    end
   end
   debug('')
 end

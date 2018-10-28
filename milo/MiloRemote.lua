@@ -10,11 +10,15 @@ local colors = _G.colors
 local device = _G.device
 local socket
 
+local SHIELD_SLOT = 2
+
 local options = {
   user   = { arg = 'u', type = 'string',
              desc = 'User name associated with bound manipulator' },
   slot   = { arg = 's', type = 'number',
              desc = 'Optional inventory slot to use to transfer to milo' },
+  shield = { arg = 'e', type = 'flag',
+             desc = 'Use shield slot to use to transfer to milo' },
   server = { arg = 'm', type = 'number',
              desc = 'ID of Milo server' },
              help   = { arg = 'h', type = 'flag', value = false,
@@ -33,7 +37,7 @@ if not options.user.value or not options.server.value then
   error('Invalid arguments')
 end
 
-if options.slot.value and
+if (options.slot.value or options.shield.value) and
    not (device.neuralInterface and device.neuralInterface.getInventory) then
   error('Introspection module is required for transferring items')
 end
@@ -246,13 +250,32 @@ end
 
 if options.slot.value then
   debug('Transfer items initialized')
-  Event.onInterval(1, function()
+  Event.onInterval(2, function()
     local neural = device.neuralInterface
     if neural and neural.getInventory then
       local item = neural.getInventory().getItem(options.slot.value)
       if item then
         debug('depositing')
         page:sendRequest({ request = 'deposit', slot = options.slot.value })
+        -- local item =
+        -- TODO: update count for this one item
+        -- page.grid:draw() page:sync()
+      end
+    else
+      debug('missing Introspection module')
+    end
+  end)
+end
+
+if options.slot.value or options.eslot.value then
+  debug('Transfer items initialized')
+  Event.onInterval(2, function()
+    local neural = device.neuralInterface
+    if neural and neural.getEquipment then
+      local item = neural.getEquipment().getItem(SHIELD_SLOT)
+      if item then
+        debug('depositing')
+        page:sendRequest({ request = 'deposit', slot = 'shield' })
         -- local item =
         -- TODO: update count for this one item
         -- page.grid:draw() page:sync()

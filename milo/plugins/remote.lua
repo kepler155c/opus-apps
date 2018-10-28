@@ -5,6 +5,8 @@ local Socket = require('socket')
 local device = _G.device
 local turtle = _G.turtle
 
+local SHIELD_SLOT = 2
+
 local context = Milo:getContext()
 
 local function getManipulatorForUser(user)
@@ -40,10 +42,19 @@ debug('remote: ' .. data.request)
 			socket:write(items)
 
 		elseif data.request == 'deposit' then
-			local count = manipulator.getInventory().pushItems(
-				context.localName,
-				data.slot,
-				64)
+			local count
+
+			if data.slot == 'shield' then
+				count = manipulator.getEquipment().pushItems(
+					context.localName,
+					SHIELD_SLOT,
+					64)
+			else
+				count = manipulator.getInventory().pushItems(
+					context.localName,
+					data.slot,
+					64)
+			end
 			socket:write({ count = count })
 			Milo:clearGrid()
 

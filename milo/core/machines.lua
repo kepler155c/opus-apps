@@ -359,8 +359,7 @@ function machineWizard.wizard:eventHandler(event)
 			self.pages.general.index = 1
 			self.pages.confirmation.index = 2
 
-			for k, page in pairs(self.pages) do
-debug(k)
+			for _, page in pairs(self.pages) do
 				if not page.index and page:isValidFor(self.parent.machine) then
 					page.index = index
 					index = index + 1
