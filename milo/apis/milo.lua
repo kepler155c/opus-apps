@@ -153,6 +153,20 @@ function Milo:eject(item, qty)
 	end
 end
 
+function Milo:saveMachineRecipe(recipe, result, machine)
+	local key = Milo:uniqueKey(result)
+
+	-- save the recipe
+	self.context.userRecipes[key] = recipe
+	Util.writeTable(Milo.RECIPES_FILE, self.context.userRecipes)
+
+	-- save the machine association
+	Craft.machineLookup[key] = machine
+	Util.writeTable(Craft.MACHINE_LOOKUP, Craft.machineLookup)
+
+	Craft.loadRecipes()
+end
+
 function Milo:mergeResources(t)
 	for _,v in pairs(self.context.resources) do
 		local item = self:getItem(t, v)

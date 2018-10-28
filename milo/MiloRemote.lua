@@ -248,6 +248,7 @@ function page:applyFilter()
   self.grid:setValues(t)
 end
 
+debug(options.slot)
 if options.slot.value then
   debug('Transfer items initialized')
   Event.onInterval(2, function()

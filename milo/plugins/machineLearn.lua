@@ -1,4 +1,3 @@
-local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
 local UI     = require('ui')
@@ -7,8 +6,6 @@ local Util   = require('util')
 local colors = _G.colors
 local device = _G.device
 local turtle = _G.turtle
-
-local MACHINE_LOOKUP = 'usr/config/machine_crafting.db'
 
 local context = Milo:getContext()
 
@@ -117,17 +114,7 @@ function pages.confirmation:validate()
 		recipe.ingredients[k] = Milo:uniqueKey(v)
 	end
 
-	local key = Milo:uniqueKey(result)
-
-	-- save the recipe
-	context.userRecipes[key] = recipe
-	Util.writeTable(Milo.RECIPES_FILE, context.userRecipes)
-
-	-- save the machine association
-	Craft.machineLookup[key] = machine.name
-	Util.writeTable(MACHINE_LOOKUP, Craft.machineLookup)
-
-	Craft.loadRecipes()
+	Milo:saveMachineRecipe(recipe, result, machine.name)
 
 	local listingPage = UI:getPage('listing')
 	local displayName = itemDB:getName(result)

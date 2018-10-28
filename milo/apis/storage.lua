@@ -218,7 +218,7 @@ function NetworkedAdapter:insert(slot, qty, toSlot, item, source)
     if amount > 0 then
 debug('INS: %s(%d): %s[%d] -> %s',
   item.name, amount,
-  source, slot, adapter.name)
+  source or self.localName, slot, adapter.name)
       self.dirty = true
       adapter.dirty = true
       local entry = self.activity[key] or 0
