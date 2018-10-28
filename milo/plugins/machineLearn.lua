@@ -12,17 +12,6 @@ local MACHINE_LOOKUP = 'usr/config/machine_crafting.db'
 
 local context = Milo:getContext()
 
-local function getTurtleInventory()
-	local introspectionModule = device['plethora:introspection'] or
-		error('Introspection module not found')
-
-	local list = { }
-	for i = 1,16 do
-		list[i] = introspectionModule.getInventory().getItemMeta(i)
-	end
-	return list
-end
-
 local machineLearnWizard = UI.Page {
 	titleBar = UI.TitleBar { title = 'Learn a crafting recipe' },
 	wizard = UI.Wizard {
@@ -92,7 +81,7 @@ function pages.machine:validate()
 end
 
 function pages.confirmation:validate()
-	local inventory = getTurtleInventory()
+	local inventory = Milo:getTurtleInventory()
 	local result    = inventory[16]
 	local slotCount = machine.size()
 

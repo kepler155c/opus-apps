@@ -9,7 +9,6 @@ local Util   = require('util')
 local colors = _G.colors
 local device = _G.device
 local socket
-local neural = device.neuralInterface
 
 local options = {
   user   = { arg = 'u', type = 'string',
@@ -32,6 +31,11 @@ if not options.user.value or not options.server.value then
   Util.showOptions(options)
   print()
   error('Invalid arguments')
+end
+
+if options.slot.value and
+   not (device.neuralInterface and device.neuralInterface.getInventory) then
+  error('Introspection module is required for transferring items')
 end
 
 local page = UI.Page {
@@ -240,14 +244,21 @@ function page:applyFilter()
   self.grid:setValues(t)
 end
 
-if neural and options.slot.value and neural.getInventory then
+if options.slot.value then
+  debug('Transfer items initialized')
   Event.onInterval(1, function()
-    local inv = neural.getInventory()
-    if inv and inv.getItem(options.slot.value) then
-      page:sendRequest({ request = 'deposit', slot = options.slot.value })
-      -- local item =
-      -- TODO: update count for this one item
-      -- page.grid:draw() page:sync()
+    local neural = device.neuralInterface
+    if neural and neural.getInventory then
+      local item = neural.getInventory().getItem(options.slot.value)
+      if item then
+        debug('depositing')
+        page:sendRequest({ request = 'deposit', slot = options.slot.value })
+        -- local item =
+        -- TODO: update count for this one item
+        -- page.grid:draw() page:sync()
+      end
+    else
+      debug('missing Introspection module')
     end
   end)
 end

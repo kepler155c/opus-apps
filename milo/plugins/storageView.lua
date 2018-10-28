@@ -1,11 +1,10 @@
 local itemDB = require('itemDB')
-local UI = require('ui')
+local UI     = require('ui')
 
 local colors = _G.colors
 local device = _G.device
 
 local storageView = UI.Window {
-	mtype = 'storage',
 	title = 'Storage Options',
 	index = 2,
 	backgroundColor = colors.cyan,
@@ -47,6 +46,10 @@ end
 
 function storageView:validate()
 	return self.form:save()
+end
+
+function storageView:isValidFor(machine)
+	return machine.mtype == 'storage'
 end
 
 function storageView:setMachine(machine)

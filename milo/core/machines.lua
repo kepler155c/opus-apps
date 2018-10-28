@@ -51,6 +51,22 @@ local machinesPage = UI.Page {
 	},
 }
 
+function machinesPage.grid:getDisplayValues(row)
+	row = Util.shallowCopy(row)
+	row.displayName = row.displayName or row.name
+	return row
+end
+
+function machinesPage.grid:getRowTextColor(row, selected)
+	if not device[row.name] then
+		return colors.red
+	end
+	if row.mtype == 'ignore' then
+		return colors.lightGray
+	end
+	return UI.Grid:getRowTextColor(row, selected)
+end
+
 function machinesPage:getList()
 	-- TODO: remove dedupe naming in perf code ?
 	for _, v in pairs(device) do
@@ -80,22 +96,6 @@ end
 function machinesPage:disable()
 	UI.Page.disable(self)
 	Event.off(self.handler)
-end
-
-function machinesPage.grid:getDisplayValues(row)
-	row = Util.shallowCopy(row)
-	row.displayName = row.displayName or row.name
-	return row
-end
-
-function machinesPage.grid:getRowTextColor(row, selected)
-	if not device[row.name] then
-		return colors.red
-	end
-	if row.mtype == 'ignore' then
-		return colors.lightGray
-	end
-	return UI.Grid:getRowTextColor(row, selected)
 end
 
 function machinesPage:eventHandler(event)
@@ -178,8 +178,146 @@ The settings will take effect immediately!]],
 		backgroundColor = colors.cyan,
 	},
 	notification = UI.Notification { },
+	filter = UI.SlideOut {
+		backgroundColor = colors.cyan,
+		menuBar = UI.MenuBar {
+			buttons = {
+				{ text = 'Save',    event = 'save'    },
+				{ text = 'Cancel',  event = 'cancel'  },
+			},
+		},
+		grid = UI.ScrollingGrid {
+			x = 2, ex = -6, y = 2, ey = -6,
+			columns = {
+				{ heading = 'Name', key = 'displayName' },
+			},
+			sortColumn = 'displayName',
+			help = 'Select item to export',
+		},
+		remove = UI.Button {
+			x = -4, y = 4,
+			text = '-', event = 'remove_entry', help = 'Remove',
+		},
+		form = UI.Form {
+			x = 2, y = -4, height = 3,
+			margin = 1,
+			manualControls = true,
+			[1] = UI.Chooser {
+				width = 7,
+				formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
+				pruneEmpty = true,
+				nochoice = 'No',
+				choices = {
+					{ name = 'Yes', value = true },
+					{ name = 'No', value = false },
+				},
+				help = 'Ignore damage of item when exporting'
+			},
+			[2] = UI.Chooser {
+				width = 7,
+				formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
+				pruneEmpty = true,
+				nochoice = 'No',
+				choices = {
+					{ name = 'Yes', value = true },
+					{ name = 'No', value = false },
+				},
+				help = 'Ignore NBT of item when exporting'
+			},
+			[3] = UI.Chooser {
+				width = 13,
+				formLabel = 'Mode', formKey = 'blacklist',
+				nochoice = 'whitelist',
+				choices = {
+					{ name = 'whitelist', value = false },
+					{ name = 'blacklist', value = true },
+				},
+				help = 'Ignore damage of item when exporting'
+			},
+			scan = UI.Button {
+				x = -11, y = 1,
+				text = 'Scan', event = 'scan_turtle',
+				help = 'Add items to turtle to add to filter',
+			},
+		},
+		statusBar = UI.StatusBar {
+			backgroundColor = colors.cyan,
+		},
+	},
 }
 
+--[[ Filter slide out ]] --
+function machineWizard.filter:show(entry, callback, whitelistOnly)
+	self.entry = entry
+	self.callback = callback
+
+	if not self.entry.filter then
+		self.entry.filter = { }
+	end
+
+	self.form:setValues(entry)
+	self:resetGrid()
+
+	self.form[3].inactive = whitelistOnly
+
+	UI.SlideOut.show(self)
+--	self:setFocus(self.filter)
+end
+
+function machineWizard.filter:resetGrid()
+	local t = { }
+	for k in pairs(self.entry.filter) do
+		table.insert(t, itemDB:splitKey(k))
+	end
+	self.grid:setValues(t)
+end
+
+function machineWizard.filter.grid:getDisplayValues(row)
+	row = Util.shallowCopy(row)
+	row.displayName = itemDB:getName(row)
+	return row
+end
+
+function machineWizard.filter:eventHandler(event)
+	if event.type == 'focus_change' then
+		self.statusBar:setStatus(event.focused.help)
+
+	elseif event.type == 'scan_turtle' then
+		local inventory = Milo:getTurtleInventory()
+		for _,item in pairs(inventory) do
+			self.entry.filter[Milo:uniqueKey(item)] = true
+		end
+		self:resetGrid()
+		self.grid:update()
+		self.grid:draw()
+
+	elseif event.type == 'remove_entry' then
+		local row = self.grid:getSelected()
+		if row then
+			Util.removeByValue(self.grid.values, row)
+			self.grid:update()
+			self.grid:draw()
+		end
+
+	elseif event.type == 'save' then
+		self.form:save()
+		self.entry.filter = { }
+		for _,v in pairs(self.grid.values) do
+			self.entry.filter[Milo:uniqueKey(v)] = true
+		end
+		self:hide()
+		self.callback()
+
+	elseif event.type == 'cancel' then
+		self:hide()
+
+	else
+		return UI.SlideOut.eventHandler(self, event)
+	end
+	return true
+end
+
+--[[ General Page ]] --
 function machineWizard.wizard.pages.general:enable()
 	UI.Window.enable(self)
 	self:focusFirst()
@@ -208,6 +346,7 @@ function machineWizard.wizard.pages.general:validate()
 	return self.form:save()
 end
 
+--[[ Wizard ]] --
 function machineWizard.wizard:eventHandler(event)
 	if event.type == 'nextView' and
 		Util.find(self.pages, 'enabled', true) == self.pages.general then
@@ -215,11 +354,16 @@ function machineWizard.wizard:eventHandler(event)
 		if self.pages.general.form:save() then
 			local index = 2
 			for _, page in pairs(self.pages) do
-				if page.mtype == machineWizard.machine.mtype then
+				page.index = nil
+			end
+			self.pages.general.index = 1
+			self.pages.confirmation.index = 2
+
+			for k, page in pairs(self.pages) do
+debug(k)
+				if not page.index and page:isValidFor(self.parent.machine) then
 					page.index = index
 					index = index + 1
-				elseif page.index ~= 1 then
-					page.index = nil
 				end
 			end
 			self.pages.confirmation.index = index
@@ -237,6 +381,7 @@ function machineWizard:enable(machine)
 	self.machine.adapter = adapter
 	machine.adapter = adapter
 
+_G._p2 = self.machine
 	self.wizard.pages.general.form:setValues(self.machine)
 	self.wizard.pages.general.form[1].shadowText = self.machine.name
 
@@ -285,6 +430,9 @@ function machineWizard:eventHandler(event)
 		saveConfig()
 
 		UI:setPreviousPage()
+
+	elseif event.type == 'edit_filter' then
+		self.filter:show(event.entry, event.callback, event.whitelistOnly)
 
 	elseif event.type == 'enable_view' then
 		local current = event.next or event.prev

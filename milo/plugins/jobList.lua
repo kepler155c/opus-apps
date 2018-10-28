@@ -61,7 +61,7 @@ end
 function jobList.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
   if row.showRemaining then
-    row.remaining = row.count - row.crafted
+    row.remaining = math.max(0, row.count - row.crafted)
   else
     row.displayName = '  ' .. row.displayName
   end

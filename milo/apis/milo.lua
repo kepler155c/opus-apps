@@ -129,6 +129,20 @@ function Milo:clearGrid()
 	return clear() or clear()
 end
 
+function Milo:getTurtleInventory()
+	local list = { }
+	for i = 1,16 do
+		-- TODO: update item db
+		local item = self.context.introspectionModule.getInventory().getItemMeta(i)
+		if item then
+			itemDB:add(item)
+			list[i] = item
+		end
+	end
+	itemDB:flush()
+	return list
+end
+
 function Milo:eject(item, qty)
 	local s, m = pcall(function()
 		self.context.storage:provide(item, qty)

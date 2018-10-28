@@ -85,6 +85,9 @@ if not modem or not modem.getNameLocal then
   error('Wired modem is not connected')
 end
 
+local introspectionModule = Peripheral.get('plethora:introspection') or
+  error('Introspection module not found')
+
 local function loadResources()
   local resources = Util.readTable(Milo.RESOURCE_FILE) or { }
   for k,v in pairs(resources) do
@@ -98,12 +101,15 @@ local context = {
   config = config,
   resources = loadResources(),
   userRecipes = Util.readTable(Milo.RECIPES_FILE) or { },
-  learnTypes = { },
-  machineTypes = { },
-  localName = modem.getNameLocal(),
-  tasks = { },
+
   craftingQueue = { },
+
+  learnTypes = { },
+  tasks = { },
+
+  localName = modem.getNameLocal(),
   storage = Storage(config),
+  introspectionModule = introspectionModule,
 }
 
 _G._p = context --debug

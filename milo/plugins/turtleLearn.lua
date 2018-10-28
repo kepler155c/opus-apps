@@ -4,24 +4,12 @@ local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
 
-local device = _G.device
 local turtle = _G.turtle
 
 local context = Milo:getContext()
 
-local function getTurtleInventory()
-	local introspectionModule = device['plethora:introspection'] or
-		error('Introspection module not found')
-
-	local list = { }
-	for i = 1,16 do
-		list[i] = introspectionModule.getInventory().getItemMeta(i)
-	end
-	return list
-end
-
 local function learnRecipe()
-	local ingredients = getTurtleInventory()
+	local ingredients = Milo:getTurtleInventory()
 
 	if not ingredients then
 		return false, 'No recipe defined'
@@ -32,7 +20,7 @@ local function learnRecipe()
 		return false, 'Failed to craft'
 	end
 
-	local results = getTurtleInventory()
+	local results = Milo:getTurtleInventory()
 	if not results or not results[1] then
 		return false, 'Failed to craft'
 	end

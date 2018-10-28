@@ -1,55 +1,103 @@
-local UI   = require('ui')
-local Util = require('util')
+local itemDB = require('itemDB')
+local UI     = require('ui')
+local Util   = require('util')
 
 local device = _G.device
 
 local importView = UI.Window {
-	mtype = 'machine',
 	title = 'Import item from machine',
 	index = 4,
 	grid = UI.ScrollingGrid {
-		y = 2, ey = -2,
+		x = 2, ex = -6, y = 2, ey = -4,
 		columns = {
 			{ heading = 'Slot',   key = 'slot', width = 4 },
-			{ heading = 'Import', key = 'import' },
+			{ heading = 'Filter', key = 'filter' },
 		},
 		sortColumn = 'slot',
-		help = 'Double-click to toggle'
+		help = 'Edit this entry',
+	},
+	text = UI.Text {
+		x = 2, y = -2,
+		value = 'Slot',
+	},
+	slots = UI.Chooser {
+		x = 7, y = -2,
+		width = 7,
+		nochoice = 'All',
+		help = 'Import from this slot',
+	},
+	add = UI.Button {
+		x = 15, y = -2,
+		text = '+', event = 'add_entry', help = 'Add',
+	},
+	remove = UI.Button {
+		x = -4, y = 4,
+		text = '-', event = 'remove_entry', help = 'Remove',
 	},
 }
 
-function importView:setMachine(machine)
-	local m = device[machine.name]
-
-	local t = { }
-	for k = 1, m.size() do
-		t[k] = { slot = k }
-	end
-
-	if machine.imports then
-		for k,v in pairs(machine.imports) do
-			t[k] = { slot = k, import = v }
-		end
-	end
-
-	self.grid:setValues(t)
+function importView:isValidFor(machine)
+	return machine.mtype == 'machine'
 end
 
-function importView:save(machine)
-	local t = { }
-	for k,v in pairs(self.grid.values) do
-		if v.import then
-			t[k] = true
-		end
+function importView:setMachine(machine)
+	self.machine = machine
+	if not self.machine.imports then
+		self.machine.imports = { }
 	end
-	machine.imports = not Util.empty(t) and t or nil
-	return true
+	self.grid:setValues(machine.imports)
+
+	self.slots.choices = {
+		{ name = 'All', value = '*' }
+	}
+
+	-- TODO: what if device is dettached ?
+	local m = device[machine.name]
+		for k = 1, m.size() do
+		table.insert(self.slots.choices, { name = k, value = k })
+	end
+end
+
+function importView.grid:getDisplayValues(row)
+	row = Util.shallowCopy(row)
+	if not row.filter or Util.empty(row.filter) then
+		row.filter = 'none'
+	else
+		local t = { }
+		for key in pairs(row.filter) do
+			table.insert(t, itemDB:getName(key))
+		end
+		row.filter = table.concat(t, ', ')
+	end
+	return row
 end
 
 function importView:eventHandler(event)
 	if event.type == 'grid_select' then
-		event.selected.import = not event.selected.import
+		self:emit({
+			type = 'edit_filter',
+			entry = self.grid:getSelected(),
+			callback = function()
+				self.grid:update()
+				self.grid:draw()
+			end,
+		})
+
+	elseif event.type == 'add_entry' then
+		table.insert(self.machine.imports, {
+			slot = self.slots.value or '*',
+			filter = { },
+		})
+		self.grid:update()
 		self.grid:draw()
+
+	elseif event.type == 'remove_entry' then
+		local row = self.grid:getSelected()
+		if row then
+			Util.removeByValue(self.grid.values, row)
+			self.grid:update()
+			self.grid:draw()
+		end
 	end
 end
 

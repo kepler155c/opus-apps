@@ -33,6 +33,7 @@ local function client(socket)
 		if not data then
 			break
 		end
+debug('remote: ' .. data.request)
 		if data.request == 'list' then
 			local items = Milo:refreshItems()
 			Milo:mergeResources(items)

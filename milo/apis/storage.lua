@@ -23,15 +23,22 @@ listCount = 0,
   local modem = Peripheral.get('wired_modem') or error('Wired modem not attached')
   self.localName = modem.getNameLocal()
 
-  Event.on({ 'device_attach' }, function(_, dev)
-debug('attach: ' .. dev)
+  Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
+debug('%s: %s', e, tostring(dev))
     self:initStorage()
   end)
-
-  Event.on({ 'device_detach' }, function(_, dev)
-debug('detach: ' .. dev)
-    self:initStorage(dev)
+  Event.onInterval(15, function()
+    self:showStorage()
   end)
+end
+
+function NetworkedAdapter:showStorage()
+  debug('Storage:')
+  for k,v in pairs(self.remoteDefaults) do
+    local online = v.adapter and v.adapter.online
+    debug(' %s: %s', online and ' online' or 'offline', k)
+  end
+  debug('')
 end
 
 function NetworkedAdapter:setOnline(online)
@@ -59,7 +66,6 @@ function NetworkedAdapter:initStorage()
     end
     if v.mtype == 'storage' then
       online = online and not not (v.adapter and v.adapter.online)
-      debug('  %s: %s', v.adapter and v.adapter.online and ' online' or 'offline', k)
     end
   end
 
