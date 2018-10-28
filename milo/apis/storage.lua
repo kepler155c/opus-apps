@@ -33,14 +33,20 @@ debug('%s: %s', e, tostring(dev))
 end
 
 function NetworkedAdapter:showStorage()
-  debug('Storage:')
+  local t = { }
   for k,v in pairs(self.remoteDefaults) do
     local online = v.adapter and v.adapter.online
     if not online then
-      debug(' %s: %s', online and ' online' or 'offline', k)
+      table.insert(t, k)
     end
   end
-  debug('')
+  if #t > 0 then
+    debug('Storage:')
+    for _, k in pairs(t) do
+      debug(' %s: %s', online and ' online' or 'offline', k)
+    end
+    debug('')
+  end
 end
 
 function NetworkedAdapter:setOnline(online)

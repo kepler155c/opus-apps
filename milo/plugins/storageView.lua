@@ -72,6 +72,7 @@ function storageView:eventHandler(event)
 						field = event.element,
 						message = 'The chest must contain the item to lock' })
 					self.form[3].value = false
+					self.form[3]:draw()
 				end
 			end
 		else

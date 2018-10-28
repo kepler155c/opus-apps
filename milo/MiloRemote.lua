@@ -267,7 +267,7 @@ if options.slot.value then
   end)
 end
 
-if options.slot.value or options.eslot.value then
+if options.shield.value then
   debug('Transfer items initialized')
   Event.onInterval(2, function()
     local neural = device.neuralInterface
