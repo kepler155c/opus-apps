@@ -21,7 +21,7 @@ function PotionImportTask:cycle(context)
 					if self.brewQueue[v.name] and list[1] then
 						local key = Milo:uniqueKey(list[1])
 						if not Craft.findRecipe(key) then
-							debug('saving new recipe')
+debug('saving new recipe')
 							Milo:saveMachineRecipe(self.brewQueue[v.name], list[1], v.name)
 						end
 					end

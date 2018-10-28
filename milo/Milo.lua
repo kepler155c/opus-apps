@@ -100,7 +100,6 @@ end
 local context = {
   config = config,
   resources = loadResources(),
-  userRecipes = Util.readTable(Milo.RECIPES_FILE) or { },
 
   craftingQueue = { },
 

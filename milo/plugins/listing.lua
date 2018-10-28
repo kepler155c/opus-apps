@@ -203,7 +203,7 @@ function listingPage:eventHandler(event)
 
       if context.userRecipes[key] then
         context.userRecipes[key] = nil
-        Util.writeTable(Milo.RECIPES_FILE, context.userRecipes)
+        Util.writeTable(Craft.USER_RECIPES, context.userRecipes)
         Craft.loadRecipes()
       end
 

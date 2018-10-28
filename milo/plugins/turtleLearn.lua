@@ -96,7 +96,7 @@ local function learnRecipe()
 	end
 
 	context.userRecipes[key] = newRecipe
-	Util.writeTable(Milo.RECIPES_FILE, context.userRecipes)
+	Util.writeTable(Craft.USER_RECIPES, context.userRecipes)
 	Craft.loadRecipes()
 
 	turtle.emptyInventory()

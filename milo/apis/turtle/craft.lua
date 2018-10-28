@@ -5,15 +5,15 @@ local device = _G.device
 local fs     = _G.fs
 local turtle = _G.turtle
 
-local RECIPES_DIR    = 'usr/etc/recipes'
-local USER_RECIPES   = 'usr/config/recipes.db'
-local MACHINE_LOOKUP = 'usr/config/machine_crafting.db'
-
 local Craft = {
 	STATUS_INFO    = 'info',
 	STATUS_WARNING = 'warning',
 	STATUS_ERROR   = 'error',
 	STATUS_SUCCESS = 'success',
+
+	RECIPES_DIR    = 'usr/etc/recipes',
+	USER_RECIPES   = 'usr/config/recipes.db',
+	MACHINE_LOOKUP = 'usr/config/machine_crafting.db',
 }
 
 local function clearGrid(inventoryAdapter)
@@ -367,7 +367,7 @@ end
 function Craft.loadRecipes()
 	Craft.recipes = { }
 
-	Util.merge(Craft.recipes, (Util.readTable(fs.combine(RECIPES_DIR, 'minecraft.db')) or { }).recipes)
+	Util.merge(Craft.recipes, (Util.readTable(fs.combine(Craft.RECIPES_DIR, 'minecraft.db')) or { }).recipes)
 
 	local config = Util.readTable('usr/config/recipeBooks.db') or { }
 	for _, book in pairs(config) do
@@ -375,14 +375,14 @@ function Craft.loadRecipes()
 		Util.merge(Craft.recipes, recipeFile.recipes)
 	end
 
-	local recipes = Util.readTable(USER_RECIPES) or { }
+	local recipes = Util.readTable(Craft.USER_RECIPES) or { }
 	Util.merge(Craft.recipes, recipes)
 
 	for k,v in pairs(Craft.recipes) do
 		v.result = k
 	end
 
-	Craft.machineLookup = Util.readTable(MACHINE_LOOKUP) or { }
+	Craft.machineLookup = Util.readTable(Craft.MACHINE_LOOKUP) or { }
 end
 
 function Craft.canCraft(item, count, items)

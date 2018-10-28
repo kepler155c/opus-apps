@@ -6,12 +6,12 @@ local Util   = require('util')
 local turtle = _G.turtle
 
 local Milo = {
-	RECIPES_FILE  = 'usr/config/recipes.db',
 	RESOURCE_FILE = 'usr/config/resources.db',
 }
 
 function Milo:init(context)
 	self.context = context
+	context.userRecipes = Util.readTable(Craft.USER_RECIPES) or { }
 end
 
 function Milo:getContext()
@@ -158,7 +158,7 @@ function Milo:saveMachineRecipe(recipe, result, machine)
 
 	-- save the recipe
 	self.context.userRecipes[key] = recipe
-	Util.writeTable(Milo.RECIPES_FILE, self.context.userRecipes)
+	Util.writeTable(Craft.USER_RECIPES, self.context.userRecipes)
 
 	-- save the machine association
 	Craft.machineLookup[key] = machine
