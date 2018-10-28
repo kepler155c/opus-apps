@@ -7,9 +7,9 @@ local Util             = require('util')
 local device = _G.device
 local os     = _G.os
 
-local NetworkedAdapter = class()
+local Storage = class()
 
-function NetworkedAdapter:init(args)
+function Storage:init(args)
   local defaults = {
     remoteDefaults = { },
     dirty = true,
@@ -32,7 +32,7 @@ debug('%s: %s', e, tostring(dev))
   end)
 end
 
-function NetworkedAdapter:showStorage()
+function Storage:showStorage()
   local t = { }
   for k,v in pairs(self.remoteDefaults) do
     local online = v.adapter and v.adapter.online
@@ -49,7 +49,7 @@ function NetworkedAdapter:showStorage()
   end
 end
 
-function NetworkedAdapter:setOnline(online)
+function Storage:setOnline(online)
   if online ~= self.storageOnline then
     self.storageOnline = online
     os.queueEvent(self.storageOnline and 'storage_online' or 'storage_offline', online)
@@ -57,11 +57,11 @@ function NetworkedAdapter:setOnline(online)
   end
 end
 
-function NetworkedAdapter:isOnline()
+function Storage:isOnline()
   return self.storageOnline
 end
 
-function NetworkedAdapter:initStorage()
+function Storage:initStorage()
   local online = true
 
   debug('Initializing storage')
@@ -80,7 +80,24 @@ function NetworkedAdapter:initStorage()
   self:setOnline(online)
 end
 
-function NetworkedAdapter:onlineAdapters(reversed)
+function Storage:filterActive(mtype, filter)
+  local iter = { }
+  for _, v in pairs(self.remoteDefaults) do
+    if v.adapter and v.adapter.online and v.mtype == mtype then
+      if not filter or filter(v) then
+        table.insert(iter, v)
+      end
+    end
+  end
+
+  local i = 0
+  return function()
+    i = i + 1
+    return iter[i]
+  end
+end
+
+function Storage:onlineAdapters(reversed)
   local iter = { }
   for _, v in pairs(self.remoteDefaults) do
     if v.adapter and v.adapter.online and v.mtype == 'storage' then
@@ -113,13 +130,13 @@ function NetworkedAdapter:onlineAdapters(reversed)
   end
 end
 
-function NetworkedAdapter:refresh(throttle)
+function Storage:refresh(throttle)
   self.dirty = true
   return self:listItems(throttle)
 end
 
 -- provide a consolidated list of items
-function NetworkedAdapter:listItems(throttle)
+function Storage:listItems(throttle)
   if not self.dirty then
     return self.items
   end
@@ -160,11 +177,11 @@ self.listCount = self.listCount + 1
   return items
 end
 
-function NetworkedAdapter:export(target, slot, count, item)
+function Storage:export(target, slot, count, item)
   return self:provide(item, count, slot, target)
 end
 
-function NetworkedAdapter:provide(item, qty, slot, direction)
+function Storage:provide(item, qty, slot, direction)
   local total = 0
 
   for _, adapter in self:onlineAdapters() do
@@ -186,7 +203,7 @@ debug('EXT: %s(%d): %s -> %s%s',
   return total
 end
 
-function NetworkedAdapter:trash(source, slot, count)
+function Storage:trash(source, slot, count)
   local trashcan = Util.find(self.remoteDefaults, 'mtype', 'trashcan')
   if trashcan and trashcan.adapter and trashcan.adapter.online then
 debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)
@@ -195,16 +212,16 @@ debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)
   return 0
 end
 
-function NetworkedAdapter:import(source, slot, count, item)
+function Storage:import(source, slot, count, item)
   return self:insert(slot, count, nil, item, source)
 end
 
-function NetworkedAdapter:insert(slot, qty, toSlot, item, source)
+function Storage:insert(slot, qty, toSlot, item, source)
   local total = 0
 
   -- toSlot is not really valid with this adapter
   if toSlot then
-    error('NetworkedAdapter: toSlot is not valid')
+    error('Storage: toSlot is not valid')
   end
 
   local key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
@@ -265,4 +282,4 @@ debug('INS: %s(%d): %s[%d] -> %s',
   return total
 end
 
-return NetworkedAdapter
+return Storage

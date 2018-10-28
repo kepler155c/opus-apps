@@ -137,8 +137,6 @@ local function turtleCraft(recipe, inventoryAdapter, request, count)
 
 	turtle.select(1)
 	if turtle.craft() then
-		request.status = nil
-		request.statusCode = Craft.STATUS_SUCCESS
 		request.crafted = request.crafted + count * recipe.count
 		return true
 	end
@@ -154,13 +152,36 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
 		end
 	end
 
-	for _,key in pairs(Util.keys(origItem.ingredients)) do
-		local e = origItem.ingredients[key]
-		if e and e.transient then
-			origItem.ingredients[key] = nil
+	-- wait til all requests have been completed
+	local isPending = false
+	for key, request in pairs(origItem.ingredients) do
+		if request.pending then
+			local irecipe = Craft.findRecipe(key)
+			machineCraft(irecipe, inventoryAdapter,
+				Craft.machineLookup[irecipe.result], request)
+			isPending = request.pending or isPending
 		end
 	end
-	return Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
+
+	local crafted = 0
+	--if not isPending then
+		for _,key in pairs(Util.keys(origItem.ingredients)) do
+			local e = origItem.ingredients[key]
+			if e and e.transient then
+				origItem.ingredients[key] = nil
+			end
+		end
+		crafted = Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
+	--end
+
+	for _, request in pairs(origItem.ingredients) do
+		if request.crafted >= request.count then
+			request.status = nil
+			request.statusCode = Craft.STATUS_SUCCESS
+		end
+	end
+
+	return crafted
 end
 
 function Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
@@ -179,8 +200,8 @@ function Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
 	end
 
 	if request.pending then
-		machineCraft(recipe, inventoryAdapter,
-				Craft.machineLookup[recipe.result], request)
+		--machineCraft(recipe, inventoryAdapter,
+		--		Craft.machineLookup[recipe.result], request)
 		return 0
 	end
 

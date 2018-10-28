@@ -9,10 +9,10 @@ local RedstoneTask = {
 }
 
 function RedstoneTask:cycle(context)
-	for _,v in pairs(context.config.remoteDefaults) do
+	for v in context.storage:filterActive({ 'mtype', 'machine' }) do
 		if v.redstone then
 			local ri = device[v.redstone.integrator]
-			if not ri or not v.adapter or not v.adapter.online then
+			if not ri or not v.adapter then
 				debug(v.redstone)
 			else
 				local function conditionsSatisfied()

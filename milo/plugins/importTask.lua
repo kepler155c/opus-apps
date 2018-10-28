@@ -1,48 +1,43 @@
 local Milo = require('milo')
 
-local device = _G.device
-
 local ImportTask = {
 	name = 'importer',
 	priority = 20,
 }
 
+local function filter(a)
+	return a.imports
+end
+
 function ImportTask:cycle(context)
-	for source, v in pairs(context.config.remoteDefaults) do
-		if v.imports then
-			local inventory = device[source]
-			if inventory then
-				for _, entry in pairs(v.imports) do
+	for inventory in context.storage:filterActive('machine', filter) do
+		for _, entry in pairs(inventory.imports) do
 
-					local function matchesFilter(item)
-						if not entry.filter then
-							return true
-						end
-
-						local key = Milo:uniqueKey(item)
-						if entry.blacklist then
-							return not entry.filter[key]
-						end
-						return entry.filter[key]
-					end
-
-					local function importSlot(slotNo)
-						local item = inventory.getItemMeta(slotNo)
-						if item and matchesFilter(item) then
-							context.storage:import(source, slotNo, item.count, item)
-						end
-					end
-
-					if type(entry.slot) == 'number' then
-						importSlot(entry.slot)
-					else
-						for i = 1, inventory.size() do
-							importSlot(i)
-						end
-					end
+			local function matchesFilter(item)
+				if not entry.filter then
+					return true
 				end
+
+				local key = Milo:uniqueKey(item)
+				if entry.blacklist then
+					return not entry.filter[key]
+				end
+				return entry.filter[key]
+			end
+
+			local function importSlot(slotNo)
+				local item = inventory.adapter.getItemMeta(slotNo)
+				if item and matchesFilter(item) then
+					context.storage:import(inventory.name, slotNo, item.count, item)
+				end
+			end
+
+			if type(entry.slot) == 'number' then
+				importSlot(entry.slot)
 			else
-				debug('Invalid import source: ' .. source)
+				for i = 1, inventory.adapter.size() do
+					importSlot(i)
+				end
 			end
 		end
 	end
