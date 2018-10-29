@@ -99,11 +99,15 @@ function craftTask:cycle()
   for _,key in pairs(Util.keys(context.craftingQueue)) do
     local item = context.craftingQueue[key]
     if item.count - item.crafted > 0 then
-      local recipe = Craft.recipes[key]
+      local recipe = Craft.findRecipe(key)
       if recipe then
         self:craft(recipe, item)
         if item.eject and item.crafted >= item.count then
-          Milo:eject(item, item.count)
+          if type(item.eject) == 'boolean' then
+            Milo:eject(item, item.count)
+          else
+            item.eject(item.count, 0) -- unknown amount in system
+          end
         end
       elseif not context.controllerAdapter then
         item.status = '(no recipe)'

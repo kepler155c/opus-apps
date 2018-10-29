@@ -143,14 +143,45 @@ function Milo:getTurtleInventory()
 	return list
 end
 
-function Milo:eject(item, qty)
-	local s, m = pcall(function()
-		self.context.storage:provide(item, qty)
-		turtle.emptyInventory()
+function Milo:xxx(item, count)
+	return self:provideItem(item, count, function(providable, currentCount)
+		-- return the current amount in the system
+		return currentCount - self:eject(item, providable)
 	end)
-	if not s and m then
-		debug(m)
+end
+
+function Milo:provideItem(item, count, callback)
+	local current = Milo:getItem(Milo:listItems(), item) or { count = 0 }
+	local toCraft = count - math.min(current.count, count)
+
+	if toCraft > 0 then
+		local recipe = Craft.findRecipe(self:uniqueKey(item))
+		if not recipe then
+			toCraft = 0
+		else
+			-- if you ask for 1 stick, getCraftableAmount will return 4 (obviously)
+			toCraft = math.min(toCraft, Craft.getCraftableAmount(recipe, toCraft, Milo:listItems(), { }))
+		end
 	end
+
+	if toCraft == 0 then
+		return callback(math.min(count, current.count), current.count)
+--		return current.count - self:eject(item, math.min(count, current.count))
+	end
+
+	item = Util.shallowCopy(item)
+	item.count = current.count + toCraft
+	item.eject = callback
+	self:requestCrafting(item)
+	item.crafted = current.count
+
+	return current.count
+end
+
+function Milo:eject(item, count)
+	count = self.context.storage:provide(item, count)
+	turtle.emptyInventory()
+	return count
 end
 
 function Milo:saveMachineRecipe(recipe, result, machine)
@@ -175,6 +206,7 @@ function Milo:mergeResources(t)
 		else
 			item = Util.shallowCopy(v)
 			item.count = 0
+			item.key = self:uniqueKey(v)
 			table.insert(t, item)
 		end
 	end
@@ -185,6 +217,7 @@ function Milo:mergeResources(t)
 		if not item then
 			item = Util.shallowCopy(v)
 			item.count = 0
+			item.key = self:uniqueKey(v)
 			table.insert(t, item)
 		end
 		item.has_recipe = true

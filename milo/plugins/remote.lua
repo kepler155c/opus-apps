@@ -59,17 +59,20 @@ debug('remote: ' .. data.request)
 			Milo:clearGrid()
 
 		elseif data.request == 'transfer' then
-			local count = context.storage:export(
-				context.localName,
-				nil,
-				data.count,
-				data.item)
-
-			turtle.eachFilledSlot(function(slot)
-				manipulator.getInventory().pullItems(
+			local count = Milo:provideItem(data.item, data.count, function(amount, currentCount)
+				amount = context.storage:export(
 					context.localName,
-					slot.index,
-					slot.count)
+					nil,
+					amount,
+					data.item)
+
+				turtle.eachFilledSlot(function(slot)
+					manipulator.getInventory().pullItems(
+						context.localName,
+						slot.index,
+						slot.count)
+				end)
+				return currentCount - amount
 			end)
 
 			socket:write({ count = count })

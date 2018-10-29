@@ -160,6 +160,7 @@ self.listCount = self.listCount + 1
         if not entry then
           entry = Util.shallowCopy(v)
           entry.count = v.count
+          entry.key = key
           cache[key] = entry
           table.insert(items, entry)
         else

@@ -91,6 +91,8 @@ local listingPage = UI.Page {
     q = 'quit',
     [ 'control-e' ] = 'eject',
     [ 'control-s' ] = 'eject_stack',
+    [ 'control-a' ] = 'eject_all',
+
     [ 'control-1' ] = 'eject_1',
     [ 'control-2' ] = 'eject_1',
     [ 'control-3' ] = 'eject_1',
@@ -144,9 +146,7 @@ function listingPage:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       queue(function()
-        Milo:eject(item, 1)
-        local updated = Milo:getItem(Milo:listItems(), item)
-        item.count = updated and updated.count or 0
+        item.count = Milo:xxx(item, 1)
         self.grid:draw()
       end)
     end
@@ -154,7 +154,19 @@ function listingPage:eventHandler(event)
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
-      queue(function() Milo:eject(item, itemDB:getMaxCount(item)) end)
+      queue(function()
+        item.count = Milo:xxx(item, itemDB:getMaxCount(item))
+        self.grid:draw()
+      end)
+    end
+
+  elseif event.type == 'eject_all' then
+    local item = self.grid:getSelected()
+    if item then
+      local updated = Milo:getItem(Milo:listItems(), item)
+      if updated then
+        queue(function() Milo:eject(item, updated.count) end)
+      end
     end
 
   elseif event.type == 'machines' then
@@ -235,7 +247,21 @@ end
 function listingPage:enable()
   self:refresh()
   self:setFocus(self.statusBar.filter)
+  self.timer = Event.onInterval(5, function()
+    for _,v in pairs(self.allItems) do
+      if not v.key then debug(v) error('') end
+      local c = context.storage.cache[v.key]
+      v.count = c and c.count or 0
+    end
+    self.grid:draw()
+    self:sync()
+  end)
   UI.Page.enable(self)
+end
+
+function listingPage:disable()
+  Event.off(self.timer)
+  UI.Page.disable(self)
 end
 
 function listingPage:refresh()

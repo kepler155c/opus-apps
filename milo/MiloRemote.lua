@@ -83,6 +83,7 @@ local page = UI.Page {
     [ 'control-e' ] = 'eject',
     [ 'control-r' ] = 'refresh',
     [ 'control-s' ] = 'eject_stack',
+    [ 'control-a' ] = 'eject_all',
     [ 'control-1' ] = 'eject_1',
     [ 'control-2' ] = 'eject_1',
     [ 'control-3' ] = 'eject_1',
@@ -123,6 +124,7 @@ end
 function page:sendRequest(data)
   local response
 
+debug(data)
   sync(self, function()
     local msg
     for _ = 1, 2 do
@@ -144,7 +146,7 @@ function page:sendRequest(data)
     end
     self.notification:error(msg or 'Failed to connect')
   end)
-
+debug('got response')
   return response
 end
 
@@ -182,7 +184,7 @@ function page:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       local response = self:sendRequest({ request = 'transfer', item = item, count = 1 })
-      item.count = item.count - response.count
+      item.count = response.count
       self.grid:draw()
     end
 
@@ -190,7 +192,15 @@ function page:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       local response = self:sendRequest({ request = 'transfer', item = item, count = 64 })
-      item.count = item.count - response.count
+      item.count = response.count
+      self.grid:draw()
+    end
+
+  elseif event.type == 'eject_all' then
+    local item = self.grid:getSelected()
+    if item then
+      local response = self:sendRequest({ request = 'transfer', item = item, count = item.count })
+      item.count = response.count
       self.grid:draw()
     end
 
@@ -251,19 +261,22 @@ end
 debug(options.slot)
 if options.slot.value then
   debug('Transfer items initialized')
-  Event.onInterval(2, function()
-    local neural = device.neuralInterface
-    if neural and neural.getInventory then
-      local item = neural.getInventory().getItem(options.slot.value)
-      if item then
-        debug('depositing')
-        page:sendRequest({ request = 'deposit', slot = options.slot.value })
-        -- local item =
-        -- TODO: update count for this one item
-        -- page.grid:draw() page:sync()
+  Event.addRoutine(function()
+    while true do
+      os.sleep(1.5)
+      local neural = device.neuralInterface
+      if neural and neural.getInventory then
+        local item = neural.getInventory().getItem(options.slot.value)
+        if item then
+          debug('depositing')
+          page:sendRequest({ request = 'deposit', slot = options.slot.value })
+          -- local item =
+          -- TODO: update count for this one item
+          -- page.grid:draw() page:sync()
+        end
+      else
+        debug('missing Introspection module')
       end
-    else
-      debug('missing Introspection module')
     end
   end)
 end
