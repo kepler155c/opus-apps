@@ -1,4 +1,5 @@
 local Event  = require('event')
+local itemDB = require('itemDB')
 local Milo   = require('milo')
 local Socket = require('socket')
 
@@ -59,7 +60,16 @@ debug('remote: ' .. data.request)
 			Milo:clearGrid()
 
 		elseif data.request == 'transfer' then
-			local count = Milo:provideItem(data.item, data.count, function(amount, currentCount)
+			local count = data.count
+
+			if count == 'stack' then
+				count = itemDB:getMaxCount(data.item)
+			elseif count == 'all' then
+				local item = Milo:getItem(Milo:listItems(), data.item)
+				count = item and item.count or 0
+			end
+
+			local provided = Milo:provideItem(data.item, count, function(amount, currentCount)
 				amount = context.storage:export(
 					context.localName,
 					nil,
@@ -75,7 +85,7 @@ debug('remote: ' .. data.request)
 				return currentCount - amount
 			end)
 
-			socket:write({ count = count })
+			socket:write({ count = provided })
 		end
 	until not socket.connected
 

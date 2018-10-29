@@ -106,6 +106,7 @@ local page = UI.Page {
     q = 'quit',
   },
   displayMode = 0,
+  items = { },
 }
 
 local function filterItems(t, filter, displayMode)
@@ -137,7 +138,6 @@ end
 function page:sendRequest(data)
   local response
 
-debug(data)
   sync(self, function()
     self:sync()
     local msg
@@ -146,6 +146,7 @@ debug(data)
         self:setStatus('connecting ...')
         socket, msg = Socket.connect(options.server.value, 4242)
         if socket then
+          self:setStatus('connected ...')
           socket:write(options.user.value)
         end
       end
@@ -163,8 +164,11 @@ debug(data)
       end
     end
     self:setStatus(msg or 'Failed to connect')
+    Event.onTimeout(2, function()
+      self:setStatus('')
+    end)
   end)
-debug('got response')
+
   return response
 end
 
@@ -196,28 +200,32 @@ function page:eventHandler(event)
     if item then
       self:setStatus('requesting 1 ...')
       local response = self:sendRequest({ request = 'transfer', item = item, count = 1 })
-      item.count = response.count
-      self.grid:draw()
+      if response then
+        item.count = response.count
+        self.grid:draw()
+      end
     end
 
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
       self:setStatus('requesting stack ...')
-      -- TODO: send a stack request - have server figure out stack size
-      local response = self:sendRequest({ request = 'transfer', item = item, count = 64 })
-      item.count = response.count
-      self.grid:draw()
+      local response = self:sendRequest({ request = 'transfer', item = item, count = 'stack' })
+      if response then
+        item.count = response.count
+        self.grid:draw()
+      end
     end
 
   elseif event.type == 'eject_all' then
     local item = self.grid:getSelected()
     if item then
       self:setStatus('requesting all ...')
-      -- TODO: let server figure out count
-      local response = self:sendRequest({ request = 'transfer', item = item, count = item.count })
-      item.count = response.count
-      self.grid:draw()
+      local response = self:sendRequest({ request = 'transfer', item = item, count = 'all' })
+      if response then
+        item.count = response.count
+        self.grid:draw()
+      end
     end
 
   elseif event.type == 'eject_specified' then
@@ -235,10 +243,10 @@ function page:eventHandler(event)
     end
 
   elseif event.type == 'refresh' then
+    self:setFocus(self.statusBar.filter)
     self:setStatus('updating ...')
     self:refresh()
     self.grid:draw()
-    self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'toggle_display' then
     local values = {
@@ -268,9 +276,13 @@ function page:eventHandler(event)
 end
 
 function page:enable()
-  self:refresh()
   self:setFocus(self.statusBar.filter)
   UI.Page.enable(self)
+  Event.onTimeout(.1, function()
+    self:refresh()
+    self.grid:draw()
+    self:sync()
+  end)
 end
 
 function page:refresh()

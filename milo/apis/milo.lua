@@ -151,6 +151,10 @@ function Milo:xxx(item, count)
 end
 
 function Milo:provideItem(item, count, callback)
+	if count <= 0 then
+		return 0
+	end
+
 	local current = Milo:getItem(Milo:listItems(), item) or { count = 0 }
 	local toCraft = count - math.min(current.count, count)
 
