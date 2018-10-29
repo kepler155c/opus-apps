@@ -43,11 +43,16 @@ if (options.slot.value or options.shield.value) and
 end
 
 local page = UI.Page {
-  menuBar = UI.MenuBar {
-    buttons = {
-      { text = 'Craft',   event = 'craft'   },
-      { text = 'Refresh', event = 'refresh', x = -9 },
+  dummy = UI.Window {
+     x = 1, ex = -10, y = 1, height = 1,
+    infoBar = UI.StatusBar {
+      backgroundColor = colors.lightGray,
     },
+  },
+  refresh = UI.Button {
+    y = 1, x = -9,
+    event = 'refresh',
+    text = 'Refresh',
   },
   grid = UI.Grid {
     y = 2, ey = -2,
@@ -56,34 +61,49 @@ local page = UI.Page {
       { heading = 'Name', key = 'displayName' },
     },
     sortColumn = 'displayName',
+    help = '^(s)tack, ^(a)ll'
   },
-  statusBar = UI.StatusBar {
+  statusBar = UI.Window {
+    y = -1,
     filter = UI.TextEntry {
-      x = 1, ex = -4,
+      x = 1, ex = -9,
       limit = 50,
       shadowText = 'filter',
-      shadowTextColor = colors.gray,
       backgroundColor = colors.cyan,
       backgroundFocusColor = colors.cyan,
       accelerators = {
-        [ 'enter' ] = 'craft',
+        [ 'enter' ] = 'eject',
       },
+    },
+    amount = UI.TextEntry {
+      x = -8, ex = -4,
+      limit = 3,
+      shadowText = '1',
+      shadowTextColor = colors.gray,
+      backgroundColor = colors.black,
+      backgroundFocusColor = colors.black,
+      accelerators = {
+        [ 'enter' ] = 'eject_specified',
+      },
+      help = 'Specify an amount to send',
     },
     display = UI.Button {
       x = -3,
       event = 'toggle_display',
       value = 0,
       text = 'A',
+      help = 'Toggle display mode',
     },
   },
-  notification = UI.Notification(),
   accelerators = {
     r = 'refresh',
-    q = 'quit',
-    [ 'control-e' ] = 'eject',
     [ 'control-r' ] = 'refresh',
+    [ 'control-e' ] = 'eject',
     [ 'control-s' ] = 'eject_stack',
     [ 'control-a' ] = 'eject_all',
+
+    q = 'quit',
+
     [ 'control-1' ] = 'eject_1',
     [ 'control-2' ] = 'eject_1',
     [ 'control-3' ] = 'eject_1',
@@ -94,8 +114,6 @@ local page = UI.Page {
     [ 'control-8' ] = 'eject_1',
     [ 'control-9' ] = 'eject_1',
     [ 'control-0' ] = 'eject_1',
-    [ 'control-m' ] = 'machines',
-    [ 'control-l' ] = 'resume',
   },
   displayMode = 0,
 }
@@ -121,14 +139,21 @@ local function filterItems(t, filter, displayMode)
   return t
 end
 
+function page:setStatus(status)
+  self.dummy.infoBar:setStatus(status)
+  self:sync()
+end
+
 function page:sendRequest(data)
   local response
 
 debug(data)
   sync(self, function()
+    self:sync()
     local msg
     for _ = 1, 2 do
       if not socket or not socket.connected then
+        self:setStatus('connecting ...')
         socket, msg = Socket.connect(options.server.value, 4242)
         if socket then
           socket:write(options.user.value)
@@ -138,13 +163,16 @@ debug(data)
         if socket:write(data) then
           response = socket:read(2)
           if response then
+            Event.onTimeout(2, function()
+              self:setStatus('')
+            end)
             return
           end
         end
         socket:close()
       end
     end
-    self.notification:error(msg or 'Failed to connect')
+    self:setStatus(msg or 'Failed to connect')
   end)
 debug('got response')
   return response
@@ -180,9 +208,13 @@ function page:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
 
-  elseif event.type == 'eject' then
+  elseif event.type == 'focus_change' then
+    self.dummy.infoBar:setStatus(event.focused.help)
+
+  elseif event.type == 'eject' or event.type == 'grid_select' then
     local item = self.grid:getSelected()
     if item then
+      self:setStatus('requesting 1 ...')
       local response = self:sendRequest({ request = 'transfer', item = item, count = 1 })
       item.count = response.count
       self.grid:draw()
@@ -191,6 +223,7 @@ function page:eventHandler(event)
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
+      self:setStatus('requesting stack ...')
       local response = self:sendRequest({ request = 'transfer', item = item, count = 64 })
       item.count = response.count
       self.grid:draw()
@@ -199,15 +232,31 @@ function page:eventHandler(event)
   elseif event.type == 'eject_all' then
     local item = self.grid:getSelected()
     if item then
+      self:setStatus('requesting all ...')
       local response = self:sendRequest({ request = 'transfer', item = item, count = item.count })
       item.count = response.count
       self.grid:draw()
     end
 
+  elseif event.type == 'eject_specified' then
+    local item = self.grid:getSelected()
+    local count = tonumber(self.statusBar.amount.value)
+    if item and count then
+      self.statusBar.amount:reset()
+      self:setFocus(self.statusBar.filter)
+      self:setStatus('requesting ' .. count .. ' ...')
+      local response = self:sendRequest({ request = 'transfer', item = item, count = count })
+      item.count = response.count
+      self.grid:draw()
+    else
+      self:setStatus('nope ...')
+    end
+
   elseif event.type == 'refresh' then
+    self:setStatus('updating ...')
     self:refresh()
     self.grid:draw()
-    self.statusBar.filter:focus()
+    self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'toggle_display' then
     local values = {
@@ -223,14 +272,13 @@ function page:eventHandler(event)
     self:applyFilter()
     self.grid:draw()
 
-  elseif event.type == 'text_change' then
+  elseif event.type == 'text_change' and event.element == self.statusBar.filter then
     self.filter = event.text
     if #self.filter == 0 then
       self.filter = nil
     end
     self:applyFilter()
     self.grid:draw()
-    self.statusBar.filter:focus()
 
   else
     UI.Page.eventHandler(self, event)
