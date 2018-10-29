@@ -8,6 +8,8 @@ local device = _G.device
 
 local context = Milo:getContext()
 
+-- TODO: allow change of machine
+
 local itemPage = UI.Page {
   titleBar = UI.TitleBar {
     title = 'Limit Resource',

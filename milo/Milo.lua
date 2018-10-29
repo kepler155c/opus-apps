@@ -150,7 +150,7 @@ UI:setPage(page)
 Event.onInterval(5, function()
   if not Milo:isCraftingPaused() and context.storage:isOnline() then
     Milo:resetCraftingStatus()
-    Milo:refreshItems()
+    --Milo:refreshItems()
 
     for _, task in ipairs(context.tasks) do
       local s, m = pcall(function() task:cycle(context) end)

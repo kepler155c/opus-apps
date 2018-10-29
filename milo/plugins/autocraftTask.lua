@@ -6,6 +6,7 @@ local Autocraft = {
   priority = 100,
 }
 
+-- TODO: fix/test
 function Autocraft:cycle(context)
   local list = { }
 

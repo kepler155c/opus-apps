@@ -89,23 +89,15 @@ local listingPage = UI.Page {
   accelerators = {
     r = 'refresh',
     [ 'control-r' ] = 'refresh',
-    q = 'quit',
+
     [ 'control-e' ] = 'eject',
     [ 'control-s' ] = 'eject_stack',
     [ 'control-a' ] = 'eject_all',
 
-    [ 'control-1' ] = 'eject_1',
-    [ 'control-2' ] = 'eject_1',
-    [ 'control-3' ] = 'eject_1',
-    [ 'control-4' ] = 'eject_1',
-    [ 'control-5' ] = 'eject_1',
-    [ 'control-6' ] = 'eject_1',
-    [ 'control-7' ] = 'eject_1',
-    [ 'control-8' ] = 'eject_1',
-    [ 'control-9' ] = 'eject_1',
-    [ 'control-0' ] = 'eject_1',
     [ 'control-m' ] = 'machines',
     [ 'control-l' ] = 'resume',
+
+    q = 'quit',
   },
   displayMode = 0,
 }

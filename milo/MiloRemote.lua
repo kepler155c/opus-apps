@@ -60,6 +60,7 @@ local page = UI.Page {
       { heading = ' Qty', key = 'count'       , width = 4, justify = 'right' },
       { heading = 'Name', key = 'displayName' },
     },
+    values = { },
     sortColumn = 'displayName',
     help = '^(s)tack, ^(a)ll'
   },
@@ -103,17 +104,6 @@ local page = UI.Page {
     [ 'control-a' ] = 'eject_all',
 
     q = 'quit',
-
-    [ 'control-1' ] = 'eject_1',
-    [ 'control-2' ] = 'eject_1',
-    [ 'control-3' ] = 'eject_1',
-    [ 'control-4' ] = 'eject_1',
-    [ 'control-5' ] = 'eject_1',
-    [ 'control-6' ] = 'eject_1',
-    [ 'control-7' ] = 'eject_1',
-    [ 'control-8' ] = 'eject_1',
-    [ 'control-9' ] = 'eject_1',
-    [ 'control-0' ] = 'eject_1',
   },
   displayMode = 0,
 }
@@ -178,10 +168,6 @@ debug('got response')
   return response
 end
 
-function page.statusBar:draw()
-  return UI.Window.draw(self)
-end
-
 function page.grid:getRowTextColor(row, selected)
   if row.is_craftable then
     return colors.yellow
@@ -195,12 +181,6 @@ end
 function page.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
   row.count = row.count > 0 and Util.toBytes(row.count) or ''
-  if row.low then
-    row.low = Util.toBytes(row.low)
-  end
-  if row.limit then
-    row.limit = Util.toBytes(row.limit)
-  end
   return row
 end
 
@@ -224,6 +204,7 @@ function page:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       self:setStatus('requesting stack ...')
+      -- TODO: send a stack request - have server figure out stack size
       local response = self:sendRequest({ request = 'transfer', item = item, count = 64 })
       item.count = response.count
       self.grid:draw()
@@ -233,6 +214,7 @@ function page:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       self:setStatus('requesting all ...')
+      -- TODO: let server figure out count
       local response = self:sendRequest({ request = 'transfer', item = item, count = item.count })
       item.count = response.count
       self.grid:draw()
@@ -264,7 +246,6 @@ function page:eventHandler(event)
       [1] = 'I',
       [2] = 'C',
     }
-
     event.button.value = (event.button.value + 1) % 3
     self.displayMode = event.button.value
     event.button.text = values[event.button.value]
@@ -306,13 +287,17 @@ function page:applyFilter()
   self.grid:setValues(t)
 end
 
+_G.p4 = Event
+
 debug(options.slot)
 if options.slot.value then
   debug('Transfer items initialized')
   Event.addRoutine(function()
     while true do
+debug('sleeping')
       os.sleep(1.5)
       local neural = device.neuralInterface
+debug(neural)
       if neural and neural.getInventory then
         local item = neural.getInventory().getItem(options.slot.value)
         if item then
@@ -321,6 +306,8 @@ if options.slot.value then
           -- local item =
           -- TODO: update count for this one item
           -- page.grid:draw() page:sync()
+        else
+debug('empty')
         end
       else
         debug('missing Introspection module')

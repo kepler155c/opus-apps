@@ -16,6 +16,8 @@ function Storage:init(args)
 listCount = 0,
     activity = { },
     storageOnline = true,
+    hits = 0,
+    misses = 0,
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
@@ -29,6 +31,7 @@ debug('%s: %s', e, tostring(dev))
   end)
   Event.onInterval(15, function()
     self:showStorage()
+    debug('STORAGE: cache: %d/%d', self.hits, self.misses)
   end)
 end
 
@@ -43,7 +46,7 @@ function Storage:showStorage()
   if #t > 0 then
     debug('Storage:')
     for _, k in pairs(t) do
-      debug(' %s: %s', online and ' online' or 'offline', k)
+      debug(' offline: ' .. k)
     end
     debug('')
   end
@@ -71,6 +74,7 @@ function Storage:initStorage()
     elseif device[k] and device[k].list and device[k].size and device[k].pullItems then
       v.adapter = InventoryAdapter.wrap({ side = k })
       v.adapter.online = true
+      v.adapter.dirty = true
     end
     if v.mtype == 'storage' then
       online = online and not not (v.adapter and v.adapter.online)
@@ -132,6 +136,10 @@ end
 
 function Storage:refresh(throttle)
   self.dirty = true
+debug('STORAGE: Forcing full refresh')
+  for _, adapter in self:onlineAdapters() do
+    adapter.dirty = true
+  end
   return self:listItems(throttle)
 end
 
@@ -144,33 +152,35 @@ self.listCount = self.listCount + 1
 --debug(self.listCount)
 
   -- todo: only listItems from dirty remotes
-
+local ct = os.clock()
   local cache = { }
   local items = { }
   throttle = throttle or Util.throttle()
 
   for _, adapter in self:onlineAdapters() do
-    adapter:listItems(throttle)
+    if adapter.dirty then
+debug('STORAGE: refresh: ' .. adapter.name)
+      adapter:listItems(throttle)
+      adapter.dirty = false
+    end
     local rcache = adapter.cache or { }
-
 -- TODO: add a method in each adapter that only updates a passed cache
     for key,v in pairs(rcache) do
-      if v.count > 0 then
-        local entry = cache[key]
-        if not entry then
-          entry = Util.shallowCopy(v)
-          entry.count = v.count
-          entry.key = key
-          cache[key] = entry
-          table.insert(items, entry)
-        else
-          entry.count = entry.count + v.count
-        end
-
-        throttle()
+      local entry = cache[key]
+      if not entry then
+        entry = Util.shallowCopy(v)
+        entry.count = v.count
+        entry.key = key
+        cache[key] = entry
+        table.insert(items, entry)
+      else
+        entry.count = entry.count + v.count
       end
+
+      throttle()
     end
   end
+debug('STORAGE: refresh in ' .. (os.clock() - ct))
 
   self.dirty = false
   self.cache = cache
@@ -184,6 +194,29 @@ end
 
 function Storage:provide(item, qty, slot, direction)
   local total = 0
+
+  local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
+  for _, adapter in self:onlineAdapters() do
+    if adapter.cache and adapter.cache[key] then
+      local amount = adapter:provide(item, qty, slot, direction or self.localName)
+      if amount > 0 then
+        self.hits = self.hits + 1
+  debug('EXT: %s(%d): %s -> %s%s',
+    item.name, amount, adapter.name, direction or self.localName,
+    slot and string.format('[%d]', slot) or '')
+        self.dirty = true
+        adapter.dirty = true
+      end
+      qty = qty - amount
+      total = total + amount
+      if qty <= 0 then
+        return total
+      end
+    end
+  end
+
+  debug('miss: %s - %d', key, qty)
+  self.misses = self.misses + 1
 
   for _, adapter in self:onlineAdapters() do
     local amount = adapter:provide(item, qty, slot, direction or self.localName)
@@ -241,6 +274,14 @@ debug('INS: %s(%d): %s[%d] -> %s',
       adapter.dirty = true
       local entry = self.activity[key] or 0
       self.activity[key] = entry + amount
+
+--[[
+      local cached = adapter.cache[key]
+      if cached then
+        cached.count = cached.count + amount
+      else
+      end
+]]
     end
     qty = qty - amount
     total = total + amount
