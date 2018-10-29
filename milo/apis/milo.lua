@@ -80,7 +80,7 @@ function Milo:registerTask(task)
 end
 
 function Milo:showError(msg)
-	self.context.jobList:showError(msg)
+	self.context.jobMonitor:showError(msg)
 end
 
 function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)

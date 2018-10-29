@@ -11,7 +11,7 @@ local context = Milo:getContext()
 local mon     = Peripheral.lookup(context.config.monitor) or
                 error('Monitor is not attached')
 
-local jobList = UI.Page {
+local jobMonitor = UI.Page {
   parent = UI.Device {
     device = mon,
     textScale = .5,
@@ -28,13 +28,13 @@ local jobList = UI.Page {
   },
 }
 
-function jobList:showError(msg)
+function jobMonitor:showError(msg)
   self.grid:clear()
   self.grid:centeredWrite(math.ceil(self.grid.height / 2), msg)
   self:sync()
 end
 
-function jobList:updateList(craftList)
+function jobMonitor:updateList(craftList)
   if not Milo:isCraftingPaused() then
     local t = { }
     for _,v in pairs(craftList) do
@@ -58,7 +58,7 @@ function jobList:updateList(craftList)
   end
 end
 
-function jobList.grid:getDisplayValues(row)
+function jobMonitor.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
   if row.showRemaining then
     row.remaining = math.max(0, row.count - row.crafted)
@@ -69,7 +69,7 @@ function jobList.grid:getDisplayValues(row)
   return row
 end
 
-function jobList.grid:getRowTextColor(row, selected)
+function jobMonitor.grid:getRowTextColor(row, selected)
   local statusColor = {
     [ Craft.STATUS_ERROR ] = colors.red,
     [ Craft.STATUS_WARNING ] = colors.orange,
@@ -80,18 +80,18 @@ function jobList.grid:getRowTextColor(row, selected)
     UI.Grid:getRowTextColor(row, selected)
 end
 
-jobList:enable()
-jobList:draw()
-jobList:sync()
+jobMonitor:enable()
+jobMonitor:draw()
+jobMonitor:sync()
 
-local JobListTask = {
+local jobMonitorTask = {
   name = 'job status',
   priority = 80,
 }
 
-function JobListTask:cycle()
-  jobList:updateList(context.craftingQueue)
+function jobMonitorTask:cycle()
+  jobMonitor:updateList(context.craftingQueue)
 end
 
-Milo:registerTask(JobListTask)
-context.jobList = jobList
+Milo:registerTask(jobMonitorTask)
+context.jobMonitor = jobMonitor
