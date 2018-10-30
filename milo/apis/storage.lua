@@ -44,7 +44,7 @@ function Storage:showStorage()
     end
   end
   if #t > 0 then
-    debug('Storage:')
+    debug('Adapter:')
     for _, k in pairs(t) do
       debug(' offline: ' .. k)
     end
@@ -164,7 +164,6 @@ debug('STORAGE: refresh: ' .. adapter.name)
       adapter.dirty = false
     end
     local rcache = adapter.cache or { }
--- TODO: add a method in each adapter that only updates a passed cache
     for key,v in pairs(rcache) do
       local entry = cache[key]
       if not entry then
@@ -172,7 +171,8 @@ debug('STORAGE: refresh: ' .. adapter.name)
         entry.count = v.count
         entry.key = key
         cache[key] = entry
-        table.insert(items, entry)
+        items[key] = entry
+--        table.insert(items, entry)
       else
         entry.count = entry.count + v.count
       end
@@ -215,7 +215,7 @@ function Storage:provide(item, qty, slot, direction)
     end
   end
 
-  debug('miss: %s - %d', key, qty)
+  debug('STORAGE: MISS: %s - %d', key, qty)
   self.misses = self.misses + 1
 
   for _, adapter in self:onlineAdapters() do

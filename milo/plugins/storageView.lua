@@ -24,7 +24,7 @@ local storageView = UI.Window {
 		},
 		[3] = UI.Text {
 			x = 16, ex = -2, y = 3,
-			value = 'minecraft:xxxxx:0'
+			value = '',
 		},
 		[4] = UI.Checkbox {
 			formLabel = 'Void', formKey = 'voidExcess',
@@ -32,7 +32,7 @@ local storageView = UI.Window {
 			pruneEmpty = true,
 		},
 		[5] = UI.Checkbox {
-			formLabel = 'Partition', formKey = 'voidExcess',
+			formLabel = 'Partition', formKey = 'partition',
 			help = 'TODO',
 			pruneEmpty = true,
 		},

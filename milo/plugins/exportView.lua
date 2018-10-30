@@ -51,7 +51,6 @@ function exportView:setMachine(machine)
 		{ name = 'All', value = '*' }
 	}
 
-	-- TODO: what if device is dettached ?
 	local m = device[machine.name]
 		for k = 1, m.size() do
 		table.insert(self.slots.choices, { name = k, value = k })

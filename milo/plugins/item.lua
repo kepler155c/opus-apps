@@ -46,14 +46,12 @@ local itemPage = UI.Page {
       formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
       help = 'Ignore NBT of item'
     },
---[[
     [6] = UI.Button {
       x = 2, y = -2, width = 10,
-      formLabel = 'Redstone',
-      event = 'show_rs',
+      formLabel = 'Machine',
+      event = 'select_machine',
       text = 'Configure',
     },
-]]
     infoButton = UI.Button {
       x = 2, y = -2,
       event = 'show_info',
@@ -99,6 +97,30 @@ local itemPage = UI.Page {
       },
     },
   },
+  machines = UI.SlideOut {
+    backgroundColor = colors.cyan,
+    titleBar = UI.TitleBar {
+      title = 'Select Machine',
+      previousPage = true,
+    },
+    grid = UI.ScrollingGrid {
+      y = 2, ey = -4,
+      disableHeader = true,
+      values = context.config.remoteDefaults,
+      columns = {
+        { heading = 'Name', key = 'displayName'},
+      },
+      sortColumn = 'displayName',
+    },
+    button1 = UI.Button {
+      x = -14, y = -2,
+      text = 'Ok', event = 'set_machine',
+    },
+    button2 = UI.Button {
+      x = -9, y = -2,
+      text = 'Cancel', event = 'cancel_machine',
+    },
+  },
   info = UI.SlideOut {
     titleBar = UI.TitleBar {
       title = "Information",
@@ -124,6 +146,16 @@ function itemPage:enable(item)
 
   UI.Page.enable(self)
   self:focusFirst()
+end
+
+function itemPage.machines.grid:isRowValid(_, value)
+  return value.mtype == 'machine'
+end
+
+function itemPage.machines.grid:getDisplayValues(row)
+  row = Util.shallowCopy(row)
+  row.displayName = row.displayName or row.name
+  return row
 end
 
 function itemPage.rsControl:enable()
@@ -159,6 +191,18 @@ function itemPage:eventHandler(event)
 
   elseif event.type == 'show_rs' then
     self.rsControl:show()
+
+  elseif event.type == 'select_machine' then
+    self.machines.grid:update()
+    self.machines.grid:setIndex(1)
+    self.machines:show()
+
+  elseif event.type == 'set_machine' then
+    --TODO save machine
+    self.machines:hide()
+
+  elseif event.type == 'cancel_machine' then
+    self.machines:hide()
 
   elseif event.type == 'show_info' then
     local value =

@@ -172,7 +172,7 @@ function listingPage:eventHandler(event)
     end
 
   elseif event.type == 'refresh' then
-    self:refresh()
+    self:refresh(true)
     self.grid:draw()
     self.statusBar.filter:focus()
 
@@ -257,8 +257,12 @@ function listingPage:disable()
   UI.Page.disable(self)
 end
 
-function listingPage:refresh()
-  self.allItems = Milo:refreshItems()
+function listingPage:refresh(force)
+  if force then
+    self.allItems = Milo:refreshItems()
+  else
+    self.allItems = Milo:listItems()
+  end
   Milo:mergeResources(self.allItems)
   self:applyFilter()
 end

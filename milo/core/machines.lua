@@ -22,6 +22,7 @@ local function saveConfig()
 	for k,v  in pairs(t) do
 		context.config.remoteDefaults[k].adapter = v
 	end
+	context.storage:initStorage()
 end
 
 local machinesPage = UI.Page {
@@ -49,6 +50,7 @@ local machinesPage = UI.Page {
 		ex = -7,
 		backgroundColor = colors.cyan,
 	},
+	notification = UI.Notification { },
 }
 
 function machinesPage.grid:getDisplayValues(row)
@@ -68,7 +70,6 @@ function machinesPage.grid:getRowTextColor(row, selected)
 end
 
 function machinesPage:getList()
-	-- TODO: remove dedupe naming in perf code ?
 	for _, v in pairs(device) do
 		if v.pullItems then
 			if not context.config.remoteDefaults[v.name] then
@@ -100,7 +101,11 @@ end
 
 function machinesPage:eventHandler(event)
 	if event.type == 'grid_select' then
-		UI:setPage('machineWizard', event.selected)
+		if not device[event.selected.name] then
+			self.notification:error('Unable to edit while disconnected')
+		else
+			UI:setPage('machineWizard', event.selected)
+		end
 
 	elseif event.type == 'remove_machine' then
 		local machine = self.grid:getSelected()

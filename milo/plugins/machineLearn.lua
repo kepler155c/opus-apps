@@ -14,7 +14,7 @@ local machineLearnWizard = UI.Page {
 	wizard = UI.Wizard {
 		y = 2, ey = -2,
 		pages = {
-			machine = UI.Window {
+			machines = UI.Window {
 				index = 1,
 				grid = UI.ScrollingGrid {
 					y = 2, ey = -2,
@@ -46,15 +46,23 @@ Example: Slot 1 is the top slot in a furnace.]],
 local pages = machineLearnWizard.wizard.pages
 local machine
 
-function pages.machine.grid:getDisplayValues(row)
+function pages.machines.grid:isRowValid(_, value)
+	return value.mtype == 'machine' and value.adapter and value.adapter.online
+end
+
+function pages.machines.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
 	row.displayName = row.displayName or row.name
 	return row
 end
 
-function pages.machine:validate()
+function pages.machines:enable()
+	self.grid:update()
+	UI.Window.enable(self)
+end
 
--- TODO: validation should only be invoked when moving forward (i think)
+function pages.machines:validate()
+
 -- TODO: index number validation in wizard
 
 	local selected = self.grid:getSelected()

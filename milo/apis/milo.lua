@@ -132,10 +132,11 @@ end
 function Milo:getTurtleInventory()
 	local list = { }
 	for i = 1,16 do
-		-- TODO: update item db
 		local item = self.context.introspectionModule.getInventory().getItemMeta(i)
 		if item then
-			itemDB:add(item)
+			if not itemDB:get(item) then
+				itemDB:add(item)
+			end
 			list[i] = item
 		end
 	end
@@ -211,7 +212,8 @@ function Milo:mergeResources(t)
 			item = Util.shallowCopy(v)
 			item.count = 0
 			item.key = self:uniqueKey(v)
-			table.insert(t, item)
+--			table.insert(t, item)
+			t[item.key] = item
 		end
 	end
 
@@ -222,9 +224,17 @@ function Milo:mergeResources(t)
 			item = Util.shallowCopy(v)
 			item.count = 0
 			item.key = self:uniqueKey(v)
-			table.insert(t, item)
+			t[item.key] = item
+--			table.insert(t, item)
 		end
 		item.has_recipe = true
+	end
+
+	for key in pairs(Craft.machineLookup) do
+		local item = t[key]
+		if item then
+			item.is_craftable = true
+		end
 	end
 
 	for _,v in pairs(t) do
