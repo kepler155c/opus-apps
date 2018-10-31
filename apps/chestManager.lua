@@ -1210,8 +1210,8 @@ local function learnRecipe(page)
         end
 
         if not recipe then
-          debug(results)
-          debug(newRecipe)
+          _debug(results)
+          _debug(newRecipe)
           error('Failed - view system log')
         end
 

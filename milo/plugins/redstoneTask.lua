@@ -13,7 +13,7 @@ function RedstoneTask:cycle(context)
 		if v.redstone then
 			local ri = device[v.redstone.integrator]
 			if not ri or not v.adapter then
-				debug(v.redstone)
+				_debug(v.redstone)
 			else
 				local function conditionsSatisfied()
 					return not not next(v.adapter.list())

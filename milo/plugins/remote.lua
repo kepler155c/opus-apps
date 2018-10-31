@@ -19,7 +19,7 @@ local function getManipulatorForUser(user)
 end
 
 local function client(socket)
-	debug('connection from ' .. socket.dhost)
+	_debug('connection from ' .. socket.dhost)
 
 	local user = socket:read(2)
 	if not user then
@@ -36,7 +36,7 @@ local function client(socket)
 		if not data then
 			break
 		end
-debug('remote: ' .. data.request)
+_debug('remote: ' .. data.request)
 		if data.request == 'list' then
 			local items = Milo:listItems()
 			Milo:mergeResources(items)
@@ -89,12 +89,12 @@ debug('remote: ' .. data.request)
 		end
 	until not socket.connected
 
-	debug('disconnected from ' .. socket.dhost)
+	_debug('disconnected from ' .. socket.dhost)
 end
 
 if device.wireless_modem then
 	Event.addRoutine(function()
-		debug('Milo: listening on port 4242')
+		_debug('Milo: listening on port 4242')
 		while true do
 			local socket = Socket.server(4242)
 			Event.addRoutine(function()

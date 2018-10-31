@@ -211,7 +211,7 @@ function listingPage:eventHandler(event)
         Util.writeTable(Craft.USER_RECIPES, context.userRecipes)
         Craft.loadRecipes()
       end
-
+--TODO: remove machine assoc
       if context.resources[key] then
         context.resources[key] = nil
         Milo:saveResources()
@@ -242,7 +242,6 @@ function listingPage:enable()
   self:setFocus(self.statusBar.filter)
   self.timer = Event.onInterval(5, function()
     for _,v in pairs(self.allItems) do
-      if not v.key then debug(v) error('') end
       local c = context.storage.cache[v.key]
       v.count = c and c.count or 0
     end
@@ -273,6 +272,7 @@ function listingPage:applyFilter()
 end
 
 Event.on({ 'storage_offline', 'storage_online' }, function(e, isOnline)
+  -- TODO: Fix button
   listingPage.statusBar.storageStatus.text =
     isOnline and 'online' or 'offline'
   listingPage.statusBar.storageStatus.textColor =

@@ -4,54 +4,17 @@
   Using a turtle allows for crafting of items eliminating the need for AE/RS
   molecular assemblers / crafters.
 
-  Inventory setup:
-    Turtle/computer must be touching at least one type of inventory
-
-    Generic inventory block such as:
-      Vanilla chest
-      RFTools modular storage
-      Storage drawers controller
-      and many others...
-
-    Applied energistics
-      AE cable or interface (depending upon AE/MC version)
-
-    Refined storage
-      TODO: add required block
-
   Turtle crafting:
     1. The turtle must have a crafting table equipped.
     2. Equip the turtle with an introspection module.
 
-  Controller (optional):
-    Provides the ability to request crafting from AE / RS
-
-    Applied Energistics
-      In versions 1.7x, AE can be used for both inventory access and crafting
-      requests.
-
-      In versions 1.8+, AE can only be used to request crafting.
-
-    Refined Storage
-      In versions 1.8x, inventory access works depending upon version.
-
-      Turtle/computer must be touching an interface for inventory access. If only
-      requesting crafting, the controller must be either be touching or connected
-      via CC cables.
-
   Configuration:
     Configuration file is usr/config/milo
 
-    monitor        : valid options include:
-                     type/monitor   - will use the first monitor found
-                     side/north     - specify a direction (top/bottom/east/etc)
-                     name/monitor_1 - specify the exact name of the peripheral
-
-
-
-  -- Internal
-  Imports are at < 20
-
+    monitor   : valid options include:
+                   type/monitor   - will use the first monitor found
+                   side/north     - specify a direction (top/bottom/east/etc)
+                   name/monitor_1 - specify the exact name of the peripheral
 ]]--
 
 _G.requireInjector(_ENV)
@@ -137,9 +100,9 @@ table.sort(context.tasks, function(a, b)
   return a.priority < b.priority
 end)
 
-debug('Tasks\n-----')
+_debug('Tasks\n-----')
 for _, task in ipairs(context.tasks) do
-  debug('%d: %s', task.priority, task.name)
+  _debug('%d: %s', task.priority, task.name)
 end
 
 Milo:clearGrid()
@@ -155,7 +118,8 @@ Event.onInterval(5, function()
     for _, task in ipairs(context.tasks) do
       local s, m = pcall(function() task:cycle(context) end)
       if not s and m then
-        Util.print(task.name)
+        _debug(task.name .. ' crashed')
+        Util.print(task.name .. ' crashed')
         error(m)
       end
     end

@@ -13,29 +13,57 @@ end
 function ExportTask:cycle(context)
 	for machine in context.storage:filterActive('machine', filter) do
 		for _, entry in pairs(machine.exports) do
-			local slotNo = type(entry.slot) == 'number' and entry.slot or nil -- '*' indicates any slot
 
-			local slot = (slotNo and machine.adapter.getItemMeta(slotNo)) or { count = 0 }
-			for key in pairs(entry.filter or { }) do
-				local item = itemDB:splitKey(key)
+			local function exportSlot(list, slotNo, item, count)
+				local slot = list[slotNo] or { count = 0 }
 
-				-- is something else is in this slot
-				if not slot.name or slot.name == item.name then
-					local maxCount = slot.maxCount or itemDB:getMaxCount(item)
-					local count = maxCount - slot.count
-					if not slotNo then
-						-- TODO: should we just execute export -
-						-- or scan all slots for space ??
-						count = machine.adapter.size() * maxCount - slot.count
-					end
+				if slot.count == 0 or
+					(slot.name == item.name and
+					 slot.damage == item.damage and
+					 slot.nbtHash == item.nbtHash) then
+
+					local maxCount = itemDB:getMaxCount(item)
+					count = math.min(maxCount - slot.count, count)
+
 					if count > 0 then
-						item = Milo:getItemWithQty(item)
-						if item and count > 0 then
-							context.storage:export(
-								machine.name,
-								slotNo,
-								math.min(count, item.count),
-								item)
+-- _debug('attempting to export %s %d into slot %d', item.name, count, slotNo)
+						count = context.storage:export(machine.name, slotNo, count, item)
+
+						if count > 0 then
+							item.count = item.count - count
+							list[slotNo] = {
+								name = item.name,
+								damage = item.damage,
+								nbtHash = item.nbtHash,
+								count = count + slot.count,
+							}
+							return true
+						end
+					end
+				end
+			end
+
+			local list
+			local function getLazyList()
+				if not list then
+					list = machine.adapter.list()
+				end
+				return list
+			end
+
+			for key in pairs(entry.filter or { }) do
+				-- bad for perf to do listItems each time
+				local items = Milo:getMatches(Milo:listItems(), itemDB:splitKey(key), entry.ignoreDamage, entry.ignoreNbtHash)
+				for _,item in pairs(items) do
+					if item and item.count > 0 then
+						if type(entry.slot) == 'number' then
+							if exportSlot(getLazyList(), entry.slot, item, item.count) then
+								break
+							end
+						else
+-- _debug('attempting to export %s %d', item.name, item.count)
+-- TODO: always going to try and export even if the chest is full
+							context.storage:export(machine.name, nil, item.count, item)
 						end
 					end
 				end

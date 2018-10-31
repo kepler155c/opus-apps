@@ -270,7 +270,7 @@ function itemPage:eventHandler(event)
 
     filtered.count = nil
     Milo:saveResources()
-
+-- TODO: min not updated upon save until refresh
     UI:setPreviousPage()
 
   else

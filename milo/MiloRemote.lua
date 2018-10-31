@@ -301,48 +301,48 @@ end
 
 _G.p4 = Event
 
-debug(options.slot)
+_debug(options.slot)
 if options.slot.value then
-  debug('Transfer items initialized')
+  _debug('Transfer items initialized')
   Event.addRoutine(function()
     while true do
-debug('sleeping')
+_debug('sleeping')
       os.sleep(1.5)
       local neural = device.neuralInterface
-debug(neural)
+_debug(neural)
       if neural and neural.getInventory then
         local item = neural.getInventory().getItem(options.slot.value)
         if item then
-          debug('depositing')
+          _debug('depositing')
           page:sendRequest({ request = 'deposit', slot = options.slot.value })
           -- local item =
           -- TODO: update count for this one item
           -- page.grid:draw() page:sync()
         else
-debug('empty')
+_debug('empty')
         end
       else
-        debug('missing Introspection module')
+        _debug('missing Introspection module')
       end
     end
   end)
 end
 
 if options.shield.value then
-  debug('Transfer items initialized')
+  _debug('Transfer items initialized')
   Event.onInterval(2, function()
     local neural = device.neuralInterface
     if neural and neural.getEquipment then
       local item = neural.getEquipment().getItem(SHIELD_SLOT)
       if item then
-        debug('depositing')
+        _debug('depositing')
         page:sendRequest({ request = 'deposit', slot = 'shield' })
         -- local item =
         -- TODO: update count for this one item
         -- page.grid:draw() page:sync()
       end
     else
-      debug('missing Introspection module')
+      _debug('missing Introspection module')
     end
   end)
 end

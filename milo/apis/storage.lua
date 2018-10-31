@@ -26,12 +26,12 @@ listCount = 0,
   self.localName = modem.getNameLocal()
 
   Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
-debug('%s: %s', e, tostring(dev))
+_debug('%s: %s', e, tostring(dev))
     self:initStorage()
   end)
   Event.onInterval(15, function()
     self:showStorage()
-    debug('STORAGE: cache: %d/%d', self.hits, self.misses)
+    _debug('STORAGE: cache: %d/%d', self.hits, self.misses)
   end)
 end
 
@@ -44,11 +44,11 @@ function Storage:showStorage()
     end
   end
   if #t > 0 then
-    debug('Adapter:')
+    _debug('Adapter:')
     for _, k in pairs(t) do
-      debug(' offline: ' .. k)
+      _debug(' offline: ' .. k)
     end
-    debug('')
+    _debug('')
   end
 end
 
@@ -56,7 +56,7 @@ function Storage:setOnline(online)
   if online ~= self.storageOnline then
     self.storageOnline = online
     os.queueEvent(self.storageOnline and 'storage_online' or 'storage_offline', online)
-    debug('Storage: %s', self.storageOnline and 'online' or 'offline')
+    _debug('Storage: %s', self.storageOnline and 'online' or 'offline')
   end
 end
 
@@ -67,7 +67,7 @@ end
 function Storage:initStorage()
   local online = true
 
-  debug('Initializing storage')
+  _debug('Initializing storage')
   for k,v in pairs(self.remoteDefaults) do
     if v.adapter then
       v.adapter.online = not not device[k]
@@ -136,7 +136,7 @@ end
 
 function Storage:refresh(throttle)
   self.dirty = true
-debug('STORAGE: Forcing full refresh')
+_debug('STORAGE: Forcing full refresh')
   for _, adapter in self:onlineAdapters() do
     adapter.dirty = true
   end
@@ -149,9 +149,8 @@ function Storage:listItems(throttle)
     return self.items
   end
 self.listCount = self.listCount + 1
---debug(self.listCount)
+--_debug(self.listCount)
 
-  -- todo: only listItems from dirty remotes
 local ct = os.clock()
   local cache = { }
   local items = { }
@@ -159,7 +158,7 @@ local ct = os.clock()
 
   for _, adapter in self:onlineAdapters() do
     if adapter.dirty then
-debug('STORAGE: refresh: ' .. adapter.name)
+_debug('STORAGE: refresh: ' .. adapter.name)
       adapter:listItems(throttle)
       adapter.dirty = false
     end
@@ -180,7 +179,7 @@ debug('STORAGE: refresh: ' .. adapter.name)
       throttle()
     end
   end
-debug('STORAGE: refresh in ' .. (os.clock() - ct))
+_debug('STORAGE: refresh in ' .. (os.clock() - ct))
 
   self.dirty = false
   self.cache = cache
@@ -201,7 +200,7 @@ function Storage:provide(item, qty, slot, direction)
       local amount = adapter:provide(item, qty, slot, direction or self.localName)
       if amount > 0 then
         self.hits = self.hits + 1
-  debug('EXT: %s(%d): %s -> %s%s',
+  _debug('EXT: %s(%d): %s -> %s%s',
     item.name, amount, adapter.name, direction or self.localName,
     slot and string.format('[%d]', slot) or '')
         self.dirty = true
@@ -215,13 +214,13 @@ function Storage:provide(item, qty, slot, direction)
     end
   end
 
-  debug('STORAGE: MISS: %s - %d', key, qty)
+  _debug('STORAGE: MISS: %s - %d', key, qty)
   self.misses = self.misses + 1
 
   for _, adapter in self:onlineAdapters() do
     local amount = adapter:provide(item, qty, slot, direction or self.localName)
     if amount > 0 then
-debug('EXT: %s(%d): %s -> %s%s',
+_debug('EXT: %s(%d): %s -> %s%s',
   item.name, amount, adapter.name, direction or self.localName,
   slot and string.format('[%d]', slot) or '')
       self.dirty = true
@@ -240,7 +239,7 @@ end
 function Storage:trash(source, slot, count)
   local trashcan = Util.find(self.remoteDefaults, 'mtype', 'trashcan')
   if trashcan and trashcan.adapter and trashcan.adapter.online then
-debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)
+_debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)
     return trashcan.adapter.pullItems(source or self.localName, slot, count)
   end
   return 0
@@ -267,7 +266,8 @@ function Storage:insert(slot, qty, toSlot, item, source)
   local function insert(adapter)
     local amount = adapter:insert(slot, qty, toSlot, source or self.localName)
     if amount > 0 then
-debug('INS: %s(%d): %s[%d] -> %s',
+-- TODO: change debug to _debug
+_debug('INS: %s(%d): %s[%d] -> %s',
   item.name, amount,
   source or self.localName, slot, adapter.name)
       self.dirty = true
@@ -300,8 +300,7 @@ debug('INS: %s(%d): %s[%d] -> %s',
   end
 
   if self.cache[key] then -- is this item in some chest
-    -- low to high priority if the chest already contains that item
-    for _, adapter in self:onlineAdapters(true --[[ reversed ]]) do
+    for _, adapter in self:onlineAdapters() do
       if qty <= 0 then
         break
       end

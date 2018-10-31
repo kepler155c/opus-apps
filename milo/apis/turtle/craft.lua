@@ -105,10 +105,21 @@ local function machineCraft(recipe, inventoryAdapter, machineName, request, coun
 		end
 	end
 
+	local xferred = { }
 	for k,v in pairs(recipe.ingredients) do
-		if inventoryAdapter:provide(splitKey(v), count, k, machineName) ~= count then
-			-- TODO: suck em back out
-			request.status = 'unknown error'
+		local provided = inventoryAdapter:provide(splitKey(v), count, k, machineName)
+		xferred[k] = {
+			key = v,
+			count = provided,
+		}
+		if provided ~= count then
+			-- take back out whatever we put in
+			for k2,v2 in pairs(xferred) do
+				if v2.count > 0 then
+					inventoryAdapter:import(machineName, k2, v2.count, splitKey(v2.key))
+				end
+			end
+			request.status = 'Invalid recipe'
 			request.statusCode = Craft.STATUS_ERROR
 			return
 		end
@@ -175,11 +186,11 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
 	--end
 
 	for _, request in pairs(origItem.ingredients) do
+		if request.crafted >= request.count then
 if request.pending then
 	debug('??')
 	debug(request)
 end
-		if request.crafted >= request.count then
 			request.status = nil
 			request.statusCode = Craft.STATUS_SUCCESS
 		end

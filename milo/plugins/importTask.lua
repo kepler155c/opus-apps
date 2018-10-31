@@ -9,6 +9,8 @@ local function filter(a)
 	return a.imports
 end
 
+-- TODO: ignore damage/nbt
+
 function ImportTask:cycle(context)
 	for inventory in context.storage:filterActive('machine', filter) do
 		for _, entry in pairs(inventory.imports) do

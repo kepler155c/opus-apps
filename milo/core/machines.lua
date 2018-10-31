@@ -7,8 +7,11 @@ local Util   = require('util')
 
 local colors = _G.colors
 local device = _G.device
+local turtle = _G.turtle
 
 local context = Milo:getContext()
+
+-- TODO: no blacklist for export
 
 local function saveConfig()
 	local t = { }
@@ -266,7 +269,14 @@ function machineWizard.filter:show(entry, callback, whitelistOnly)
 	self.form[3].inactive = whitelistOnly
 
 	UI.SlideOut.show(self)
---	self:setFocus(self.filter)
+	self:setFocus(self.form.scan)
+
+	Milo:pauseCrafting()
+end
+
+function machineWizard.filter:hide()
+	UI.SlideOut.hide(self)
+	Milo:resumeCrafting()
 end
 
 function machineWizard.filter:resetGrid()
@@ -295,6 +305,7 @@ function machineWizard.filter:eventHandler(event)
 		self:resetGrid()
 		self.grid:update()
 		self.grid:draw()
+		turtle.emptyInventory()
 
 	elseif event.type == 'remove_entry' then
 		local row = self.grid:getSelected()
@@ -411,13 +422,6 @@ function machineWizard:eventHandler(event)
 		UI:setPreviousPage()
 
 	elseif event.type == 'accept' then
-		-- todo: no need for calling this function - use validate instead
-		for _, v in pairs(self.wizard.pages) do
-			if v.save and v.index then  -- only save if the page was valid for this mtype
-				v:save(self.machine)
-			end
-		end
-
 		Util.prune(self.machine, function(v)
 			if type(v) == 'boolean' then
 				return v

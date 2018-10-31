@@ -113,24 +113,50 @@ function Milo:getItemWithQty(res, ignoreDamage, ignoreNbtHash)
 	return item
 end
 
-function Milo:clearGrid()
-	local function clear()
-		turtle.eachFilledSlot(function(slot)
-			self.context.storage:import(self.context.localName, slot.index, slot.count, slot)
-		end)
+function Milo:getMatches(items, item, ignoreDamage, ignoreNbtHash)
+	local t = { }
 
-		for i = 1, 16 do
-			if turtle.getItemCount(i) ~= 0 then
-				return false
+	if not ignoreDamage and not ignoreNbtHash then
+		local key = item.key or Milo:uniqueKey(item)
+		local e = items[key]
+		if e then
+			t[key] = Util.shallowCopy(e)
+		end
+
+	else
+		for k,v in pairs(items) do
+			if item.name == v.name and
+				(ignoreDamage or item.damage == v.damage) and
+				(ignoreNbtHash or item.nbtHash == v.nbtHash) then
+				local e = t[k]
+				if not e then
+					t[k] = Util.shallowCopy(v)
+				else
+					e.count = e.count + item.count
+				end
 			end
 		end
-		return true
 	end
-	return clear() or clear()
+
+	return t
+end
+
+function Milo:clearGrid()
+	turtle.eachFilledSlot(function(slot)
+		self.context.storage:import(self.context.localName, slot.index, slot.count, slot)
+	end)
+
+	for i = 1, 16 do
+		if turtle.getItemCount(i) ~= 0 then
+			return false
+		end
+	end
+	return true
 end
 
 function Milo:getTurtleInventory()
 	local list = { }
+
 	for i = 1,16 do
 		local item = self.context.introspectionModule.getInventory().getItemMeta(i)
 		if item then

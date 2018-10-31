@@ -62,9 +62,6 @@ function pages.machines:enable()
 end
 
 function pages.machines:validate()
-
--- TODO: index number validation in wizard
-
 	local selected = self.grid:getSelected()
 	if not selected then
 		machineLearnWizard.notification:error('No machines configured')
