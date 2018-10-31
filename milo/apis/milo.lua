@@ -64,6 +64,10 @@ function Milo:uniqueKey(item)
 	return table.concat({ item.name, item.damage, item.nbtHash }, ':')
 end
 
+function Milo:splitKey(key)
+	return itemDB:splitKey(key)
+end
+
 function Milo:resetCraftingStatus()
 	self.context.storage.activity = { }
 
@@ -84,6 +88,10 @@ function Milo:showError(msg)
 end
 
 function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)
+	if not ignoreDamage and not ignoreNbtHash then
+		return items[inItem.key or self:uniqueKey(inItem)]
+	end
+
 	for _,item in pairs(items) do
 		if item.name == inItem.name and
 			(ignoreDamage or item.damage == inItem.damage) and
@@ -96,10 +104,9 @@ end
 function Milo:getItemWithQty(res, ignoreDamage, ignoreNbtHash)
 	local items = self:listItems()
 	local item = self:getItem(items, res, ignoreDamage, ignoreNbtHash)
+	local count = 0
 
 	if item and (ignoreDamage or ignoreNbtHash) then
-		local count = 0
-
 		for _,v in pairs(items) do
 			if item.name == v.name and
 				(ignoreDamage or item.damage == v.damage) and
@@ -107,10 +114,11 @@ function Milo:getItemWithQty(res, ignoreDamage, ignoreNbtHash)
 				count = count + v.count
 			end
 		end
-		item.count = count
+	elseif item then
+		count = item.count
 	end
 
-	return item
+	return item, count
 end
 
 function Milo:getMatches(items, item, ignoreDamage, ignoreNbtHash)
@@ -170,21 +178,29 @@ function Milo:getTurtleInventory()
 	return list
 end
 
-function Milo:xxx(item, count)
-	return self:provideItem(item, count, function(providable, currentCount)
-		-- return the current amount in the system
-		return currentCount - self:eject(item, providable)
+function Milo:craftAndEject(item, count)
+	local provided = self:provideItem(item, count, function(amount)
+		-- eject rest when finished crafted
+		return self:eject(item, amount)
 	end)
+
+	-- eject what we currently have
+	return item.count - self:eject(item, provided.available)
 end
 
 function Milo:provideItem(item, count, callback)
+	local current = Milo:getItem(Milo:listItems(), item) or { count = 0 }
+
 	if count <= 0 then
-		return 0
+		return {
+			requested = 0,
+			craft = 0,
+			available = 0,
+			current = current.count,
+		}
 	end
 
-	local current = Milo:getItem(Milo:listItems(), item) or { count = 0 }
 	local toCraft = count - math.min(current.count, count)
-
 	if toCraft > 0 then
 		local recipe = Craft.findRecipe(self:uniqueKey(item))
 		if not recipe then
@@ -195,18 +211,20 @@ function Milo:provideItem(item, count, callback)
 		end
 	end
 
-	if toCraft == 0 then
-		return callback(math.min(count, current.count), current.count)
---		return current.count - self:eject(item, math.min(count, current.count))
+	if toCraft > 0 then
+		item = Util.shallowCopy(item)
+		item.count = toCraft
+		item.eject = callback
+		self:requestCrafting(item)
+		item.crafted = 0
 	end
 
-	item = Util.shallowCopy(item)
-	item.count = current.count + toCraft
-	item.eject = callback
-	self:requestCrafting(item)
-	item.crafted = current.count
-
-	return current.count
+	return {
+		requested = count,
+		craft = toCraft,
+		available = math.min(count, current.count),
+		current = current.count,
+	}
 end
 
 function Milo:eject(item, count)
@@ -230,36 +248,43 @@ function Milo:saveMachineRecipe(recipe, result, machine)
 end
 
 function Milo:mergeResources(t)
-	for _,v in pairs(self.context.resources) do
-		local item = self:getItem(t, v)
+	t = Util.shallowCopy(t)
+
+	for k,v in pairs(self.context.resources) do
+		local key = itemDB:splitKey(k)
+		local item = self:getItem(t, key)
 		if item then
-			Util.merge(item, v)
+			item = Util.shallowCopy(item)
 		else
-			item = Util.shallowCopy(v)
+			item = key
 			item.count = 0
-			item.key = self:uniqueKey(v)
---			table.insert(t, item)
-			t[item.key] = item
+			item.key = k
 		end
+		Util.merge(item, v)
+		item.resource = v
+		t[item.key] = item
 	end
 
 	for k in pairs(Craft.recipes) do
 		local v = itemDB:splitKey(k)
 		local item = self:getItem(t, v)
 		if not item then
-			item = Util.shallowCopy(v)
+			item = v
 			item.count = 0
-			item.key = self:uniqueKey(v)
-			t[item.key] = item
---			table.insert(t, item)
+			item.key = k
+		else
+			item = Util.shallowCopy(item)
 		end
+		t[item.key] = item
 		item.has_recipe = true
 	end
 
 	for key in pairs(Craft.machineLookup) do
 		local item = t[key]
 		if item then
+			item = Util.shallowCopy(item)
 			item.is_craftable = true
+			t[item.key] = item
 		end
 	end
 
@@ -269,38 +294,17 @@ function Milo:mergeResources(t)
 		end
 		v.lname = v.displayName:lower()
 	end
+
+	return t
 end
 
 function Milo:saveResources()
-	local t = { }
-
-	for k,v in pairs(self.context.resources) do
-		v = Util.shallowCopy(v)
-		local keys = Util.transpose({ 'auto', 'low', 'limit',
-									'ignoreDamage', 'ignoreNbtHash',
-									 'rsControl', 'rsDevice', 'rsSide' })
-
-		for _,key in pairs(Util.keys(v)) do
-			if not keys[key] then
-				v[key] = nil
-			end
-		end
-		if not Util.empty(v) then
-			t[k] = v
-		end
-	end
-
-	Util.writeTable(self.RESOURCE_FILE, t)
+	Util.writeTable(self.RESOURCE_FILE, self.context.resources)
 end
 
 -- Return a list of everything in the system
-function Milo:listItems()
-	return self.context.storage:listItems()
-end
-
--- force a full rescan of chests
-function Milo:refreshItems()
-	return self.context.storage:refresh()
+function Milo:listItems(forceRefresh)
+	return forceRefresh and self.context.storage:refresh() or self.context.storage:listItems()
 end
 
 return Milo

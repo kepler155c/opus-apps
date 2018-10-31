@@ -18,6 +18,7 @@ listCount = 0,
     storageOnline = true,
     hits = 0,
     misses = 0,
+    lastRefresh = os.clock(),
   }
   Util.merge(self, defaults)
   Util.merge(self, args)
@@ -136,6 +137,7 @@ end
 
 function Storage:refresh(throttle)
   self.dirty = true
+  self.lastRefresh = os.clock()
 _debug('STORAGE: Forcing full refresh')
   for _, adapter in self:onlineAdapters() do
     adapter.dirty = true
@@ -266,7 +268,6 @@ function Storage:insert(slot, qty, toSlot, item, source)
   local function insert(adapter)
     local amount = adapter:insert(slot, qty, toSlot, source or self.localName)
     if amount > 0 then
--- TODO: change debug to _debug
 _debug('INS: %s(%d): %s[%d] -> %s',
   item.name, amount,
   source or self.localName, slot, adapter.name)

@@ -2,12 +2,13 @@ _G.requireInjector(_ENV)
 
 local Event  = require('event')
 local Socket = require('socket')
-local sync   = require('sync')
+local sync   = require('sync').sync
 local UI     = require('ui')
 local Util   = require('util')
 
 local colors = _G.colors
 local device = _G.device
+local os     = _G.os
 local socket
 
 local SHIELD_SLOT = 2
@@ -139,7 +140,6 @@ function page:sendRequest(data)
   local response
 
   sync(self, function()
-    self:sync()
     local msg
     for _ = 1, 2 do
       if not socket or not socket.connected then
@@ -154,6 +154,10 @@ function page:sendRequest(data)
         if socket:write(data) then
           response = socket:read(2)
           if response then
+            if response.msg then
+              self:setStatus(response.msg)
+              response = nil
+            end
             Event.onTimeout(2, function()
               self:setStatus('')
             end)
@@ -188,6 +192,20 @@ function page.grid:getDisplayValues(row)
   return row
 end
 
+function page:transfer(item, count)
+  local response = self:sendRequest({ request = 'transfer', item = item, count = count })
+  debug(response)
+  if response then
+    item.count = response.current - response.transferred
+    self.grid:draw()
+    if response.craft > 0 then
+      self:setStatus(response.craft .. ' crafting ...')
+    elseif response.craft + response.available < response.requested then
+      self:setStatus((response.craft + response.available) .. ' available ...')
+    end
+  end
+end
+
 function page:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
@@ -199,33 +217,21 @@ function page:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       self:setStatus('requesting 1 ...')
-      local response = self:sendRequest({ request = 'transfer', item = item, count = 1 })
-      if response then
-        item.count = response.count
-        self.grid:draw()
-      end
+      self:transfer(item, 1)
     end
 
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
       self:setStatus('requesting stack ...')
-      local response = self:sendRequest({ request = 'transfer', item = item, count = 'stack' })
-      if response then
-        item.count = response.count
-        self.grid:draw()
-      end
+      self:transfer(item, 'stack')
     end
 
   elseif event.type == 'eject_all' then
     local item = self.grid:getSelected()
     if item then
       self:setStatus('requesting all ...')
-      local response = self:sendRequest({ request = 'transfer', item = item, count = 'all' })
-      if response then
-        item.count = response.count
-        self.grid:draw()
-      end
+      self:transfer(item, 'all')
     end
 
   elseif event.type == 'eject_specified' then
@@ -235,9 +241,7 @@ function page:eventHandler(event)
       self.statusBar.amount:reset()
       self:setFocus(self.statusBar.filter)
       self:setStatus('requesting ' .. count .. ' ...')
-      local response = self:sendRequest({ request = 'transfer', item = item, count = count })
-      item.count = response.count
-      self.grid:draw()
+      self:transfer(item, count)
     else
       self:setStatus('nope ...')
     end
@@ -299,50 +303,43 @@ function page:applyFilter()
   self.grid:setValues(t)
 end
 
-_G.p4 = Event
+if options.slot.value or options.shield.value then
+  local inv = 'getInventory'
+  local slotNo = options.slot.value
+  local slotValue = options.slot.value
 
-_debug(options.slot)
-if options.slot.value then
-  _debug('Transfer items initialized')
+  if options.shield.value then
+    slotNo = SHIELD_SLOT
+    slotValue = 'shield'
+    inv = 'getEquipment'
+  end
+
   Event.addRoutine(function()
     while true do
-_debug('sleeping')
       os.sleep(1.5)
       local neural = device.neuralInterface
-_debug(neural)
-      if neural and neural.getInventory then
-        local item = neural.getInventory().getItem(options.slot.value)
-        if item then
-          _debug('depositing')
-          page:sendRequest({ request = 'deposit', slot = options.slot.value })
-          -- local item =
-          -- TODO: update count for this one item
-          -- page.grid:draw() page:sync()
-        else
-_debug('empty')
-        end
-      else
+      if not neural or not neural[inv] then
         _debug('missing Introspection module')
       end
-    end
-  end)
-end
 
-if options.shield.value then
-  _debug('Transfer items initialized')
-  Event.onInterval(2, function()
-    local neural = device.neuralInterface
-    if neural and neural.getEquipment then
-      local item = neural.getEquipment().getItem(SHIELD_SLOT)
+      local method = neural and neural[inv]
+      local item = method and method().getItemMeta(slotNo)
       if item then
         _debug('depositing')
-        page:sendRequest({ request = 'deposit', slot = 'shield' })
-        -- local item =
-        -- TODO: update count for this one item
-        -- page.grid:draw() page:sync()
+        local response = page:sendRequest({
+          request = 'deposit',
+          slot = slotValue,
+          key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
+        })
+        if response then
+          local ritem = page.items[response.key]
+          if ritem then
+            ritem.count = response.current
+          end
+          page.grid:draw()
+          page:sync()
+        end
       end
-    else
-      _debug('missing Introspection module')
     end
   end)
 end

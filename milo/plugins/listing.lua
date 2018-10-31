@@ -118,7 +118,7 @@ end
 
 function listingPage.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
-  row.count = row.count > 0 and Util.toBytes(row.count) or ''
+  row.count = row.count > 0 and Util.toBytes(row.count)
   if row.low then
     row.low = Util.toBytes(row.low)
   end
@@ -139,7 +139,7 @@ function listingPage:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       queue(function()
-        item.count = Milo:xxx(item, 1)
+        item.count = Milo:craftAndEject(item, 1)
         self.grid:draw()
       end)
     end
@@ -148,7 +148,7 @@ function listingPage:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       queue(function()
-        item.count = Milo:xxx(item, itemDB:getMaxCount(item))
+        item.count = Milo:craftAndEject(item, itemDB:getMaxCount(item))
         self.grid:draw()
       end)
     end
@@ -257,12 +257,7 @@ function listingPage:disable()
 end
 
 function listingPage:refresh(force)
-  if force then
-    self.allItems = Milo:refreshItems()
-  else
-    self.allItems = Milo:listItems()
-  end
-  Milo:mergeResources(self.allItems)
+  self.allItems = Milo:mergeResources(Milo:listItems(force))
   self:applyFilter()
 end
 

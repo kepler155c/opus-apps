@@ -2,6 +2,7 @@ local Config = require('config')
 local Event  = require('event')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
+local sync   = require('sync')
 local UI     = require('ui')
 local Util   = require('util')
 
@@ -10,8 +11,6 @@ local device = _G.device
 local turtle = _G.turtle
 
 local context = Milo:getContext()
-
--- TODO: no blacklist for export
 
 local function saveConfig()
 	local t = { }
@@ -272,11 +271,13 @@ function machineWizard.filter:show(entry, callback, whitelistOnly)
 	self:setFocus(self.form.scan)
 
 	Milo:pauseCrafting()
+	sync.lock(turtle)
 end
 
 function machineWizard.filter:hide()
 	UI.SlideOut.hide(self)
 	Milo:resumeCrafting()
+	sync.release(turtle)
 end
 
 function machineWizard.filter:resetGrid()

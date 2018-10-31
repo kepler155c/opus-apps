@@ -2,6 +2,7 @@ local Event  = require('event')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
 local Socket = require('socket')
+local Sync   = require('sync')
 
 local device = _G.device
 local turtle = _G.turtle
@@ -19,7 +20,7 @@ local function getManipulatorForUser(user)
 end
 
 local function client(socket)
-	_debug('connection from ' .. socket.dhost)
+	_G._debug('connection from ' .. socket.dhost)
 
 	local user = socket:read(2)
 	if not user then
@@ -36,28 +37,41 @@ local function client(socket)
 		if not data then
 			break
 		end
-_debug('remote: ' .. data.request)
+
 		if data.request == 'list' then
-			local items = Milo:listItems()
-			Milo:mergeResources(items)
+			local items = Milo:mergeResources(Milo:listItems())
 			socket:write(items)
 
 		elseif data.request == 'deposit' then
-			local count
-
-			if data.slot == 'shield' then
-				count = manipulator.getEquipment().pushItems(
-					context.localName,
-					SHIELD_SLOT,
-					64)
+			if Sync.isLocked(turtle) then
+				socket:write({ msg = '' })
 			else
-				count = manipulator.getInventory().pushItems(
-					context.localName,
-					data.slot,
-					64)
+				local count
+
+				Sync.sync(turtle, function()
+					if data.slot == 'shield' then
+						count = manipulator.getEquipment().pushItems(
+							context.localName,
+							SHIELD_SLOT,
+							64)
+					else
+						count = manipulator.getInventory().pushItems(
+							context.localName,
+							data.slot,
+							64)
+					end
+					Milo:clearGrid()
+				end)
+
+				local list = Milo:listItems()
+				local current = list[data.key] and list[data.key].count or 0
+
+				socket:write({
+					key = data.key,
+					count = count,
+					current = current + count,
+				})
 			end
-			socket:write({ count = count })
-			Milo:clearGrid()
 
 		elseif data.request == 'transfer' then
 			local count = data.count
@@ -69,32 +83,42 @@ _debug('remote: ' .. data.request)
 				count = item and item.count or 0
 			end
 
-			local provided = Milo:provideItem(data.item, count, function(amount, currentCount)
-				amount = context.storage:export(
-					context.localName,
-					nil,
-					amount,
-					data.item)
-
-				turtle.eachFilledSlot(function(slot)
-					manipulator.getInventory().pullItems(
+			local function transfer(amount)
+				Sync.sync(turtle, function()
+					amount = context.storage:export(
 						context.localName,
-						slot.index,
-						slot.count)
-				end)
-				return currentCount - amount
-			end)
+						nil,
+						amount,
+						data.item)
 
-			socket:write({ count = provided })
+					turtle.eachFilledSlot(function(slot)
+						manipulator.getInventory().pullItems(
+							context.localName,
+							slot.index,
+							slot.count)
+					end)
+				end)
+
+				return amount
+			end
+
+			if Sync.isLocked(turtle) then
+				socket:write({ msg = 'Turtle in use. please wait...' })
+			end
+
+			local provided = Milo:provideItem(data.item, count, transfer)
+			provided.transferred = provided.available > 0 and transfer(provided.available) or 0
+
+			socket:write(provided)
 		end
 	until not socket.connected
 
-	_debug('disconnected from ' .. socket.dhost)
+	_G._debug('disconnected from ' .. socket.dhost)
 end
 
 if device.wireless_modem then
 	Event.addRoutine(function()
-		_debug('Milo: listening on port 4242')
+		_G._debug('Milo: listening on port 4242')
 		while true do
 			local socket = Socket.server(4242)
 			Event.addRoutine(function()

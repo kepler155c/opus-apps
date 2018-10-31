@@ -1,6 +1,7 @@
 local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
+local sync   = require('sync')
 local UI     = require('ui')
 local Util   = require('util')
 
@@ -122,13 +123,9 @@ local turtleLearnWizard = UI.Page {
 	notification = UI.Notification { },
 }
 
-function turtleLearnWizard:enable()
-	Milo:pauseCrafting()
-	UI.Page.enable(self)
-end
-
 function turtleLearnWizard:disable()
 	Milo:resumeCrafting()
+	sync.release(turtle)
 	UI.Page.disable(self)
 end
 

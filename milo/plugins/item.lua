@@ -20,11 +20,13 @@ local itemPage = UI.Page {
     x = 1, y = 2, height = 10, ex = -1,
     [1] = UI.TextEntry {
       width = 7,
-      formLabel = 'Min', formKey = 'low', help = 'Craft if below min'
+      formLabel = 'Min', formKey = 'low', help = 'Craft if below min',
+      validate = 'numeric',
     },
     [2] = UI.TextEntry {
       width = 7,
-      formLabel = 'Max', formKey = 'limit', help = 'Eject if above max'
+      formLabel = 'Max', formKey = 'limit', help = 'Send to trash if above max',
+      validate = 'numeric',
     },
 --[[
     [3] = UI.Chooser {
@@ -40,11 +42,11 @@ local itemPage = UI.Page {
 ]]
     [4] = UI.Checkbox {
       formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
-      help = 'Ignore damage of item'
+      help = 'Ignore damage of item',
     },
     [5] = UI.Checkbox {
       formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
-      help = 'Ignore NBT of item'
+      help = 'Ignore NBT of item',
     },
     [6] = UI.Button {
       x = 2, y = -2, width = 10,
@@ -135,13 +137,15 @@ local itemPage = UI.Page {
       event = 'hide_info',
     },
   },
-  statusBar = UI.StatusBar { }
+  statusBar = UI.StatusBar { },
+  notification = UI.Notification { },
 }
 
 function itemPage:enable(item)
   self.item = Util.shallowCopy(item)
+  self.res = item.resource or { }
 
-  self.form:setValues(self.item)
+  self.form:setValues(self.res)
   self.titleBar.title = item.displayName or item.name
 
   UI.Page.enable(self)
@@ -232,47 +236,46 @@ function itemPage:eventHandler(event)
   elseif event.type == 'hide_info' then
     self.info:hide()
 
+  elseif event.type == 'form_invalid' then
+    self.notification:error(event.message)
+
   elseif event.type == 'focus_change' then
     self.statusBar:setStatus(event.focused.help)
     self.statusBar:draw()
 
   elseif event.type == 'form_complete' then
-    local values = self.form.values
-    local originalKey = Milo:uniqueKey(self.item)
+    local item = self.item
 
-    local filtered = Util.shallowCopy(values)
-    filtered.low = tonumber(filtered.low)
-    filtered.limit = tonumber(filtered.limit)
+    if self.form:save() then
+      Util.prune(self.res, function(v)
+        if type(v) == 'boolean' then
+          return v
+        elseif type(v) == 'string' then
+          return #v > 0
+        end
+        return true
+      end)
 
-    if filtered.auto ~= true then
-      filtered.auto = nil
+      local newKey = {
+        name = item.name,
+        damage = self.res.ignoreDamage and 0 or item.damage,
+        nbtHash = not self.res.ignoreNbtHash and item.nbtHash or nil,
+      }
+
+      for k,v in pairs(context.resources) do
+        if v == self.res then
+          context.resources[k] = nil
+          break
+        end
+      end
+
+      if not Util.empty(self.res) then
+        context.resources[Milo:uniqueKey(newKey)] = self.res
+      end
+
+      Milo:saveResources()
+      UI:setPreviousPage()
     end
-
-    if filtered.rsControl ~= true then
-      filtered.rsControl = nil
-      filtered.rsSide = nil
-      filtered.rsDevice = nil
-    end
-
-    if filtered.ignoreDamage == true then
-      filtered.damage = 0
-    else
-      filtered.ignoreDamage = nil
-    end
-
-    if filtered.ignoreNbtHash == true then
-      filtered.nbtHash = nil
-    else
-      filtered.ignoreNbtHash = nil
-    end
-    context.resources[originalKey] = nil
-    context.resources[Milo:uniqueKey(filtered)] = filtered
-
-    filtered.count = nil
-    Milo:saveResources()
--- TODO: min not updated upon save until refresh
-    UI:setPreviousPage()
-
   else
     return UI.Page.eventHandler(self, event)
   end

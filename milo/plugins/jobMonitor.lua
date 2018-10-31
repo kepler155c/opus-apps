@@ -11,6 +11,8 @@ local context = Milo:getContext()
 local mon     = Peripheral.lookup(context.config.monitor) or
                 error('Monitor is not attached')
 
+-- TODO: some way to cancel a job
+
 local jobMonitor = UI.Page {
   parent = UI.Device {
     device = mon,

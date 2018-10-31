@@ -1,7 +1,9 @@
 local Milo   = require('milo')
+local sync   = require('sync')
 local UI     = require('ui')
 
 local context = Milo:getContext()
+local turtle  = _G.turtle
 
 local learnPage = UI.Dialog {
   height = 6, width = UI.term.width - 6,
@@ -34,6 +36,9 @@ function learnPage:enable()
     Milo:getState('learnType') or
     self.chooser.choices[1].value
 
+  Milo:pauseCrafting()
+  sync.lock(turtle)
+
   self:focusFirst()
   UI.Dialog.enable(self)
 end
@@ -44,6 +49,8 @@ end
 
 function learnPage:eventHandler(event)
   if event.type == 'cancel' then
+    sync.release(turtle)
+    Milo:resumeCrafting()
     UI:setPreviousPage()
 
   elseif event.type == 'accept' then

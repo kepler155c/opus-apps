@@ -51,18 +51,9 @@ end
 local introspectionModule = Peripheral.get('plethora:introspection') or
   error('Introspection module not found')
 
-local function loadResources()
-  local resources = Util.readTable(Milo.RESOURCE_FILE) or { }
-  for k,v in pairs(resources) do
-    Util.merge(v, itemDB:splitKey(k))
-  end
-
-  return resources
-end
-
 local context = {
   config = config,
-  resources = loadResources(),
+  resources = Util.readTable(Milo.RESOURCE_FILE) or { },
 
   craftingQueue = { },
 

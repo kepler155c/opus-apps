@@ -1,9 +1,11 @@
 local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
+local sync   = require('sync').sync
 local Util   = require('util')
 
 local context = Milo:getContext()
+local turtle  = _G.turtle
 
 local craftTask = {
   name = 'crafting',
@@ -101,12 +103,14 @@ function craftTask:cycle()
     if item.count - item.crafted > 0 then
       local recipe = Craft.findRecipe(key)
       if recipe then
-        self:craft(recipe, item)
+        sync(turtle, function()
+          self:craft(recipe, item)
+        end)
         if item.eject and item.crafted >= item.count then
           if type(item.eject) == 'boolean' then
             Milo:eject(item, item.count)
           else
-            item.eject(item.count, 0) -- unknown amount in system
+            item.eject(item.count) -- invoke callback
           end
         end
       elseif not context.controllerAdapter then

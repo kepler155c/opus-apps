@@ -7,27 +7,29 @@ local ReplenishTask = {
 }
 
 function ReplenishTask:cycle(context)
-  for _,res in pairs(context.resources) do
+  for k,res in pairs(context.resources) do
     if res.low then
-      local item = Milo:getItemWithQty(res, res.ignoreDamage, res.ignoreNbtHash)
+      local key = Milo:splitKey(k)
+      local item, count = Milo:getItemWithQty(key, res.ignoreDamage, res.ignoreNbtHash)
       if not item then
         item = {
-          damage = res.damage,
-          nbtHash = res.nbtHash,
-          name = res.name,
-          displayName = itemDB:getName(res),
+          damage = key.damage,
+          nbtHash = key.nbtHash,
+          name = key.name,
+          displayName = itemDB:getName(key),
           count = 0
         }
       end
 
-      if item.count < res.low then
-        if res.ignoreDamage then
-          item.damage = 0
+      if count < res.low then
+        local nbtHash = item.nbtHash
+        if res.ignoreNbtHash then
+          nbtHash = nil
         end
         Milo:requestCrafting({
-          damage = item.damage,
-          nbtHash = item.nbtHash,
-          count = res.low - item.count,
+          damage = res.ignoreDamage and 0 or item.damage,
+          nbtHash = nbtHash,
+          count = res.low - count,
           name = item.name,
           displayName = item.displayName,
           replenish = true,
