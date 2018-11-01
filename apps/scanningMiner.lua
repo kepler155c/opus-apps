@@ -413,10 +413,13 @@ local function scan()
         s, m = turtle.digAt(b)
       end
       if not s then
-        page.statusBar:setValue('status', m)
+        page.statusBar:setValue('status', b.name .. ' ' .. m)
         page.statusBar:draw()
         page:sync()
-        os.sleep(3)
+        if debug and type(debug) == 'function' then
+          debug(b.name .. ' ' .. m)
+        end
+--        os.sleep(3)
       else
         page.statusBar:setValue('mining', m)
       end
@@ -452,7 +455,10 @@ local function mineChunk()
     if turtle.isAborted() then
       error('aborted')
     end
-    status('scanning ' .. pt.y + mining.home.y - 8 .. '-' .. pt.y + mining.home.y + 8)
+    status('scanning %d %d-%d',
+      mining.chunkIndex,
+      pt.y + mining.home.y - 8,
+      pt.y + mining.home.y + 8)
 
     turtle.select(1)
     safeGoto(pt.x, pt.z, pt.y)
