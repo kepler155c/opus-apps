@@ -188,8 +188,8 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
 	for _, request in pairs(origItem.ingredients) do
 		if request.crafted >= request.count then
 if request.pending then
-	debug('??')
-	debug(request)
+	_debug('??')
+	_debug(request)
 end
 			request.status = nil
 			request.statusCode = Craft.STATUS_SUCCESS

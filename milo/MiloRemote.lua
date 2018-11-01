@@ -194,7 +194,6 @@ end
 
 function page:transfer(item, count)
   local response = self:sendRequest({ request = 'transfer', item = item, count = count })
-  debug(response)
   if response then
     item.count = response.current - response.transferred
     self.grid:draw()
