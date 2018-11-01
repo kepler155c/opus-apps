@@ -455,10 +455,10 @@ local function mineChunk()
     if turtle.isAborted() then
       error('aborted')
     end
-    status('scanning %d %d-%d',
+    status(string.format('scanning %d %d-%d',
       mining.chunkIndex,
       pt.y + mining.home.y - 8,
-      pt.y + mining.home.y + 8)
+      pt.y + mining.home.y + 8))
 
     turtle.select(1)
     safeGoto(pt.x, pt.z, pt.y)
