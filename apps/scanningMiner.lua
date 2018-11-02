@@ -455,8 +455,9 @@ local function mineChunk()
     if turtle.isAborted() then
       error('aborted')
     end
+    local chunks = math.pow(mining.diameter-2, 2) + mining.chunkIndex
     status(string.format('scanning %d %d-%d',
-      mining.chunkIndex,
+      chunks,
       pt.y + mining.home.y - 8,
       pt.y + mining.home.y + 8))
 
