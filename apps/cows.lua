@@ -2,6 +2,7 @@ _G.requireInjector(_ENV)
 
 local Config = require('config')
 local Util   = require('util')
+local InventoryAdapter = require('chestAdapter18')
 
 local device = _G.device
 local os     = _G.os
@@ -16,23 +17,51 @@ local sensor = device['plethora:sensor'] or
   turtle.equip('right', 'plethora:module:3') and device['plethora:sensor'] or
   error('Plethora sensor required')
 
+local dispenser = device['minecraft:dispenser_89'] or
+  error('Dispenser not found')
+local integrator = device['redstone_integrator_131'] or
+  error('Integrator not found')
+
+local function pulse()
+  integrator.setOutput('north', true)
+  os.sleep(.25)
+  integrator.setOutput('north', false)
+end
+
+local function turnOffWater()
+  local list = dispenser.list()
+  if list[1].name == 'minecraft:bucket' then
+    pulse()
+    os.sleep(2)
+  end
+end
+
+local function turnOnWater()
+  if dispenser.list()[1].name == 'minecraft:water_bucket' then
+    pulse()
+  end
+end
+
 local function getCowCount()
   local blocks = sensor.sense()
 
   local grown = 0
   local babies = 0
+  local xpCount = 0
 
   Util.filterInplace(blocks, function(v)
     if v.name == 'Cow' then
       if v.y > -.5 then grown  = grown  + 1 end
       if v.y < -.5 then babies = babies + 1 end
       return v.y > -.5
+    elseif v.name == 'XPOrb' then
+      xpCount = xpCount + 1
     end
   end)
 
-  Util.print('%d grown, %d babies', grown, babies)
+  Util.print('%d grown, %d babies, %d xp', grown, babies, xpCount)
 
-  return #blocks
+  return #blocks, xpCount
 end
 
 local function butcher()
@@ -60,16 +89,29 @@ local function breed()
   end
 end
 
+local chest = InventoryAdapter({ side = 'top', direction = 'down' }) or
+    error('missing chest above')
+
 turtle.run(function()
+  turnOffWater()
+
   repeat
-    if getCowCount() > config.max_cows then
+    local cowCount, xpCount = getCowCount()
+    if cowCount > config.max_cows then
       turtle.setStatus('Butchering')
       butcher()
     elseif turtle.getItemCount('minecraft:wheat') == 0 then
-      turtle.setStatus('Out of wheat')
+      if chest:provide({ name = 'minecraft:wheat' }, 64) == 0 then
+        turtle.setStatus('Out of wheat')
+      end
     else
       turtle.setStatus('Breeding')
       breed()
+    end
+    if xpCount > 2 then
+      turnOnWater()
+      os.sleep(8)
+      turnOffWater()
     end
     os.sleep(5)
   until turtle.isAborted()

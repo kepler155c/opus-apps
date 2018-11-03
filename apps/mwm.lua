@@ -28,8 +28,9 @@ local monitor
 
 local defaultEnv = Util.shallowCopy(_ENV)
 defaultEnv.multishell = multishell
-
-if args[2] then
+if args[3] then
+  monitor = _G.device[args[3]]
+elseif args[2] then
   monitor = peripheral.wrap(args[2]) or syntax()
 else
   monitor = peripheral.find('monitor') or syntax()

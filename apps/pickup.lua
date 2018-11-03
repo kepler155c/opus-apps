@@ -12,10 +12,6 @@ local peripheral = _G.peripheral
 local printError = _G.printError
 local turtle     = _G.turtle
 
-if not device.wireless_modem then
-  error('Modem is required')
-end
-
 if not turtle then
   error('Can only be run on a turtle')
 end
@@ -236,16 +232,18 @@ local function pickupHost(socket)
   end
 end
 
-Event.addRoutine(function()
-  while true do
-    print('waiting for connection on port 5222')
-    local socket = Socket.server(5222)
+if device.wireless_modem then
+  Event.addRoutine(function()
+    while true do
+      print('waiting for connection on port 5222')
+      local socket = Socket.server(5222)
 
-    print('pickup: connection from ' .. socket.dhost)
+      print('pickup: connection from ' .. socket.dhost)
 
-    Event.addRoutine(function() pickupHost(socket) end)
-  end
-end)
+      Event.addRoutine(function() pickupHost(socket) end)
+    end
+  end)
+end
 
 local function eachEntry(t, fn)
 

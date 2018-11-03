@@ -94,6 +94,7 @@ local function getPoint()
   if not gpt then
     mainPage.statusBar:timedStatus('Unable to get location', 3)
   end
+  gpt.y = gpt.y - 1
   return gpt
 end
 
