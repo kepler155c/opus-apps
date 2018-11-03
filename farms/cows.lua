@@ -3,6 +3,7 @@ _G.requireInjector(_ENV)
 local Config = require('config')
 local Util   = require('util')
 local InventoryAdapter = require('chestAdapter18')
+local Peripheral = require('peripheral')
 
 local device = _G.device
 local os     = _G.os
@@ -17,9 +18,9 @@ local sensor = device['plethora:sensor'] or
   turtle.equip('right', 'plethora:module:3') and device['plethora:sensor'] or
   error('Plethora sensor required')
 
-local dispenser = device['minecraft:dispenser_89'] or
+local dispenser = Peripheral.lookup('type/minecraft:dispenser') or
   error('Dispenser not found')
-local integrator = device['redstone_integrator_131'] or
+local integrator = Peripheral.lookup('type/redstone_integrator') or
   error('Integrator not found')
 
 local function pulse()
