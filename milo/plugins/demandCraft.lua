@@ -119,7 +119,11 @@ function craftPage:eventHandler(event)
     local item = Util.shallowCopy(self.item)
     item.count = tonumber(self.wizard.pages.quantity.count.value)
     item.forceCrafting = true
-    item.eject = self.wizard.pages.quantity.eject.value == true
+    if self.wizard.pages.quantity.eject.value then
+      item.callback = function(request)
+        Milo:eject(item, request.count)
+      end
+    end
     Milo:requestCrafting(item)
     UI:setPreviousPage()
   else

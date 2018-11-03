@@ -43,35 +43,32 @@ local function client(socket)
 			socket:write(items)
 
 		elseif data.request == 'deposit' then
-			if Sync.isLocked(turtle) then
-				socket:write({ msg = '' })
-			else
-				local count
-
+			local function deposit()
 				Sync.sync(turtle, function()
 					if data.slot == 'shield' then
-						count = manipulator.getEquipment().pushItems(
+						manipulator.getEquipment().pushItems(
 							context.localName,
 							SHIELD_SLOT,
-							64)
+							data.count)
 					else
-						count = manipulator.getInventory().pushItems(
+						manipulator.getInventory().pushItems(
 							context.localName,
 							data.slot,
-							64)
+							data.count)
 					end
 					Milo:clearGrid()
 				end)
-
-				local list = Milo:listItems()
-				local current = list[data.key] and list[data.key].count or 0
-
-				socket:write({
-					key = data.key,
-					count = count,
-					current = current + count,
-				})
 			end
+
+			local list = Milo:listItems()
+			local current = list[data.key] and list[data.key].count or 0
+
+			socket:write({
+				key = data.key,
+				current = current,
+			})
+
+			Milo:queueRequest({ }, deposit)
 
 		elseif data.request == 'transfer' then
 			local count = data.count
@@ -83,33 +80,26 @@ local function client(socket)
 				count = item and item.count or 0
 			end
 
-			local function transfer(amount)
+			local function transfer(request)
 				Sync.sync(turtle, function()
-					amount = context.storage:export(
+					local transferred = context.storage:export(
 						context.localName,
 						nil,
-						amount,
+						request.count,
 						data.item)
 
 					turtle.eachFilledSlot(function(slot)
 						manipulator.getInventory().pullItems(
 							context.localName,
 							slot.index,
-							slot.count)
+							transferred)
 					end)
 				end)
-
-				return amount
 			end
 
-			if Sync.isLocked(turtle) then
-				socket:write({ msg = 'Turtle in use. please wait...' })
-			end
+			local request = Milo:makeRequest(data.item, count, transfer)
 
-			local provided = Milo:provideItem(data.item, count, transfer)
-			provided.transferred = provided.available > 0 and transfer(provided.available) or 0
-
-			socket:write(provided)
+			socket:write(request)
 		end
 	until not socket.connected
 

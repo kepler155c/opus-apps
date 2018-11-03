@@ -106,12 +106,8 @@ function craftTask:cycle()
         sync(turtle, function()
           self:craft(recipe, item)
         end)
-        if item.eject and item.crafted >= item.count then
-          if type(item.eject) == 'boolean' then
-            Milo:eject(item, item.count)
-          else
-            item.eject(item.count) -- invoke callback
-          end
+        if item.callback and item.crafted >= item.count then
+          item.callback(item) -- invoke callback
         end
       elseif not context.controllerAdapter then
         item.status = '(no recipe)'

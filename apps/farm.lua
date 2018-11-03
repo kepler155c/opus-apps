@@ -109,7 +109,7 @@ turtle.run(function()
   local facing = scanner.getBlockMeta(0, 0, 0).state.facing
   turtle.point.heading = Point.facings[facing].heading
 
-  turtle.setPolicy('digOnly')
+  --turtle.setPolicy('digOnly')
   turtle.setMovementStrategy('goto')
   repeat
     local blocks, harvestCount = scan()

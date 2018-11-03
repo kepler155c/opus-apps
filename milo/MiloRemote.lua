@@ -195,12 +195,13 @@ end
 function page:transfer(item, count)
   local response = self:sendRequest({ request = 'transfer', item = item, count = count })
   if response then
-    item.count = response.current - response.transferred
+    _debug(response)
+    item.count = response.current - response.count
     self.grid:draw()
     if response.craft > 0 then
       self:setStatus(response.craft .. ' crafting ...')
-    elseif response.craft + response.available < response.requested then
-      self:setStatus((response.craft + response.available) .. ' available ...')
+    elseif response.craft + response.count < response.requested then
+      self:setStatus((response.craft + response.count) .. ' available ...')
     end
   end
 end
@@ -318,22 +319,22 @@ if options.slot.value or options.shield.value then
       os.sleep(1.5)
       local neural = device.neuralInterface
       if not neural or not neural[inv] then
-        _debug('missing Introspection module')
+        _G._debug('missing Introspection module')
       end
 
       local method = neural and neural[inv]
       local item = method and method().getItemMeta(slotNo)
       if item then
-        _debug('depositing')
         local response = page:sendRequest({
           request = 'deposit',
           slot = slotValue,
+          count = item.count,
           key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
         })
         if response then
           local ritem = page.items[response.key]
           if ritem then
-            ritem.count = response.current
+            ritem.count = response.current + item.count
           end
           page.grid:draw()
           page:sync()

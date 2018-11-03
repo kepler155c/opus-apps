@@ -3,6 +3,7 @@ local Craft  = require('turtle.craft')
 local itemDB = require('itemDB')
 local Util   = require('util')
 
+local os     = _G.os
 local turtle = _G.turtle
 
 local Milo = {
@@ -178,25 +179,37 @@ function Milo:getTurtleInventory()
 	return list
 end
 
-function Milo:craftAndEject(item, count)
-	local provided = self:provideItem(item, count, function(amount)
-		-- eject rest when finished crafted
-		return self:eject(item, amount)
-	end)
-
-	-- eject what we currently have
-	return item.count - self:eject(item, provided.available)
+-- queue up an action that reliees on the crafting grid
+function Milo:queueRequest(request, callback)
+	if Util.empty(self.context.queue) then
+		os.queueEvent('milo_queue')
+	end
+	table.insert(self.context.queue, {
+		request = request,
+		callback = callback
+	})
 end
 
-function Milo:provideItem(item, count, callback)
+function Milo:craftAndEject(item, count)
+	local request = self:makeRequest(item, count, function(request)
+		-- eject rest when finished crafted
+		return self:eject(item, request.count)
+	end)
+
+	-- predict that we will eject that amount
+	return request.current - request.count
+end
+
+function Milo:makeRequest(item, count, callback)
 	local current = Milo:getItem(Milo:listItems(), item) or { count = 0 }
 
 	if count <= 0 then
 		return {
 			requested = 0,
 			craft = 0,
-			available = 0,
+			count = 0,
 			current = current.count,
+			item = item,
 		}
 	end
 
@@ -211,20 +224,26 @@ function Milo:provideItem(item, count, callback)
 		end
 	end
 
-	if toCraft > 0 then
-		item = Util.shallowCopy(item)
-		item.count = toCraft
-		item.eject = callback
-		self:requestCrafting(item)
-		item.crafted = 0
-	end
-
-	return {
+	local request = {
 		requested = count,
 		craft = toCraft,
-		available = math.min(count, current.count),
+		count = math.min(count, current.count),
 		current = current.count,
+		item = item,
 	}
+
+	if request.count > 0 then
+		Milo:queueRequest(request, callback)
+	end
+
+	if request.craft > 0 then
+		item = Util.shallowCopy(item)
+		item.count = request.craft
+		item.callback = callback
+		self:requestCrafting(item)
+	end
+
+	return request
 end
 
 function Milo:eject(item, count)

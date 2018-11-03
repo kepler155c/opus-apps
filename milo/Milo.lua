@@ -59,6 +59,7 @@ local context = {
 
   learnTypes = { },
   tasks = { },
+  queue = { },
 
   localName = modem.getNameLocal(),
   storage = Storage(config),
@@ -101,10 +102,10 @@ Milo:clearGrid()
 local page = UI:getPage('listing')
 UI:setPage(page)
 
-Event.onInterval(5, function()
-  if not Milo:isCraftingPaused() and context.storage:isOnline() then
+Event.on('milo_cycle', function()
+  if not context.turtleBusy then
+    context.turtleBusy = true
     Milo:resetCraftingStatus()
-    --Milo:refreshItems()
 
     for _, task in ipairs(context.tasks) do
       local s, m = pcall(function() task:cycle(context) end)
@@ -114,6 +115,30 @@ Event.onInterval(5, function()
         error(m)
       end
     end
+    context.turtleBusy = false
+    if not Util.empty(context.queue) then
+      os.queueEvent('milo_queue')
+    end
+  end
+end)
+
+Event.on('milo_queue', function()
+  if not context.turtleBusy then
+    context.turtleBusy = true
+
+    for _, key in pairs(Util.keys(context.queue)) do
+      local entry = context.queue[key]
+      entry.callback(entry.request)
+      context.queue[key] = nil
+    end
+
+    context.turtleBusy = false
+  end
+end)
+
+Event.onInterval(5, function()
+  if not Milo:isCraftingPaused() and context.storage:isOnline() then
+    os.queueEvent('milo_cycle')
   end
 end)
 
