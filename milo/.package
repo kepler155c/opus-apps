@@ -3,10 +3,7 @@
 		'opus-develop-1.8',
 	},
 	title = 'Inventory manager for Opus OS',
-	description = [[
-Unstable Branch
-]],
+	repository = 'kepler155c/opus-apps/develop1.8/milo',
+	description = [[ ... ]],
 	licence = 'MIT',
-	--location = '',
-	--mount = 'packages/opus-neural gitfs kepler155c/opus-neural/master',
 }

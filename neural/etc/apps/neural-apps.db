@@ -1,0 +1,22 @@
+{
+  [ "shootingGallery" ] = {
+    title = "Gallery",
+    category = "Neural",
+    run = "shootingGallery.lua",
+  },
+  [ "neuralFight" ] = {
+    title = "Fight",
+    category = "Neural",
+    run = "neuralFight.lua",
+  },
+  [ "neuralFly" ] = {
+    title = "Fly",
+    category = "Neural",
+    run = "neuralFly.lua",
+  },
+  [ "neuralRemote" ] = {
+    title = "Remote",
+    category = "Neural",
+    run = "neuralRemote.lua",
+  },
+}

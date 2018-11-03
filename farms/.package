@@ -1,0 +1,9 @@
+{
+	required = {
+		'opus-develop-1.8',
+	},
+	title = 'Programs for farming resources',
+	repository = 'kepler155c/opus-apps/develop1.8/farms',
+	description = [[ ... ]],
+	licence = 'MIT',
+}

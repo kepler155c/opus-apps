@@ -1,0 +1,9 @@
+{
+	required = {
+		'opus-develop-1.8',
+	},
+	title = 'Schematic Builder',
+	repository = 'kepler155c/opus-apps/develop1.8/builder',
+	description = [[ ... ]],
+	licence = 'MIT',
+}

@@ -440,7 +440,6 @@ out.setTextScale = function(scale)
   end
   if textScale ~= scale then
     local factor = textScale/scale
-debug({ scale, textScale, factor, tx*factor, ty*factor })
     textScale = scale
     resize(tx*factor, ty*factor)
   end

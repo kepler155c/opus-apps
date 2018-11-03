@@ -4,7 +4,7 @@ local Util   = require('util')
 local fs     = _G.fs
 local turtle = _G.turtle
 
-local RECIPES_DIR  = 'usr/etc/recipes'
+local RECIPES_DIR  = 'packages/core/etc/recipes'
 local USER_RECIPES = 'usr/config/recipes.db'
 
 local Craft = { }

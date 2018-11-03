@@ -1,0 +1,9 @@
+{
+	required = {
+		'opus-develop-1.8',
+	},
+	title = 'Manage inventory',
+	repository = 'kepler155c/opus-apps/develop1.8/storageManager',
+	description = [[ ... ]],
+	licence = 'MIT',
+}

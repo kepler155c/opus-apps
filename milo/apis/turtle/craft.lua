@@ -11,7 +11,7 @@ local Craft = {
 	STATUS_ERROR   = 'error',
 	STATUS_SUCCESS = 'success',
 
-	RECIPES_DIR    = 'usr/etc/recipes',
+	RECIPES_DIR  = 'packages/core/etc/recipes',
 	USER_RECIPES   = 'usr/config/recipes.db',
 	MACHINE_LOOKUP = 'usr/config/machine_crafting.db',
 }

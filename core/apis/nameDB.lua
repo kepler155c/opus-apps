@@ -3,7 +3,7 @@ local TableDB = require('tableDB')
 
 local fs = _G.fs
 
-local NAME_DIR = '/usr/etc/names'
+local NAME_DIR = '/packages/core/etc/names'
 
 local nameDB = TableDB()
 
