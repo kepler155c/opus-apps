@@ -3,7 +3,7 @@
 		'opus-develop-1.8',
 	},
 	title = 'Inventory manager for Opus OS',
-	repository = 'kepler155c/opus-apps/develop1.8/milo',
+	repository = 'kepler155c/opus-apps/develop-1.8/milo',
 	description = [[ ... ]],
 	licence = 'MIT',
 }

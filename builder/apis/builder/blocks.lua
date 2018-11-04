@@ -10,7 +10,7 @@ local JSON    = require('json')
 local blockDB = TableDB()
 
 function blockDB:load()
-  local blocks = JSON.decodeFromFile('usr/etc/names/minecraft.json')
+  local blocks = JSON.decodeFromFile('packages/core/etc/names/minecraft.json')
 
   if not blocks then
     error('Unable to read blocks.json')

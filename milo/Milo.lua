@@ -21,7 +21,6 @@ _G.requireInjector(_ENV)
 
 local Config     = require('config')
 local Event      = require('event')
-local itemDB     = require('itemDB')
 local Milo       = require('milo')
 local Peripheral = require('peripheral')
 local Storage    = require('storage')

@@ -3,7 +3,7 @@
 		'opus-develop-1.8',
 	},
 	title = 'Recipe books for crafting programs',
-	repository = 'kepler155c/opus-apps/develop1.8/recipeBook',
+	repository = 'kepler155c/opus-apps/develop-1.8/recipeBook',
 	description = [[ ... ]],
 	licence = 'MIT',
 }

@@ -3,7 +3,7 @@
 		'opus-develop-1.8',
 	},
 	title = 'Programs for the neural interface',
-	repository = 'kepler155c/opus-apps/develop1.8/neural',
+	repository = 'kepler155c/opus-apps/develop-1.8/neural',
 	description = [[ ... ]],
 	licence = 'MIT',
 }

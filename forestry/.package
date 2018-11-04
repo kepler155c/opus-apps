@@ -3,7 +3,7 @@
 		'opus-develop-1.8',
 	},
 	title = 'Forestry mod applications',
-	repository = 'kepler155c/opus-apps/develop1.8/forestry',
+	repository = 'kepler155c/opus-apps/develop-1.8/forestry',
 	description = [[ ... ]],
 	licence = 'MIT',
 }

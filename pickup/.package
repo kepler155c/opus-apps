@@ -3,7 +3,7 @@
 		'opus-develop-1.8',
 	},
 	title = 'Move resources around with turtles',
-	repository = 'kepler155c/opus-apps/develop1.8/pickup',
+	repository = 'kepler155c/opus-apps/develop-1.8/pickup',
 	description = [[ ... ]],
 	licence = 'MIT',
 }

@@ -3,7 +3,7 @@
 		'opus-develop-1.8',
 	},
 	title = 'Turtle mining programs',
-	repository = 'kepler155c/opus-apps/develop1.8/miners',
+	repository = 'kepler155c/opus-apps/develop-1.8/miners',
 	description = [[ ... ]],
 	licence = 'MIT',
 }

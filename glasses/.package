@@ -3,7 +3,7 @@
 		'opus-develop-1.8',
 	},
 	title = 'Plethora overlay glasses support',
-	repository = 'kepler155c/opus-apps/develop1.8/glasses',
+	repository = 'kepler155c/opus-apps/develop-1.8/glasses',
 	description = [[ ... ]],
 	licence = 'MIT',
 }
