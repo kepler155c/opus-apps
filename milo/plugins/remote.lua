@@ -20,7 +20,7 @@ local function getManipulatorForUser(user)
 end
 
 local function client(socket)
-	_G._debug('connection from ' .. socket.dhost)
+	_G._debug('REMOTE: connection from ' .. socket.dhost)
 
 	local user = socket:read(2)
 	if not user then
@@ -29,12 +29,15 @@ local function client(socket)
 
 	local manipulator = getManipulatorForUser(user)
 	if not manipulator then
+		_debug('REMOTE: Manipulator with introspection module bound with user not found. Closing connection.')
 		socket:write({
 			msg = 'Manipulator not found'
 			})
+		socket:close()
 		return
 	end
 
+	_debug('REMOTE: all good')
 	socket:write({
 		data = 'ok',
 	})
@@ -110,12 +113,12 @@ local function client(socket)
 		end
 	until not socket.connected
 
-	_G._debug('disconnected from ' .. socket.dhost)
+	_G._debug('REMOTE: disconnected from ' .. socket.dhost)
 end
 
 if device.wireless_modem then
 	Event.addRoutine(function()
-		_G._debug('Milo: listening on port 4242')
+		_G._debug('REMOTE: listening on port 4242')
 		while true do
 			local socket = Socket.server(4242)
 			Event.addRoutine(function()

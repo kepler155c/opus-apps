@@ -38,6 +38,7 @@ end
 
 local config = {
   monitor = 'type/monitor',
+  activityMonitor = 'none',
   remoteDefaults = { },
 }
 Config.load('milo', config)

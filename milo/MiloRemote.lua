@@ -151,8 +151,10 @@ function page:sendRequest(data)
           if r and not r.msg then
             self:setStatus('connected ...')
           else
+            msg = r and r.msg or 'Timed out'
+            socket:close()
             socket = nil
-            self:setStatus(r.msg)
+            break
           end
         end
       end
