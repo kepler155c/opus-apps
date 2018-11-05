@@ -146,8 +146,14 @@ function page:sendRequest(data)
         self:setStatus('connecting ...')
         socket, msg = Socket.connect(options.server.value, 4242)
         if socket then
-          self:setStatus('connected ...')
           socket:write(options.user.value)
+          local r = socket:read(2)
+          if r and not r.msg then
+            self:setStatus('connected ...')
+          else
+            socket = nil
+            self:setStatus(r.msg)
+          end
         end
       end
       if socket then

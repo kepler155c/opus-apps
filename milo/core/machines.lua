@@ -36,9 +36,10 @@ local machinesPage = UI.Page {
 		y = 2, ey = -2,
 		values = context.config.remoteDefaults,
 		columns = {
-			{                       key = 'priority',   width = 3  },
-			{ heading = 'Name',     key = 'displayName' },
-			{ heading = 'Type',     key = 'mtype',      width = 5  },
+			{                   key = 'suffix', 		width = 4, justify = 'right' },
+			{ heading = 'Name', key = 'displayName' },
+			{ heading = 'Type', key = 'mtype',      width = 4 },
+			{ heading = 'Pri',  key = 'priority',   width = 3 },
 		},
 		sortColumn = 'displayName',
 		help = 'Select Machine',
@@ -57,6 +58,11 @@ local machinesPage = UI.Page {
 
 function machinesPage.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
+	local t = { row.name:match(':(.+)_(%d+)') }
+	if t and #t == 2 then
+		row.name, row.suffix = table.unpack(t)
+		row.name = row.name .. '_' .. row.suffix
+	end
 	row.displayName = row.displayName or row.name
 	return row
 end

@@ -109,9 +109,10 @@ Event.on('milo_cycle', function()
     for _, task in ipairs(context.tasks) do
       local s, m = pcall(function() task:cycle(context) end)
       if not s and m then
-        _debug(task.name .. ' crashed')
-        Util.print(task.name .. ' crashed')
-        error(m)
+        _G._debug(task.name .. ' crashed')
+        _G._debug(m)
+        -- _G.printError(task.name .. ' crashed')
+        -- _G.printError(m)
       end
     end
     context.turtleBusy = false

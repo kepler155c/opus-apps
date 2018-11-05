@@ -29,8 +29,15 @@ local function client(socket)
 
 	local manipulator = getManipulatorForUser(user)
 	if not manipulator then
+		socket:write({
+			msg = 'Manipulator not found'
+			})
 		return
 	end
+
+	socket:write({
+		data = 'ok',
+	})
 
 	repeat
 		local data = socket:read()

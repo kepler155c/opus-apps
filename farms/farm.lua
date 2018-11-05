@@ -91,6 +91,7 @@ local function harvest(blocks)
           end
         end
         dropped = true
+        turtle.condense()
         turtle.select(1)
       end
     elseif b.action == 'smash' then
