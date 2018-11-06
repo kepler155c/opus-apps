@@ -160,7 +160,7 @@ local ct = os.clock()
 
   for _, adapter in self:onlineAdapters() do
     if adapter.dirty then
-_debug('STORAGE: refresh: ' .. adapter.name)
+--_debug('STORAGE: refresh: ' .. adapter.name)
       adapter:listItems(throttle)
       adapter.dirty = false
     end

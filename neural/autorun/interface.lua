@@ -2,10 +2,10 @@ _G.requireInjector(_ENV)
 
 local GPS = require('gps')
 
-local kernel = _G.kernel
+local device = _G.device
 
-kernel.onDeviceAttach('neuralInterface', function(dev)
-  dev.goTo = function(x, _, z)
+if device.neuralInterface and device.wireless_modem then
+  device.neuralInterface.goTo = function(x, _, z)
     local pt = GPS.locate(2)
     if pt then
       return pcall(function()
@@ -16,9 +16,9 @@ kernel.onDeviceAttach('neuralInterface', function(dev)
         }
         gpt.x = math.min(math.max(gpt.x, -15), 15)
         gpt.z = math.min(math.max(gpt.z, -15), 15)
-        return dev.walk(gpt.x, gpt.y, gpt.z)
+        return device.neuralInterface.walk(gpt.x, gpt.y, gpt.z)
       end)
     end
     return false, 'No GPS'
   end
-end)
+end
