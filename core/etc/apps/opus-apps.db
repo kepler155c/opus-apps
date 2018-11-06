@@ -32,15 +32,6 @@
 \030 \031  \030f\0317\130\030 \031  \030f\0317\130",
     run = "Appstore.lua",
   },
-  [ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
-    title = "Miner",
-    category = "Apps",
-    icon = "    \0315\\\030 \031  \
- \0304\031f _ \030 \031c/\0315\\\
- \0304   ",
-    run = "simpleMiner.lua",
-    requires = 'turtle',
-  },
   [ "131260cbfbb0c821f8eae5e7c3c296c7aa4d50b9" ] = {
     title = "Music",
     category = "Apps",
@@ -52,13 +43,14 @@
     requires = 'turtle',
   },
 --[[
-  [ "81c0d915fa6d82fd30661c5e66e204cea52bb2b5" ] = {
-    title = "Activity",
+  [ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
+    title = "Miner",
     category = "Apps",
-    icon = "\0318/\030f\031  \030 \0318\\\
-\030f \0308\0319o\030f\031  \
-\0318\\\030f\031  \030 \0318/",
-    run = "storageActivity.lua",
+    icon = "    \0315\\\030 \031  \
+ \0304\031f _ \030 \031c/\0315\\\
+ \0304   ",
+    run = "simpleMiner.lua",
+    requires = 'turtle',
   },
   [ "89307d419a2fe4fbb69af92b3d3af27b6ec14d3e" ] = {
     title = "Telnet",
@@ -76,6 +68,15 @@
  \031e\\/\031  \0319c",
     run = "vnc.lua",
   },
+  [ "131f0b008f44298812221d120d982940609be781" ] = {
+    title = "Builder",
+    category = "Apps",
+    icon = "\0317_____\
+\030e\031c###\0308\0317=\030e\031c#\
+\030e\031c#\0307\031f.\030e\031c###",
+    run = "usr/apps/builder.lua",
+    requires = "turtle",
+  },
 --]]
   [ "a0365977708b7387ee9ce2c13e5820e6e11732cb" ] = {
     title = "Pain",
@@ -84,15 +85,6 @@
 \030 \031f\0308\031f\135\0307\0318\144\140\030f\0317\159\143\031c\139\0302\135\030f\0312\157\
 \030 \031f\030f\0318\143\133\0312\136\0302\031f\159\159\143\131\030f\0312\132",
     run = "http://pastebin.com/raw/wJQ7jav0",
-  },
-  [ "9e092dda4f0e27d0c7686ddd00272079e678b6e6" ] = {
-    title = "Storage",
-    category = "Apps",
-    icon = "\0307       \
-\0307 \0308\0311 \0305 \0308\031  \0307 \0308 \0301 \
-\0307       ",
-    run = "chestManager.lua",
-    requires = 'turtle',
   },
   [ "114edfc04a1ab03541bdc80ce064f66a7cfcedbb" ] = {
     title = "Recorder",
@@ -104,15 +96,6 @@
 \030 \031f\030e\031f\129\031e\128\128\030f\148\0304\031f\149\0307\0318\140\140\030f\0314\149\
 \030 \031f\030f\031e\139\030e\128\030f\159\129\0314\130\131\131\129",
     run = "recorder.lua",
-  },
-  [ "131f0b008f44298812221d120d982940609be781" ] = {
-    title = "Builder",
-    category = "Apps",
-    icon = "\0317_____\
-\030e\031c###\0308\0317=\030e\031c#\
-\030e\031c#\0307\031f.\030e\031c###",
-    run = "usr/apps/builder.lua",
-    requires = "turtle",
   },
   [ "d8c298dd41e4a4ec20e8307901797b64688b3b77" ] = {
     title = "GPS Deploy",
@@ -150,19 +133,6 @@
 \030 \031f\030f\0310\136\140\140\030     ",
     run = "https://gist.github.com/LDDestroier/c7528d95bc0103545c2a/raw",
   },
---[[
-  [ "d78f28759f255a0db76604ee560b87c4715a0da5" ] = {
-    title = "Sketch",
-    category = "Apps",
-    icon = " \031bskch\
-\0303\031f  \030d  \
-\030d\031f   ",
-    iconExt = "\030 \031f\0308\031f\151\0313\140\140\140\030f\0318\148\
-\030 \031f\030b\031f\149\0318\130\131\129\030f\031b\149\
-\030 \031f\030f\0318\138\0308\031b\130\131\129\030f\0318\133",
-    run = "http://pastebin.com/raw/Mm5hd97E",
-  },
-]]
   [ "58ec8d6e36e346d9f42eb43935652e3e58e2c829" ] = {
     title = "Mwm",
     category = "Apps",
@@ -173,15 +143,6 @@
 \030 \031f\030f\0315\152\129\030d\031f\141\030f\031d\153\030d\031f\149\030f\031d\131\148\0304\0314\128\
 \030 \031f\0304\031f\131\131\131\131\131\131\131\030e\0314\131",
     run = "mwm.lua usr/config/mwm",
-  },
-  [ "8d1b0a73bedc0dc492377c2f6ab880940b97ec6e" ] = {
-    title = "Treefarm",
-    icon = "\030 \031f \0305 \030    \030d \030  \
-\0305\031f \030d  \030  \030d \0305 \030d \
-\030 \031f \030c \030  \0304 \030  \030c \030  ",
-    category = "Apps",
-    run = "treefarm.lua",
-    requires = "turtle",
   },
   [ "01c933b2a36ad8ed2d54089cb2903039046c1216" ] = {
     title = "Enchat",

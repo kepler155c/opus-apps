@@ -1,0 +1,11 @@
+{
+	[ "8d1b0a73bedc0dc492377c2f6ab880940b97ec6e" ] = {
+		title = "Treefarm",
+		icon = "\030 \031f \0305 \030    \030d \030  \
+\0305\031f \030d  \030  \030d \0305 \030d \
+\030 \031f \030c \030  \0304 \030  \030c \030  ",
+		category = "Apps",
+		run = "treefarm.lua",
+		requires = "turtle",
+	},
+}

@@ -69,7 +69,7 @@ local context = {
 _G._p = context --debug
 
 Event.on('storage_offline', function()
-  Milo:showError('A storage chest has gone offline, ctrl-l to continue')
+  Milo:showError('A storage chest has gone offline - See configuration screen')
 end)
 
 Milo:init(context)
@@ -99,8 +99,7 @@ end
 
 Milo:clearGrid()
 
-local page = UI:getPage('listing')
-UI:setPage(page)
+UI:setPage(UI:getPage('listing'))
 
 Event.on('milo_cycle', function()
   if not context.turtleBusy then

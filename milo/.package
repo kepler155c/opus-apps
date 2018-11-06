@@ -2,8 +2,10 @@
 	required = {
 		'opus-develop-1.8',
 	},
-	title = 'Inventory manager for Opus OS',
+	title = 'Milo: Advanced inventory management',
 	repository = 'kepler155c/opus-apps/develop-1.8/milo',
-	description = [[ ... ]],
+	description = [[Provides AE style crafting in computercraft.
+	Includes Importing, exporting, autocrafting, replenish and limits, and much more.
+	Includes over 200 standard Minecraft recipes.]],
 	licence = 'MIT',
 }

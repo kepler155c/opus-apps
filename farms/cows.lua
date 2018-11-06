@@ -93,7 +93,7 @@ end
 local chest = InventoryAdapter({ side = 'top', direction = 'down' }) or
     error('missing chest above')
 
-turtle.run(function()
+local s, m = turtle.run(function()
   turnOffWater()
 
   repeat
@@ -117,3 +117,7 @@ turtle.run(function()
     os.sleep(5)
   until turtle.isAborted()
 end)
+
+if not s and m then
+  error(m)
+end

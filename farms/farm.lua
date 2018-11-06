@@ -106,7 +106,7 @@ local function harvest(blocks)
   turtle.equip('right', 'plethora:module:2')
 end
 
-turtle.run(function()
+local s, m = turtle.run(function()
   local facing = scanner.getBlockMeta(0, 0, 0).state.facing
   turtle.point.heading = Point.facings[facing].heading
 
@@ -125,3 +125,7 @@ turtle.run(function()
     end
   until turtle.isAborted()
 end)
+
+if not s and m then
+  error(m)
+end
