@@ -314,7 +314,13 @@ end
 
 local function equip(side, item)
   if not turtle.equip(side, item) then
-    turtle.selectSlotWithQuantity(0)
+    if not turtle.selectSlotWithQuantity(0) then
+      ejectTrash()
+    end
+    if not turtle.selectSlotWithQuantity(0) then
+      turtle.select(16)
+      turtle.drop()
+    end
     turtle.equip(side)
     if not turtle.equip(side, item) then
       error('Unable to equip ' .. item)
@@ -348,6 +354,9 @@ local function scan()
   Util.filterInplace(blocks, function(b)
     if b.y >= 0 or
        (b.action == 'liquid_fuel' and b.y <= bedrock) then
+      return false
+
+    elseif b.action == 'liquid_fuel' and b.damage > 0 then
       return false
 
     elseif b.y >= bedrock then
