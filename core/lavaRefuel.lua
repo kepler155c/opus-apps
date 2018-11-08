@@ -16,6 +16,8 @@ if not turtle.select('minecraft:bucket') then
 end
 
 local s, m = turtle.run(function()
+	turtle.setMovementStrategy('goto')
+
 	local facing = scanner.getBlockMeta(0, 0, 0).state.facing
 	turtle.setPoint({ x = 0, y = 0, z = 0, heading = Point.facings[facing].heading })
 

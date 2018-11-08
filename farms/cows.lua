@@ -9,7 +9,14 @@ local device = _G.device
 local os     = _G.os
 local turtle = _G.turtle
 
+local retain = Util.transpose {
+  'minecraft:shears',
+  'minecraft_wheat',
+  'minecraft:diamond_sword',
+  'plethora:module:3',
+}
 local config = {
+  animal = 'Cow',
   max_cows = 15,
 }
 Config.load('cows', config)
@@ -51,7 +58,7 @@ local function getCowCount()
   local xpCount = 0
 
   Util.filterInplace(blocks, function(v)
-    if v.name == 'Cow' then
+    if v.name == config.animal then
       if v.y > -.5 then grown  = grown  + 1 end
       if v.y < -.5 then babies = babies + 1 end
       return v.y > -.5
@@ -76,16 +83,26 @@ local function butcher()
   end
   turtle.equip('right', 'plethora:module:3')
 
-  turtle.dropUp('minecraft:beef')
-  turtle.dropUp('minecraft:leather')
+  turtle.eachFilledSlot(function(slot)
+    if not retain[slot.name] then
+      turtle.select(slot.index)
+      turtle.dropUp()
+    end
+  end)
 end
 
 local function breed()
   turtle.select(1)
 
+  if config.animal == 'Sheep' then
+    turtle.place('minecraft:shears')
+  end
   turtle.place('minecraft:wheat')
   for _ = 1, 3 do
     turtle.turnRight()
+    if config.animal == 'Sheep' then
+      turtle.place('minecraft:shears')
+    end
     turtle.place('minecraft:wheat')
   end
 end
