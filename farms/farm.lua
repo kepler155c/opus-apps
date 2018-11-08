@@ -23,6 +23,8 @@ local crops = Util.readTable(CONFIG_FILE) or {
     { seed = 'minecraft:potato', mature = 7, action = 'plant' },
   ['minecraft:beetroots'] =
     { seed = 'minecraft:beetroot_seeds', mature = 3, action = 'plant' },
+  ['minecraft:cocoa'] =
+    { seed = 'minecraft:dye:3', mature = 8, action = 'pick' },
   ['minecraft:reeds'] = { action = 'bash' },
   ['minecraft:melon_block'] = { action = 'smash' },
   ['minecraft:pumpkin'] = { action = 'smash' },
@@ -56,6 +58,9 @@ local function scan()
     end
     if v.action == 'smash' then
       return v.y == -1
+    end
+    if v.action == 'pick' then
+      return v.y == 0 and v.state.age == 2
     end
     return v.action == 'plant' and
       v.metadata == crops[v.name].mature and
@@ -100,6 +105,17 @@ local function harvest(blocks)
       if turtle.digDownAt(b) then
         turtle.placeDown(crops[b.name].seed)
         turtle.select(1)
+      end
+    elseif b.action == 'pick' then
+      local h = Point.facings[b.state.facing].heading
+      local hi = Point.headings[(h + 2) % 4] -- opposite heading
+
+      -- without pathfinding, will be unable to circle log
+      if turtle._goto({ x = b.x + hi.xd, z = b.z + hi.zd, heading = h }) then
+        if turtle.dig() then
+          turtle.place(crops[b.name].seed)
+          turtle.select(1)
+        end
       end
     end
   end)
