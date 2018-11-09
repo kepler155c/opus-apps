@@ -17,9 +17,9 @@ local retain = Util.transpose {
 }
 local config = {
   animal = 'Cow',
-  max_cows = 15,
+  max_animals = 15,
 }
-Config.load('cows', config)
+Config.load('rancher', config)
 
 local sensor = device['plethora:sensor'] or
   turtle.equip('right', 'plethora:module:3') and device['plethora:sensor'] or
@@ -50,7 +50,7 @@ local function turnOnWater()
   end
 end
 
-local function getCowCount()
+local function getAnimalCount()
   local blocks = sensor.sense()
 
   local grown = 0
@@ -114,8 +114,8 @@ local s, m = turtle.run(function()
   turnOffWater()
 
   repeat
-    local cowCount, xpCount = getCowCount()
-    if cowCount > config.max_cows then
+    local animalCount, xpCount = getAnimalCount()
+    if animalCount > config.max_animals then
       turtle.setStatus('Butchering')
       butcher()
     elseif turtle.getItemCount('minecraft:wheat') == 0 then

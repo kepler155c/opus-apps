@@ -1,8 +1,11 @@
+_G.requireInjector(_ENV)
+
+local device     = _G.device
+local multishell = _G.multishell
+
 if not device.wireless_modem then
   error('Wireless modem is required')
 end
-
-requireInjector(getfenv(1))
 
 local Event  = require('event')
 local GPS    = require('gps')
@@ -20,11 +23,10 @@ local mainPage = UI.Page({
     y = 2,
     height = 8,
     menuItems = {
+      { prompt = 'Add',    event = 'add_location', help = 'Add a new location' },
       { prompt = 'Pickup', event = 'pickup', help = 'Pickup items from this location' },
-      { prompt = 'Charge cell', event = 'charge', help = 'Recharge this cell' },
       { prompt = 'Refill', event = 'refill', help = 'Recharge this cell' },
       { prompt = 'Set drop off location', event = 'setPickup', help = 'Recharge this cell' },
-      { prompt = 'Set recharge location', event = 'setRecharge', help = 'Recharge this cell' },
       { prompt = 'Clear', event = 'clear', help = 'Remove this location' },
     },
   }),
@@ -115,7 +117,7 @@ function refillPage:eventHandler(event)
       text = UI.Text({ x = 3, y = 3, value = 'Quantity' }),
       textEntry = UI.TextEntry({ x = 14, y = 3 })
     })
- 
+
     dialog.eventHandler = function(self, event)
       if event.type == 'accept' then
         local l = tonumber(self.textEntry.value)
@@ -129,10 +131,10 @@ function refillPage:eventHandler(event)
         end
         return true
       end
- 
+
       return UI.Dialog.eventHandler(self, event)
     end
- 
+
     dialog.titleBar.title = item.name
     dialog:setFocus(dialog.textEntry)
     UI:setPage(dialog)
@@ -202,8 +204,7 @@ function mainPage:eventHandler(event)
       UI:setPage(refillPage)
     end
 
-  elseif event.type == 'pickup' or event.type == 'setPickup' or 
-         event.type == 'setRecharge' or event.type == 'charge' or
+  elseif event.type == 'pickup' or event.type == 'setPickup' or
          event.type == 'clear' then
     local pt = getPoint()
     if pt then

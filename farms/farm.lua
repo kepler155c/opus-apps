@@ -1,12 +1,13 @@
 _G.requireInjector(_ENV)
 
-local Point = require('point')
-local Util  = require('util')
+local Point       = require('point')
+local Util        = require('util')
 
-local device = _G.device
-local fs     = _G.fs
-local os     = _G.os
-local turtle = _G.turtle
+local device      = _G.device
+local fs          = _G.fs
+local os          = _G.os
+local peripheral  = _G.peripheral
+local turtle      = _G.turtle
 
 local CONFIG_FILE = 'usr/config/farm'
 
@@ -29,10 +30,23 @@ local crops = Util.readTable(CONFIG_FILE) or {
   ['minecraft:melon_block'] = { action = 'smash' },
   ['minecraft:pumpkin'] = { action = 'smash' },
   ['minecraft:chest'] = { action = 'drop' },
+  ['minecraft:cactus'] = { action = 'bump' },
 }
 
 if not fs.exists(CONFIG_FILE) then
   Util.writeTable(CONFIG_FILE, crops)
+end
+
+local retain = Util.transpose {
+  "minecraft:diamond_pickaxe",
+  "plethora:module:2",
+  "plethora:module:3",
+}
+
+for _, v in pairs(crops) do
+  if v.seed then
+    retain[v.seed] = true
+  end
 end
 
 local function scan()
@@ -47,29 +61,35 @@ local function scan()
     end
   end
 
-  Util.filterInplace(blocks, function(v)
-    v.action = crops[v.name] and crops[v.name].action
+  Util.filterInplace(blocks, function(b)
+    b.action = crops[b.name] and crops[b.name].action
 
-    if v.action == 'bash' then
-      return v.y == 0
+    if b.action == 'bash' then
+      return b.y == 0
     end
-    if v.action == 'drop' then
-      return doDropOff and v.y == -1
+    if b.action == 'drop' then
+      return doDropOff and b.y == -1
     end
-    if v.action == 'smash' then
-      return v.y == -1
+    if b.action == 'smash' then
+      return b.y == -1
     end
-    if v.action == 'pick' then
-      return v.y == 0 and v.state.age == 2
+    if b.action == 'pick' then
+      return b.y == 0 and b.state.age == 2
     end
-    return v.action == 'plant' and
-      v.metadata == crops[v.name].mature and
-      v.y == -1
+    if b.action == 'bump' then
+      return b.y == 0
+    end
+    return b.action == 'plant' and
+      b.metadata == crops[b.name].mature and
+      b.y == -1
   end)
 
   local harvestCount = 0
-  for _,v in pairs(blocks) do
-    if v.action ~= 'drop' then
+  for _,b in pairs(blocks) do
+    b.x = b.x + turtle.point.x
+    b.y = b.y + turtle.point.y
+    b.z = b.z + turtle.point.z
+    if b.action ~= 'drop' then
       harvestCount = harvestCount + 1
     end
   end
@@ -79,7 +99,6 @@ end
 
 local function harvest(blocks)
   turtle.equip('right', 'minecraft:diamond_pickaxe')
-  turtle.setPoint({ x = 0, y = 0, z = 0, heading = turtle.point.heading })
   turtle.select(1)
 
   local dropped
@@ -87,25 +106,58 @@ local function harvest(blocks)
   Point.eachClosest(turtle.point, blocks, function(b)
     if b.action == 'bash' then
       turtle.digForwardAt(b)
+
     elseif b.action == 'drop' and not dropped then
       if turtle._goto(Point.above(b)) then
+        turtle.eachFilledSlot(function(slot)
+          if not retain[slot.name] and not retain[slot.key] then
+            turtle.select(slot.index)
+            turtle.dropDown()
+          end
+        end)
         local summed = turtle.getSummedInventory()
         for k,v in pairs(summed) do
           if v.count > 16 then
             turtle.dropDown(k, v.count - 16)
           end
         end
+
         dropped = true
         turtle.condense()
         turtle.select(1)
       end
+
     elseif b.action == 'smash' then
       turtle.digDownAt(b)
+
     elseif b.action == 'plant' then
       if turtle.digDownAt(b) then
         turtle.placeDown(crops[b.name].seed)
         turtle.select(1)
       end
+
+    elseif b.action == 'bump' then
+      if turtle.faceAgainst(b) then
+        turtle.equip('right', 'plethora:module:3')
+        local sensed = peripheral.call('right', 'sense')
+        turtle.equip('right', 'minecraft:diamond_pickaxe')
+        os.sleep(.25)
+        Util.filterInplace(sensed, function(s)
+          if s.displayName == 'item.tile.cactus' and Point.distance(b, s) < 6 then
+            s.ex = s.x
+            s.ez = s.z
+            s.x = Util.round(s.x) + turtle.point.x
+            s.z = Util.round(s.z) + turtle.point.z
+            s.y = -1
+            return true
+          end
+        end)
+        Point.eachClosest(turtle.point, sensed, function(s)
+          turtle.suckDownAt(s)
+        end)
+        turtle.select(1)
+      end
+
     elseif b.action == 'pick' then
       local h = Point.facings[b.state.facing].heading
       local hi = Point.headings[(h + 2) % 4] -- opposite heading
@@ -125,6 +177,8 @@ end
 local s, m = turtle.run(function()
   local facing = scanner.getBlockMeta(0, 0, 0).state.facing
   turtle.point.heading = Point.facings[facing].heading
+
+  print('Fuel: ' .. turtle.getFuelLevel())
 
   --turtle.setPolicy('digOnly')
   turtle.setMovementStrategy('goto')
