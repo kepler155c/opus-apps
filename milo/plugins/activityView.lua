@@ -13,7 +13,7 @@ if not mon then
   return
 end
 
-local changedPage = UI.Window {
+local page = UI.Window {
   parent = UI.Device {
     device = mon,
     textScale = .5,
@@ -55,7 +55,14 @@ local changedPage = UI.Window {
   }
 }
 
-function changedPage.grid:getDisplayValues(row)
+function page.grid:getRowTextColor(row, selected)
+  if row.lastCount and row.lastCount ~= row.count then
+    return row.count > row.lastCount and colors.yellow or colors.lightGray
+  end
+  return UI.Grid:getRowTextColor(row, selected)
+end
+
+function page.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
 
   local ind = '+'
@@ -70,7 +77,7 @@ function changedPage.grid:getDisplayValues(row)
   return row
 end
 
-function changedPage:eventHandler(event)
+function page:eventHandler(event)
   if event.type == 'reset' then
     self.lastItems = nil
     self.grid:setValues({ })
@@ -93,7 +100,7 @@ function changedPage:eventHandler(event)
   return true
 end
 
-function changedPage:refresh()
+function page:refresh()
   local t = context.storage.cache
 
   if not self.lastItems then
@@ -101,7 +108,7 @@ function changedPage:refresh()
     for k,v in pairs(t) do
       self.lastItems[k] = {
         displayName = v.displayName,
-        lastCount = v.count,
+        initialCount = v.count,
       }
     end
     self.timestamp = os.clock()
@@ -109,6 +116,7 @@ function changedPage:refresh()
 
   else
     for _,v in pairs(self.lastItems) do
+      v.lastCount = v.count
       v.count = nil
     end
 
@@ -122,7 +130,7 @@ function changedPage:refresh()
         self.lastItems[k] = {
           displayName = v.displayName,
           count = v.count,
-          lastCount = 0,
+          initialCount = 0,
         }
       end
     end
@@ -132,8 +140,8 @@ function changedPage:refresh()
       if not v.count then
         v.count = 0
       end
-      if v.count ~= v.lastCount then
-        v.change  = v.count - v.lastCount
+      if v.count ~= v.initialCount then
+        v.change  = v.count - v.initialCount
         v.rate = Util.round(60 / self.elapsed * v.change, 1)
         changedItems[k] = v
       end
@@ -146,14 +154,21 @@ end
 
 Event.onInterval(5, function()
   if context.storage:isOnline() then
-    changedPage:refresh()
-    changedPage:sync()
+    page:refresh()
+    page:sync()
   else
-    changedPage.grid:clear()
-    changedPage.grid:centeredWrite(math.ceil(changedPage.height / 2), 'Storage Offline')
-    changedPage:sync()
+    page.grid:clear()
+    page.grid:centeredWrite(math.ceil(page.height / 2), 'Storage Offline')
+    page:sync()
   end
 end)
 
-changedPage:draw()
-changedPage:sync()
+Event.on('monitor_touch', function(_, side)
+  if side == mon.side then
+    page:emit({ type = 'reset' })
+    page:sync()
+  end
+end)
+
+page:draw()
+page:sync()
