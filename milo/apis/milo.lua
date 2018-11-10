@@ -23,11 +23,11 @@ function Milo:requestCrafting(item)
 	local key = Milo:uniqueKey(item)
 
 	if not self.context.craftingQueue[key] then
-		item.ingredients = {
-			[ key ] = item
-		}
 		item.crafted = 0
+		item.pending = { }
+		item.key = key
 		self.context.craftingQueue[key] = item
+		os.queueEvent('milo_cycle')
 	end
 end
 

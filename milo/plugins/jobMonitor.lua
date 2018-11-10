@@ -25,7 +25,12 @@ local jobMonitor = UI.Page {
       { heading = 'Qty',      key = 'remaining',   width = 4 },
       { heading = 'Crafting', key = 'displayName', },
       { heading = 'Status',   key = 'status',      },
-      { heading = 'Progress', key = 'progress',    width = 8 },
+      { heading = 'need',   key = 'need',    width = 4  },
+      { heading = 'total',   key = 'total',  width = 4    },
+      { heading = 'used',   key = 'used',   width = 4   },
+      { heading = 'count',   key = 'count', width = 4     },
+      { heading = 'crafted',   key = 'crafted',  width = 4    },
+--      { heading = 'Progress', key = 'progress',    width = 8 },
     },
   },
 }
@@ -44,7 +49,7 @@ function jobMonitor:updateList(craftList)
       v.index = #t
       v.showRemaining = true
       for k2,v2 in pairs(v.ingredients) do
-        if v2 ~= v then
+        if v2.key ~= v.key and v2.statusCode then
           table.insert(t, v2)
           if not v2.displayName then
             v2.displayName = itemDB:getName(k2)

@@ -425,10 +425,6 @@ local function scan()
         page.statusBar:setValue('status', b.name .. ' ' .. m)
         page.statusBar:draw()
         page:sync()
-        if debug and type(debug) == 'function' then
-          debug(b.name .. ' ' .. m)
-        end
---        os.sleep(3)
       else
         page.statusBar:setValue('mining', m)
       end

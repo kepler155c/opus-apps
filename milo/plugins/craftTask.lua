@@ -1,5 +1,4 @@
 local Craft  = require('turtle.craft')
-local itemDB = require('itemDB')
 local Milo   = require('milo')
 local sync   = require('sync').sync
 local Util   = require('util')
@@ -12,89 +11,30 @@ local craftTask = {
   priority = 70,
 }
 
-function craftTask:craftItem(recipe, item, count)
-  Craft.craftRecipe(recipe, count, context.storage, item)
-  Milo:clearGrid()
-end
-
--- Craft as much as possible regardless if all ingredients are available
-function craftTask:forceCraftItem(inRecipe, originalItem, inCount)
-  local summed = { }
-  local items = Milo:listItems()
-  local throttle = Util.throttle()
-
-  local function sumItems(recipe, count)
-    count = math.ceil(count / recipe.count)
-    local craftable = count
-
-    for key,iqty in pairs(Craft.sumIngredients(recipe)) do
-      throttle()
-      local item = itemDB:splitKey(key)
-      local summedItem = summed[key]
-      if not summedItem then
-        summedItem = Util.shallowCopy(item)
-        summedItem.recipe = Craft.findRecipe(item)
-        summedItem.count = Craft.getItemCount(items, key)
-        summedItem.need = 0
-        summedItem.used = 0
-        summedItem.craftable = 0
-        summed[key] = summedItem
-      end
-
-      local total = count * iqty                           -- 4 * 2
-      local used = math.min(summedItem.count, total)       -- 5
-      local need = total - used                            -- 3
-
-      if recipe.craftingTools and recipe.craftingTools[key] then
-        if summedItem.count > 0 then
-          summedItem.used = 1
-          summedItem.need = 0
-          need = 0
-        elseif not summedItem.recipe then
-          summedItem.need = 1
-          need = 1
-        else
-          need = 1
-        end
-      else
-        summedItem.count = summedItem.count - used
-        summedItem.used = summedItem.used + used
-      end
-
-      if need > 0 then
-        if not summedItem.recipe then
-          craftable = math.min(craftable, math.floor(used / iqty))
-          summedItem.need = summedItem.need + need
-        else
-          local c = sumItems(summedItem.recipe, need) -- 4
-          craftable = math.min(craftable, math.floor((used + c) / iqty))
-          summedItem.craftable = summedItem.craftable + c
-        end
-      end
-    end
-
-    if craftable > 0 then
-      craftable = Craft.craftRecipe(recipe, craftable * recipe.count,
-        context.storage, originalItem) / recipe.count
-      Milo:clearGrid()
-    end
-
-    return craftable * recipe.count
-  end
-
-  return sumItems(inRecipe, inCount)
-end
-
 function craftTask:craft(recipe, item)
   if Milo:isCraftingPaused() then
     return
   end
 
-  if item.forceCrafting then
-    self:forceCraftItem(recipe, item, item.count - item.crafted)
-  else
-    self:craftItem(recipe, item, item.count - item.crafted)
+  Craft.processPending(item, context.storage)
+
+  item.ingredients = Craft.getResourceList(recipe, Milo:listItems(), item.count - item.crafted)
+
+  for k, v in pairs(item.ingredients) do
+    v.crafted = v.used
+    v.count = v.used
+    v.key = k
+    if v.need > 0 then
+      v.status = 'No recipe'
+      v.statusCode = Craft.STATUS_ERROR
+    end
   end
+  item.ingredients[recipe.result] = Util.shallowCopy(item)
+  item.ingredients[recipe.result].total = item.count
+  item.ingredients[recipe.result].crafted = item.crafted
+
+  Craft.craftRecipe(recipe, item.count - item.crafted, context.storage, item)
+  Milo:clearGrid()
 end
 
 function craftTask:cycle()

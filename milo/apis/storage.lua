@@ -27,12 +27,12 @@ listCount = 0,
   self.localName = modem.getNameLocal()
 
   Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
-_debug('%s: %s', e, tostring(dev))
+--_debug('%s: %s', e, tostring(dev))
     self:initStorage()
   end)
   Event.onInterval(15, function()
     self:showStorage()
-    _debug('STORAGE: cache: %d/%d', self.hits, self.misses)
+--    _debug('STORAGE: cache: %d/%d', self.hits, self.misses)
   end)
 end
 
@@ -202,9 +202,9 @@ function Storage:provide(item, qty, slot, direction)
       local amount = adapter:provide(item, qty, slot, direction or self.localName)
       if amount > 0 then
         self.hits = self.hits + 1
-  _debug('EXT: %s(%d): %s -> %s%s',
-    item.name, amount, adapter.name, direction or self.localName,
-    slot and string.format('[%d]', slot) or '')
+--  _debug('EXT: %s(%d): %s -> %s%s',
+--    item.name, amount, adapter.name, direction or self.localName,
+--    slot and string.format('[%d]', slot) or '')
         self.dirty = true
         adapter.dirty = true
       end
@@ -222,9 +222,9 @@ function Storage:provide(item, qty, slot, direction)
   for _, adapter in self:onlineAdapters() do
     local amount = adapter:provide(item, qty, slot, direction or self.localName)
     if amount > 0 then
-_debug('EXT: %s(%d): %s -> %s%s',
-  item.name, amount, adapter.name, direction or self.localName,
-  slot and string.format('[%d]', slot) or '')
+--_debug('EXT: %s(%d): %s -> %s%s',
+--  item.name, amount, adapter.name, direction or self.localName,
+--  slot and string.format('[%d]', slot) or '')
       self.dirty = true
       adapter.dirty = true
     end
@@ -241,8 +241,8 @@ end
 function Storage:trash(source, slot, count)
   local trashcan = Util.find(self.remoteDefaults, 'mtype', 'trashcan')
   if trashcan and trashcan.adapter and trashcan.adapter.online then
-_debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)
-    return trashcan.adapter.pullItems(source or self.localName, slot, count)
+--_debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)
+--    return trashcan.adapter.pullItems(source or self.localName, slot, count)
   end
   return 0
 end

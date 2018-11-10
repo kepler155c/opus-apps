@@ -19,7 +19,6 @@ local page = UI.Window {
     textScale = .5,
   },
   grid = UI.Grid {
-    ey = -6,
     columns = {
       { heading = 'Qty',    key = 'count',       width = 6 },
       { heading = 'Change', key = 'change',      width = 6 },
@@ -28,31 +27,6 @@ local page = UI.Window {
     },
     sortColumn = 'displayName',
   },
-  buttons = UI.Window {
-    y = -5, height = 5,
-    backgroundColor = colors.gray,
-    prevButton = UI.Button {
-      x = 2, y = 2, height = 3, width = 5,
-      event = 'previous',
-      backgroundColor = colors.lightGray,
-      text = ' < '
-    },
-    resetButton = UI.Button {
-      x = 8, y = 2, height = 3, ex = -8,
-      event = 'reset',
-      backgroundColor = colors.lightGray,
-      text = 'Reset'
-    },
-    nextButton = UI.Button {
-      x = -6, y = 2, height = 3, width = 5,
-      event = 'next',
-      backgroundColor = colors.lightGray,
-      text = ' > '
-    },
-  },
-  accelerators = {
-    q = 'quit',
-  }
 }
 
 function page.grid:getRowTextColor(row, selected)
@@ -77,27 +51,11 @@ function page.grid:getDisplayValues(row)
   return row
 end
 
-function page:eventHandler(event)
-  if event.type == 'reset' then
-    self.lastItems = nil
-    self.grid:setValues({ })
-    self.grid:clear()
-    self.grid:draw()
-
-  elseif event.type == 'next' then
-    self.grid:nextPage()
-
-  elseif event.type == 'previous' then
-    self.grid:previousPage()
-
-  elseif event.type == 'quit' then
-    Event.exitPullEvents()
-
-  else
-    return UI.Window.eventHandler(self, event)
-  end
-
-  return true
+function page:reset()
+  self.lastItems = nil
+  self.grid:setValues({ })
+  self.grid:clear()
+  self.grid:draw()
 end
 
 function page:refresh()
@@ -165,7 +123,7 @@ end)
 
 Event.on('monitor_touch', function(_, side)
   if side == mon.side then
-    page:emit({ type = 'reset' })
+    page:reset()
     page:sync()
   end
 end)
