@@ -36,22 +36,22 @@ local exportView = UI.Window {
 	},
 }
 
-function exportView:isValidFor(machine)
-	return machine.mtype == 'machine'
+function exportView:isValidFor(node)
+	return node.mtype == 'machine'
 end
 
-function exportView:setMachine(machine)
-	self.machine = machine
+function exportView:setNode(node)
+	self.machine = node
 	if not self.machine.exports then
 		self.machine.exports = { }
 	end
-	self.grid:setValues(machine.exports)
+	self.grid:setValues(self.machine.exports)
 
 	self.slots.choices = {
 		{ name = 'All', value = '*' }
 	}
 
-	local m = device[machine.name]
+	local m = device[self.machine.name]
 		for k = 1, m.size() do
 		table.insert(self.slots.choices, { name = k, value = k })
 	end
@@ -101,4 +101,4 @@ function exportView:eventHandler(event)
 	end
 end
 
-UI:getPage('machineWizard').wizard:add({ export = exportView })
+UI:getPage('nodeWizard').wizard:add({ export = exportView })

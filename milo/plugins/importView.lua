@@ -36,22 +36,22 @@ local importView = UI.Window {
 	},
 }
 
-function importView:isValidFor(machine)
-	return machine.mtype == 'machine'
+function importView:isValidFor(node)
+	return node.mtype == 'machine'
 end
 
-function importView:setMachine(machine)
-	self.machine = machine
+function importView:setNode(node)
+	self.machine = node
 	if not self.machine.imports then
 		self.machine.imports = { }
 	end
-	self.grid:setValues(machine.imports)
+	self.grid:setValues(self.machine.imports)
 
 	self.slots.choices = {
 		{ name = 'All', value = '*' }
 	}
 
-	local m = device[machine.name]
+	local m = device[self.machine.name]
 		for k = 1, m.size() do
 		table.insert(self.slots.choices, { name = k, value = k })
 	end
@@ -100,4 +100,4 @@ function importView:eventHandler(event)
 	end
 end
 
-UI:getPage('machineWizard').wizard:add({ import = importView })
+UI:getPage('nodeWizard').wizard:add({ import = importView })

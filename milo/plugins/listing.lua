@@ -32,20 +32,21 @@ end
 local listingPage = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
-      { text = 'Learn',   event = 'learn'    },
-      { text = 'Forget',  event = 'forget'   },
-      { text = 'Craft',   event = 'craft'    },
-      { text = '...',     event = 'machines' },
+      { text = 'Learn',   event = 'learn'   },
+      --{ text = 'Forget',  event = 'forget'   },
+      { text = 'Craft',   event = 'craft'   },
+      { text = 'Edit',    event = 'details' },
+      { text = 'Network', event = 'network' },
       { text = 'Refresh', event = 'refresh', x = -9 },
     },
   },
   grid = UI.Grid {
     y = 2, ey = -2,
     columns = {
-      { heading = ' Qty',  key = 'count'       , width = 4, justify = 'right' },
+      { heading = ' Qty', key = 'count'        , width = 4, justify = 'right' },
       { heading = 'Name', key = 'displayName' },
-      { heading = 'Min',  key = 'low'         , width = 4 },
-      { heading = 'Max',  key = 'limit'       , width = 4 },
+      { heading = 'Min',  key = 'low'          , width = 4 },
+      { heading = 'Max',  key = 'limit'        , width = 4 },
     },
     sortColumn = 'displayName',
   },
@@ -95,7 +96,7 @@ local listingPage = UI.Page {
     [ 'control-s' ] = 'eject_stack',
     [ 'control-a' ] = 'eject_all',
 
-    [ 'control-m' ] = 'machines',
+    [ 'control-m' ] = 'network',
 
     q = 'quit',
   },
@@ -132,7 +133,7 @@ function listingPage:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
 
-  elseif event.type == 'eject' then
+  elseif event.type == 'eject' or event.type == 'grid_select' then
     local item = self.grid:getSelected()
     if item then
       item.count = Milo:craftAndEject(item, 1)
@@ -164,8 +165,8 @@ function listingPage:eventHandler(event)
       Milo:craftAndEject(item, count)
     end
 
-  elseif event.type == 'machines' then
-    UI:setPage('machines')
+  elseif event.type == 'network' then
+    UI:setPage('network')
 
   elseif event.type == 'details' or event.type == 'grid_select_right' then
     local item = self.grid:getSelected()
@@ -195,33 +196,12 @@ function listingPage:eventHandler(event)
   elseif event.type == 'learn' then
     UI:setPage('learn')
 
-  elseif event.type == 'craft' or event.type == 'grid_select' then
+  elseif event.type == 'craft' then
     local item = self.grid:getSelected()
     if Craft.findRecipe(item) or true then -- or item.is_craftable then
       UI:setPage('craft', self.grid:getSelected())
     else
       self.notification:error('No recipe defined')
-    end
-
-  elseif event.type == 'forget' then
-    local item = self.grid:getSelected()
-    if item then
-      local key = Milo:uniqueKey(item)
-
-      if context.userRecipes[key] then
-        context.userRecipes[key] = nil
-        Util.writeTable(Craft.USER_RECIPES, context.userRecipes)
-        Craft.loadRecipes()
-      end
---TODO: remove machine assoc
-      if context.resources[key] then
-        context.resources[key] = nil
-        Milo:saveResources()
-      end
-
-      self.notification:info('Forgot: ' .. item.name)
-      self:refresh()
-      self.grid:draw()
     end
 
   elseif event.type == 'text_change' and event.element == self.statusBar.filter then

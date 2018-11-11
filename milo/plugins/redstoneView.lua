@@ -37,10 +37,10 @@ local dispenserView = UI.Window {
 	},
 }
 
-function dispenserView:isValidFor(machine)
-	if machine.mtype == 'machine' then
-		local m = device[machine.name]
-		return m and m.type == 'minecraft:dispenser'
+function dispenserView:isValidFor(node)
+	if node.mtype == 'machine' then
+		local m = device[node.name]
+		--return m and m.type == 'minecraft:dispenser'
 	end
 end
 
@@ -63,11 +63,11 @@ function dispenserView:validate()
 	return self.form:save()
 end
 
-function dispenserView:setMachine(machine)
-	if not machine.redstone then
-		machine.redstone = { }
+function dispenserView:setNode(node)
+	if not node.redstone then
+		node.redstone = { }
 	end
-	self.form:setValues(machine.redstone)
+	self.form:setValues(node.redstone)
 end
 
-UI:getPage('machineWizard').wizard:add({ dispenser = dispenserView })
+UI:getPage('nodeWizard').wizard:add({ dispenser = dispenserView })

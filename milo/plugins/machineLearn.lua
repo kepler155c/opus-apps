@@ -19,7 +19,7 @@ local machineLearnWizard = UI.Page {
 				index = 1,
 				grid = UI.ScrollingGrid {
 					y = 2, ey = -2,
-					values = context.config.remoteDefaults,
+					values = context.config.nodes,
 					columns = {
 						{ heading = 'Name', key = 'displayName' },
 					},

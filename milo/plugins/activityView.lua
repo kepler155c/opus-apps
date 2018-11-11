@@ -4,10 +4,14 @@ local Peripheral = require('peripheral')
 local UI         = require('ui')
 local Util       = require('util')
 
-local colors     = _G.colors
-
+local colors  = _G.colors
 local context = Milo:getContext()
 local mon     = Peripheral.lookup(context.config.activityMonitor)
+
+local ActivityTask = {
+  name = 'activity',
+  priority = 30,
+}
 
 if not mon then
   return
@@ -110,7 +114,7 @@ function page:refresh()
   self.grid:draw()
 end
 
-Event.onInterval(5, function()
+function page:update()
   if context.storage:isOnline() then
     page:refresh()
     page:sync()
@@ -119,6 +123,10 @@ Event.onInterval(5, function()
     page.grid:centeredWrite(math.ceil(page.height / 2), 'Storage Offline')
     page:sync()
   end
+end
+
+Event.on({ 'storage_offline', 'storage_online' }, function()
+  page:update()
 end)
 
 Event.on('monitor_touch', function(_, side)
@@ -127,6 +135,12 @@ Event.on('monitor_touch', function(_, side)
     page:sync()
   end
 end)
+
+function ActivityTask:cycle()
+  page:update()
+end
+
+Milo:registerTask(ActivityTask)
 
 page:draw()
 page:sync()

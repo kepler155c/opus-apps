@@ -12,7 +12,7 @@ local Storage = class()
 
 function Storage:init(args)
   local defaults = {
-    remoteDefaults = { },
+    nodes = { },
     dirty = true,
     activity = { },
     storageOnline = true,
@@ -35,9 +35,9 @@ end
 
 function Storage:showStorage()
   local t = { }
-  for k,v in pairs(self.remoteDefaults) do
+  for k,v in pairs(self.nodes) do
     local online = v.adapter and v.adapter.online
-    if not online then
+    if not online and v.mtype ~= 'ignore' then
       table.insert(t, k)
     end
   end
@@ -58,7 +58,7 @@ function Storage:initStorage()
   local online = true
 
   _G._debug('Initializing storage')
-  for k,v in pairs(self.remoteDefaults) do
+  for k,v in pairs(self.nodes) do
     if v.adapter then
       v.adapter.online = not not device[k]
     elseif device[k] and device[k].list and device[k].size and device[k].pullItems then
@@ -80,7 +80,7 @@ end
 
 function Storage:filterActive(mtype, filter)
   local iter = { }
-  for _, v in pairs(self.remoteDefaults) do
+  for _, v in pairs(self.nodes) do
     if v.adapter and v.adapter.online and v.mtype == mtype then
       if not filter or filter(v) then
         table.insert(iter, v)
@@ -97,7 +97,7 @@ end
 
 function Storage:onlineAdapters(reversed)
   local iter = { }
-  for _, v in pairs(self.remoteDefaults) do
+  for _, v in pairs(self.nodes) do
     if v.adapter and v.adapter.online and v.mtype == 'storage' then
       table.insert(iter, v)
     end
@@ -191,7 +191,8 @@ function Storage:updateCache(adapter, key, count)
       adapter.dirty = true
       self.dirty = true
     else
-      entry = Util.shallowCopy(itemDB:get(key))
+      local item = itemDB:get(key) or itemDB:splitKey(key)
+      entry = Util.shallowCopy(item)
       entry.count = count
       entry.key = key
       adapter.cache[key] = entry
@@ -311,7 +312,7 @@ end
 
 -- When importing items into a locked chest, trash any remaining items if full
 function Storage:trash(source, slot, count)
-  local trashcan = Util.find(self.remoteDefaults, 'mtype', 'trashcan')
+  local trashcan = Util.find(self.nodes, 'mtype', 'trashcan')
   if trashcan and trashcan.adapter and trashcan.adapter.online then
 
 _G._debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)

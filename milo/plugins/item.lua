@@ -1,4 +1,5 @@
 local Ansi = require('ansi')
+local Craft  = require('turtle.craft')
 local Milo = require('milo')
 local UI   = require('ui')
 local Util = require('util')
@@ -59,6 +60,12 @@ local itemPage = UI.Page {
       event = 'show_info',
       text = 'Info',
     },
+    resetButton = UI.Button {
+      x = 9, y = -2,
+      event = 'reset',
+      text = 'Reset',
+      help = 'Clear recipe and all settings',
+    },
   },
   rsControl = UI.SlideOut {
     backgroundColor = colors.cyan,
@@ -108,7 +115,7 @@ local itemPage = UI.Page {
     grid = UI.ScrollingGrid {
       y = 2, ey = -4,
       disableHeader = true,
-      values = context.config.remoteDefaults,
+      values = context.config.nodes,
       columns = {
         { heading = 'Name', key = 'displayName'},
       },
@@ -200,6 +207,25 @@ function itemPage:eventHandler(event)
     self.machines.grid:update()
     self.machines.grid:setIndex(1)
     self.machines:show()
+
+  elseif event.type == 'reset' then
+    if context.userRecipes[self.item.key] then
+      context.userRecipes[self.item.key] = nil
+      Util.writeTable(Craft.USER_RECIPES, context.userRecipes)
+      Craft.loadRecipes()
+    end
+
+    if context.resources[self.item.key] then
+      context.resources[self.item.key] = nil
+      Milo:saveResources()
+    end
+
+    if Craft.machineLookup[self.item.key] then
+      Craft.machineLookup[self.item.key] = nil
+      Util.writeTable(Craft.MACHINE_LOOKUP, Craft.machineLookup)
+    end
+
+    UI:setPreviousPage()
 
   elseif event.type == 'set_machine' then
     --TODO save machine

@@ -48,14 +48,14 @@ function storageView:validate()
 	return self.form:save()
 end
 
-function storageView:isValidFor(machine)
-	return machine.mtype == 'storage'
+function storageView:isValidFor(node)
+	return node.mtype == 'storage'
 end
 
-function storageView:setMachine(machine)
-	self.machine = machine
-	self.form:setValues(machine)
-	self.form[3].value = machine.lock and itemDB:getName(machine.lock) or ''
+function storageView:setNode(node)
+	self.machine = node
+	self.form:setValues(node)
+	self.form[3].value = node.lock and itemDB:getName(node.lock) or ''
 end
 
 function storageView:eventHandler(event)
@@ -83,4 +83,4 @@ function storageView:eventHandler(event)
 	end
 end
 
-UI:getPage('machineWizard').wizard:add({ storage = storageView })
+UI:getPage('nodeWizard').wizard:add({ storage = storageView })

@@ -25,11 +25,11 @@ local brewingStandView = UI.Window {
 	},
 }
 
-function brewingStandView:isValidFor(machine)
-	if machine.mtype == 'machine' then
-		local m = device[machine.name]
+function brewingStandView:isValidFor(node)
+	if node.mtype == 'machine' then
+		local m = device[node.name]
 		return m and m.type == 'minecraft:brewing_stand'
 	end
 end
 
-UI:getPage('machineWizard').wizard:add({ brewingStand = brewingStandView })
+UI:getPage('nodeWizard').wizard:add({ brewingStand = brewingStandView })

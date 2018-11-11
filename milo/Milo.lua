@@ -39,9 +39,15 @@ end
 local config = {
   monitor = 'type/monitor',
   activityMonitor = 'none',
-  remoteDefaults = { },
+  nodes = { },
 }
 Config.load('milo', config)
+
+-- TODO: remove - temporary
+if config.remoteDefaults then
+  config.nodes = config.remoteDefaults
+  config.remoteDefaults = nil
+end
 
 local modem = Peripheral.get('wired_modem')
 if not modem or not modem.getNameLocal then
