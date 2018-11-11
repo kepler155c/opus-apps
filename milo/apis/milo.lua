@@ -74,7 +74,7 @@ function Milo:resetCraftingStatus()
 
 	for _,key in pairs(Util.keys(self.context.craftingQueue)) do
 		local item = self.context.craftingQueue[key]
-		if item.crafted >= item.count then
+		if item.crafted >= item.requested then
 			self.context.craftingQueue[key] = nil
 		end
 	end
@@ -193,7 +193,7 @@ end
 function Milo:craftAndEject(item, count)
 	local request = self:makeRequest(item, count, function(request)
 		-- eject rest when finished crafted
-		return self:eject(item, request.count)
+		return self:eject(item, request.requested)
 	end)
 
 	-- predict that we will eject that amount
@@ -238,7 +238,7 @@ function Milo:makeRequest(item, count, callback)
 
 	if request.craft > 0 then
 		item = Util.shallowCopy(item)
-		item.count = request.craft
+		item.requested = request.craft
 		item.callback = callback
 		self:requestCrafting(item)
 	end

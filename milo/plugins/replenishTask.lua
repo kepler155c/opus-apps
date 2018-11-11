@@ -29,7 +29,7 @@ function ReplenishTask:cycle(context)
         Milo:requestCrafting({
           damage = res.ignoreDamage and 0 or item.damage,
           nbtHash = nbtHash,
-          count = res.low - count,
+          requested = res.low - count,
           name = item.name,
           displayName = item.displayName,
           replenish = true,
@@ -37,7 +37,7 @@ function ReplenishTask:cycle(context)
       else
         local request = context.craftingQueue[Milo:uniqueKey(item)]
         if request and request.replenish then
-          request.count = request.crafted
+          --request.count = request.crafted
         end
       end
     end

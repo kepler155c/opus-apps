@@ -16,9 +16,9 @@ local Craft = {
 	MACHINE_LOOKUP = 'usr/config/machine_crafting.db',
 }
 
-local function clearGrid(inventoryAdapter)
+local function clearGrid(storage)
 	turtle.eachFilledSlot(function(slot)
-		inventoryAdapter:insert(slot.index, slot.count, nil, slot)
+		storage:import(storage.localName, slot.index, slot.count, slot)
 	end)
 
 	for i = 1, 16 do
@@ -76,7 +76,7 @@ function Craft.sumIngredients(recipe)
 	return t
 end
 
-local function machineCraft(recipe, inventoryAdapter, machineName, request, count, item)
+local function machineCraft(recipe, storage, machineName, request, count, item)
 	local machine = device[machineName]
 	if not machine then
 		request.status = 'machine not found'
@@ -94,7 +94,7 @@ local function machineCraft(recipe, inventoryAdapter, machineName, request, coun
 
 	local xferred = { }
 	for k,v in pairs(recipe.ingredients) do
-		local provided = inventoryAdapter:provide(splitKey(v), count, k, machineName)
+		local provided = storage:provide(splitKey(v), count, k, machineName)
 		xferred[k] = {
 			key = v,
 			count = provided,
@@ -103,7 +103,7 @@ local function machineCraft(recipe, inventoryAdapter, machineName, request, coun
 			-- take back out whatever we put in
 			for k2,v2 in pairs(xferred) do
 				if v2.count > 0 then
-					inventoryAdapter:import(machineName, k2, v2.count, splitKey(v2.key))
+					storage:import(machineName, k2, v2.count, splitKey(v2.key))
 				end
 			end
 			request.status = 'Invalid recipe'
@@ -116,8 +116,8 @@ local function machineCraft(recipe, inventoryAdapter, machineName, request, coun
 	item.pending[recipe.result] = count * recipe.count
 end
 
-local function turtleCraft(recipe, inventoryAdapter, request, count)
-	if not clearGrid(inventoryAdapter) then
+local function turtleCraft(recipe, storage, request, count)
+	if not clearGrid(storage) then
 		request.status = 'grid in use'
 		request.statusCode = Craft.STATUS_ERROR
 		return
@@ -125,7 +125,7 @@ local function turtleCraft(recipe, inventoryAdapter, request, count)
 
 	for k,v in pairs(recipe.ingredients) do
 		local item = splitKey(v)
-		if inventoryAdapter:provide(item, count, k) ~= count then
+		if storage:provide(item, count, k) ~= count then
 																				-- FIX: ingredients cannot be stacked
 			request.status = 'unknown error'
 			request.statusCode = Craft.STATUS_ERROR
@@ -137,20 +137,23 @@ local function turtleCraft(recipe, inventoryAdapter, request, count)
 	if turtle.craft() then
 		request.crafted = request.crafted + count * recipe.count
 		request.status = 'crafted'
-		request.statusCode = Craft.STATUS_INFO
-		return true
+		request.statusCode = Craft.STATUS_SUCCESS
+	else
+		request.status = 'Failed to craft'
+		request.statusCode = Craft.STATUS_ERROR
 	end
-	request.status = 'Failed to craft'
-	request.statusCode = Craft.STATUS_ERROR
+	clearGrid(storage)
+	return request.statusCode == Craft.STATUS_SUCCESS
 end
 
-function Craft.processPending(item, inventoryAdapter)
+function Craft.processPending(item, storage)
 	for key, count in pairs(item.pending) do
-		local imported = inventoryAdapter.activity[key]
+		local imported = storage.activity[key]
 		if imported then
 			local amount = math.min(imported, count)
-			inventoryAdapter.activity[key] = imported - amount
+			storage.activity[key] = imported - amount
 			item.pending[key] = count - amount
+			item.ingredients[key].crafted = item.ingredients[key].crafted + amount
 			if item.pending[key] <= 0 then
 				item.pending[key] = nil
 			end
@@ -158,7 +161,7 @@ function Craft.processPending(item, inventoryAdapter)
 	end
 end
 
-function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
+function Craft.craftRecipe(recipe, count, storage, origItem)
 	if type(recipe) == 'string' then
 		recipe = Craft.recipes[recipe]
 		if not recipe then
@@ -166,11 +169,7 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter, origItem)
 		end
 	end
 
-	local crafted = Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
-
-	origItem.crafted = math.min(origItem.count, origItem.crafted + crafted)
-
-	return crafted
+	return Craft.craftRecipeInternal(recipe, count, storage, origItem)
 end
 
 local function adjustCounts(recipe, count, ingredients)
@@ -184,8 +183,14 @@ local function adjustCounts(recipe, count, ingredients)
 	result.count = result.count + (count * recipe.count)
 end
 
-function Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
+function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 	local request = origItem.ingredients[recipe.result]
+
+	if origItem.pending[recipe.result] then
+		request.status = 'processing'
+		request.statusCode = Craft.STATUS_INFO
+		return 0
+	end
 
 	local canCraft = Craft.getCraftableAmount(recipe, count, origItem.ingredients)
 	if not origItem.forceCrafting and canCraft == 0 then
@@ -198,6 +203,8 @@ function Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
 	else
 		count = canCraft
 	end
+
+_G._debug({'eval', recipe.result, count })
 
 	local maxCount = recipe.maxCount or math.floor(64 / recipe.count)
 
@@ -213,8 +220,9 @@ function Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
 			if not irecipe then
 				return 0
 			end
+
 			local iqty = need - itemCount
-			local crafted = Craft.craftRecipeInternal(irecipe, iqty, inventoryAdapter, origItem)
+			local crafted = Craft.craftRecipeInternal(irecipe, iqty, storage, origItem)
 			if not origItem.forceCrafting and crafted < iqty then
 				return 0
 			end
@@ -224,23 +232,16 @@ function Craft.craftRecipeInternal(recipe, count, inventoryAdapter, origItem)
 		end
 	end
 
-
 	local crafted = 0
 	while canCraft > 0 do
-		if origItem.pending[recipe.result] then
-			request.status = 'processing'
-			request.statusCode = Craft.STATUS_INFO
-			break
-		end
-
 		local batch = math.min(canCraft, maxCount)
-
-		if Craft.machineLookup[recipe.result] then
-			if not machineCraft(recipe, inventoryAdapter,
-				Craft.machineLookup[recipe.result], request, batch, origItem) then
+		local machine = Craft.machineLookup[recipe.result]
+_G._debug({ 'crafting', recipe.result, batch })
+		if machine then
+			if not machineCraft(recipe, storage, machine, request, batch, origItem) then
 				break
 			end
-		elseif not turtleCraft(recipe, inventoryAdapter, request, batch) then
+		elseif not turtleCraft(recipe, storage, request, batch) then
 			break
 		end
 
@@ -275,7 +276,7 @@ end
 
 -- determine the full list of ingredients needed to craft
 -- a quantity of a recipe.
-function Craft.getResourceList(inRecipe, items, inCount)
+function Craft.getResourceList(inRecipe, items, inCount, pending)
 	local summed = { }
 
 	local function sumItems(recipe, key, count)
@@ -294,6 +295,10 @@ function Craft.getResourceList(inRecipe, items, inCount)
 		local total = count
 		local used = math.min(summedItem.count, total)
 		local need = total - used
+
+		if pending and pending[key] then
+			need = need - pending[key]
+		end
 
 		if recipe.craftingTools and recipe.craftingTools[key] then
 			summedItem.total = 1
@@ -325,8 +330,13 @@ function Craft.getResourceList(inRecipe, items, inCount)
 	end
 
 	inCount = math.ceil(inCount / inRecipe.count)
-	for ikey,iqty in pairs(Craft.sumIngredients(inRecipe)) do
-		sumItems(inRecipe, ikey, math.ceil(inCount * iqty))
+	if pending and pending[inRecipe.result] then
+		inCount = inCount - pending[inRecipe.result]
+	end
+	if inCount > 0 then
+		for ikey,iqty in pairs(Craft.sumIngredients(inRecipe)) do
+			sumItems(inRecipe, ikey, math.ceil(inCount * iqty))
+		end
 	end
 
 	return summed
@@ -339,7 +349,7 @@ function Craft.getResourceList4(inRecipe, items, count)
 end
 
 -- given a certain quantity, return how many of those can be crafted
-function Craft.getCraftableAmount(inRecipe, count, items, missing)
+function Craft.getCraftableAmount(inRecipe, inCount, items, missing)
 	local function sumItems(recipe, summedItems, count)
 		local canCraft = 0
 
@@ -367,7 +377,7 @@ function Craft.getCraftableAmount(inRecipe, count, items, missing)
 		return canCraft
 	end
 
-	return sumItems(inRecipe, { }, math.ceil(count / inRecipe.count))
+	return sumItems(inRecipe, { }, math.ceil(inCount / inRecipe.count))
 end
 
 function Craft.loadRecipes()

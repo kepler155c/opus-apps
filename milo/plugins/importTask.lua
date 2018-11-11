@@ -9,22 +9,35 @@ local function filter(a)
 	return a.imports
 end
 
--- TODO: ignore damage/nbt
-
 function ImportTask:cycle(context)
 	for inventory in context.storage:filterActive('machine', filter) do
 		for _, entry in pairs(inventory.imports) do
+
+			local function itemMatchesFilter(item)
+				if not entry.ignoreDamage and not entry.ignoreNbtHash then
+					return entry.filter[item.key]
+				end
+
+				for key in pairs(entry.filter) do
+					local v = Milo:splitKey(key)
+					if item.name == v.name and
+						(entry.ignoreDamage or item.damage == v.damage) and
+						(entry.ignoreNbtHash or item.nbtHash == v.nbtHash) then
+						return true
+					end
+				end
+			end
 
 			local function matchesFilter(item)
 				if not entry.filter then
 					return true
 				end
 
-				local key = Milo:uniqueKey(item)
 				if entry.blacklist then
-					return not entry.filter[key]
+					return not itemMatchesFilter(item)
 				end
-				return entry.filter[key]
+
+				return itemMatchesFilter(item)
 			end
 
 			local function importSlot(slotNo)

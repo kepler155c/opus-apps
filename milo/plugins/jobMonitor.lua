@@ -47,9 +47,8 @@ function jobMonitor:updateList(craftList)
     for _,v in pairs(craftList) do
       table.insert(t, v)
       v.index = #t
-      v.showRemaining = true
-      for k2,v2 in pairs(v.ingredients) do
-        if v2.key ~= v.key and v2.statusCode then
+      for k2,v2 in pairs(v.ingredients or { }) do
+        if v2.key ~= v.key --[[and v2.statusCode ]] then
           table.insert(t, v2)
           if not v2.displayName then
             v2.displayName = itemDB:getName(k2)
@@ -67,12 +66,12 @@ end
 
 function jobMonitor.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
-  if row.showRemaining then
-    row.remaining = math.max(0, row.count - row.crafted)
+  if row.requested then
+    row.remaining = math.max(0, row.requested - row.crafted)
   else
     row.displayName = '  ' .. row.displayName
   end
-  row.progress = string.format('%d/%d', row.crafted, row.count)
+  --row.progress = string.format('%d/%d', row.crafted, row.count)
   return row
 end
 

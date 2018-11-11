@@ -100,7 +100,7 @@ function craftPage.wizard.pages.resources:enable()
   local count = tonumber(self.parent.quantity.count.value)
   local recipe = Craft.findRecipe(craftPage.item)
   if recipe then
-    local ingredients = Craft.getResourceList(recipe, items, count)
+    local ingredients = Craft.getResourceList4(recipe, items, count)
     for _,v in pairs(ingredients) do
       v.displayName = itemDB:getName(v)
     end
@@ -117,11 +117,11 @@ function craftPage:eventHandler(event)
 
   elseif event.type == 'accept' then
     local item = Util.shallowCopy(self.item)
-    item.count = tonumber(self.wizard.pages.quantity.count.value)
+    item.requested = tonumber(self.wizard.pages.quantity.count.value)
     item.forceCrafting = true
     if self.wizard.pages.quantity.eject.value then
       item.callback = function(request)
-        Milo:eject(item, request.count)
+        Milo:eject(item, request.requested)
       end
     end
     Milo:requestCrafting(item)

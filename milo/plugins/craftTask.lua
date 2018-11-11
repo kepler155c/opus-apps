@@ -15,10 +15,11 @@ function craftTask:craft(recipe, item)
   if Milo:isCraftingPaused() then
     return
   end
-
   Craft.processPending(item, context.storage)
 
-  item.ingredients = Craft.getResourceList(recipe, Milo:listItems(), item.count - item.crafted)
+--TODO:  this needs to take into account what is pending
+  item.ingredients = Craft.getResourceList(
+    recipe, Milo:listItems(), item.requested - item.crafted, item.pending)
 
   for k, v in pairs(item.ingredients) do
     v.crafted = v.used
@@ -29,24 +30,39 @@ function craftTask:craft(recipe, item)
       v.statusCode = Craft.STATUS_ERROR
     end
   end
-  item.ingredients[recipe.result] = Util.shallowCopy(item)
+  item.ingredients[recipe.result] = item
   item.ingredients[recipe.result].total = item.count
   item.ingredients[recipe.result].crafted = item.crafted
 
-  Craft.craftRecipe(recipe, item.count - item.crafted, context.storage, item)
-  Milo:clearGrid()
+_G._p2 = item
+if not item.history then
+  item.history = { }
+end
+local t = Util.shallowCopy(item)
+t.history = { input = { }, output = { } }
+for k,v in pairs(item.ingredients) do
+  t.history.input[k] = Util.shallowCopy(v)
+end
+table.insert(item.history, t)
+
+  Craft.craftRecipe(recipe, item.requested - item.crafted, context.storage, item)
+
+for k,v in pairs(item.ingredients) do
+  t.history.output[k] = Util.shallowCopy(v)
+end
+
 end
 
 function craftTask:cycle()
   for _,key in pairs(Util.keys(context.craftingQueue)) do
     local item = context.craftingQueue[key]
-    if item.count - item.crafted > 0 then
+    if item.requested - item.crafted > 0 then
       local recipe = Craft.findRecipe(key)
       if recipe then
         sync(turtle, function()
           self:craft(recipe, item)
         end)
-        if item.callback and item.crafted >= item.count then
+        if item.callback and item.crafted >= item.requested then
           item.callback(item) -- invoke callback
         end
       elseif not context.controllerAdapter then

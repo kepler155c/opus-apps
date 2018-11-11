@@ -95,7 +95,7 @@ local function client(socket)
 					local transferred = context.storage:export(
 						context.localName,
 						nil,
-						request.count,
+						request.requested,
 						data.item)
 
 					turtle.eachFilledSlot(function(slot)

@@ -27,12 +27,12 @@ listCount = 0,
   self.localName = modem.getNameLocal()
 
   Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
---_debug('%s: %s', e, tostring(dev))
+_debug('%s: %s', e, tostring(dev))
     self:initStorage()
   end)
   Event.onInterval(15, function()
     self:showStorage()
---    _debug('STORAGE: cache: %d/%d', self.hits, self.misses)
+    _debug('STORAGE: cache: %d/%d', self.hits, self.misses)
   end)
 end
 
@@ -248,16 +248,7 @@ function Storage:trash(source, slot, count)
 end
 
 function Storage:import(source, slot, count, item)
-  return self:insert(slot, count, nil, item, source)
-end
-
-function Storage:insert(slot, qty, toSlot, item, source)
   local total = 0
-
-  -- toSlot is not really valid with this adapter
-  if toSlot then
-    error('Storage: toSlot is not valid')
-  end
 
   local key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
 
@@ -266,9 +257,9 @@ function Storage:insert(slot, qty, toSlot, item, source)
   end
 
   local function insert(adapter)
-    local amount = adapter:insert(slot, qty, toSlot, source or self.localName)
+    local amount = adapter:insert(slot, count, nil, source or self.localName)
     if amount > 0 then
-_debug('INS: %s(%d): %s[%d] -> %s',
+_G._debug('INS: %s(%d): %s[%d] -> %s',
   item.name, amount,
   source or self.localName, slot, adapter.name)
       self.dirty = true
@@ -284,7 +275,7 @@ _debug('INS: %s(%d): %s[%d] -> %s',
       end
 ]]
     end
-    qty = qty - amount
+    count = count - amount
     total = total + amount
   end
 
@@ -293,8 +284,8 @@ _debug('INS: %s(%d): %s[%d] -> %s',
     -- TODO: proper checking using ignore dmg/nbt
     if remote.lock == key or remote.lock == item.name then
       insert(remote.adapter)
-      if qty > 0 then -- TODO: only if void flag set
-        total = total + self:trash(source, slot, qty)
+      if count > 0 then -- TODO: only if void flag set
+        total = total + self:trash(source, slot, count)
       end
       return total
     end
@@ -302,7 +293,7 @@ _debug('INS: %s(%d): %s[%d] -> %s',
 
   if self.cache[key] then -- is this item in some chest
     for _, adapter in self:onlineAdapters() do
-      if qty <= 0 then
+      if count <= 0 then
         break
       end
       if adapter.cache and adapter.cache[key] and not adapter.lock then
@@ -313,7 +304,7 @@ _debug('INS: %s(%d): %s[%d] -> %s',
 
   -- high to low priority
   for remote in self:onlineAdapters() do
-    if qty <= 0 then
+    if count <= 0 then
       break
     end
     if not remote.lock then
