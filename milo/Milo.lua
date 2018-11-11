@@ -69,7 +69,7 @@ local context = {
 _G._p = context --debug
 
 Event.on('storage_offline', function()
-  Milo:showError('A storage chest has gone offline - See configuration screen')
+  Milo:showError('A storage chest has gone offline - Review configuration')
 end)
 
 Milo:init(context)

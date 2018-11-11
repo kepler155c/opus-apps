@@ -6,17 +6,7 @@ local UI     = require('ui')
 local Util   = require('util')
 
 local colors = _G.colors
-local os     = _G.os
-
 local context = Milo:getContext()
-
--- TODO: fix
-local function queue(fn)
-  while Milo:isCraftingPaused() do
-    os.sleep(1)
-  end
-  fn()
-end
 
 local function filterItems(t, filter, displayMode)
   if filter or displayMode > 0 then
@@ -61,7 +51,7 @@ local listingPage = UI.Page {
   },
   statusBar = UI.StatusBar {
     filter = UI.TextEntry {
-      x = 1, ex = -13,
+      x = 1, ex = -17,
       limit = 50,
       shadowText = 'filter',
       shadowTextColor = colors.gray,
@@ -71,12 +61,23 @@ local listingPage = UI.Page {
         [ 'enter' ] = 'craft',
       },
     },
-    storageStatus = UI.Button {
-      x = -12, ex = -4,
-      event = 'toggle_online',
-      backgroundColor = colors.cyan,
+    storageStatus = UI.Text {
+      x = -16, ex = -9,
       textColor = colors.lime,
-      text = '',
+      backgroundColor = colors.cyan,
+      value = '',
+    },
+    amount = UI.TextEntry {
+      x = -8, ex = -4,
+      limit = 3,
+      shadowText = '1',
+      shadowTextColor = colors.gray,
+      backgroundColor = colors.black,
+      backgroundFocusColor = colors.black,
+      accelerators = {
+        [ 'enter' ] = 'eject_specified',
+      },
+      help = 'Specify an amount to send',
     },
     display = UI.Button {
       x = -3,
@@ -95,7 +96,6 @@ local listingPage = UI.Page {
     [ 'control-a' ] = 'eject_all',
 
     [ 'control-m' ] = 'machines',
-    [ 'control-l' ] = 'resume',
 
     q = 'quit',
   },
@@ -132,25 +132,18 @@ function listingPage:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
 
-  elseif event.type == 'resume' then
-    context.storage:setOnline(true)
-
   elseif event.type == 'eject' then
     local item = self.grid:getSelected()
     if item then
-      queue(function()
-        item.count = Milo:craftAndEject(item, 1)
-        self.grid:draw()
-      end)
+      item.count = Milo:craftAndEject(item, 1)
+      self.grid:draw()
     end
 
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
-      queue(function()
-        item.count = Milo:craftAndEject(item, itemDB:getMaxCount(item))
-        self.grid:draw()
-      end)
+      item.count = Milo:craftAndEject(item, itemDB:getMaxCount(item))
+      self.grid:draw()
     end
 
   elseif event.type == 'eject_all' then
@@ -158,8 +151,17 @@ function listingPage:eventHandler(event)
     if item then
       local updated = Milo:getItem(Milo:listItems(), item)
       if updated then
-        queue(function() Milo:eject(item, updated.count) end)
+        Milo:craftAndEject(item, updated.count)
       end
+    end
+
+  elseif event.type == 'eject_specified' then
+    local item = self.grid:getSelected()
+    local count = tonumber(self.statusBar.amount.value)
+    if item and count then
+      self.statusBar.amount:reset()
+      self:setFocus(self.statusBar.filter)
+      Milo:craftAndEject(item, count)
     end
 
   elseif event.type == 'machines' then
@@ -222,7 +224,7 @@ function listingPage:eventHandler(event)
       self.grid:draw()
     end
 
-  elseif event.type == 'text_change' then
+  elseif event.type == 'text_change' and event.element == self.statusBar.filter then
     self.filter = event.text
     if #self.filter == 0 then
       self.filter = nil
@@ -240,7 +242,7 @@ end
 function listingPage:enable()
   self:refresh()
   self:setFocus(self.statusBar.filter)
-  self.timer = Event.onInterval(5, function()
+  self.timer = Event.onInterval(3, function()
     for _,v in pairs(self.allItems) do
       local c = context.storage.cache[v.key]
       v.count = c and c.count or 0
@@ -268,8 +270,8 @@ end
 
 Event.on({ 'storage_offline', 'storage_online' }, function(e, isOnline)
   -- TODO: Fix button
-  listingPage.statusBar.storageStatus.text =
-    isOnline and 'online' or 'offline'
+  listingPage.statusBar.storageStatus.value =
+    isOnline and '' or 'offline'
   listingPage.statusBar.storageStatus.textColor =
     isOnline and colors.lime or colors.red
   listingPage.statusBar.storageStatus:draw()

@@ -11,7 +11,7 @@ local Craft = {
 	STATUS_ERROR   = 'error',
 	STATUS_SUCCESS = 'success',
 
-	RECIPES_DIR  = 'packages/core/etc/recipes',
+	RECIPES_DIR    = 'packages/core/etc/recipes',
 	USER_RECIPES   = 'usr/config/recipes.db',
 	MACHINE_LOOKUP = 'usr/config/machine_crafting.db',
 }
@@ -94,7 +94,7 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 
 	local xferred = { }
 	for k,v in pairs(recipe.ingredients) do
-		local provided = storage:provide(splitKey(v), count, k, machineName)
+		local provided = storage:export(machineName, k, count, splitKey(v))
 		xferred[k] = {
 			key = v,
 			count = provided,
@@ -125,8 +125,8 @@ local function turtleCraft(recipe, storage, request, count)
 
 	for k,v in pairs(recipe.ingredients) do
 		local item = splitKey(v)
-		if storage:provide(item, count, k) ~= count then
-																				-- FIX: ingredients cannot be stacked
+		if storage:export(storage.localName, k, count, item) ~= count then
+																				-- TODO: FIX: ingredients cannot be stacked
 			request.status = 'unknown error'
 			request.statusCode = Craft.STATUS_ERROR
 			return
@@ -403,38 +403,6 @@ end
 
 function Craft.canCraft(item, count, items)
 	return Craft.getCraftableAmount(Craft.recipes[item], count, items) == count
-end
-
-function Craft.setRecipes(recipes)
-	Craft.recipes = recipes
-end
-
-function Craft.getCraftableAmountTest()
-	local results = { }
-	Craft.setRecipes(Util.readTable('usr/etc/recipes.db'))
-
-	local items = {
-		{ name = 'minecraft:planks', damage = 0, count = 5 },
-		{ name = 'minecraft:log',    damage = 0, count = 2 },
-	}
-	results[1] = { item = 'chest', expected = 1,
-		got = Craft.getCraftableAmount(Craft.recipes['minecraft:chest:0'], 2, items) }
-
-	items = {
-		{ name = 'minecraft:log',    damage = 0, count = 1 },
-		{ name = 'minecraft:coal',   damage = 1, count = 1 },
-	}
-	results[2] = { item = 'torch', expected = 4,
-		got = Craft.getCraftableAmount(Craft.recipes['minecraft:torch:0'], 4, items) }
-
-	return results
-end
-
-function Craft.craftRecipeTest(name, count)
-	local ChestAdapter = require('chestAdapter18')
-	local chestAdapter = ChestAdapter({ wrapSide = 'top', direction = 'down' })
-	Craft.setRecipes(Util.readTable('usr/etc/recipes.db'))
-	return { Craft.craftRecipe(Craft.recipes[name], count, chestAdapter) }
 end
 
 Craft.loadRecipes()

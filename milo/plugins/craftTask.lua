@@ -15,9 +15,11 @@ function craftTask:craft(recipe, item)
   if Milo:isCraftingPaused() then
     return
   end
+
+  -- TODO: refactor into craft.lua
   Craft.processPending(item, context.storage)
 
---TODO:  this needs to take into account what is pending
+  -- create a mini-list of items that are required for this recipe
   item.ingredients = Craft.getResourceList(
     recipe, Milo:listItems(), item.requested - item.crafted, item.pending)
 

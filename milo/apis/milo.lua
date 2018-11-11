@@ -247,7 +247,7 @@ function Milo:makeRequest(item, count, callback)
 end
 
 function Milo:eject(item, count)
-	count = self.context.storage:provide(item, count)
+	count = self.context.storage:export(self.context.storage.localName, nil, count, item)
 	turtle.emptyInventory()
 	return count
 end
