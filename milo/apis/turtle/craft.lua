@@ -4,6 +4,7 @@ local Util   = require('util')
 local device = _G.device
 local fs     = _G.fs
 local turtle = _G.turtle
+local intro  = device['plethora:introspection']
 
 local Craft = {
 	STATUS_INFO    = 'info',
@@ -15,20 +16,6 @@ local Craft = {
 	USER_RECIPES   = 'usr/config/recipes.db',
 	MACHINE_LOOKUP = 'usr/config/machine_crafting.db',
 }
-
-local function clearGrid(storage)
-	turtle.eachFilledSlot(function(slot)
-		storage:import(storage.localName, slot.index, slot.count, slot)
-	end)
-
-	for i = 1, 16 do
-		if turtle.getItemCount(i) ~= 0 then
-			return false
-		end
-	end
-
-	return true
-end
 
 local function splitKey(key)
 	local t = Util.split(key, '(.-):')
@@ -46,6 +33,27 @@ local function makeRecipeKey(item)
 		item = splitKey(item)
 	end
 	return table.concat({ item.name, item.damage or 0, item.nbtHash }, ':')
+end
+
+function Craft.clearGrid(storage)
+	turtle.eachFilledSlot(function(slot)
+		local item = slot
+		if intro then
+			item = intro.getInventory().getItemMeta(slot.index)
+			if not itemDB:get(item) then
+				itemDB:add(item)
+			end
+		end
+		storage:import(storage.localName, slot.index, slot.count, item)
+	end)
+
+	for i = 1, 16 do
+		if turtle.getItemCount(i) ~= 0 then
+			return false
+		end
+	end
+
+	return true
 end
 
 function Craft.getItemCount(items, item)
@@ -117,7 +125,7 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 end
 
 local function turtleCraft(recipe, storage, request, count)
-	if not clearGrid(storage) then
+	if not Craft.clearGrid(storage) then
 		request.status = 'grid in use'
 		request.statusCode = Craft.STATUS_ERROR
 		return
@@ -142,7 +150,7 @@ local function turtleCraft(recipe, storage, request, count)
 		request.status = 'Failed to craft'
 		request.statusCode = Craft.STATUS_ERROR
 	end
-	clearGrid(storage)
+	Craft.clearGrid(storage)
 	return request.statusCode == Craft.STATUS_SUCCESS
 end
 

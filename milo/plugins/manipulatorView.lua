@@ -7,20 +7,26 @@ local colors = _G.colors
 local device = _G.device
 local turtle = _G.turtle
 
---[[ Configuration Screen ]]
-local template =
-[[%sBound Manipulator%s
-
-Automatically import items into storage from your ender chest.
-]]
-
+--[[ Configuration Screen ]]--
 local wizardPage = UI.Window {
   title = 'Manipulator',
   index = 2,
   backgroundColor = colors.cyan,
-  [1] = UI.TextArea {
-    x = 2, ex = -2, y = 2, ey = -2,
-    value = string.format(template, Ansi.yellow, Ansi.reset),
+  form = UI.Form {
+    x = 1, y = 3, ex = -1, ey = -2,
+    manualControls = true,
+    [1] = UI.Checkbox {
+      formLabel = 'Import', formKey = 'importEnder',
+      help = 'Locks chest to a single item type',
+      pruneEmpty = true,
+    },
+    [2] = UI.TextArea {
+      x = 13, ex = -2, y = 2,
+      value = 'Automatically import the user\'s ender chest contents',
+    },
+  },
+  userInfo = UI.TextArea {
+    x = 2, ex = -2, y = 2, height = 1,
   },
 }
 
@@ -36,8 +42,19 @@ function wizardPage:isValidFor(node)
   return node.mtype == 'manipulator'
 end
 
+function wizardPage:setNode(node)
+  self.form:setValues(node)
+  self.userInfo.value = string.format('%sBound to:  %s%s',
+    Ansi.black, Ansi.yellow, node.adapter.getName())
+end
+
+function wizardPage:validate()
+  return self.form:save()
+end
+
 UI:getPage('nodeWizard').wizard:add({ manipulator = wizardPage })
 
+--[[ Task ]]--
 local task = {
   name = 'manipulator',
   priority = 15,
@@ -45,7 +62,7 @@ local task = {
 
 function task:cycle(context)
   local function filter(v)
-    return v.adapter.getEnder
+    return v.adapter.getEnder and v.importEnder
   end
 
   for manipulator in context.storage:filterActive('manipulator', filter) do

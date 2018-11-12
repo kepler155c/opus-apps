@@ -30,6 +30,7 @@ function ReplenishTask:cycle(context)
           damage = res.ignoreDamage and 0 or item.damage,
           nbtHash = nbtHash,
           requested = res.low - count,
+          count = count,
           name = item.name,
           displayName = item.displayName,
           replenish = true,

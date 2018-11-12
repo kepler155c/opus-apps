@@ -154,16 +154,7 @@ function Milo:getMatches(items, item, ignoreDamage, ignoreNbtHash)
 end
 
 function Milo:clearGrid()
-	turtle.eachFilledSlot(function(slot)
-		self.context.storage:import(self.context.localName, slot.index, slot.count, slot)
-	end)
-
-	for i = 1, 16 do
-		if turtle.getItemCount(i) ~= 0 then
-			return false
-		end
-	end
-	return true
+	return Craft.clearGrid(self.context.storage)
 end
 
 function Milo:getTurtleInventory()

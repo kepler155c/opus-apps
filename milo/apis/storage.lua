@@ -218,13 +218,14 @@ function Storage:updateCache(adapter, key, count)
     else
       -- TODO: all items imported should be updated in itemdb
       -- error here if not
-      local item = itemDB:get(key) or itemDB:splitKey(key)
-      if item.displayName then
+      local item = itemDB:get(key)
+      if item then
         entry = Util.shallowCopy(item)
         entry.count = count
         entry.key = key
         adapter.cache[key] = entry
       else
+debug('STORAGE: item missing details')
         -- TODO: somehow update itemdb with this maybe new item
         adapter.dirty = true
         self.dirty = true
@@ -243,7 +244,7 @@ local function sn(name)
   if #t ~= 2 then
     return name
   end
-  return table.concat(table.unpack(t), '_')
+  return table.concat(t, '_')
 end
 
 function Storage:export(target, slot, count, item)
@@ -253,9 +254,11 @@ function Storage:export(target, slot, count, item)
   local function provide(adapter)
     local amount = adapter:provide(item, count, slot, target or self.localName)
     if amount > 0 then
+
   _G._debug('EXT: %s(%d): %s -> %s%s',
-    item.name, amount, sn(adapter.name), sn(target or self.localName),
+    item.displayName or item.name, amount, sn(adapter.name), sn(target or self.localName),
     slot and string.format('[%d]', slot) or '')
+
       self:updateCache(adapter, key, -amount)
       self:updateCache(self, key, -amount)
     end
@@ -302,7 +305,7 @@ function Storage:import(source, slot, count, item)
     if amount > 0 then
 
 _G._debug('INS: %s(%d): %s[%d] -> %s',
-  item.name, amount,
+  item.displayName or item.name, amount,
   sn(source or self.localName), slot, sn(adapter.name))
 
       self:updateCache(adapter, key, amount)
