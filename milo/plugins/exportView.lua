@@ -36,6 +36,11 @@ local exportView = UI.Window {
 	},
 }
 
+function exportView:isValidType(node)
+	local m = device[node.name]
+	return m and m.pullItems and { name = 'Generic Inventory', value = 'machine' }
+end
+
 function exportView:isValidFor(node)
 	return node.mtype == 'machine'
 end

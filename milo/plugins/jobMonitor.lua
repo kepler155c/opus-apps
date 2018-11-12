@@ -1,21 +1,53 @@
+local Ansi       = require('ansi')
 local Craft      = require('turtle.craft')
 local itemDB     = require('itemDB')
 local Milo       = require('milo')
-local Peripheral = require('peripheral')
 local UI         = require('ui')
 local Util       = require('util')
 
 local colors     = _G.colors
+local context    = Milo:getContext()
+local device     = _G.device
+local monNode    = context.storage:getSingleNode('jobs')
 
-local context = Milo:getContext()
-local mon     = Peripheral.lookup(context.config.monitor) or
-                error('Monitor is not attached')
+--[[ Configuration Screen ]]
+local template =
+[[%sDisplays the crafting progress%s
+
+%sMilo must be restarted to activate diplay.
+]]
+
+local jobsWizardPage = UI.Window {
+  title = 'Crafting Monitor',
+  index = 2,
+  backgroundColor = colors.cyan,
+  [1] = UI.TextArea {
+    x = 2, ex = -2, y = 2, ey = -2,
+    value = string.format(template, Ansi.yellow, Ansi.reset, Ansi.orange),
+  },
+}
+
+function jobsWizardPage:isValidType(node)
+  local m = device[node.name]
+  return m and m.type == 'monitor' and { name = 'Crafting Monitor', value = 'jobs' }
+end
+
+function jobsWizardPage:isValidFor(node)
+  return node.mtype == 'jobs'
+end
+
+UI:getPage('nodeWizard').wizard:add({ jobs = jobsWizardPage })
+
+--[[ Display ]]
+if not monNode then
+  return
+end
 
 -- TODO: some way to cancel a job
 
 local jobMonitor = UI.Page {
   parent = UI.Device {
-    device = mon,
+    device = monNode.adapter,
     textScale = .5,
   },
   grid = UI.Grid {
@@ -90,6 +122,7 @@ jobMonitor:enable()
 jobMonitor:draw()
 jobMonitor:sync()
 
+--[[ Task ]]
 local jobMonitorTask = {
   name = 'job status',
   priority = 80,

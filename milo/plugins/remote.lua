@@ -29,7 +29,7 @@ local function client(socket)
 
 	local manipulator = getManipulatorForUser(user)
 	if not manipulator then
-		_debug('REMOTE: Manipulator with introspection module bound with user not found. Closing connection.')
+		_G._debug('REMOTE: Manipulator with introspection module bound with user not found. Closing connection.')
 		socket:write({
 			msg = 'Manipulator not found'
 			})
@@ -37,7 +37,7 @@ local function client(socket)
 		return
 	end
 
-	_debug('REMOTE: all good')
+	_G._debug('REMOTE: all good')
 	socket:write({
 		data = 'ok',
 	})
@@ -98,12 +98,14 @@ local function client(socket)
 						request.requested,
 						data.item)
 
-					turtle.eachFilledSlot(function(slot)
-						manipulator.getInventory().pullItems(
-							context.localName,
-							slot.index,
-							transferred)
-					end)
+					if transferred > 0 then
+						turtle.eachFilledSlot(function(slot)
+							manipulator.getInventory().pullItems(
+								context.localName,
+								slot.index,
+								slot.count)
+						end)
+					end
 				end)
 			end
 

@@ -48,6 +48,11 @@ function storageView:validate()
 	return self.form:save()
 end
 
+function storageView:isValidType(node)
+	local m = device[node.name]
+	return m and m.pullItems and { name = 'Storage', value = 'storage' }
+end
+
 function storageView:isValidFor(node)
 	return node.mtype == 'storage'
 end

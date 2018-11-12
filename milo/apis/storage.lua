@@ -65,6 +65,9 @@ function Storage:initStorage()
       v.adapter = InventoryAdapter.wrap({ side = k })
       v.adapter.online = true
       v.adapter.dirty = true
+    elseif device[k] then
+      v.adapter = device[k]
+      v.adapter.online = true
     end
     if v.mtype == 'storage' then
       online = online and not not (v.adapter and v.adapter.online)
@@ -73,15 +76,23 @@ function Storage:initStorage()
 
   if online ~= self.storageOnline then
     self.storageOnline = online
+    -- TODO: if online, then list items
     os.queueEvent(self.storageOnline and 'storage_online' or 'storage_offline', online)
     _G._debug('Storage: %s', self.storageOnline and 'online' or 'offline')
   end
 end
 
-function Storage:filterActive(mtype, filter)
+function Storage:getSingleNode(mtype)
+  local node = Util.find(self.nodes, 'mtype', mtype)
+  if node and node.adapter and node.adapter.online then
+    return node
+  end
+end
+
+function Storage:filterNodes(mtype, filter)
   local iter = { }
   for _, v in pairs(self.nodes) do
-    if v.adapter and v.adapter.online and v.mtype == mtype then
+    if v.mtype == mtype then
       if not filter or filter(v) then
         table.insert(iter, v)
       end
@@ -93,6 +104,14 @@ function Storage:filterActive(mtype, filter)
     i = i + 1
     return iter[i]
   end
+end
+
+function Storage:filterActive(mtype, filter)
+  return self:filterNodes(mtype, function(v)
+    if v.adapter and v.adapter.online then
+      return not filter and true or filter(v)
+    end
+  end)
 end
 
 function Storage:onlineAdapters(reversed)
@@ -184,6 +203,12 @@ _G._debug('STORAGE: refresh in ' .. timer())
 end
 
 function Storage:updateCache(adapter, key, count)
+  if not adapter.cache then
+    adapter.dirty = true
+    self.dirty = true
+    return
+  end
+
   local entry = adapter.cache[key]
 
   if not entry then

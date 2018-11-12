@@ -70,4 +70,4 @@ function dispenserView:setNode(node)
 	self.form:setValues(node.redstone)
 end
 
-UI:getPage('nodeWizard').wizard:add({ dispenser = dispenserView })
+--UI:getPage('nodeWizard').wizard:add({ dispenser = dispenserView })

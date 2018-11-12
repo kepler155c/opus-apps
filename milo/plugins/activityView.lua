@@ -1,25 +1,47 @@
+local Ansi       = require('ansi')
 local Event      = require('event')
 local Milo       = require('milo')
-local Peripheral = require('peripheral')
 local UI         = require('ui')
 local Util       = require('util')
 
-local colors  = _G.colors
-local context = Milo:getContext()
-local mon     = Peripheral.lookup(context.config.activityMonitor)
+local colors     = _G.colors
+local context    = Milo:getContext()
+local device     = _G.device
+local monitor    = context.storage:getSingleNode('activity')
 
-local ActivityTask = {
-  name = 'activity',
-  priority = 30,
+--[[ Configuration Page ]]--
+local template =
+[[%sDisplays the amount of items entering or leaving storage%s
+
+Right-clicking on the activity monitor will reset the totals.
+
+%sMilo must be restarted to activate diplay.
+]]
+
+local activityWizardPage = UI.Window {
+  title = 'Activity Monitor',
+  index = 2,
+  backgroundColor = colors.cyan,
+  [1] = UI.TextArea {
+    x = 2, ex = -2, y = 2, ey = -2,
+    value = string.format(template, Ansi.yellow, Ansi.reset, Ansi.orange),
+  },
 }
 
-if not mon then
-  return
+function activityWizardPage:isValidType(node)
+  local m = device[node.name]
+  return m and m.type == 'monitor' and { name = 'Activity Monitor', value = 'activity' }
 end
+
+function activityWizardPage:isValidFor(node)
+  return node.mtype == 'activity'
+end
+
+UI:getPage('nodeWizard').wizard:add({ activity = activityWizardPage })
 
 local page = UI.Window {
   parent = UI.Device {
-    device = mon,
+    device = monitor.adapter,
     textScale = .5,
   },
   grid = UI.Grid {
@@ -130,17 +152,23 @@ Event.on({ 'storage_offline', 'storage_online' }, function()
 end)
 
 Event.on('monitor_touch', function(_, side)
-  if side == mon.side then
+  if side == monitor.adapter.side then
     page:reset()
     page:sync()
   end
 end)
+
+page:draw()
+page:sync()
+
+--[[ Task ]]--
+local ActivityTask = {
+  name = 'activity',
+  priority = 30,
+}
 
 function ActivityTask:cycle()
   page:update()
 end
 
 Milo:registerTask(ActivityTask)
-
-page:draw()
-page:sync()

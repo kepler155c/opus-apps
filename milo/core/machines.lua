@@ -12,6 +12,8 @@ local turtle = _G.turtle
 
 local context = Milo:getContext()
 
+local nodeWizard
+
 local function saveConfig()
 	local t = { }
 	for k,v  in pairs(context.config.nodes) do
@@ -38,9 +40,6 @@ local networkPage = UI.Page {
 		shadowText = 'filter',
 		backgroundColor = colors.cyan,
 		backgroundFocusColor = colors.cyan,
-		accelerators = {
-			[ 'enter' ] = 'eject',
-		},
 	},
 	grid = UI.ScrollingGrid {
 		y = 2, ey = -3,
@@ -91,12 +90,16 @@ end
 
 function networkPage:getList()
 	for _, v in pairs(device) do
-		if v.pullItems then
-			if not context.config.nodes[v.name] then
-				context.config.nodes[v.name] = {
-					name  = v.name,
-					mtype = 'ignore',
-				}
+		if not context.config.nodes[v.name] then
+			local node = {
+				name  = v.name,
+				mtype = 'ignore',
+			}
+			for _, page in pairs(nodeWizard.wizard.pages) do
+				if page.isValidType and page:isValidType(node) then
+					context.config.nodes[v.name] = node
+					break
+				end
 			end
 		end
 	end
@@ -168,7 +171,7 @@ function networkPage:eventHandler(event)
 	return true
 end
 
-local nodeWizard = UI.Page {
+nodeWizard = UI.Page {
 	titleBar = UI.TitleBar { title = 'Configure' },
 	wizard = UI.Wizard {
 		y = 2, ey = -2,
@@ -185,16 +188,9 @@ local nodeWizard = UI.Page {
 						limit = 64, pruneEmpty = true,
 					},
 					[2] = UI.Chooser {
-						width = 15,
+						width = 25,
 						formLabel = 'Type', formKey = 'mtype',
-						nochoice = 'Storage',
-						choices = {
-							{ name = 'Storage',     value = 'storage'  },
-							{ name = 'Trashcan',    value = 'trashcan' },
-							{ name = 'Input chest', value = 'input'    },
-							{ name = 'Ignore',      value = 'ignore'   },
-							{ name = 'Machine',     value = 'machine'  },
-						},
+						--nochoice = 'Storage',
 						help = 'Select type',
 					},
 				},
@@ -401,36 +397,30 @@ function nodeWizard.wizard.pages.general.grid:getDisplayValues(row)
 end
 
 function nodeWizard.wizard.pages.general:validate()
-	return self.form:save()
-end
-
---[[ Wizard ]] --
-function nodeWizard.wizard:eventHandler(event)
-	if event.type == 'nextView' and
-		Util.find(self.pages, 'enabled', true) == self.pages.general then
-
-		if self.pages.general.form:save() then
-			local index = 2
-			for _, page in pairs(self.pages) do
-				page.index = nil
-			end
-			self.pages.general.index = 1
-			self.pages.confirmation.index = 2
-
-			for _, page in pairs(self.pages) do
-				if not page.index and page:isValidFor(self.parent.node) then
+	if self.form:save() then
+		for _, page in pairs(nodeWizard.wizard.pages) do
+			page.index = nil
+		end
+		local index = 2
+		nodeWizard.wizard.pages.general.index = 1
+		nodeWizard.wizard.pages.confirmation.index = 2
+		for _, page in pairs(nodeWizard.wizard.pages) do
+			if not page.index then
+				if not page.isValidFor or page:isValidFor(nodeWizard.node) then
 					page.index = index
 					index = index + 1
+					if page.setNode then
+						page:setNode(nodeWizard.node)
+					end
 				end
 			end
-			self.pages.confirmation.index = index
-			return UI.Wizard.eventHandler(self, event)
 		end
-	else
-		return UI.Wizard.eventHandler(self, event)
+		nodeWizard.wizard.pages.confirmation.index = index
+		return true
 	end
 end
 
+--[[ Wizard ]] --
 function nodeWizard:enable(node)
 	local adapter = node.adapter
 	node.adapter = nil	-- don't deep copy the adapter
@@ -439,8 +429,21 @@ function nodeWizard:enable(node)
 	node.adapter = adapter
 
 _G._p2 = self.node
-	self.wizard.pages.general.form:setValues(self.node)
+
+	local choices = {
+		{ name = 'Ignore', value = 'ignore' },
+	}
+	for _, page in pairs(self.wizard.pages) do
+		if page.isValidType then
+			local choice = page:isValidType(self.node)
+			if choice then
+				table.insert(choices, choice)
+			end
+		end
+	end
 	self.wizard.pages.general.form[1].shadowText = self.node.name
+	self.wizard.pages.general.form[2].choices = choices
+	self.wizard.pages.general.form:setValues(self.node)
 
 	-- restore indices
 	for _, page in pairs(self.wizard.pages) do
@@ -451,12 +454,6 @@ _G._p2 = self.node
 	end
 
 	UI.Page.enable(self)
-
-	for _, v in pairs(self.wizard.pages) do
-		if v.setNode then
-			v:setNode(self.node)
-		end
-	end
 end
 
 function nodeWizard:eventHandler(event)

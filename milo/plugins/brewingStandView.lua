@@ -16,7 +16,7 @@ When finished brewing, the recipe will be available upon refreshing.
 Note that you do not need to import items from the brewing stand, this will be done automatically.]]
 
 local brewingStandView = UI.Window {
-	title = 'Storage Options',
+	title = 'Brewing Stand',
 	index = 2,
 	backgroundColor = colors.cyan,
 	[1] = UI.TextArea {
@@ -25,11 +25,13 @@ local brewingStandView = UI.Window {
 	},
 }
 
+function brewingStandView:isValidType(node)
+	local m = device[node.name]
+	return m and m.type == 'minecraft:brewing_stand'and { name = 'Brewing Stand', value = 'brewingStand' }
+end
+
 function brewingStandView:isValidFor(node)
-	if node.mtype == 'machine' then
-		local m = device[node.name]
-		return m and m.type == 'minecraft:brewing_stand'
-	end
+	return node.mtype == 'brewingStand'
 end
 
 UI:getPage('nodeWizard').wizard:add({ brewingStand = brewingStandView })
