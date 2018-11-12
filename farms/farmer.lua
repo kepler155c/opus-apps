@@ -144,11 +144,13 @@ local function harvest(blocks)
         local sensed = peripheral.call('right', 'sense')
         turtle.equip('right', 'minecraft:diamond_pickaxe')
         Util.filterInplace(sensed, function(s)
-          if s.displayName == 'item.tile.cactus' and Point.distance(b, s) < 6 then
+          if s.displayName == 'item.tile.cactus' then
             s.x = Util.round(s.x) + turtle.point.x
             s.z = Util.round(s.z) + turtle.point.z
             s.y = -1
-            return true
+            if  Point.distance(b, s) < 6 then
+              return true
+            end
           end
         end)
         Point.eachClosest(turtle.point, sensed, function(s)

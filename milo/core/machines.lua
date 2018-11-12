@@ -435,6 +435,7 @@ _G._p2 = self.node
 	}
 	for _, page in pairs(self.wizard.pages) do
 		if page.isValidType then
+			-- TODO: dedupe list
 			local choice = page:isValidType(self.node)
 			if choice then
 				table.insert(choices, choice)

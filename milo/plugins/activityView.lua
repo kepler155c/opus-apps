@@ -39,6 +39,10 @@ end
 
 UI:getPage('nodeWizard').wizard:add({ activity = activityWizardPage })
 
+if not monitor then
+  return
+end
+
 local page = UI.Window {
   parent = UI.Device {
     device = monitor.adapter,

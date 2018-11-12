@@ -85,7 +85,10 @@ function Milo:registerTask(task)
 end
 
 function Milo:showError(msg)
-	self.context.jobMonitor:showError(msg)
+	-- TODO: break dependency
+	if self.context.jobMonitor then
+		self.context.jobMonitor:showError(msg)
+	end
 end
 
 function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)

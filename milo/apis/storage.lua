@@ -216,11 +216,19 @@ function Storage:updateCache(adapter, key, count)
       adapter.dirty = true
       self.dirty = true
     else
+      -- TODO: all items imported should be updated in itemdb
+      -- error here if not
       local item = itemDB:get(key) or itemDB:splitKey(key)
-      entry = Util.shallowCopy(item)
-      entry.count = count
-      entry.key = key
-      adapter.cache[key] = entry
+      if item.displayName then
+        entry = Util.shallowCopy(item)
+        entry.count = count
+        entry.key = key
+        adapter.cache[key] = entry
+      else
+        -- TODO: somehow update itemdb with this maybe new item
+        adapter.dirty = true
+        self.dirty = true
+      end
     end
   else
     entry.count = entry.count + count
@@ -230,6 +238,14 @@ function Storage:updateCache(adapter, key, count)
   end
 end
 
+local function sn(name)
+  local t = { name:match(':(.+)_(%d+)$') }
+  if #t ~= 2 then
+    return name
+  end
+  return table.concat(table.unpack(t), '_')
+end
+
 function Storage:export(target, slot, count, item)
   local total = 0
   local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
@@ -237,9 +253,9 @@ function Storage:export(target, slot, count, item)
   local function provide(adapter)
     local amount = adapter:provide(item, count, slot, target or self.localName)
     if amount > 0 then
---  _debug('EXT: %s(%d): %s -> %s%s',
---    item.name, amount, adapter.name, direction or self.localName,
---    slot and string.format('[%d]', slot) or '')
+  _G._debug('EXT: %s(%d): %s -> %s%s',
+    item.name, amount, sn(adapter.name), sn(target or self.localName),
+    slot and string.format('[%d]', slot) or '')
       self:updateCache(adapter, key, -amount)
       self:updateCache(self, key, -amount)
     end
@@ -287,7 +303,7 @@ function Storage:import(source, slot, count, item)
 
 _G._debug('INS: %s(%d): %s[%d] -> %s',
   item.name, amount,
-  source or self.localName, slot, adapter.name)
+  sn(source or self.localName), slot, sn(adapter.name))
 
       self:updateCache(adapter, key, amount)
       self:updateCache(self, key, amount)
@@ -340,7 +356,7 @@ function Storage:trash(source, slot, count)
   local trashcan = Util.find(self.nodes, 'mtype', 'trashcan')
   if trashcan and trashcan.adapter and trashcan.adapter.online then
 
-_G._debug('TRA: %s[%d] (%d)', source or self.localName, slot, count or 64)
+_G._debug('TRA: %s[%d] (%d)', sn(source or self.localName), slot, count or 64)
 
     return trashcan.adapter.pullItems(source or self.localName, slot, count)
   end

@@ -8,7 +8,7 @@ local Util       = require('util')
 local colors     = _G.colors
 local context    = Milo:getContext()
 local device     = _G.device
-local monNode    = context.storage:getSingleNode('jobs')
+local monitor    = context.storage:getSingleNode('jobs')
 
 --[[ Configuration Screen ]]
 local template =
@@ -39,7 +39,7 @@ end
 UI:getPage('nodeWizard').wizard:add({ jobs = jobsWizardPage })
 
 --[[ Display ]]
-if not monNode then
+if not monitor then
   return
 end
 
@@ -47,7 +47,7 @@ end
 
 local jobMonitor = UI.Page {
   parent = UI.Device {
-    device = monNode.adapter,
+    device = monitor.adapter,
     textScale = .5,
   },
   grid = UI.Grid {
