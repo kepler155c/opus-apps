@@ -52,6 +52,7 @@ function itemDB:splitKey(key, item)
 end
 
 function itemDB:get(key)
+  if not key then error('itemDB:get: key is required', 2) end
   if type(key) == 'string' then
     key = self:splitKey(key)
   end

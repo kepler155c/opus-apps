@@ -293,6 +293,19 @@ function Storage:export(target, slot, count, item)
   return total
 end
 
+local function isLockedWith(node, key)
+  if node.lock then
+    if type(node.lock) == 'string' then
+      return node.lock == key
+    end
+    for k in pairs(node.lock) do
+      if k == key then
+        return true
+      end
+    end
+  end
+end
+
 function Storage:import(source, slot, count, item)
   local total = 0
   local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
@@ -320,23 +333,27 @@ _G._debug('INS: %s(%d): %s[%d] -> %s',
   end
 
   -- find a chest locked with this item
-  for remote in self:onlineAdapters() do
-    if remote.lock == key then
-      insert(remote.adapter)
-      if count > 0 then -- TODO: only if void flag set
+  for node in self:onlineAdapters() do
+    if isLockedWith(node, key) then
+      insert(node.adapter)
+      if count > 0 and node.void then
         total = total + self:trash(source, slot, count)
+        return total
       end
+      --return total
+    end
+    if count <= 0 then
       return total
     end
   end
 
   -- is this item in some chest
   if self.cache[key] then
-    for _, adapter in self:onlineAdapters() do
+    for node, adapter in self:onlineAdapters() do
       if count <= 0 then
         return total
       end
-      if adapter.cache and adapter.cache[key] and not adapter.lock then
+      if adapter.cache and adapter.cache[key] and not node.lock then
         insert(adapter)
       end
     end
