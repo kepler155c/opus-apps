@@ -40,6 +40,15 @@ if config.remoteDefaults then
   config.remoteDefaults = nil
 end
 
+-- TODO: remove - temporary
+for _, node in pairs(config.nodes) do
+  if node.lock and type(node.lock) == 'string' then
+    node.lock = {
+      [ node.lock ] = true,
+    }
+  end
+end
+
 local modem = Peripheral.get('wired_modem')
 if not modem or not modem.getNameLocal then
   error('Wired modem is not connected')
