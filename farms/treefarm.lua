@@ -6,7 +6,7 @@ _G.requireInjector()
     Area around turtle must be flat and can only be dirt or grass
       (10 blocks in each direction from turtle)
     Turtle must have: crafting table, chest
-    Turtle must have a pick equipped
+    Turtle must have a pick equipped on the RIGHT side
 
   Optional:
     Add additional sapling types that can grow with a single sapling
@@ -140,7 +140,21 @@ local function craftItem(item, qty)
   return success
 end
 
+local function emptyFurnace()
+  if state.cooking then
+
+    print('Emptying furnace')
+
+    turtle.suckDownAt(state.furnace)
+    turtle.suckForwardAt(state.furnace)
+    turtle.suckUpAt(state.furnace)
+    setState('cooking')
+  end
+end
+
 local function cook(item, count, result, fuel, fuelCount)
+
+  emptyFurnace()
 
   setState('cooking', true)
 
@@ -154,9 +168,19 @@ local function cook(item, count, result, fuel, fuelCount)
   count = count + turtle.getItemCount(result)
   turtle.select(1)
   turtle.pathfind(Point.below(state.furnace))
+
+  local lastSuck = os.clock()
   repeat
     os.sleep(1)
-    turtle.suckUp()
+    if turtle.suckUp() then
+      lastSuck = os.clock()
+    end
+
+    if os.clock() - lastSuck > 10 then
+      -- sponge bug
+      Util.print('Timed out waiting for furnace')
+      return
+    end
   until turtle.getItemCount(result) >= count
 
   setState('cooking')
@@ -223,18 +247,6 @@ local function makeCharcoal()
   until charcoal + toCook >= MIN_CHARCOAL
 
   return true
-end
-
-local function emptyFurnace()
-  if state.cooking then
-
-    print('Emptying furnace')
-
-    turtle.suckDownAt(state.furnace)
-    turtle.suckForwardAt(state.furnace)
-    turtle.suckUpAt(state.furnace)
-    setState('cooking')
-  end
 end
 
 local function getCobblestone(count)
@@ -602,7 +614,20 @@ local function findGround()
       break
     end
 
-    if b == COBBLESTONE or b == STONE then
+    if b == COBBLESTONE then
+      turtle.back()
+      local s2, b2 = turtle.inspectDown()
+      if not s2 then
+        error('lost')
+      end
+      if b2.name == COBBLESTONE then
+        turtle.turnLeft()
+        turtle.back()
+      end
+      break
+    end
+
+    if b == STONE then
       error('lost')
     end
 
