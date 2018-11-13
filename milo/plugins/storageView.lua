@@ -9,22 +9,34 @@ local storageView = UI.Window {
 	index = 2,
 	backgroundColor = colors.cyan,
 	form = UI.Form {
-		x = 1, y = 2, ex = -1, ey = -2,
+		x = 1, y = 1, ex = -1, ey = -2,
 		manualControls = true,
 		[1] = UI.TextEntry {
 			formLabel = 'Priority', formKey = 'priority',
 			help = 'Larger values get precedence',
 			limit = 4,
-			validate = 'numeric', pruneEmpty = true,
+			validate = 'numeric',
+			shadowText = 'Numeric priority',
 		},
 		[2] = UI.Checkbox {
 			formLabel = 'Locked', formKey = 'lockWith',
 			help = 'Locks chest to a single item type',
-			pruneEmpty = true,
 		},
 		[3] = UI.Text {
 			x = 16, ex = -2, y = 3,
 			value = '',
+		},
+		[4] = UI.TextEntry {
+			formLabel = 'Refresh', formKey = 'refreshInterval',
+			help = 'Refresh periodically',
+			limit = 4,
+			validate = 'numeric',
+			shadowText = 'seconds between refresh',
+		},
+		[5] = UI.TextArea {
+			x = 12, ex = -2, y = 5,
+			textColor = colors.yellow,
+			value = 'Only specify if you are manually taking items out of this inventory. Value should be > 10',
 		},
 --[[
 		[4] = UI.Checkbox {

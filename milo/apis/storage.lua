@@ -177,6 +177,7 @@ function Storage:listItems(throttle)
   local timer = Timer()
   for _, adapter in self:onlineAdapters() do
     if adapter.dirty then
+      _G._debug('STORAGE: refreshing ' .. adapter.name)
       adapter:listItems(throttle)
       adapter.dirty = false
     end

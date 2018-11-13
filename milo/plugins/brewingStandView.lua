@@ -13,7 +13,7 @@ Simply craft potions in the brewing stand as normal except for these conditions.
 
 When finished brewing, the recipe will be available upon refreshing.
 
-Note that you do not need to import items from the brewing stand, this will be done automatically.]]
+Note that you do not need to import items from the brewing stand or export blaze powder, this will be done automatically.]]
 
 local brewingStandView = UI.Window {
 	title = 'Brewing Stand',
