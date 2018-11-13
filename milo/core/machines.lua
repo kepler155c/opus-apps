@@ -251,27 +251,13 @@ The settings will take effect immediately!]],
 			x = 2, y = -4, height = 3,
 			margin = 1,
 			manualControls = true,
-			[1] = UI.Chooser {
-				width = 7,
+			[1] = UI.Checkbox {
 				formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
-				pruneEmpty = true,
-				nochoice = 'No',
-				choices = {
-					{ name = 'Yes', value = true },
-					{ name = 'No', value = false },
-				},
-				help = 'Ignore damage of item'
+				help = 'Ignore damage of item',
 			},
-			[2] = UI.Chooser {
-				width = 7,
+			[2] = UI.Checkbox {
 				formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
-				pruneEmpty = true,
-				nochoice = 'No',
-				choices = {
-					{ name = 'Yes', value = true },
-					{ name = 'No', value = false },
-				},
-				help = 'Ignore NBT of item'
+				help = 'Ignore NBT of item',
 			},
 			[3] = UI.Chooser {
 				width = 13,
