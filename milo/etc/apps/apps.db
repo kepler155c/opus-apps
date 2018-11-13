@@ -1,0 +1,13 @@
+{
+  [ "9302912a2d9794a47241faefc475335b4e07a581" ] = {
+    title = "Remote",
+    category = "Apps",
+    run = "MiloRemote",
+  },
+  [ "eea426f9baef72a8fcefd091e0cec5ab94a76698" ] = {
+    title = "Milo",
+    category = "Apps",
+    run = "Milo",
+    requires = 'advancedTurtle',
+  },
+}

@@ -26,6 +26,7 @@ local storageView = UI.Window {
 			x = 16, ex = -2, y = 3,
 			value = '',
 		},
+--[[
 		[4] = UI.Checkbox {
 			formLabel = 'Void', formKey = 'voidExcess',
 			help = 'Void excess if locked - TODO',
@@ -36,6 +37,7 @@ local storageView = UI.Window {
 			help = 'TODO',
 			pruneEmpty = true,
 		},
+]]--
 	},
 }
 
@@ -50,7 +52,11 @@ end
 
 function storageView:isValidType(node)
 	local m = device[node.name]
-	return m and m.pullItems and { name = 'Storage', value = 'storage' }
+	return m and m.pullItems and {
+		name = 'Storage',
+		value = 'storage',
+		help = 'Use for item storage',
+	}
 end
 
 function storageView:isValidFor(node)

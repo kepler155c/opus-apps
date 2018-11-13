@@ -62,6 +62,9 @@ local networkPage = UI.Page {
 		backgroundColor = colors.lightGray,
 	},
 	notification = UI.Notification { },
+	accelerators = {
+		delete = 'remove_node',
+	}
 }
 
 function networkPage.grid:getDisplayValues(row)
@@ -236,7 +239,9 @@ The settings will take effect immediately!]],
 				{ heading = 'Name', key = 'displayName' },
 			},
 			sortColumn = 'displayName',
-			help = 'Select item to export',
+			accelerators = {
+				delete = 'remove_entry',
+			},
 		},
 		remove = UI.Button {
 			x = -4, y = 4,
@@ -255,7 +260,7 @@ The settings will take effect immediately!]],
 					{ name = 'Yes', value = true },
 					{ name = 'No', value = false },
 				},
-				help = 'Ignore damage of item when exporting'
+				help = 'Ignore damage of item'
 			},
 			[2] = UI.Chooser {
 				width = 7,
@@ -266,7 +271,7 @@ The settings will take effect immediately!]],
 					{ name = 'Yes', value = true },
 					{ name = 'No', value = false },
 				},
-				help = 'Ignore NBT of item when exporting'
+				help = 'Ignore NBT of item'
 			},
 			[3] = UI.Chooser {
 				width = 13,
@@ -276,7 +281,7 @@ The settings will take effect immediately!]],
 					{ name = 'whitelist', value = false },
 					{ name = 'blacklist', value = true },
 				},
-				help = 'Ignore damage of item when exporting'
+				help = 'Ignore damage of item'
 			},
 			scan = UI.Button {
 				x = -11, y = 1,
@@ -377,7 +382,7 @@ function nodeWizard.wizard.pages.general:enable()
 	self:focusFirst()
 end
 
-function nodeWizard.wizard.pages.general:setNode(node)
+function nodeWizard.wizard.pages.general:showInventory(node)
 	local inventory
 
 	if device[node.name] and device[node.name].list then
@@ -437,7 +442,7 @@ _G._p2 = self.node
 		if page.isValidType then
 			-- TODO: dedupe list
 			local choice = page:isValidType(self.node)
-			if choice then
+			if choice and not Util.find(choices, 'value', choice.value) then
 				table.insert(choices, choice)
 			end
 		end
@@ -445,6 +450,8 @@ _G._p2 = self.node
 	self.wizard.pages.general.form[1].shadowText = self.node.name
 	self.wizard.pages.general.form[2].choices = choices
 	self.wizard.pages.general.form:setValues(self.node)
+
+	self.wizard.pages.general:showInventory(self.node)
 
 	-- restore indices
 	for _, page in pairs(self.wizard.pages) do
@@ -478,6 +485,15 @@ function nodeWizard:eventHandler(event)
 		saveConfig()
 
 		UI:setPreviousPage()
+
+	elseif event.type == 'choice_change' then
+		local help
+		if event.choice and event.choice.help then -- TODO: new param sent by UI api
+			help = event.choice.help
+		else
+			help = ''
+		end
+		self.statusBar:setStatus(help)
 
 	elseif event.type == 'edit_filter' then
 		self.filter:show(event.entry, event.callback, event.whitelistOnly)

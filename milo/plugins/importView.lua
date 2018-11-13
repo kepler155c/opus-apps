@@ -15,6 +15,9 @@ local importView = UI.Window {
 		},
 		sortColumn = 'slot',
 		help = 'Edit this entry',
+		accelerators = {
+			delete = 'remove_entry',
+		},
 	},
 	text = UI.Text {
 		x = 2, y = -2,
@@ -38,7 +41,11 @@ local importView = UI.Window {
 
 function importView:isValidType(node)
 	local m = device[node.name]
-	return m and m.pullItems and { name = 'Generic Inventory', value = 'machine' }
+	return m and m.pullItems and {
+		name = 'Generic Inventory',
+		value = 'machine',
+		help = 'Chest, furnace... (has an inventory)',
+	}
 end
 
 function importView:isValidFor(node)

@@ -27,7 +27,11 @@ local brewingStandView = UI.Window {
 
 function brewingStandView:isValidType(node)
 	local m = device[node.name]
-	return m and m.type == 'minecraft:brewing_stand'and { name = 'Brewing Stand', value = 'brewingStand' }
+	return m and m.type == 'minecraft:brewing_stand'and {
+		name = 'Brewing Stand',
+		value = 'brewingStand',
+		help = 'Auto-learning brewing stand',
+	}
 end
 
 function brewingStandView:isValidFor(node)

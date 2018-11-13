@@ -12,7 +12,7 @@ local function filter(a)
 end
 
 function PotionImportTask:cycle(context)
-	for bs in context.storage:filterActive('machine', filter) do
+	for bs in context.storage:filterActive('brewingStand', filter) do
 		if bs.adapter.getBrewTime() == 0 then
 			local list = bs.adapter.list()
 

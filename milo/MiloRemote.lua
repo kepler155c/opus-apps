@@ -1,5 +1,6 @@
 _G.requireInjector(_ENV)
 
+local Config = require('config')
 local Event  = require('event')
 local Socket = require('socket')
 local sync   = require('sync').sync
@@ -13,47 +14,25 @@ local socket
 
 local SHIELD_SLOT = 2
 
-local options = {
-  user   = { arg = 'u', type = 'string',
-             desc = 'User name associated with bound manipulator' },
-  slot   = { arg = 's', type = 'number',
-             desc = 'Optional inventory slot to use to transfer to milo' },
-  shield = { arg = 'e', type = 'flag',
-             desc = 'Use shield slot to use to transfer to milo' },
-  server = { arg = 'm', type = 'number',
-             desc = 'ID of Milo server' },
-             help   = { arg = 'h', type = 'flag', value = false,
-             desc = 'Displays the options' },
-}
-
-local args = { ... }
-if not Util.getOptions(options, args) then
-  print()
-  error('Invalid arguments')
-end
-
-if not options.user.value or not options.server.value then
-  Util.showOptions(options)
-  print()
-  error('Invalid arguments')
-end
-
-if (options.slot.value or options.shield.value) and
-   not (device.neuralInterface and device.neuralInterface.getInventory) then
-  error('Introspection module is required for transferring items')
-end
+local config = Config.load('miloRemote', { })
 
 local page = UI.Page {
   dummy = UI.Window {
-     x = 1, ex = -10, y = 1, height = 1,
+     x = 1, ex = -13, y = 1, height = 1,
     infoBar = UI.StatusBar {
       backgroundColor = colors.lightGray,
     },
   },
   refresh = UI.Button {
-    y = 1, x = -9,
+    y = 1, x = -12,
     event = 'refresh',
     text = 'Refresh',
+  },
+  setupButton = UI.Button {
+    y = 1, x = -3,
+    event = 'setup',
+    text = '\206',
+    help = 'Configuration',
   },
   grid = UI.Grid {
     y = 2, ey = -2,
@@ -106,6 +85,46 @@ local page = UI.Page {
 
     q = 'quit',
   },
+  setup = UI.SlideOut {
+    backgroundColor = colors.cyan,
+    titleBar = UI.TitleBar {
+      title = 'Remote Setup',
+    },
+    form = UI.Form {
+      x = 2, ex = -2, y = 2, ey = -1,
+      values = config,
+      [1] = UI.TextEntry {
+        formLabel = 'Server', formKey = 'server',
+        help = 'ID for the server',
+        shadowText = 'Milo server ID',
+        limit = 6,
+        validate = 'numeric',
+        required = true,
+      },
+      [2] = UI.TextEntry {
+        formLabel = 'User Name', formKey = 'user',
+        help = 'User name for bound manipulator',
+        shadowText = 'User name',
+        limit = 50,
+        required = true,
+      },
+      [3] = UI.TextEntry {
+        formLabel = 'Return Slot', formKey = 'slot',
+        help = 'Use a slot for sending to storage',
+        shadowText = 'Inventory slot #',
+        limit = 5,
+        validate = 'numeric',
+        required = true,
+      },
+      [4] = UI.Checkbox {
+        formLabel = 'Shield Slot', formKey = 'useShield',
+        help = 'or use the shield slot for sending'
+      },
+    },
+    statusBar = UI.StatusBar {
+      backgroundColor = colors.cyan,
+    },
+  },
   displayMode = 0,
   items = { },
 }
@@ -139,14 +158,22 @@ end
 function page:sendRequest(data)
   local response
 
+  if not config.server then
+    self:setStatus('Invalid configuration')
+    Event.onTimeout(2, function()
+      self:setStatus('')
+    end)
+    return
+  end
+
   sync(self, function()
     local msg
     for _ = 1, 2 do
       if not socket or not socket.connected then
         self:setStatus('connecting ...')
-        socket, msg = Socket.connect(options.server.value, 4242)
+        socket, msg = Socket.connect(config.server, 4242)
         if socket then
-          socket:write(options.user.value)
+          socket:write(config.user)
           local r = socket:read(2)
           if r and not r.msg then
             self:setStatus('connected ...')
@@ -203,7 +230,6 @@ end
 function page:transfer(item, count)
   local response = self:sendRequest({ request = 'transfer', item = item, count = count })
   if response then
-    _debug(response)
     item.count = response.current - response.count
     self.grid:draw()
     if response.craft > 0 then
@@ -214,9 +240,28 @@ function page:transfer(item, count)
   end
 end
 
+function page.setup:eventHandler(event)
+  if event.type == 'focus_change' then
+    self.statusBar:setStatus(event.focused.help)
+  end
+  return UI.SlideOut.eventHandler(self, event)
+end
+
 function page:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
+
+  elseif event.type == 'setup' then
+    self.setup:show()
+
+  elseif event.type == 'form_complete' then
+    Config.update('miloRemote', config)
+    self.setup:hide()
+    self:refresh()
+    self.grid:draw()
+
+  elseif event.type == 'form_cancel' then
+    self.setup:hide()
 
   elseif event.type == 'focus_change' then
     self.dummy.infoBar:setStatus(event.focused.help)
@@ -290,6 +335,9 @@ end
 function page:enable()
   self:setFocus(self.statusBar.filter)
   UI.Page.enable(self)
+  if not config.server then
+    self.setup:show()
+  end
   Event.onTimeout(.1, function()
     self:refresh()
     self.grid:draw()
@@ -311,31 +359,21 @@ function page:applyFilter()
   self.grid:setValues(t)
 end
 
-if options.slot.value or options.shield.value then
-  local inv = 'getInventory'
-  local slotNo = options.slot.value
-  local slotValue = options.slot.value
-
-  if options.shield.value then
-    slotNo = SHIELD_SLOT
-    slotValue = 'shield'
-    inv = 'getEquipment'
-  end
-
-  Event.addRoutine(function()
-    while true do
-      os.sleep(1.5)
-      local neural = device.neuralInterface
-      if not neural or not neural[inv] then
-        _G._debug('missing Introspection module')
-      end
-
-      local method = neural and neural[inv]
-      local item = method and method().getItemMeta(slotNo)
+Event.addRoutine(function()
+  while true do
+    os.sleep(1.5)
+    local neural = device.neuralInterface
+    local inv = config.useShield and 'getEquipment' or 'getInventory'
+    if not neural or not neural[inv] then
+      _G._debug('missing Introspection module')
+    elseif config.server then
+      local method = neural[inv]
+      local item = method and method().getItemMeta(config.useShield and SHIELD_SLOT or config.slot)
       if item then
+        local slotNo = config.useShield and 'shield' or config.slot
         local response = page:sendRequest({
           request = 'deposit',
-          slot = slotValue,
+          slot = slotNo,
           count = item.count,
           key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
         })
@@ -349,8 +387,8 @@ if options.slot.value or options.shield.value then
         end
       end
     end
-  end)
-end
+  end
+end)
 
 UI:setPage(page)
 UI:pullEvents()

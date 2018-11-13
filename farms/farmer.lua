@@ -139,7 +139,7 @@ local function harvest(blocks)
     elseif b.action == 'bump' then
       if turtle.faceAgainst(b) then
         turtle.equip('right', 'plethora:module:3')
-        os.sleep(.3)
+        os.sleep(.5)
         -- search the ground for the dropped cactus
         local sensed = peripheral.call('right', 'sense')
         turtle.equip('right', 'minecraft:diamond_pickaxe')

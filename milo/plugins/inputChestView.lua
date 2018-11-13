@@ -23,7 +23,11 @@ local inputChestWizardPage = UI.Window {
 
 function inputChestWizardPage:isValidType(node)
   local m = device[node.name]
-  return m and m.pullItems and { name = 'Input Chest', value = 'input' }
+  return m and m.pullItems and {
+    name = 'Input Chest',
+    value = 'input',
+    help = 'Sends all items to storage',
+  }
 end
 
 function inputChestWizardPage:isValidFor(node)

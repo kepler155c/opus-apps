@@ -30,7 +30,11 @@ local activityWizardPage = UI.Window {
 
 function activityWizardPage:isValidType(node)
   local m = device[node.name]
-  return m and m.type == 'monitor' and { name = 'Activity Monitor', value = 'activity' }
+  return m and m.type == 'monitor' and {
+    name = 'Activity Monitor',
+    value = 'activity',
+    help = 'Display storage activity'
+  }
 end
 
 function activityWizardPage:isValidFor(node)

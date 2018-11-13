@@ -25,7 +25,11 @@ local trashcanWizardPage = UI.Window {
 
 function trashcanWizardPage:isValidType(node)
   local m = device[node.name]
-  return m and m.pullItems and { name = 'Trashcan', value = 'trashcan' }
+  return m and m.pullItems and {
+    name = 'Trashcan',
+    value = 'trashcan',
+    help = 'An inventory to send unwanted items',
+  }
 end
 
 function trashcanWizardPage:isValidFor(node)

@@ -31,6 +31,7 @@ local function safeString(text)
 end
 
 function itemDB:makeKey(item)
+  if not item then error('itemDB:makeKey: item is required', 2) end
   return table.concat({ item.name, item.damage or '*', item.nbtHash }, ':')
 end
 

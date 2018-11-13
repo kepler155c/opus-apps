@@ -29,7 +29,11 @@ local jobsWizardPage = UI.Window {
 
 function jobsWizardPage:isValidType(node)
   local m = device[node.name]
-  return m and m.type == 'monitor' and { name = 'Crafting Monitor', value = 'jobs' }
+  return m and m.type == 'monitor' and {
+    name = 'Crafting Monitor',
+    value = 'jobs',
+    help = 'Display crafting progress / jobs'
+  }
 end
 
 function jobsWizardPage:isValidFor(node)

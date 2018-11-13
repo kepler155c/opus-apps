@@ -36,8 +36,8 @@ local listingPage = UI.Page {
       --{ text = 'Forget',  event = 'forget'   },
       { text = 'Craft',   event = 'craft'   },
       { text = 'Edit',    event = 'details' },
-      { text = 'Network', event = 'network' },
-      { text = 'Refresh', event = 'refresh', x = -9 },
+      { text = 'Refresh', event = 'refresh', x = -12 },
+      { text = '\206', event = 'network', x = -3 },
     },
   },
   grid = UI.Grid {
@@ -59,7 +59,7 @@ local listingPage = UI.Page {
       backgroundColor = colors.cyan,
       backgroundFocusColor = colors.cyan,
       accelerators = {
-        [ 'enter' ] = 'craft',
+        [ 'enter' ] = 'eject',
       },
     },
     storageStatus = UI.Text {
@@ -198,10 +198,12 @@ function listingPage:eventHandler(event)
 
   elseif event.type == 'craft' then
     local item = self.grid:getSelected()
-    if Craft.findRecipe(item) or true then -- or item.is_craftable then
-      UI:setPage('craft', self.grid:getSelected())
-    else
-      self.notification:error('No recipe defined')
+    if item then
+      if Craft.findRecipe(item) then -- or item.is_craftable then
+        UI:setPage('craft', self.grid:getSelected())
+      else
+        self.notification:error('No recipe defined')
+      end
     end
 
   elseif event.type == 'text_change' and event.element == self.statusBar.filter then

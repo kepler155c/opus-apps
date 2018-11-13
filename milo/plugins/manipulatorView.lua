@@ -35,7 +35,11 @@ function wizardPage:isValidType(node)
   return m and
          m.type == 'manipulator' and
          m.getEnder and
-         { name = 'Manipulator', value = 'manipulator' }
+         {
+           name = 'Manipulator',
+           value = 'manipulator',
+           help = 'Manipulator w/bound introspection mod'
+         }
 end
 
 function wizardPage:isValidFor(node)
