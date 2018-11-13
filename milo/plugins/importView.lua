@@ -64,7 +64,7 @@ function importView:setNode(node)
 	}
 
 	local m = device[self.machine.name]
-		for k = 1, m.size() do
+	for k = 1, m.size() do
 		table.insert(self.slots.choices, { name = k, value = k })
 	end
 end

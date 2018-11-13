@@ -2223,6 +2223,12 @@
 				[ 6 ] = "minecraft:stone:0",
 			},
 		},
+		[ "minecraft:blaze_powder:0" ] = {
+			count = 2,
+			ingredients = {
+				"minecraft:blaze_rod:0",
+			},
+		},
 		[ "minecraft:end_rod:0" ] = {
 			count = 4,
 			ingredients = {

@@ -4,7 +4,6 @@ local Util   = require('util')
 local device = _G.device
 local fs     = _G.fs
 local turtle = _G.turtle
-local intro  = device['plethora:introspection']
 
 local Craft = {
 	STATUS_INFO    = 'info',
@@ -37,14 +36,7 @@ end
 
 function Craft.clearGrid(storage)
 	turtle.eachFilledSlot(function(slot)
-		local item = slot
-		if intro then
-			item = intro.getInventory().getItemMeta(slot.index)
-			if not itemDB:get(item) then
-				itemDB:add(item)
-			end
-		end
-		storage:import(storage.localName, slot.index, slot.count, item)
+		storage:import(storage.localName, slot.index, slot.count, slot)
 	end)
 
 	for i = 1, 16 do

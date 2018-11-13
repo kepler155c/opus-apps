@@ -7,14 +7,6 @@
   Turtle crafting:
     1. The turtle must have a crafting table equipped.
     2. Equip the turtle with an introspection module.
-
-  Configuration:
-    Configuration file is usr/config/milo
-
-    monitor   : valid options include:
-                   type/monitor   - will use the first monitor found
-                   side/north     - specify a direction (top/bottom/east/etc)
-                   name/monitor_1 - specify the exact name of the peripheral
 ]]--
 
 _G.requireInjector(_ENV)
@@ -27,6 +19,7 @@ local Storage    = require('storage')
 local UI         = require('ui')
 local Util       = require('util')
 
+local device     = _G.device
 local fs         = _G.fs
 local multishell = _ENV.multishell
 local os         = _G.os
@@ -37,8 +30,6 @@ if multishell then
 end
 
 local config = {
-  monitor = 'type/monitor',
-  activityMonitor = 'none',
   nodes = { },
 }
 Config.load('milo', config)
@@ -54,7 +45,7 @@ if not modem or not modem.getNameLocal then
   error('Wired modem is not connected')
 end
 
-local introspectionModule = Peripheral.get('plethora:introspection') or
+local introspection = Peripheral.get('plethora:introspection') or
   error('Introspection module not found')
 
 local context = {
@@ -62,15 +53,16 @@ local context = {
   resources = Util.readTable(Milo.RESOURCE_FILE) or { },
 
   craftingQueue = { },
-
   learnTypes = { },
   tasks = { },
   queue = { },
 
   localName = modem.getNameLocal(),
   storage = Storage(config),
-  introspectionModule = introspectionModule,
+  turtleInventory = introspection.getInventory(),
 }
+
+device[context.localName] = introspection.getInventory()
 
 _G._p = context --debug
 

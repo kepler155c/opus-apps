@@ -161,14 +161,13 @@ function Milo:getTurtleInventory()
 	local list = { }
 
 	for i = 1,16 do
-		local item = self.context.introspectionModule.getInventory().getItemMeta(i)
-		if item then
-			if not itemDB:get(item) then
-				itemDB:add(item)
-			end
-			list[i] = item
+		local item = self.context.turtleInventory.getItemMeta(i)
+		if item and not itemDB:get(item) then
+			itemDB:add(item)
 		end
+		list[i] = item
 	end
+
 	itemDB:flush()
 	return list
 end

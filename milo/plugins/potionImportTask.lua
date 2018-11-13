@@ -1,5 +1,8 @@
-local Craft = require('turtle.craft')
-local Milo  = require('milo')
+local Craft  = require('turtle.craft')
+local itemDB = require('itemDB')
+local Milo   = require('milo')
+
+local BLAZE_POWDER = "minecraft:blaze_powder:0"
 
 local PotionImportTask = {
 	name = 'potions',
@@ -16,6 +19,20 @@ function PotionImportTask:cycle(context)
 		if bs.adapter.getBrewTime() == 0 then
 			local list = bs.adapter.list()
 
+			-- refill blaze powder
+			if not list[5] then
+				local blazePowder = context.storage.cache[BLAZE_POWDER]
+				if blazePowder then
+					context.storage:export(bs.name, 5, 1, blazePowder)
+				else
+					local item = itemDB:get(BLAZE_POWDER)
+					if item then
+						item.requested = 1
+						Milo:requestCrafting(item)
+					end
+				end
+			end
+
 			if list[1] and not list[4] then
 				-- brewing has completd
 
@@ -25,6 +42,7 @@ function PotionImportTask:cycle(context)
 						Milo:saveMachineRecipe(self.brewQueue[bs.name], list[1], bs.name)
 					end
 				end
+
 				for slot = 1, 3 do
 					if list[slot] then
 						context.storage:import(bs.name, slot, 1, list[slot])

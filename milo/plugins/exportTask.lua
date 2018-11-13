@@ -52,7 +52,6 @@ function ExportTask:cycle(context)
 			end
 
 			for key in pairs(entry.filter or { }) do
-				-- bad for perf to do listItems each time
 				local items = Milo:getMatches(Milo:listItems(), itemDB:splitKey(key), entry.ignoreDamage, entry.ignoreNbtHash)
 				for _,item in pairs(items) do
 					if item and item.count > 0 then
@@ -63,7 +62,9 @@ function ExportTask:cycle(context)
 						else
 -- _debug('attempting to export %s %d', item.name, item.count)
 -- TODO: always going to try and export even if the chest is full
-							context.storage:export(machine.name, nil, item.count, item)
+							if context.storage:export(machine.name, nil, item.count, item) == 0 then
+								break
+							end
 						end
 					end
 				end
