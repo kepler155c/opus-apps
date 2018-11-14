@@ -102,6 +102,9 @@ end
 
 function jobMonitor.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
+  if not row.displayName then
+    row.displayName = itemDB:getName(row)
+  end
   if row.requested then
     row.remaining = math.max(0, row.requested - row.crafted)
   else

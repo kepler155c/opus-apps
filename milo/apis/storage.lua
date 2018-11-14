@@ -240,7 +240,11 @@ _G._debug('STORAGE: item missing details')
   end
 end
 
-local function sn(name)
+function Storage:_sn(name)
+  local node = self.nodes[name]
+  if node and node.displayName then
+    return node.displayName
+  end
   local t = { name:match(':(.+)_(%d+)$') }
   if #t ~= 2 then
     return name
@@ -257,7 +261,7 @@ function Storage:export(target, slot, count, item)
     if amount > 0 then
 
       _G._debug('EXT: %s(%d): %s -> %s%s',
-        item.displayName or item.name, amount, sn(adapter.name), sn(target),
+        item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target),
         slot and string.format('[%d]', slot) or '[*]')
 
       self:updateCache(adapter, key, -amount)
@@ -278,7 +282,7 @@ function Storage:export(target, slot, count, item)
   end
 
   _G._debug('MISS: %s(%d): %s%s %s',
-    item.displayName or item.name, count, sn(target),
+    item.displayName or item.name, count, self:_sn(target),
     slot and string.format('[%d]', slot) or '[*]', key)
 
 -- TODO: If there are misses when a slot is specified than something is wrong...
@@ -320,7 +324,7 @@ function Storage:import(source, slot, count, item)
 
       _G._debug('INS: %s(%d): %s[%d] -> %s',
         item.displayName or item.name, amount,
-        sn(source), slot, sn(adapter.name))
+        self:_sn(source), slot, self:_sn(adapter.name))
 
       self:updateCache(adapter, key, amount)
       self:updateCache(self, key, amount)
@@ -391,7 +395,7 @@ function Storage:trash(source, slot, count)
   local trashcan = Util.find(self.nodes, 'mtype', 'trashcan')
   if trashcan and trashcan.adapter and trashcan.adapter.online then
 
-    _G._debug('TRA: %s[%d] (%d)', sn(source), slot, count or 64)
+    _G._debug('TRA: %s[%d] (%d)', self:_sn(source), slot, count or 64)
 
     return trashcan.adapter.pullItems(source, slot, count)
   end
