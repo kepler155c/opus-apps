@@ -11,12 +11,11 @@ local monitor    = context.storage:getSingleNode('activity')
 
 --[[ Configuration Page ]]--
 local template =
-[[%sDisplays the amount of items entering or leaving storage%s
+[[%sDisplays the amount of items entering or leaving storage.%s
 
 Right-clicking on the activity monitor will reset the totals.
 
-%sMilo must be restarted to activate diplay.
-]]
+%sMilo must be restarted to activate diplay.]]
 
 local activityWizardPage = UI.Window {
   title = 'Activity Monitor',
@@ -24,6 +23,7 @@ local activityWizardPage = UI.Window {
   backgroundColor = colors.cyan,
   [1] = UI.TextArea {
     x = 2, ex = -2, y = 2, ey = -2,
+    marginRight = 0,
     value = string.format(template, Ansi.yellow, Ansi.reset, Ansi.orange),
   },
 }

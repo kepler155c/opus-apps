@@ -114,11 +114,24 @@ local page = UI.Page {
         shadowText = 'Inventory slot #',
         limit = 5,
         validate = 'numeric',
-        required = true,
+        required = false,
       },
       [4] = UI.Checkbox {
         formLabel = 'Shield Slot', formKey = 'useShield',
-        help = 'or use the shield slot for sending'
+        help = 'Or, use the shield slot for sending'
+      },
+      info = UI.TextArea {
+        x = 1, ex = -1, y = 7, ey = -3,
+        textColor = colors.yellow,
+        marginLeft = 0,
+        marginRight = 0,
+        value = [[The Milo turtle must connect to a manipulator with a ]] ..
+                [[bound introspection module. The neural interface must ]] ..
+                [[also have an introspection module.]],
+      },
+      [5] = UI.Button {
+        x = 1, y = -2,
+        text = 'Force scan', event = 'rescan', help = 'Force a scan of all inventories',
       },
     },
     statusBar = UI.StatusBar {
@@ -252,12 +265,13 @@ function page:eventHandler(event)
     UI:exitPullEvents()
 
   elseif event.type == 'setup' then
+    self.setup.form:setValues(config)
     self.setup:show()
 
   elseif event.type == 'form_complete' then
     Config.update('miloRemote', config)
     self.setup:hide()
-    self:refresh()
+    self:refresh('list')
     self.grid:draw()
 
   elseif event.type == 'form_cancel' then
@@ -299,10 +313,16 @@ function page:eventHandler(event)
       self:setStatus('nope ...')
     end
 
+  elseif event.type == 'rescan' then
+    self:setFocus(self.statusBar.filter)
+    self:setStatus('rescanning ...')
+    self:refresh('scan')
+    self.grid:draw()
+
   elseif event.type == 'refresh' then
     self:setFocus(self.statusBar.filter)
     self:setStatus('updating ...')
-    self:refresh()
+    self:refresh('list')
     self.grid:draw()
 
   elseif event.type == 'toggle_display' then
@@ -339,14 +359,14 @@ function page:enable()
     self.setup:show()
   end
   Event.onTimeout(.1, function()
-    self:refresh()
+    self:refresh('list')
     self.grid:draw()
     self:sync()
   end)
 end
 
-function page:refresh()
-  local items = self:sendRequest({ request = 'list' })
+function page:refresh(requestType)
+  local items = self:sendRequest({ request = requestType })
 
   if items then
     self.items = items
@@ -366,7 +386,7 @@ Event.addRoutine(function()
     local inv = config.useShield and 'getEquipment' or 'getInventory'
     if not neural or not neural[inv] then
       _G._debug('missing Introspection module')
-    elseif config.server then
+    elseif config.server and (config.useShield or config.slot) then
       local method = neural[inv]
       local item = method and method().getItemMeta(config.useShield and SHIELD_SLOT or config.slot)
       if item then

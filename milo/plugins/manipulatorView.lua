@@ -13,7 +13,7 @@ local wizardPage = UI.Window {
   index = 2,
   backgroundColor = colors.cyan,
   form = UI.Form {
-    x = 1, y = 3, ex = -1, ey = -2,
+    x = 2, ex = -2, y = 3, ey = -2,
     manualControls = true,
     [1] = UI.Checkbox {
       formLabel = 'Import', formKey = 'importEnder',
@@ -26,7 +26,7 @@ local wizardPage = UI.Window {
     },
   },
   userInfo = UI.TextArea {
-    x = 2, ex = -2, y = 2, height = 1,
+    x = 3, ex = -2, y = 2, height = 2,
   },
 }
 

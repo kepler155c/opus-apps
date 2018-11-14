@@ -49,13 +49,30 @@ for _, node in pairs(config.nodes) do
   end
 end
 
+local function Syntax(msg)
+  print([[
+Turtle must be equipped with:
+  * Introspection module
+  * Workbench
+
+Turtle must be connected to:
+  * Wired modem
+]])
+
+  error(msg)
+end
+
 local modem = Peripheral.get('wired_modem')
 if not modem or not modem.getNameLocal then
-  error('Wired modem is not connected')
+  Syntax('Wired modem missing')
 end
 
 local introspection = Peripheral.get('plethora:introspection') or
-  error('Introspection module not found')
+  Syntax('Introspection module missing')
+
+if not device.workbench then
+  Syntax('Workbench missing')
+end
 
 local context = {
   config = config,

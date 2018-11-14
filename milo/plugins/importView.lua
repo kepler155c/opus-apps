@@ -2,6 +2,7 @@ local itemDB = require('itemDB')
 local UI     = require('ui')
 local Util   = require('util')
 
+local colors = _G.colors
 local device = _G.device
 
 local importView = UI.Window {
@@ -20,17 +21,18 @@ local importView = UI.Window {
 		},
 	},
 	text = UI.Text {
-		x = 2, y = -2,
+		x = 3, y = -2,
 		value = 'Slot',
+		textColor = colors.black,
 	},
 	slots = UI.Chooser {
-		x = 7, y = -2,
+		x = 8, y = -2,
 		width = 7,
 		nochoice = 'All',
 		help = 'Import from this slot',
 	},
 	add = UI.Button {
-		x = 15, y = -2,
+		x = 16, y = -2,
 		text = '+', event = 'add_entry', help = 'Add',
 	},
 	remove = UI.Button {

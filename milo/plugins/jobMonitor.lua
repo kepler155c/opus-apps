@@ -14,8 +14,7 @@ local monitor    = context.storage:getSingleNode('jobs')
 local template =
 [[%sDisplays the crafting progress%s
 
-%sMilo must be restarted to activate diplay.
-]]
+%sMilo must be restarted to activate diplay.]]
 
 local jobsWizardPage = UI.Window {
   title = 'Crafting Monitor',
@@ -23,6 +22,7 @@ local jobsWizardPage = UI.Window {
   backgroundColor = colors.cyan,
   [1] = UI.TextArea {
     x = 2, ex = -2, y = 2, ey = -2,
+    marginRight = 0,
     value = string.format(template, Ansi.yellow, Ansi.reset, Ansi.orange),
   },
 }

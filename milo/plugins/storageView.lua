@@ -9,7 +9,7 @@ local storageView = UI.Window {
 	index = 2,
 	backgroundColor = colors.cyan,
 	form = UI.Form {
-		x = 1, y = 1, ex = -1, ey = -2,
+		x = 2, ex = -2, y = 1, ey = -2,
 		manualControls = true,
 		[1] = UI.TextEntry {
 			formLabel = 'Priority', formKey = 'priority',
@@ -28,6 +28,7 @@ local storageView = UI.Window {
 		[3] = UI.TextArea {
 			x = 12, ex = -2, y = 4,
 			textColor = colors.yellow,
+			marginRight = 0,
 			value = 'Only specify if you are manually taking items out of this inventory. Value should be > 10',
 		},
 	},
@@ -67,7 +68,7 @@ local lockView = UI.Window {
 	index = 3,
 	backgroundColor = colors.cyan,
 	form = UI.Form {
-		x = 1, y = 1, ex = -1, ey = 3,
+		x = 2, ex = -2, y = 1, ey = 3,
 		manualControls = true,
 		[1] = UI.Checkbox {
 			formLabel = 'Locked', formKey = 'lockWith',
@@ -79,11 +80,12 @@ local lockView = UI.Window {
 		},
 	},
 	grid = UI.ScrollingGrid {
-		x = 2, ex = -2, y = 4, ey = -2,
+		x = 2, ex = -2, y = 5, ey = -2,
 		columns = {
 			{ heading = 'Name', key = 'displayName' },
 		},
 		sortColumn = 'displayName',
+		disableHeader = true,
 	},
 }
 

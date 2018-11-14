@@ -48,7 +48,11 @@ local function client(socket)
 			break
 		end
 
-		if data.request == 'list' then
+		if data.request == 'scan' then -- full scan of all inventories
+			local items = Milo:mergeResources(Milo:listItems(true))
+			socket:write(items)
+
+		elseif data.request == 'list' then
 			local items = Milo:mergeResources(Milo:listItems())
 			socket:write(items)
 

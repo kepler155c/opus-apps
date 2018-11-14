@@ -17,7 +17,7 @@ local wizardPage = UI.Window {
     value = [[ Items can be automatically dropped from this storage.]],
   },
   form = UI.Form {
-    x = 1, y = 4, ex = -1, ey = -2,
+    x = 2, ex = -2, y = 4, ey = -2,
     manualControls = true,
     [1] = UI.Checkbox {
       formLabel = 'Drop', formKey = 'drop',
@@ -25,7 +25,7 @@ local wizardPage = UI.Window {
     },
     [2] = UI.Chooser {
       width = 9,
-      formLabel = 'Drop direction', formKey = 'dropDirection',
+      formLabel = 'Direction', formKey = 'dropDirection',
       nochoice = 'Down',
       choices = {
         { name = 'Down', value = 'down' },

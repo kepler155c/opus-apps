@@ -183,7 +183,7 @@ nodeWizard = UI.Page {
 				index = 1,
 				backgroundColor = colors.cyan,
 				form = UI.Form {
-					x = 1, y = 1, ex = -1, ey = 3,
+					x = 2, ex = -2, y = 1, ey = 3,
 					manualControls = true,
 					[1] = UI.TextEntry {
 						formLabel = 'Name', formKey = 'displayName',
