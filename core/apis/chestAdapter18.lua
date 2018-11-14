@@ -137,8 +137,8 @@ function ChestAdapter:provide(item, qty, slot, direction)
     local stacks = self.list()
     for key,stack in Util.rpairs(stacks) do
       if stack.name == item.name and
-        (not item.damage or stack.damage == item.damage) and
-        (not item.nbtHash or stack.nbtHash == item.nbtHash) then
+         stack.damage == item.damage and
+         stack.nbtHash == item.nbtHash then
         local amount = math.min(qty, stack.count)
         if amount > 0 then
           amount = self.pushItems(direction or self.direction, key, amount, slot)

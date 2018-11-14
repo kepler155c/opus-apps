@@ -1,4 +1,3 @@
-local itemDB = require('itemDB')
 local Milo   = require('milo')
 
 local ReplenishTask = {
@@ -9,30 +8,22 @@ local ReplenishTask = {
 function ReplenishTask:cycle(context)
   for k,res in pairs(context.resources) do
     if res.low then
-      local key = Milo:splitKey(k)
-      local item, count = Milo:getItemWithQty(key, res.ignoreDamage, res.ignoreNbtHash)
-      if not item then
-        item = {
-          damage = key.damage,
-          nbtHash = key.nbtHash,
-          name = key.name,
-          displayName = itemDB:getName(key),
-          count = 0
-        }
-      end
+      local item = Milo:splitKey(k)
+      item.key = k
+
+      local _, count = Milo:getMatches(item, res)
 
       if count < res.low then
-        local nbtHash = item.nbtHash
-        if res.ignoreNbtHash then
-          nbtHash = nil
+        local nbtHash
+        if not res.ignoreNbtHash then
+          nbtHash = item.nbtHash
         end
         Milo:requestCrafting({
+          name = item.name,
           damage = res.ignoreDamage and 0 or item.damage,
           nbtHash = nbtHash,
           requested = res.low - count,
           count = count,
-          name = item.name,
-          displayName = item.displayName,
           replenish = true,
         })
       else

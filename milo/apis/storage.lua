@@ -256,9 +256,9 @@ function Storage:export(target, slot, count, item)
     local amount = adapter:provide(item, count, slot, target)
     if amount > 0 then
 
-  _G._debug('EXT: %s(%d): %s -> %s%s',
-    item.displayName or item.name, amount, sn(adapter.name), sn(target),
-    slot and string.format('[%d]', slot) or '')
+      _G._debug('EXT: %s(%d): %s -> %s%s',
+        item.displayName or item.name, amount, sn(adapter.name), sn(target),
+        slot and string.format('[%d]', slot) or '[*]')
 
       self:updateCache(adapter, key, -amount)
       self:updateCache(self, key, -amount)
@@ -277,8 +277,17 @@ function Storage:export(target, slot, count, item)
     end
   end
 
-  _G._debug('STORAGE: MISS: %s - %d', key, count)
+  _G._debug('MISS: %s(%d): %s%s %s',
+    item.displayName or item.name, count, sn(target),
+    slot and string.format('[%d]', slot) or '[*]', key)
 
+-- TODO: If there are misses when a slot is specified than something is wrong...
+-- The caller should confirm the quantity beforehand
+-- If no slot and full amount is not exported, then no need to check rest of adapters
+-- ... so should not reach here
+
+
+--[[
   -- not found - scan all others
   for _, adapter in self:onlineAdapters() do
     if not adapter.cache or not adapter.cache[key] then
@@ -289,11 +298,15 @@ function Storage:export(target, slot, count, item)
       end
     end
   end
+--]]
 
   return total
 end
 
 function Storage:import(source, slot, count, item)
+  if not source then error('Storage:import: source is required') end
+  if not slot   then error('Storage:import: slot is required')   end
+
   local total = 0
   local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
 
@@ -305,9 +318,9 @@ function Storage:import(source, slot, count, item)
     local amount = adapter:insert(slot, count, nil, source)
     if amount > 0 then
 
-_G._debug('INS: %s(%d): %s[%d] -> %s',
-  item.displayName or item.name, amount,
-  sn(source), slot, sn(adapter.name))
+      _G._debug('INS: %s(%d): %s[%d] -> %s',
+        item.displayName or item.name, amount,
+        sn(source), slot, sn(adapter.name))
 
       self:updateCache(adapter, key, amount)
       self:updateCache(self, key, amount)
@@ -347,11 +360,15 @@ _G._debug('INS: %s(%d): %s[%d] -> %s',
   end
 
   if not itemDB:get(item) then
-    if not slot then
+    if item.displayName then
+       -- this item already has metadata
+      itemDB:add(item)
+    elseif not slot then
       _G._debug("IMPORT: NO SLOT")
     elseif not device[source] or not device[source].getItemMeta then
       _G._debug("IMPORT: DEVICE? : " .. source)
     else
+       -- get the metadata from the device and add to db
       itemDB:add(device[source].getItemMeta(slot))
     end
   end
@@ -374,7 +391,7 @@ function Storage:trash(source, slot, count)
   local trashcan = Util.find(self.nodes, 'mtype', 'trashcan')
   if trashcan and trashcan.adapter and trashcan.adapter.online then
 
-_G._debug('TRA: %s[%d] (%d)', sn(source), slot, count or 64)
+    _G._debug('TRA: %s[%d] (%d)', sn(source), slot, count or 64)
 
     return trashcan.adapter.pullItems(source, slot, count)
   end

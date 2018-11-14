@@ -19,18 +19,6 @@ function Milo:getContext()
 	return self.context
 end
 
-function Milo:requestCrafting(item)
-	local key = Milo:uniqueKey(item)
-
-	if not self.context.craftingQueue[key] then
-		item.crafted = 0
-		item.pending = { }
-		item.key = key
-		self.context.craftingQueue[key] = item
-		os.queueEvent('milo_cycle')
-	end
-end
-
 function Milo:pauseCrafting()
 	self.craftingPaused = true
 	Milo:showError('Crafting Paused')
@@ -105,52 +93,33 @@ function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)
 	end
 end
 
-function Milo:getItemWithQty(res, ignoreDamage, ignoreNbtHash)
-	local items = self:listItems()
-	local item = self:getItem(items, res, ignoreDamage, ignoreNbtHash)
-	local count = 0
-
-	if item and (ignoreDamage or ignoreNbtHash) then
-		for _,v in pairs(items) do
-			if item.name == v.name and
-				(ignoreDamage or item.damage == v.damage) and
-				(ignoreNbtHash or item.nbtHash == v.nbtHash) then
-				count = count + v.count
-			end
-		end
-	elseif item then
-		count = item.count
-	end
-
-	return item, count
-end
-
-function Milo:getMatches(items, item, ignoreDamage, ignoreNbtHash)
+-- returns a list of items that matches along with a total count
+function Milo:getMatches(item, flags)
 	local t = { }
+	local count = 0
+	local items = self:listItems()
 
-	if not ignoreDamage and not ignoreNbtHash then
+	if not flags.ignoreDamage and not flags.ignoreNbtHash then
 		local key = item.key or Milo:uniqueKey(item)
-		local e = items[key]
-		if e then
-			t[key] = Util.shallowCopy(e)
+		local v = items[key]
+		if v then
+			t[key] = Util.shallowCopy(v)
+			count = v.count
 		end
 
 	else
-		for k,v in pairs(items) do
+		for key,v in pairs(items) do
 			if item.name == v.name and
-				(ignoreDamage or item.damage == v.damage) and
-				(ignoreNbtHash or item.nbtHash == v.nbtHash) then
-				local e = t[k]
-				if not e then
-					t[k] = Util.shallowCopy(v)
-				else
-					e.count = e.count + item.count
-				end
+				(flags.ignoreDamage or item.damage == v.damage) and
+				(flags.ignoreNbtHash or item.nbtHash == v.nbtHash) then
+
+				t[key] = Util.shallowCopy(v)
+				count = count + v.count
 			end
 		end
 	end
 
-	return t
+	return t, count
 end
 
 function Milo:clearGrid()
@@ -170,6 +139,18 @@ function Milo:getTurtleInventory()
 
 	itemDB:flush()
 	return list
+end
+
+function Milo:requestCrafting(item)
+	local key = Milo:uniqueKey(item)
+
+	if not self.context.craftingQueue[key] then
+		item.crafted = 0
+		item.pending = { }
+		item.key = key
+		self.context.craftingQueue[key] = item
+		os.queueEvent('milo_cycle')
+	end
 end
 
 -- queue up an action that reliees on the crafting grid

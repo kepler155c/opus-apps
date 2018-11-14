@@ -11,63 +11,70 @@ local function filter(a)
 end
 
 function ExportTask:cycle(context)
-	for machine in context.storage:filterActive('machine', filter) do
-		for _, entry in pairs(machine.exports) do
+	for node in context.storage:filterActive('machine', filter) do
+		for _, entry in pairs(node.exports) do
 
-			local function exportSlot(list, slotNo, item, count)
-				local slot = list[slotNo] or { count = 0 }
+			if not entry.filter then
+				-- exports must have a filter
+				-- TODO: validate in exportView
+				break
+			end
 
-				if slot.count == 0 or
-					(slot.name == item.name and
-					 slot.damage == item.damage and
-					 slot.nbtHash == item.nbtHash) then
+			local function exportSingleSlot()
+				local slot = node.adapter.getItemMeta(entry.slot)
 
-					local maxCount = itemDB:getMaxCount(item)
-					count = math.min(maxCount - slot.count, count)
+				if slot and slot.count == slot.maxCount then
+					return
+				end
 
-					if count > 0 then
--- _debug('attempting to export %s %d into slot %d', item.name, count, slotNo)
-						count = context.storage:export(machine.name, slotNo, count, item)
+				if slot then
+					-- something is in the slot, find what we can export
+					for key in pairs(entry.filter) do
+						local filterItem = Milo:splitKey(key)
+						if (slot.name == filterItem.name and
+								entry.ignoreDamage or slot.damage == filterItem.damage and
+								entry.ignoreNbtHash or slot.nbtHash == filterItem.nbtHash) then
 
-						if count > 0 then
-							item.count = item.count - count
-							list[slotNo] = {
-								name = item.name,
-								damage = item.damage,
-								nbtHash = item.nbtHash,
-								count = count + slot.count,
-							}
-							return true
+							local items = Milo:getMatches(filterItem, entry)
+							local _, item = next(items)
+							if item then
+								local count = math.min(item.count, slot.maxCount - slot.count)
+								context.storage:export(node.name, entry.slot, count, item)
+							end
+							break
 						end
+					end
+					return
+				end
+
+				-- slot is empty - export first matching item we have in storage
+				for key in pairs(entry.filter) do
+					local items = Milo:getMatches(Milo:splitKey(key), entry)
+					local _, item = next(items)
+					if item then
+						local count = math.min(item.count, itemDB:getMaxCount(item))
+						context.storage:export(node.name, entry.slot, count, item)
+						break
 					end
 				end
 			end
 
-			local list
-			local function getLazyList()
-				if not list then
-					list = machine.adapter.list()
-				end
-				return list
-			end
-
-			for key in pairs(entry.filter or { }) do
-				local items = Milo:getMatches(Milo:listItems(), itemDB:splitKey(key), entry.ignoreDamage, entry.ignoreNbtHash)
-				for _,item in pairs(items) do
-					if item and item.count > 0 then
-						if type(entry.slot) == 'number' then
-							if exportSlot(getLazyList(), entry.slot, item, item.count) then
-								break
-							end
-						else
--- _debug('attempting to export %s %d', item.name, item.count)
--- TODO: always going to try and export even if the chest is full
-							if context.storage:export(machine.name, nil, item.count, item) == 0 then
-								break
-							end
+			local function exportItems()
+				for key in pairs(entry.filter) do
+					local items = Milo:getMatches(itemDB:splitKey(key), entry)
+					for _,item in pairs(items) do
+						if context.storage:export(node.name, nil, item.count, item) == 0 then
+							-- TODO: really shouldn't break here as there may be room in other slots
+							-- leaving for now for performance reasons
+							break
 						end
 					end
 				end
+			end
+			if type(entry.slot) == 'number' then
+				exportSingleSlot()
+			else
+				exportItems()
 			end
 		end
 	end

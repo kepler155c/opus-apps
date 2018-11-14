@@ -10,8 +10,8 @@ local function filter(a)
 end
 
 function ImportTask:cycle(context)
-	for inventory in context.storage:filterActive('machine', filter) do
-		for _, entry in pairs(inventory.imports) do
+	for node in context.storage:filterActive('machine', filter) do
+		for _, entry in pairs(node.imports) do
 
 			local function itemMatchesFilter(item)
 				if not entry.ignoreDamage and not entry.ignoreNbtHash then
@@ -41,16 +41,16 @@ function ImportTask:cycle(context)
 			end
 
 			local function importSlot(slotNo)
-				local item = inventory.adapter.getItemMeta(slotNo)
+				local item = node.adapter.getItemMeta(slotNo)
 				if item and matchesFilter(item) then
-					context.storage:import(inventory.name, slotNo, item.count, item)
+					context.storage:import(node.name, slotNo, item.count, item)
 				end
 			end
 
 			if type(entry.slot) == 'number' then
 				importSlot(entry.slot)
 			else
-				for i = 1, inventory.adapter.size() do
+				for i in pairs(node.adapter.list()) do
 					importSlot(i)
 				end
 			end

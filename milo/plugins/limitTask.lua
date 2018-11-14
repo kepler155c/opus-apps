@@ -9,16 +9,21 @@ function LimitTask:cycle(context)
 	local trashcan = context.storage:filterActive('trashcan')()
 
 	if trashcan then
-		for k,res in pairs(context.resources) do
+		for key,res in pairs(context.resources) do
 			if res.limit then
--- TODO: change to export method of finding items (maybe)
-				local item, count = Milo:getItemWithQty(Milo:splitKey(k), res.ignoreDamage, res.ignoreNbtHash)
-				if item and count > res.limit then
-					context.storage:export(
-						trashcan.name,
-						nil,
-						count - res.limit,
-						item)
+				local items, count = Milo:getMatches(Milo:splitKey(key), res)
+				if count > res.limit then
+					local amount = count - res.limit
+					for _, item in pairs(items) do
+						amount = amount - context.storage:export(
+							trashcan.name,
+							nil,
+							math.min(amount, item.count),
+							item)
+						if amount <= 0 then
+							break
+						end
+					end
 				end
 			end
 		end
