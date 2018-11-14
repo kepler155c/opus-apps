@@ -9,8 +9,15 @@ local wizardPage = UI.Window {
   title = 'Trashcan',
   index = 2,
   backgroundColor = colors.cyan,
+  info = UI.TextArea {
+    x = 1, ex = -1, y = 2, ey = 4,
+    textColor = colors.yellow,
+    marginLeft = 1,
+    marginRight = 1,
+    value = [[ Items can be automatically dropped from this storage.]],
+  },
   form = UI.Form {
-    x = 1, y = 1, ex = -1, ey = -2,
+    x = 1, y = 4, ex = -1, ey = -2,
     manualControls = true,
     [1] = UI.Checkbox {
       formLabel = 'Drop', formKey = 'drop',
