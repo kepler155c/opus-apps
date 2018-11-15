@@ -1,14 +1,15 @@
-local Ansi       = require('ansi')
-local Craft      = require('turtle.craft')
-local itemDB     = require('itemDB')
-local Milo       = require('milo')
-local UI         = require('ui')
-local Util       = require('util')
+local Ansi    = require('ansi')
+local Craft   = require('turtle.craft')
+local Event   = require('event')
+local itemDB  = require('itemDB')
+local Milo    = require('milo')
+local UI      = require('ui')
+local Util    = require('util')
 
-local colors     = _G.colors
-local context    = Milo:getContext()
-local device     = _G.device
-local monitor    = context.storage:getSingleNode('jobs')
+local colors  = _G.colors
+local context = Milo:getContext()
+local device  = _G.device
+local monitor = context.storage:getSingleNode('jobs')
 
 --[[ Configuration Screen ]]
 local template =
@@ -16,7 +17,7 @@ local template =
 
 %sMilo must be restarted to activate diplay.]]
 
-local jobsWizardPage = UI.Window {
+local wizardPage = UI.Window {
   title = 'Crafting Monitor',
   index = 2,
   backgroundColor = colors.cyan,
@@ -27,7 +28,7 @@ local jobsWizardPage = UI.Window {
   },
 }
 
-function jobsWizardPage:isValidType(node)
+function wizardPage:isValidType(node)
   local m = device[node.name]
   return m and m.type == 'monitor' and {
     name = 'Crafting Monitor',
@@ -36,11 +37,11 @@ function jobsWizardPage:isValidType(node)
   }
 end
 
-function jobsWizardPage:isValidFor(node)
+function wizardPage:isValidFor(node)
   return node.mtype == 'jobs'
 end
 
-UI:getPage('nodeWizard').wizard:add({ jobs = jobsWizardPage })
+UI:getPage('nodeWizard').wizard:add({ jobs = wizardPage })
 
 --[[ Display ]]
 if not monitor then
@@ -61,21 +62,15 @@ local jobMonitor = UI.Page {
       { heading = 'Qty',      key = 'remaining',   width = 4 },
       { heading = 'Crafting', key = 'displayName', },
       { heading = 'Status',   key = 'status',      },
-      { heading = 'need',   key = 'need',    width = 4  },
-      { heading = 'total',   key = 'total',  width = 4    },
-      { heading = 'used',   key = 'used',   width = 4   },
-      { heading = 'count',   key = 'count', width = 4     },
+--      { heading = 'need',   key = 'need',    width = 4  },
+--      { heading = 'total',   key = 'total',  width = 4    },
+--      { heading = 'used',   key = 'used',   width = 4   },
+--      { heading = 'count',   key = 'count', width = 4     },
       { heading = 'crafted',   key = 'crafted',  width = 4    },
 --      { heading = 'Progress', key = 'progress',    width = 8 },
     },
   },
 }
-
-function jobMonitor:showError(msg)
-  self.grid:clear()
-  self.grid:centeredWrite(math.ceil(self.grid.height / 2), msg)
-  self:sync()
-end
 
 function jobMonitor:updateList(craftList)
   if not Milo:isCraftingPaused() then
@@ -124,6 +119,16 @@ function jobMonitor.grid:getRowTextColor(row, selected)
   return row.statusCode and statusColor[row.statusCode] or
     UI.Grid:getRowTextColor(row, selected)
 end
+
+Event.on({ 'milo_resume', 'milo_pause' }, function(_, reason)
+  if reason then
+    jobMonitor.grid:clear()
+    jobMonitor.grid:centeredWrite(math.ceil(jobMonitor.grid.height / 2), reason.msg)
+  else
+    jobMonitor.grid:draw()
+  end
+  jobMonitor:sync()
+end)
 
 jobMonitor:enable()
 jobMonitor:draw()

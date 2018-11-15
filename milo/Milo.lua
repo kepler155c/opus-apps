@@ -78,6 +78,7 @@ local context = {
   config = config,
   resources = Util.readTable(Milo.RESOURCE_FILE) or { },
 
+  state = { },
   craftingQueue = { },
   learnTypes = { },
   tasks = { },
@@ -91,10 +92,6 @@ local context = {
 device[context.localName] = introspection.getInventory()
 
 _G._p = context --debug
-
-Event.on('storage_offline', function()
-  Milo:showError('A storage chest has gone offline - Review configuration')
-end)
 
 Milo:init(context)
 context.storage:initStorage()
@@ -125,9 +122,11 @@ Milo:clearGrid()
 
 UI:setPage(UI:getPage('listing'))
 
+local processing
+
 Event.on('milo_cycle', function()
-  if not context.turtleBusy then
-    context.turtleBusy = true
+  if not processing and not Milo:isCraftingPaused() then
+    processing = true
     Milo:resetCraftingStatus()
 
     for _, task in ipairs(context.tasks) do
@@ -139,7 +138,7 @@ Event.on('milo_cycle', function()
         -- _G.printError(m)
       end
     end
-    context.turtleBusy = false
+    processing = false
     if not Util.empty(context.queue) then
       os.queueEvent('milo_queue')
     end
@@ -147,8 +146,8 @@ Event.on('milo_cycle', function()
 end)
 
 Event.on('milo_queue', function()
-  if not context.turtleBusy then
-    context.turtleBusy = true
+  if not processing and context.storage:isOnline() then
+    processing = true
 
     for _, key in pairs(Util.keys(context.queue)) do
       local entry = context.queue[key]
@@ -156,13 +155,21 @@ Event.on('milo_queue', function()
       context.queue[key] = nil
     end
 
-    context.turtleBusy = false
+    processing = false
   end
 end)
 
 Event.onInterval(5, function()
-  if not Milo:isCraftingPaused() and context.storage:isOnline() then
+  if not Milo:isCraftingPaused() then
     os.queueEvent('milo_cycle')
+  end
+end)
+
+Event.on({ 'storage_offline', 'storage_online' }, function()
+  if context.storage:isOnline() then
+    Milo:resumeCrafting({ key = 'storageOnline' })
+  else
+    Milo:pauseCrafting({ key = 'storageOnline', msg = 'Storage offline' })
   end
 end)
 

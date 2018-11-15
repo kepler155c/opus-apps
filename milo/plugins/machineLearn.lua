@@ -135,7 +135,7 @@ function pages.confirmation:validate()
 end
 
 function machineLearnWizard:disable()
-	Milo:resumeCrafting()
+	Milo:resumeCrafting({ key = 'gridInUse' })
 	sync.release(turtle)
 	UI.Page.disable(self)
 end

@@ -114,7 +114,7 @@ function Storage:filterActive(mtype, filter)
   end)
 end
 
-function Storage:onlineAdapters(reversed)
+function Storage:onlineAdapters()
   local iter = { }
   for _, v in pairs(self.nodes) do
     if v.adapter and v.adapter.online and v.mtype == 'storage' then
@@ -122,20 +122,14 @@ function Storage:onlineAdapters(reversed)
     end
   end
 
-  local function forwardSort(a, b)
+  table.sort(iter, function(a, b)
     if not a.priority then
       return false
     elseif not b.priority then
       return true
     end
     return a.priority > b.priority
-  end
-
-  local function backwardSort(a, b)
-    return not forwardSort(a, b)
-  end
-
-  table.sort(iter, reversed and backwardSort or forwardSort)
+  end)
 
   local i = 0
   return function()
@@ -378,12 +372,12 @@ function Storage:import(source, slot, count, item)
   end
 
   -- high to low priority
-  for remote in self:onlineAdapters() do
+  for node in self:onlineAdapters() do
     if count <= 0 then
       break
     end
-    if not remote.lock then
-      insert(remote.adapter)
+    if not node.lock then
+      insert(node.adapter)
     end
   end
 

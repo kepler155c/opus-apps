@@ -145,19 +145,9 @@ function page:refresh()
 end
 
 function page:update()
-  if context.storage:isOnline() then
-    page:refresh()
-    page:sync()
-  else
-    page.grid:clear()
-    page.grid:centeredWrite(math.ceil(page.height / 2), 'Storage Offline')
-    page:sync()
-  end
+  page:refresh()
+  page:sync()
 end
-
-Event.on({ 'storage_offline', 'storage_online' }, function()
-  page:update()
-end)
 
 Event.on('monitor_touch', function(_, side)
   if side == monitor.adapter.side then
@@ -166,6 +156,7 @@ Event.on('monitor_touch', function(_, side)
   end
 end)
 
+page:enable()
 page:draw()
 page:sync()
 

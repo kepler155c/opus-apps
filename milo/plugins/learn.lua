@@ -36,7 +36,7 @@ function learnPage:enable()
     Milo:getState('learnType') or
     self.chooser.choices[1].value
 
-  Milo:pauseCrafting()
+  Milo:pauseCrafting({ key = 'gridInUse', msg = 'Crafting paused' })
   sync.lock(turtle)
 
   self:focusFirst()
@@ -50,7 +50,7 @@ end
 function learnPage:eventHandler(event)
   if event.type == 'cancel' then
     sync.release(turtle)
-    Milo:resumeCrafting()
+    Milo:resumeCrafting({ key = 'gridInUse' })
     UI:setPreviousPage()
 
   elseif event.type == 'accept' then

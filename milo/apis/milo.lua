@@ -19,17 +19,29 @@ function Milo:getContext()
 	return self.context
 end
 
-function Milo:pauseCrafting()
-	self.craftingPaused = true
-	Milo:showError('Crafting Paused')
+function Milo:pauseCrafting(reason)
+	local _, key = Util.find(self.context.state, 'key', reason.key)
+	if not key then
+		table.insert(self.context.state, reason)
+		os.queueEvent('milo_pause', reason)
+	end
 end
 
-function Milo:resumeCrafting()
-	self.craftingPaused = false
+function Milo:resumeCrafting(reason)
+	local _, key = Util.find(self.context.state, 'key', reason.key)
+	if key then
+		table.remove(self.context.state, key)
+		local n = self.context.state[#self.context.state]
+		if n then
+			os.queueEvent('milo_pause', n)
+		else
+			os.queueEvent('milo_resume')
+		end
+	end
 end
 
 function Milo:isCraftingPaused()
-	return self.craftingPaused
+	return self.context.state[#self.context.state]
 end
 
 function Milo:getState(key)
@@ -70,13 +82,6 @@ end
 
 function Milo:registerTask(task)
 	table.insert(self.context.tasks, task)
-end
-
-function Milo:showError(msg)
-	-- TODO: break dependency
-	if self.context.jobMonitor then
-		self.context.jobMonitor:showError(msg)
-	end
 end
 
 function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)

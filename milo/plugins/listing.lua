@@ -224,6 +224,7 @@ end
 function listingPage:enable()
   self:refresh()
   self:setFocus(self.statusBar.filter)
+
   self.timer = Event.onInterval(3, function()
     for _,v in pairs(self.allItems) do
       local c = context.storage.cache[v.key]
@@ -232,11 +233,22 @@ function listingPage:enable()
     self.grid:draw()
     self:sync()
   end)
+
+  self.handler = Event.on({ 'storage_offline', 'storage_online' }, function(_, isOnline)
+    self.statusBar.storageStatus.value =
+      isOnline and '' or 'offline'
+    self.statusBar.storageStatus.textColor =
+      isOnline and colors.lime or colors.red
+    self.statusBar.storageStatus:draw()
+    self:sync()
+  end)
+
   UI.Page.enable(self)
 end
 
 function listingPage:disable()
   Event.off(self.timer)
+  Event.off(self.handler)
   UI.Page.disable(self)
 end
 
@@ -249,15 +261,5 @@ function listingPage:applyFilter()
   local t = filterItems(self.allItems, self.filter, self.displayMode)
   self.grid:setValues(t)
 end
-
-Event.on({ 'storage_offline', 'storage_online' }, function(e, isOnline)
-  -- TODO: Fix button
-  listingPage.statusBar.storageStatus.value =
-    isOnline and '' or 'offline'
-  listingPage.statusBar.storageStatus.textColor =
-    isOnline and colors.lime or colors.red
-  listingPage.statusBar.storageStatus:draw()
-  listingPage:sync()
-end)
 
 UI:addPage('listing', listingPage)

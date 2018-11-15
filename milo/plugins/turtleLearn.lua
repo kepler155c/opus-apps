@@ -124,7 +124,7 @@ local turtleLearnWizard = UI.Page {
 }
 
 function turtleLearnWizard:disable()
-	Milo:resumeCrafting()
+	Milo:resumeCrafting({ key = 'gridInUse' })
 	sync.release(turtle)
 	UI.Page.disable(self)
 end

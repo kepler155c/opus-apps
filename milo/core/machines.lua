@@ -59,6 +59,11 @@ local networkPage = UI.Page {
 		help = 'Remove Node',
 	},
 	statusBar = UI.StatusBar {
+		ex = -9,
+		backgroundColor = colors.lightGray,
+	},
+	storageStatus = UI.Text {
+		x = -8, ex = -1, y = -1,
 		backgroundColor = colors.lightGray,
 	},
 	notification = UI.Notification { },
@@ -109,16 +114,27 @@ function networkPage:getList()
 end
 
 function networkPage:enable()
-	self:getList()
-	self.grid:update()
-	self:setFocus(self.filter)
-	UI.Page.enable(self)
-	self.handler = Event.on({ 'device_attach', 'device_detach'}, function()
+	local function updateStatus()
+		local isOnline = context.storage:isOnline()
+		self.storageStatus.value = isOnline and ' online' or 'offline'
+		self.storageStatus.textColor = isOnline and colors.lime or colors.red
+		self.storageStatus:draw()
+	end
+
+	self.handler = Event.on({ 'device_attach', 'device_detach', 'storage_online', 'storage_offline' }, function()
 		self:getList()
-		self.grid:update()
+		self:applyFilter()
 		self.grid:draw()
 		self.grid:sync()
+		updateStatus()
+		self:sync()
 	end)
+
+	self:getList()
+	self:applyFilter()
+	self:setFocus(self.filter)
+	UI.Page.enable(self)
+	updateStatus()
 end
 
 function networkPage:disable()
@@ -158,12 +174,15 @@ function networkPage:eventHandler(event)
 			context.config.nodes[node.name] = nil
 			saveConfig()
 		end
-		self.grid:update()
+		self:applyFilter()
 		self.grid:draw()
 
 	elseif event.type == 'text_change' then
 		self:applyFilter()
 		self.grid:draw()
+
+	elseif event.type == 'grid_focus_row' then
+		self.statusBar:setStatus(event.selected.name)
 
 	elseif event.type == 'focus_change' then
 		self.statusBar:setStatus(event.focused.help)
@@ -298,13 +317,13 @@ function nodeWizard.filter:show(entry, callback, whitelistOnly)
 	UI.SlideOut.show(self)
 	self:setFocus(self.form.scan)
 
-	Milo:pauseCrafting()
+	Milo:pauseCrafting({ key = 'gridInUse', msg = 'Crafting paused' })
 	sync.lock(turtle)
 end
 
 function nodeWizard.filter:hide()
 	UI.SlideOut.hide(self)
-	Milo:resumeCrafting()
+	Milo:resumeCrafting({ key = 'gridInUse' })
 	sync.release(turtle)
 end
 
