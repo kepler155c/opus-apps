@@ -351,18 +351,6 @@ function Storage:import(source, slot, count, item)
     end
   end
 
-  -- is this item in some chest
-  if self.cache[key] then
-    for node, adapter in self:onlineAdapters() do
-      if count <= 0 then
-        return total
-      end
-      if adapter.cache and adapter.cache[key] and not node.lock then
-        insert(adapter)
-      end
-    end
-  end
-
   if not itemDB:get(item) then
     if item.displayName then
        -- this item already has metadata
@@ -374,6 +362,18 @@ function Storage:import(source, slot, count, item)
     else
        -- get the metadata from the device and add to db
       itemDB:add(device[source].getItemMeta(slot))
+    end
+  end
+
+  -- is this item in some chest
+  if self.cache[key] then
+    for node, adapter in self:onlineAdapters() do
+      if count <= 0 then
+        return total
+      end
+      if adapter.cache and adapter.cache[key] and not node.lock then
+        insert(adapter)
+      end
     end
   end
 

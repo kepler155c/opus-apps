@@ -1,78 +1,97 @@
 _G.requireInjector(_ENV)
 
-local ni = require('neural.interface')
+local Config = require('config')
 local GPS = require('gps')
+local ni = _G.device.neuralInterface
 
-local strength = .315
-local delay = .1
+local os       = _G.os
+local parallel = _G.parallel
 
-while ni.getMetaOwner().health < 26 do
-  print('health: ' .. ni.getMetaOwner().health)
-  os.sleep(1)
+local id = ni.getID()
+local config = Config.load('flight', { })
+
+local args = { ... }
+if args[1] == 'wp' then
+  local pt = GPS.locate()
+  config[args[2]] = pt
+  Config.update('flight', config)
+  return
 end
 
-ni.launch(0, 270, 1.5)
-os.sleep(.25)
+local wp = config[args[1]]
+if not wp then
+  error('invalid wp')
+end
 
-local pt
+local pt = GPS.locate()
 
-local function fly()
-  for i = 1, 100 do
-    os.sleep(1)
-    if pt then
-      print(pt.y)
-      print(strength)
+local function descend()
+  print('descending to ' .. wp.y)
+  repeat
+    local meta = ni.getMetaByID(id)
+    if meta.motionY < 0 then
+      ni.launch(0, -90, math.min(4, meta.motionY / -0.5))
     end
-  end
+    print(math.abs(wp.y - pt.y))
+  until math.abs(wp.y - pt.y) < 1
 end
 
 local function gps()
-  local lastY = 12
   while true do
-    pt = GPS.locate()
-    if pt then
-      local d = math.abs(lastY - pt.y)
-
-      -- force required to get to lvl 12
-
-      local motionY = ni.getMetaOwner().motionY
---      print('y: ' .. pt.y)
-      if pt.y < 12 then
-        if pt.y > lastY then
-          --strength = strength + .001
-        else
-          strength = strength + .02 * d
-        end
-      elseif pt.y > 12 then
-        if pt.y > lastY then
-          strength = strength - .02 * d
-        else
-          --strength = strength - .001
-        end
-      end
-      lastY = pt.y
-      
-      -- force required to offset motion
-      local om = (motionY - 0.138) / 0.8
-
-  ni.launch(0, 270, strength-motionY)
---      print('strength: ' .. strength)
-    os.sleep(delay)
+    local lpt = GPS.locate()
+    if lpt then
+      pt = lpt
     end
+    os.sleep(.1)
   end
 end
 
-parallel.waitForAny(fly, gps)
+local function yap(x, y, z)
+  local pitch = -math.atan2(y, math.sqrt(x * x + z * z))
+  local yaw = math.atan2(-(x - .5), z - .5)
 
-repeat
-  ni.launch(0, 270, .25)
-  os.sleep(.1)
-until not ni.getMetaOwner().isAirborne
-
-print('descending')
-for i = 1, 50 do
-  ni.launch(0, 270, .2)
-  os.sleep(.1)
+  return math.deg(yaw), math.deg(pitch)
 end
 
-ni.look(180, 0)
+local function distance(a, b)
+ return math.sqrt(
+           math.pow(a.x - b.x, 2) +
+           math.pow(a.z - b.z, 2))
+end
+
+local function hover()
+  repeat
+    local meta = ni.getMetaByID(id)
+    local pitch = 295
+    local yaw = yap(wp.x - pt.x, wp.y, wp.z - pt.z)
+
+    if pt.y < wp.y + 16 and meta.motionY < 0 then
+      ni.launch(yaw, pitch, math.min(4, math.min(4, -meta.motionY * math.abs(pt.y - (wp.y + 16)) / 2)))
+    end
+
+  until distance(wp, pt) < 2
+end
+
+local function launch()
+  ni.launch(0, 270, 3)
+
+  repeat
+    local meta = ni.getMetaByID(id)
+  until meta.motionY < 0
+
+  hover()
+
+  descend()
+end
+
+local s, m = pcall(parallel.waitForAny, launch, gps)
+
+if not s then
+  _G.printError(m)
+end
+
+--s, m = pcall(parallel.waitForAny, descend, gps)
+
+if not s then
+  error(m)
+end
