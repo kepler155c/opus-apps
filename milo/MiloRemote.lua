@@ -17,22 +17,32 @@ local SHIELD_SLOT = 2
 local config = Config.load('miloRemote', { })
 
 local page = UI.Page {
-  dummy = UI.Window {
-     x = 1, ex = -13, y = 1, height = 1,
+  menuBar = UI.MenuBar {
+    y = 1, height = 1,
+    buttons = {
+      {
+        text = 'Refresh',
+        x = -12,
+        event = 'refresh'
+      },
+      {
+        text = '\206',
+        x = -3,
+        dropdown = {
+          { text = 'Setup', event = 'setup' },
+          UI.MenuBar.spacer,
+          {
+            text = 'Rescan storage',
+            event = 'rescan',
+            help = 'Rescan all inventories'
+          },
+        },
+      },
+    },
     infoBar = UI.StatusBar {
+      x = 1, ex = -13,
       backgroundColor = colors.lightGray,
     },
-  },
-  refresh = UI.Button {
-    y = 1, x = -12,
-    event = 'refresh',
-    text = 'Refresh',
-  },
-  setupButton = UI.Button {
-    y = 1, x = -3,
-    event = 'setup',
-    text = '\206',
-    help = 'Configuration',
   },
   grid = UI.Grid {
     y = 2, ey = -2,
@@ -129,10 +139,6 @@ local page = UI.Page {
                 [[bound introspection module. The neural interface must ]] ..
                 [[also have an introspection module.]],
       },
-      [5] = UI.Button {
-        x = 1, y = -2,
-        text = 'Force scan', event = 'rescan', help = 'Force a scan of all inventories',
-      },
     },
     statusBar = UI.StatusBar {
       backgroundColor = colors.cyan,
@@ -164,7 +170,7 @@ local function filterItems(t, filter, displayMode)
 end
 
 function page:setStatus(status)
-  self.dummy.infoBar:setStatus(status)
+  self.menuBar.infoBar:setStatus(status)
   self:sync()
 end
 
@@ -273,12 +279,14 @@ function page:eventHandler(event)
     self.setup:hide()
     self:refresh('list')
     self.grid:draw()
+    self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'form_cancel' then
     self.setup:hide()
+    self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'focus_change' then
-    self.dummy.infoBar:setStatus(event.focused.help)
+    self.menuBar.infoBar:setStatus(event.focused.help)
 
   elseif event.type == 'eject' or event.type == 'grid_select' then
     local item = self.grid:getSelected()

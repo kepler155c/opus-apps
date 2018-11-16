@@ -37,7 +37,19 @@ local listingPage = UI.Page {
       { text = 'Craft',   event = 'craft'   },
       { text = 'Edit',    event = 'details' },
       { text = 'Refresh', event = 'refresh', x = -12 },
-      { text = '\206', event = 'network', x = -3 },
+      {
+        text = '\206',
+        x = -3,
+        dropdown = {
+          { text = 'Setup', event = 'network' },
+          UI.MenuBar.spacer,
+          {
+            text = 'Rescan storage',
+            event = 'rescan',
+            help = 'Rescan all inventories'
+          },
+        },
+      },
     },
   },
   grid = UI.Grid {
@@ -175,9 +187,14 @@ function listingPage:eventHandler(event)
     end
 
   elseif event.type == 'refresh' then
+    self:refresh()
+    self.grid:draw()
+    self:setFocus(self.statusBar.filter)
+
+  elseif event.type == 'rescan' then
     self:refresh(true)
     self.grid:draw()
-    self.statusBar.filter:focus()
+    self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'toggle_display' then
     local values = {
