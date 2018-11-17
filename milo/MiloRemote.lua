@@ -16,10 +16,21 @@ local SHIELD_SLOT = 2
 
 local config = Config.load('miloRemote', { })
 
+local depositMode = {
+  [ true ]  = { text = '\25',  textColor = colors.black, help = 'Deposit enabled' },
+  [ false ] = { text = '\215', textColor = colors.red,  help = 'Deposit disabled' },
+}
+
 local page = UI.Page {
   menuBar = UI.MenuBar {
     y = 1, height = 1,
     buttons = {
+      {
+        name = 'depositToggle',
+        text = '\215',
+        x = -15,
+        event = 'toggle_deposit'
+      },
       {
         text = 'Refresh',
         x = -12,
@@ -40,7 +51,7 @@ local page = UI.Page {
       },
     },
     infoBar = UI.StatusBar {
-      x = 1, ex = -13,
+      x = 1, ex = -16,
       backgroundColor = colors.lightGray,
     },
   },
@@ -274,6 +285,13 @@ function page:eventHandler(event)
     self.setup.form:setValues(config)
     self.setup:show()
 
+  elseif event.type == 'toggle_deposit' then
+    config.deposit = not config.deposit
+    Util.merge(self.menuBar.depositToggle, depositMode[config.deposit])
+    self.menuBar:draw()
+    self:setStatus(depositMode[config.deposit].help)
+    Config.update('miloRemote', config)
+
   elseif event.type == 'form_complete' then
     Config.update('miloRemote', config)
     self.setup:hide()
@@ -362,6 +380,7 @@ end
 
 function page:enable()
   self:setFocus(self.statusBar.filter)
+  Util.merge(self.menuBar.depositToggle, depositMode[config.deposit])
   UI.Page.enable(self)
   if not config.server then
     self.setup:show()
@@ -390,28 +409,30 @@ end
 Event.addRoutine(function()
   while true do
     os.sleep(1.5)
-    local neural = device.neuralInterface
-    local inv = config.useShield and 'getEquipment' or 'getInventory'
-    if not neural or not neural[inv] then
-      _G._debug('missing Introspection module')
-    elseif config.server and (config.useShield or config.slot) then
-      local method = neural[inv]
-      local item = method and method().getItemMeta(config.useShield and SHIELD_SLOT or config.slot)
-      if item then
-        local slotNo = config.useShield and 'shield' or config.slot
-        local response = page:sendRequest({
-          request = 'deposit',
-          slot = slotNo,
-          count = item.count,
-          key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
-        })
-        if response then
-          local ritem = page.items[response.key]
-          if ritem then
-            ritem.count = response.current + item.count
+    if config.deposit then
+      local neural = device.neuralInterface
+      local inv = config.useShield and 'getEquipment' or 'getInventory'
+      if not neural or not neural[inv] then
+        _G._debug('missing Introspection module')
+      elseif config.server and (config.useShield or config.slot) then
+        local method = neural[inv]
+        local item = method and method().getItemMeta(config.useShield and SHIELD_SLOT or config.slot)
+        if item then
+          local slotNo = config.useShield and 'shield' or config.slot
+          local response = page:sendRequest({
+            request = 'deposit',
+            slot = slotNo,
+            count = item.count,
+            key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
+          })
+          if response then
+            local ritem = page.items[response.key]
+            if ritem then
+              ritem.count = response.current + item.count
+            end
+            page.grid:draw()
+            page:sync()
           end
-          page.grid:draw()
-          page:sync()
         end
       end
     end
