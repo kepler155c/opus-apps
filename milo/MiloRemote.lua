@@ -14,7 +14,7 @@ local socket
 
 local SHIELD_SLOT = 2
 
-local config = Config.load('miloRemote', { })
+local config = Config.load('miloRemote', { displayMode = 0 })
 
 local depositMode = {
   [ true ]  = { text = '\25',  textColor = colors.black, help = 'Deposit enabled' },
@@ -155,7 +155,6 @@ local page = UI.Page {
       backgroundColor = colors.cyan,
     },
   },
-  displayMode = 0,
   items = { },
 }
 
@@ -358,11 +357,12 @@ function page:eventHandler(event)
       [2] = 'C',
     }
     event.button.value = (event.button.value + 1) % 3
-    self.displayMode = event.button.value
+    config.displayMode = event.button.value
     event.button.text = values[event.button.value]
     event.button:draw()
     self:applyFilter()
     self.grid:draw()
+    Config.update('miloRemote', config)
 
   elseif event.type == 'text_change' and event.element == self.statusBar.filter then
     self.filter = event.text
@@ -402,7 +402,7 @@ function page:refresh(requestType)
 end
 
 function page:applyFilter()
-  local t = filterItems(self.items, self.filter, self.displayMode)
+  local t = filterItems(self.items, self.filter, config.displayMode)
   self.grid:setValues(t)
 end
 
