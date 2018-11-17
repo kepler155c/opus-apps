@@ -21,6 +21,12 @@ local depositMode = {
   [ false ] = { text = '\215', textColor = colors.red,  help = 'Deposit disabled' },
 }
 
+local displayMode = {
+  [0] = { text = 'A', help = 'Showing all items' },
+  [1] = { text = 'I', help = 'Showing inventory items' },
+  [2] = { text = 'C', help = 'Showing craftable items' },
+}
+
 local page = UI.Page {
   menuBar = UI.MenuBar {
     y = 1, height = 1,
@@ -87,14 +93,13 @@ local page = UI.Page {
       accelerators = {
         [ 'enter' ] = 'eject_specified',
       },
-      help = 'Specify an amount to send',
+      help = 'Request amount',
     },
     display = UI.Button {
       x = -3,
       event = 'toggle_display',
-      value = 0,
-      text = 'A',
-      help = 'Toggle display mode',
+      text = displayMode[config.displayMode].text,
+      help = displayMode[config.displayMode].help,
     },
   },
   accelerators = {
@@ -351,16 +356,11 @@ function page:eventHandler(event)
     self.grid:draw()
 
   elseif event.type == 'toggle_display' then
-    local values = {
-      [0] = 'A',
-      [1] = 'I',
-      [2] = 'C',
-    }
-    event.button.value = (event.button.value + 1) % 3
-    config.displayMode = event.button.value
-    event.button.text = values[event.button.value]
+    config.displayMode = (config.displayMode + 1) % 3
+    Util.merge(event.button, displayMode[config.displayMode])
     event.button:draw()
     self:applyFilter()
+    self:setStatus(event.button.help)
     self.grid:draw()
     Config.update('miloRemote', config)
 
