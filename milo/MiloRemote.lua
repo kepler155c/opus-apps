@@ -21,7 +21,7 @@ local depositMode = {
   [ false ] = { text = '\215', textColor = colors.red,  help = 'Deposit disabled' },
 }
 
-local displayMode = {
+local displayModes = {
   [0] = { text = 'A', help = 'Showing all items' },
   [1] = { text = 'I', help = 'Showing inventory items' },
   [2] = { text = 'C', help = 'Showing craftable items' },
@@ -98,8 +98,8 @@ local page = UI.Page {
     display = UI.Button {
       x = -3,
       event = 'toggle_display',
-      text = displayMode[config.displayMode].text,
-      help = displayMode[config.displayMode].help,
+      text = displayModes[config.displayMode].text,
+      help = displayModes[config.displayMode].help,
     },
   },
   accelerators = {
@@ -357,7 +357,7 @@ function page:eventHandler(event)
 
   elseif event.type == 'toggle_display' then
     config.displayMode = (config.displayMode + 1) % 3
-    Util.merge(event.button, displayMode[config.displayMode])
+    Util.merge(event.button, displayModes[config.displayMode])
     event.button:draw()
     self:applyFilter()
     self:setStatus(event.button.help)

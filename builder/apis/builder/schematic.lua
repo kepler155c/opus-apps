@@ -23,7 +23,7 @@ local gzipMagic = 0x1f8b
 local Spinner = class()
 function Spinner:init(args)
   local defaults = {
-    timeout = .095,
+    timeout = .075,
     c = os.clock(),
     spinIndex = 0,
     spinSymbols = { '-', '/', '|', '\\' }

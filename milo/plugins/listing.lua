@@ -5,10 +5,17 @@ local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
 
-local colors = _G.colors
-local context = Milo:getContext()
+local colors      = _G.colors
+local context     = Milo:getContext()
+local displayMode = Milo:getState('displayMode') or 0
 
-local function filterItems(t, filter, displayMode)
+local displayModes = {
+  [0] = { text = 'A', help = 'Showing all items' },
+  [1] = { text = 'I', help = 'Showing inventory items' },
+  [2] = { text = 'C', help = 'Showing craftable items' },
+}
+
+local function filterItems(t, filter)
   if filter or displayMode > 0 then
     local r = { }
     if filter then
@@ -96,7 +103,8 @@ local listingPage = UI.Page {
       x = -3,
       event = 'toggle_display',
       value = 0,
-      text = 'A',
+      text = displayModes[displayMode].text,
+      help = displayModes[displayMode].help,
     },
   },
   notification = UI.Notification(),
@@ -112,7 +120,6 @@ local listingPage = UI.Page {
 
     q = 'quit',
   },
-  displayMode = 0,
 }
 
 function listingPage.statusBar:draw()
@@ -197,18 +204,12 @@ function listingPage:eventHandler(event)
     self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'toggle_display' then
-    local values = {
-      [0] = 'A',
-      [1] = 'I',
-      [2] = 'C',
-    }
-
-    event.button.value = (event.button.value + 1) % 3
-    self.displayMode = event.button.value
-    event.button.text = values[event.button.value]
+    displayMode = (displayMode + 1) % 3
+    Util.merge(event.button, displayModes[displayMode])
     event.button:draw()
     self:applyFilter()
     self.grid:draw()
+    Milo:setState('displayMode', displayMode)
 
   elseif event.type == 'learn' then
     UI:setPage('learn')
@@ -275,7 +276,7 @@ function listingPage:refresh(force)
 end
 
 function listingPage:applyFilter()
-  local t = filterItems(self.allItems, self.filter, self.displayMode)
+  local t = filterItems(self.allItems, self.filter)
   self.grid:setValues(t)
 end
 

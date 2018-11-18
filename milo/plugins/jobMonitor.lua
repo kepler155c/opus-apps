@@ -1,4 +1,3 @@
-local Ansi    = require('ansi')
 local Craft   = require('turtle.craft')
 local Event   = require('event')
 local itemDB  = require('itemDB')
@@ -9,14 +8,8 @@ local Util    = require('util')
 local colors  = _G.colors
 local context = Milo:getContext()
 local device  = _G.device
-local monitor = context.storage:getSingleNode('jobs')
 
 --[[ Configuration Screen ]]
-local template =
-[[%sDisplays the crafting progress%s
-
-%sMilo must be restarted to activate diplay.]]
-
 local wizardPage = UI.Window {
   title = 'Crafting Monitor',
   index = 2,
@@ -24,7 +17,8 @@ local wizardPage = UI.Window {
   [1] = UI.TextArea {
     x = 2, ex = -2, y = 2, ey = -2,
     marginRight = 0,
-    value = string.format(template, Ansi.yellow, Ansi.reset, Ansi.orange),
+    textColor = colors.yellow,
+    value = 'Displays the crafting progress.'
   },
 }
 
@@ -44,105 +38,115 @@ end
 UI:getPage('nodeWizard').wizard:add({ jobs = wizardPage })
 
 --[[ Display ]]
-if not monitor then
-  return
-end
-
 -- TODO: some way to cancel a job
-
-local jobMonitor = UI.Page {
-  parent = UI.Device {
-    device = monitor.adapter,
-    textScale = .5,
-  },
-  grid = UI.Grid {
-    sortColumn = 'index',
-    backgroundFocusColor = colors.black,
-    columns = {
-      { heading = 'Qty',      key = 'remaining',   width = 4 },
-      { heading = 'Crafting', key = 'displayName', },
-      { heading = 'Status',   key = 'status',      },
-      { heading = 'need',   key = 'need',    width = 4  },
---      { heading = 'total',   key = 'total',  width = 4    },
---      { heading = 'used',   key = 'used',   width = 4   },
---      { heading = 'count',   key = 'count', width = 4     },
-      { heading = 'crafted',   key = 'crafted',  width = 5    },
---      { heading = 'Progress', key = 'progress',    width = 8 },
+local function createPage(node)
+  local page = UI.Page {
+    parent = UI.Device {
+      device = node.adapter,
+      textScale = .5,
     },
-  },
-}
+    grid = UI.Grid {
+      sortColumn = 'index',
+      backgroundFocusColor = colors.black,
+      columns = {
+        { heading = 'Qty',      key = 'remaining',   width = 4 },
+        { heading = 'Crafting', key = 'displayName', },
+        { heading = 'Status',   key = 'status',      },
+        { heading = 'need',   key = 'need',    width = 4  },
+  --      { heading = 'total',   key = 'total',  width = 4    },
+  --      { heading = 'used',   key = 'used',   width = 4   },
+  --      { heading = 'count',   key = 'count', width = 4     },
+        { heading = 'crafted',   key = 'crafted',  width = 5    },
+  --      { heading = 'Progress', key = 'progress',    width = 8 },
+      },
+    },
+  }
 
-function jobMonitor:updateList(craftList)
-  if not Milo:isCraftingPaused() then
-    local t = { }
-    for _,v in pairs(craftList) do
-      table.insert(t, v)
-      v.index = #t
-      for k2,v2 in pairs(v.ingredients or { }) do
-        if v2.key ~= v.key --[[and v2.statusCode ]] then
-          table.insert(t, v2)
-          if not v2.displayName then
-            v2.displayName = itemDB:getName(k2)
+  function page:updateList(craftList)
+    if not Milo:isCraftingPaused() then
+      local t = { }
+      for _,v in pairs(craftList) do
+        table.insert(t, v)
+        v.index = #t
+        for k2,v2 in pairs(v.ingredients or { }) do
+          if v2.key ~= v.key --[[and v2.statusCode ]] then
+            table.insert(t, v2)
+            if not v2.displayName then
+              v2.displayName = itemDB:getName(k2)
+            end
+            v2.index = #t
           end
-          v2.index = #t
         end
       end
+      self.grid:setValues(t)
+      self.grid:update()
+      self:draw()
+      self:sync()
     end
-    self.grid:setValues(t)
-    self.grid:update()
-    self:draw()
-    self:sync()
   end
+
+  function page.grid:getDisplayValues(row)
+    row = Util.shallowCopy(row)
+    if not row.displayName then
+      row.displayName = itemDB:getName(row)
+    end
+    if row.requested then
+      row.remaining = math.max(0, row.requested - row.crafted)
+    else
+      row.displayName = '  ' .. row.displayName
+    end
+    --row.progress = string.format('%d/%d', row.crafted, row.count)
+    return row
+  end
+
+  function page.grid:getRowTextColor(row, selected)
+    local statusColor = {
+      [ Craft.STATUS_ERROR ] = colors.red,
+      [ Craft.STATUS_WARNING ] = colors.orange,
+      [ Craft.STATUS_INFO ] = colors.yellow,
+      [ Craft.STATUS_SUCCESS ] = colors.green,
+    }
+    return row.statusCode and statusColor[row.statusCode] or
+      UI.Grid:getRowTextColor(row, selected)
+  end
+
+  page:enable()
+  page:draw()
+  page:sync()
+
+  return page
 end
 
-function jobMonitor.grid:getDisplayValues(row)
-  row = Util.shallowCopy(row)
-  if not row.displayName then
-    row.displayName = itemDB:getName(row)
-  end
-  if row.requested then
-    row.remaining = math.max(0, row.requested - row.crafted)
-  else
-    row.displayName = '  ' .. row.displayName
-  end
-  --row.progress = string.format('%d/%d', row.crafted, row.count)
-  return row
-end
-
-function jobMonitor.grid:getRowTextColor(row, selected)
-  local statusColor = {
-    [ Craft.STATUS_ERROR ] = colors.red,
-    [ Craft.STATUS_WARNING ] = colors.orange,
-    [ Craft.STATUS_INFO ] = colors.yellow,
-    [ Craft.STATUS_SUCCESS ] = colors.green,
-  }
-  return row.statusCode and statusColor[row.statusCode] or
-    UI.Grid:getRowTextColor(row, selected)
-end
+local pages = { }
 
 Event.on({ 'milo_resume', 'milo_pause' }, function(_, reason)
-  if reason then
-    jobMonitor.grid:clear()
-    jobMonitor.grid:centeredWrite(math.ceil(jobMonitor.grid.height / 2), reason.msg)
-  else
-    jobMonitor.grid:draw()
+  for node in context.storage:filterActive('jobs') do
+    local page = pages[node.name]
+    if page then
+      if reason then
+        page.grid:clear()
+        page.grid:centeredWrite(math.ceil(page.grid.height / 2), reason.msg)
+      else
+        page.grid:draw()
+      end
+      page:sync()
+    end
   end
-  jobMonitor:sync()
 end)
 
-jobMonitor:enable()
-jobMonitor:draw()
-jobMonitor:sync()
-
 --[[ Task ]]
-local jobMonitorTask = {
+local task = {
   name = 'job status',
   priority = 80,
 }
 
-function jobMonitorTask:cycle()
-  jobMonitor:updateList(context.craftingQueue)
+function task:cycle()
+  for node in context.storage:filterActive('jobs') do
+    if not pages[node.name] then
+      pages[node.name] = createPage(node)
+    end
+    pages[node.name]:updateList(context.craftingQueue)
+  end
 end
 
-Milo:registerTask(jobMonitorTask)
-context.jobMonitor = jobMonitor
+Milo:registerTask(task)

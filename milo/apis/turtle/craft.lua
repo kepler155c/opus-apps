@@ -126,7 +126,6 @@ local function turtleCraft(recipe, storage, request, count)
 	for k,v in pairs(recipe.ingredients) do
 		local item = splitKey(v)
 		if storage:export(storage.localName, k, count, item) ~= count then
-																				-- TODO: FIX: ingredients cannot be stacked
 			request.status = 'unknown error'
 			request.statusCode = Craft.STATUS_ERROR
 			return

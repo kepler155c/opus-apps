@@ -164,7 +164,6 @@ function Storage:listItems(throttle)
     return self.cache
   end
 
--- TODO: is there any reason now to maintain 2 lists
   local cache = { }
   throttle = throttle or Util.throttle()
 

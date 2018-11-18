@@ -110,10 +110,10 @@ local itemPage = UI.Page {
     backgroundColor = colors.cyan,
     titleBar = UI.TitleBar {
       title = 'Select Machine',
-      previousPage = true,
+      event = 'cancel_machine',
     },
     grid = UI.ScrollingGrid {
-      y = 2, ey = -4,
+      y = 2, ey = -5,
       disableHeader = true,
       values = context.config.nodes,
       columns = {
@@ -122,13 +122,14 @@ local itemPage = UI.Page {
       sortColumn = 'displayName',
     },
     button1 = UI.Button {
-      x = -14, y = -2,
+      x = -14, y = -3,
       text = 'Ok', event = 'set_machine',
     },
     button2 = UI.Button {
-      x = -9, y = -2,
+      x = -9, y = -3,
       text = 'Cancel', event = 'cancel_machine',
     },
+    statusBar = UI.StatusBar { values = 'Enter or double click to select' },
   },
   info = UI.SlideOut {
     titleBar = UI.TitleBar {
@@ -155,6 +156,8 @@ function itemPage:enable(item)
   self.form:setValues(self.res)
   self.titleBar.title = item.displayName or item.name
 
+  self.form[6].inactive = not Craft.machineLookup[self.item.key]
+
   UI.Page.enable(self)
   self:focusFirst()
 end
@@ -168,6 +171,13 @@ function itemPage.machines.grid:getDisplayValues(row)
   row.displayName = row.displayName or row.name
   return row
 end
+
+  function itemPage.machines.grid:getRowTextColor(row, selected)
+    if row.name == Craft.machineLookup[itemPage.item.key] then
+      return colors.yellow
+    end
+    return UI.Grid:getRowTextColor(row, selected)
+  end
 
 function itemPage.rsControl:enable()
   local devices = self.form[1].choices
@@ -227,8 +237,15 @@ function itemPage:eventHandler(event)
 
     UI:setPreviousPage()
 
+  elseif event.type == 'grid_select' then
+    Craft.machineLookup[self.item.key] = event.selected.name
+    self.machines.grid:draw()
+
   elseif event.type == 'set_machine' then
-    --TODO save machine
+    local machine = self.machines.grid:getSelected()
+    if machine then
+      Util.writeTable(Craft.MACHINE_LOOKUP, Craft.machineLookup)
+    end
     self.machines:hide()
 
   elseif event.type == 'cancel_machine' then

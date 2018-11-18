@@ -438,14 +438,13 @@ function nodeWizard:enable(node)
 	self.node.adapter = adapter
 	node.adapter = adapter
 
-_G._p2 = self.node
+_G._p3 = self.node
 
 	local choices = {
 		{ name = 'Ignore', value = 'ignore' },
 	}
 	for _, page in pairs(self.wizard.pages) do
 		if page.isValidType then
-			-- TODO: dedupe list
 			local choice = page:isValidType(self.node)
 			if choice and not Util.find(choices, 'value', choice.value) then
 				table.insert(choices, choice)
@@ -474,6 +473,10 @@ function nodeWizard:eventHandler(event)
 		UI:setPreviousPage()
 
 	elseif event.type == 'accept' then
+
+		local adapter = self.node.adapter
+		self.node.adapter = nil
+
 		Util.prune(self.node, function(v)
 			if type(v) == 'boolean' then
 				return v
@@ -487,13 +490,15 @@ function nodeWizard:eventHandler(event)
 
 		Util.clear(context.config.nodes[self.node.name])
 		Util.merge(context.config.nodes[self.node.name], self.node)
+		context.config.nodes[self.node.name].adapter = adapter
+
 		saveConfig()
 
 		UI:setPreviousPage()
 
 	elseif event.type == 'choice_change' then
 		local help
-		if event.choice and event.choice.help then -- TODO: new param sent by UI api
+		if event.choice and event.choice.help then
 			help = event.choice.help
 		else
 			help = ''

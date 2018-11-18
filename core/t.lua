@@ -1,4 +1,6 @@
-function doCommand(command, moves)
+local turtle = _G.turtle
+
+local function doCommand(command, moves)
 
   local function format(value)
     if type(value) == 'boolean' then
@@ -49,6 +51,8 @@ function doCommand(command, moves)
     [ 'r' ] = turtle.turnRight,
     [ 'l' ] = turtle.turnLeft,
     [ 'ta' ] = turtle.turnAround,
+    [ 'el' ] = turtle.equipLeft,
+    [ 'er' ] = turtle.equipRight,
     [ 'DD' ] = turtle.digDown,
     [ 'DU' ] = turtle.digUp,
     [ 'D' ] = turtle.dig,
@@ -64,7 +68,7 @@ function doCommand(command, moves)
   if cmds[command] then
     runCommand(cmds[command], moves)
   elseif repCmds[command] then
-    for i = 1, moves do
+    for _ = 1, moves do
       if not runCommand(repCmds[command]) then
         break
       end
@@ -79,7 +83,7 @@ if #args > 0 then
 else
   print('Enter command (q to quit):')
   while true do
-    local cmd = read()
+    local cmd = _G.read()
     if cmd == 'q' then break
     end
     args = { }
