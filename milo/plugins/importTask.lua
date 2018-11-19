@@ -15,7 +15,8 @@ function ImportTask:cycle(context)
 
 			local function itemMatchesFilter(item)
 				if not entry.ignoreDamage and not entry.ignoreNbtHash then
-					return entry.filter[item.key]
+					local key = Milo:uniqueKey(item)
+					return entry.filter[key]
 				end
 
 				for key in pairs(entry.filter) do

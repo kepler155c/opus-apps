@@ -407,8 +407,9 @@ function page:applyFilter()
 end
 
 Event.addRoutine(function()
+  local sleepTime = 1.5
   while true do
-    os.sleep(1.5)
+    os.sleep(sleepTime)
     if config.deposit then
       local neural = device.neuralInterface
       local inv = config.useShield and 'getEquipment' or 'getInventory'
@@ -432,7 +433,10 @@ Event.addRoutine(function()
             end
             page.grid:draw()
             page:sync()
+            sleepTime = math.max(sleepTime - .25, .25)
           end
+        else
+          sleepTime = math.min(sleepTime + .25, 1.5)
         end
       end
     end
