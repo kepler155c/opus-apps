@@ -252,15 +252,20 @@ function listingPage:enable()
     self:sync()
   end)
 
-  self.handler = Event.on({ 'storage_offline', 'storage_online' }, function(_, isOnline)
+  local function updateStatus()
     self.statusBar.storageStatus.value =
-      isOnline and '' or 'offline'
+      context.storage:isOnline() and '' or 'offline'
     self.statusBar.storageStatus.textColor =
-      isOnline and colors.lime or colors.red
+      context.storage:isOnline() and colors.lime or colors.red
+  end
+
+  self.handler = Event.on({ 'storage_offline', 'storage_online' }, function()
+    updateStatus()
     self.statusBar.storageStatus:draw()
     self:sync()
   end)
 
+  updateStatus()
   UI.Page.enable(self)
 end
 

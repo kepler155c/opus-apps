@@ -67,6 +67,10 @@ if not modem or not modem.getNameLocal then
   Syntax('Wired modem missing')
 end
 
+if not modem.getNameLocal() then
+  Syntax('Wired modem is not active')
+end
+
 local introspection = Peripheral.get('plethora:introspection') or
   Syntax('Introspection module missing')
 

@@ -10,6 +10,8 @@
 \030 \031f\030f\031f\128\0317\143\031f\128\128\0317\143\031f\128\128\128",
     run = "Turtles.lua",
   },
+--[[
+Needs work
   [ "381e3298b2b8f6caeb2208b57d805ada38402f0b" ] = {
     title = "Scripts",
     category = "Apps",
@@ -21,6 +23,7 @@
 \0300\0317else\140",
     run = "Script.lua",
   },
+]]
   c5497bca58468ae64aed6c0fd921109217988db3 = {
     title = "Events",
     category = "System",

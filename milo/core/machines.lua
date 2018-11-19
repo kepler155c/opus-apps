@@ -143,20 +143,19 @@ function networkPage:disable()
 end
 
 function networkPage:applyFilter()
-	local t      = context.config.nodes
-	local filter = self.filter.value
+	local t = Util.filter(context.config.nodes, function(v)
+		return not v.hidden
+	end)
 
-	if #filter > 0 then
-		t = { }
-		filter = filter:lower()
-
-		for _,v in pairs(context.config.nodes) do
-			if (v.displayName and string.find(string.lower(v.displayName), filter, 1, true)) or
-					string.find(string.lower(v.name), filter, 1, true) then
-				table.insert(t, v)
-			end
-		end
+	if #self.filter.value > 0 then
+		local filter = self.filter.value:lower()
+		Util.filterInplace(t, function(v)
+			return v.displayName and
+					string.find(string.lower(v.displayName), filter, 1, true) or
+					string.find(string.lower(v.name), filter, 1, true)
+		end)
 	end
+
 	self.grid:setValues(t)
 end
 
@@ -391,10 +390,12 @@ function nodeWizard.wizard.pages.general:showInventory(node)
 	local inventory
 
 	if device[node.name] and device[node.name].list then
-		inventory = device[node.name].list()
-		for k,v in pairs(inventory) do
-			v.slot = k
-		end
+		pcall(function()
+			inventory = device[node.name].list()
+			for k,v in pairs(inventory) do
+				v.slot = k
+			end
+		end)
 	end
 
 	self.grid:setValues(inventory or { })
@@ -438,16 +439,17 @@ function nodeWizard:enable(node)
 	self.node.adapter = adapter
 	node.adapter = adapter
 
-_G._p3 = self.node
+_G._p3 = self.node -- TODO: remove - debugging
 
 	local choices = {
-		{ name = 'Ignore', value = 'ignore' },
+		{ name = 'Ignore', value = 'ignore', '' },
+		{ name = 'Hidden', value = 'hidden', 'Do not show in list' },
 	}
 	for _, page in pairs(self.wizard.pages) do
 		if page.isValidType then
 			local choice = page:isValidType(self.node)
 			if choice and not Util.find(choices, 'value', choice.value) then
-				table.insert(choices, choice)
+				table.insert(choices, 2, choice)
 			end
 		end
 	end
