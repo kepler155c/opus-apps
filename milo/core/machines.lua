@@ -144,7 +144,7 @@ end
 
 function networkPage:applyFilter()
 	local t = Util.filter(context.config.nodes, function(v)
-		return not v.hidden
+		return v.mtype ~= 'hidden'
 	end)
 
 	if #self.filter.value > 0 then
@@ -443,7 +443,7 @@ _G._p3 = self.node -- TODO: remove - debugging
 
 	local choices = {
 		{ name = 'Ignore', value = 'ignore', '' },
-		{ name = 'Hidden', value = 'hidden', 'Do not show in list' },
+		{ name = 'Hidden', value = 'hidden', help = 'Do not show in list' },
 	}
 	for _, page in pairs(self.wizard.pages) do
 		if page.isValidType then
