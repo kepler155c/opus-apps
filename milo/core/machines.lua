@@ -149,7 +149,7 @@ function networkPage:applyFilter()
 
 	if #self.filter.value > 0 then
 		local filter = self.filter.value:lower()
-		Util.filterInplace(t, function(v)
+		t = Util.filter(t, function(v)
 			return v.displayName and
 					string.find(string.lower(v.displayName), filter, 1, true) or
 					string.find(string.lower(v.name), filter, 1, true)
