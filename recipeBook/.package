@@ -1,9 +1,6 @@
 {
-	required = {
-		'opus-develop-1.8',
-	},
 	title = 'Recipe books for crafting programs',
-	repository = 'kepler155c/opus-apps/develop-1.8/recipeBook',
-	description = [[ ... ]],
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/recipeBook',
+	description = [[ WIP ]],
 	licence = 'MIT',
 }

@@ -1,9 +1,13 @@
 {
 	required = {
-		'opus-develop-1.8',
+		'core',
 	},
 	title = 'Programs for farming resources',
-	repository = 'kepler155c/opus-apps/develop-1.8/farms',
-	description = [[ ... ]],
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/farms',
+	description = [[Includes: 
+ * Tree Farm
+ * Cow/Sheep Rancher
+ * Farmer
+]],
 	licence = 'MIT',
 }

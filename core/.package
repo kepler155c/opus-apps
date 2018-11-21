@@ -1,9 +1,6 @@
 {
-	required = {
-		'opus-develop-1.8',
-	},
 	title = 'Core apps and apis',
-	repository = 'kepler155c/opus-apps/develop-1.8/core',
-	description = [[ ... ]],
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/core',
+	description = [[Provides common files used by Opus applications. Also includes various useful applications.]],
 	licence = 'MIT',
 }

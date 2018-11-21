@@ -1,9 +1,9 @@
 {
 	required = {
-		'opus-develop-1.8',
+		'core',
 	},
 	title = 'Schematic Builder',
-	repository = 'kepler155c/opus-apps/develop-1.8/builder',
-	description = [[ ... ]],
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/builder',
+	description = [[ Build structures from schematic files using a turtle or command computer. ]],
 	licence = 'MIT',
 }
