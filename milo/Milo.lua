@@ -24,6 +24,7 @@ local fs         = _G.fs
 local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
+local turtle     = _G.turtle
 
 if multishell then
   multishell.setTitle(multishell.getCurrent(), 'Milo')
@@ -71,11 +72,15 @@ if not modem.getNameLocal() then
   Syntax('Wired modem is not active')
 end
 
-local introspection = Peripheral.get('plethora:introspection') or
+local introspection = device['plethora:introspection'] or
+  turtle.equip('left', 'plethora:module:0') and device['plethora:introspection'] or
   Syntax('Introspection module missing')
 
 if not device.workbench then
-  Syntax('Workbench missing')
+  turtle.equip('right', 'minecraft:crafting_table:0')
+  if not device.workbench then
+    Syntax('Workbench missing')
+  end
 end
 
 local context = {

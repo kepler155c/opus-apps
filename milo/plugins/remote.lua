@@ -122,15 +122,33 @@ local function client(socket)
 	_G._debug('REMOTE: disconnected from ' .. socket.dhost)
 end
 
-if device.wireless_modem then
-	Event.addRoutine(function()
-		_G._debug('REMOTE: listening on port 4242')
-		while true do
-			local socket = Socket.server(4242)
-			Event.addRoutine(function()
-				client(socket)
-				socket:close()
-			end)
-		end
-	end)
+local handler
+
+local function listen()
+	if device.wireless_modem then
+		handler = Event.addRoutine(function()
+			_G._debug('REMOTE: listening on port 4242')
+			while true do
+				local socket = Socket.server(4242)
+				Event.addRoutine(function()
+					client(socket)
+					socket:close()
+				end)
+			end
+		end)
+	end
 end
+
+Event.on({ 'device_attach', 'device_detach' }, function(_, name)
+	if name == 'wireless_modem' then
+		if handler then
+			handler:terminate()
+			handler = nil
+			_debug('REMOTE: wireless modem disconnected')
+		else
+			listen()
+		end
+	end
+end)
+
+listen()
