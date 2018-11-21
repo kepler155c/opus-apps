@@ -11,8 +11,8 @@ local fs         = _G.fs
 local os         = _G.os
 local shell      = _ENV.shell
 
-local GROUPS_PATH = 'usr/groups'
-local SCRIPTS_PATH = 'usr/etc/scripts'
+local GROUPS_PATH = 'usr/config/groups'
+local SCRIPTS_PATH = 'packages/core/etc/scripts'
 
 UI:configure('script', ...)
 
