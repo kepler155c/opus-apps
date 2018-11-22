@@ -140,6 +140,9 @@ end
 function networkPage:disable()
 	UI.Page.disable(self)
 	Event.off(self.handler)
+
+	-- Since some storage may have been added/removed - force a full rescan
+	context.storage:setDirty()
 end
 
 function networkPage:applyFilter()

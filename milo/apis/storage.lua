@@ -141,6 +141,10 @@ function Storage:onlineAdapters()
   end
 end
 
+function Storage:setDirty()
+  self.dirty = true
+end
+
 function Storage:refresh(throttle)
   self.dirty = true
   self.lastRefresh = os.clock()

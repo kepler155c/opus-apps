@@ -128,13 +128,6 @@ local page = UI.Page {
         required = true,
       },
       [2] = UI.TextEntry {
-        formLabel = 'User Name', formKey = 'user',
-        help = 'User name for bound manipulator',
-        shadowText = 'User name',
-        limit = 50,
-        required = true,
-      },
-      [3] = UI.TextEntry {
         formLabel = 'Return Slot', formKey = 'slot',
         help = 'Use a slot for sending to storage',
         shadowText = 'Inventory slot #',
@@ -142,12 +135,12 @@ local page = UI.Page {
         validate = 'numeric',
         required = false,
       },
-      [4] = UI.Checkbox {
+      [3] = UI.Checkbox {
         formLabel = 'Shield Slot', formKey = 'useShield',
         help = 'Or, use the shield slot for sending'
       },
       info = UI.TextArea {
-        x = 1, ex = -1, y = 7, ey = -3,
+        x = 1, ex = -1, y = 6, ey = -4,
         textColor = colors.yellow,
         marginLeft = 0,
         marginRight = 0,
@@ -162,6 +155,14 @@ local page = UI.Page {
   },
   items = { },
 }
+
+local function getPlayerName()
+  local neural = device.neuralInterface
+
+  if neural and neural.getName then
+    return neural.getName()
+  end
+end
 
 local function filterItems(t, filter, displayMode)
   if filter or displayMode > 0 then
@@ -194,9 +195,12 @@ function page:sendRequest(data)
 
   if not config.server then
     self:setStatus('Invalid configuration')
-    Event.onTimeout(2, function()
-      self:setStatus('')
-    end)
+    return
+  end
+
+  local player = getPlayerName()
+  if not player then
+    self:setStatus('Missing neural or introspection')
     return
   end
 
@@ -207,7 +211,7 @@ function page:sendRequest(data)
         self:setStatus('connecting ...')
         socket, msg = Socket.connect(config.server, 4242)
         if socket then
-          socket:write(config.user)
+          socket:write(player)
           local r = socket:read(2)
           if r and not r.msg then
             self:setStatus('connected ...')
@@ -416,27 +420,32 @@ Event.addRoutine(function()
       if not neural or not neural[inv] then
         _G._debug('missing Introspection module')
       elseif config.server and (config.useShield or config.slot) then
-        local method = neural[inv]
-        local item = method and method().getItemMeta(config.useShield and SHIELD_SLOT or config.slot)
-        if item then
-          local slotNo = config.useShield and 'shield' or config.slot
-          local response = page:sendRequest({
-            request = 'deposit',
-            slot = slotNo,
-            count = item.count,
-            key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
-          })
-          if response then
-            local ritem = page.items[response.key]
-            if ritem then
-              ritem.count = response.current + item.count
+        local s, m = pcall(function()
+          local method = neural[inv]
+          local item = method and method().getItemMeta(config.useShield and SHIELD_SLOT or config.slot)
+          if item then
+            local slotNo = config.useShield and 'shield' or config.slot
+            local response = page:sendRequest({
+              request = 'deposit',
+              slot = slotNo,
+              count = item.count,
+              key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
+            })
+            if response then
+              local ritem = page.items[response.key]
+              if ritem then
+                ritem.count = response.current + item.count
+              end
+              page.grid:draw()
+              page:sync()
+              sleepTime = math.max(sleepTime - .25, .25)
             end
-            page.grid:draw()
-            page:sync()
-            sleepTime = math.max(sleepTime - .25, .25)
+          else
+            sleepTime = math.min(sleepTime + .25, 1.5)
           end
-        else
-          sleepTime = math.min(sleepTime + .25, 1.5)
+        end)
+        if not s and m then
+          _debug(m)
         end
       end
     end

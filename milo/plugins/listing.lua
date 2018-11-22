@@ -108,6 +108,10 @@ local listingPage = UI.Page {
     },
   },
   notification = UI.Notification(),
+  throttle = UI.Throttle {
+    textColor = colors.yellow,
+    borderColor = colors.gray,
+  },
   accelerators = {
     r = 'refresh',
     [ 'control-r' ] = 'refresh',
@@ -240,32 +244,36 @@ function listingPage:eventHandler(event)
 end
 
 function listingPage:enable()
-  self:refresh()
-  self:setFocus(self.statusBar.filter)
+  Event.onTimeout(0, function()
+    self:refresh()
+    self:draw()
+    self:sync()
 
-  self.timer = Event.onInterval(3, function()
-    for _,v in pairs(self.allItems) do
-      local c = context.storage.cache[v.key]
-      v.count = c and c.count or 0
+    self.timer = Event.onInterval(3, function()
+      for _,v in pairs(self.allItems) do
+        local c = context.storage.cache[v.key]
+        v.count = c and c.count or 0
+      end
+      self.grid:draw()
+      self:sync()
+    end)
+
+    local function updateStatus()
+      self.statusBar.storageStatus.value =
+        context.storage:isOnline() and '' or 'offline'
+      self.statusBar.storageStatus.textColor =
+        context.storage:isOnline() and colors.lime or colors.red
     end
-    self.grid:draw()
-    self:sync()
-  end)
-
-  local function updateStatus()
-    self.statusBar.storageStatus.value =
-      context.storage:isOnline() and '' or 'offline'
-    self.statusBar.storageStatus.textColor =
-      context.storage:isOnline() and colors.lime or colors.red
-  end
-
-  self.handler = Event.on({ 'storage_offline', 'storage_online' }, function()
     updateStatus()
-    self.statusBar.storageStatus:draw()
-    self:sync()
+
+    self.handler = Event.on({ 'storage_offline', 'storage_online' }, function()
+      updateStatus()
+      self.statusBar.storageStatus:draw()
+      self:sync()
+    end)
   end)
 
-  updateStatus()
+  self:setFocus(self.statusBar.filter)
   UI.Page.enable(self)
 end
 
@@ -276,8 +284,12 @@ function listingPage:disable()
 end
 
 function listingPage:refresh(force)
-  self.allItems = Milo:mergeResources(Milo:listItems(force))
+  local throttle = function() self.throttle:update() end
+
+  self.throttle:enable()
+  self.allItems = Milo:mergeResources(Milo:listItems(force, throttle))
   self:applyFilter()
+  self.throttle:disable()
 end
 
 function listingPage:applyFilter()

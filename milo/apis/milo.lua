@@ -301,8 +301,9 @@ function Milo:saveResources()
 end
 
 -- Return a list of everything in the system
-function Milo:listItems(forceRefresh)
-	return forceRefresh and self.context.storage:refresh() or self.context.storage:listItems()
+function Milo:listItems(forceRefresh, throttle)
+	return forceRefresh and self.context.storage:refresh(throttle) or
+		self.context.storage:listItems(throttle)
 end
 
 return Milo
