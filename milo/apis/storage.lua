@@ -287,20 +287,6 @@ function Storage:export(target, slot, count, item)
 -- If no slot and full amount is not exported, then no need to check rest of adapters
 -- ... so should not reach here
 
-
---[[
-  -- not found - scan all others
-  for _, adapter in self:onlineAdapters() do
-    if not adapter.cache or not adapter.cache[key] then
-      provide(adapter)
-      if count <= 0 then
-  _G._debug('STORAGE: FOUND: %s - %d', key, count)
-        break
-      end
-    end
-  end
---]]
-
   return total
 end
 
@@ -368,7 +354,7 @@ function Storage:import(source, slot, count, item)
       if count <= 0 then
         return total
       end
-      if adapter.cache and adapter.cache[key] and not node.lock then
+      if not node.lock and adapter.cache and adapter.cache[key] then
         insert(adapter)
       end
     end

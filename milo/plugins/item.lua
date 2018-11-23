@@ -1,15 +1,13 @@
-local Ansi = require('ansi')
-local Craft  = require('turtle.craft')
-local Milo = require('milo')
-local UI   = require('ui')
-local Util = require('util')
+local Ansi  = require('ansi')
+local Craft = require('craft2')
+local Milo  = require('milo')
+local UI    = require('ui')
+local Util  = require('util')
 
 local colors = _G.colors
 local device = _G.device
 
 local context = Milo:getContext()
-
--- TODO: allow change of machine
 
 local itemPage = UI.Page {
   titleBar = UI.TitleBar {
@@ -29,18 +27,6 @@ local itemPage = UI.Page {
       formLabel = 'Max', formKey = 'limit', help = 'Send to trash if above max',
       validate = 'numeric',
     },
---[[
-    [3] = UI.Chooser {
-      width = 7,
-      formLabel = 'Autocraft', formKey = 'auto',
-      nochoice = 'No',
-      choices = {
-        { name = 'Yes', value = true },
-        { name = 'No', value = false },
-      },
-      help = 'Craft until out of ingredients'
-    },
-]]
     [4] = UI.Checkbox {
       formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
       help = 'Ignore damage of item',
@@ -163,7 +149,12 @@ function itemPage:enable(item)
 end
 
 function itemPage.machines.grid:isRowValid(_, value)
-  return value.mtype == 'machine'
+  local ignores = Util.transpose({ 'storage', 'ignore', 'hidden' })
+  if not ignores[value.mtype] then
+    local node = context.storage.nodes[value.name]
+_debug(node)
+    return node and node.adapter and node.adapter.online and node.adapter.pushItems
+  end
 end
 
 function itemPage.machines.grid:getDisplayValues(row)

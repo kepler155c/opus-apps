@@ -1,4 +1,4 @@
-local Craft  = require('turtle.craft')
+local Craft  = require('craft2')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
 local UI     = require('ui')

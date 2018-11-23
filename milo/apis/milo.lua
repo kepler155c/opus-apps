@@ -1,5 +1,5 @@
 local Config = require('config')
-local Craft  = require('turtle.craft')
+local Craft  = require('craft2')
 local itemDB = require('itemDB')
 local Util   = require('util')
 

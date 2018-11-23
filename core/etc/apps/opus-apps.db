@@ -46,6 +46,7 @@ Needs work
 \030 \031  \030f\0317\130\030 \031  \030f\0317\130",
     run = "Appstore.lua",
   },
+--[[
   [ "131260cbfbb0c821f8eae5e7c3c296c7aa4d50b9" ] = {
     title = "Music",
     category = "Apps",
@@ -56,7 +57,6 @@ Needs work
     run = "usr/apps/Music.lua",
     requires = 'turtle',
   },
---[[
   [ "89307d419a2fe4fbb69af92b3d3af27b6ec14d3e" ] = {
     title = "Telnet",
     category = "Apps",

@@ -442,8 +442,6 @@ function nodeWizard:enable(node)
 	self.node.adapter = adapter
 	node.adapter = adapter
 
-_G._p3 = self.node -- TODO: remove - debugging
-
 	local choices = {
 		{ name = 'Ignore', value = 'ignore', '' },
 		{ name = 'Hidden', value = 'hidden', help = 'Do not show in list' },
