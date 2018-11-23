@@ -245,6 +245,14 @@ function listingPage:eventHandler(event)
 end
 
 function listingPage:enable()
+  local function updateStatus()
+    self.statusBar.storageStatus.value =
+      context.storage:isOnline() and '' or 'offline'
+    self.statusBar.storageStatus.textColor =
+      context.storage:isOnline() and colors.lime or colors.red
+  end
+  updateStatus()
+
   Event.onTimeout(0, function()
     self:refresh()
     self:draw()
@@ -258,14 +266,6 @@ function listingPage:enable()
       self.grid:draw()
       self:sync()
     end)
-
-    local function updateStatus()
-      self.statusBar.storageStatus.value =
-        context.storage:isOnline() and '' or 'offline'
-      self.statusBar.storageStatus.textColor =
-        context.storage:isOnline() and colors.lime or colors.red
-    end
-    updateStatus()
 
     self.handler = Event.on({ 'storage_offline', 'storage_online' }, function()
       updateStatus()
