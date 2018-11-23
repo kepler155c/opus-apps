@@ -55,7 +55,7 @@ function PotionImportTask:cycle(context)
 			local recipe = {
 				count       = 3,
 				ingredients = { },
-				maxCount    = 3,
+				maxCount    = 1,
 			}
 			local list = bs.adapter.list()
 

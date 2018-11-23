@@ -205,7 +205,8 @@ function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 
 _G._debug({'eval', recipe.result, count })
 
-	local maxCount = math.floor((recipe.maxCount or 64) / recipe.count)
+	--local maxCount = math.floor((recipe.maxCount or 64) / recipe.count)
+	local maxCount = recipe.maxCount or math.floor(64 / recipe.count)
 
 	for key,icount in pairs(Craft.sumIngredients(recipe)) do
 		local itemCount = Craft.getItemCount(origItem.ingredients, key)
