@@ -44,6 +44,8 @@ equip('right', 'plethora:sensor', 'plethora:module:3')
 
 local sensor = device['plethora:sensor']
 
+turtle.setMovementStrategy('goto')
+
 while true do
 	local blocks = sensor.sense()
 	local mobs = Util.filterInplace(blocks, function(b)
