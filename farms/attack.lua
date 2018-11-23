@@ -63,6 +63,7 @@ function Point.iterateClosest(spt, ipts)
 	return function()
 		local pt = Point.closest(spt, pts)
 		if pt then
+			Util.removeByValue(pts, pt)
 			return pt
 		end
 	end
@@ -126,7 +127,7 @@ while true do
 					repeat
 						repeat until not turtle.attack()
 						mob = sensor.getMetaByID(mob.id)
-						if not mob then
+						if not mob or Util.empty(mob) then
 							break
 						end
 						normalize(mob)
