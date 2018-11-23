@@ -58,6 +58,16 @@ local sensor = device['plethora:sensor']
 
 turtle.setMovementStrategy('goto')
 
+function Point.iterateClosest(spt, ipts)
+	local pts = Util.shallowCopy(ipts)
+	return function()
+		local pt = Point.closest(spt, pts)
+		if pt then
+			return pt
+		end
+	end
+end
+
 local function dropOff()
 	if not chest then
 		return
@@ -101,17 +111,34 @@ while true do
 			end)
 			os.sleep(2) --- give a little time for mobs to calm down
 		else
-			-- this mob doesn't run, attack and follow until dead
-			local mob = Point.closest(turtle.point, mobs)
-			repeat
+			local attacked = false
+
+			local function attack()
+				if turtle.attack() then
+					attacked = true
+					return attacked
+				end
+			end
+
+			for mob in Point.iterateClosest(turtle.point, mobs) do
+				-- this mob doesn't run, attack and follow until dead
 				if turtle.faceAgainst(mob) then
-					repeat until not turtle.attack()
+					repeat
+						repeat until not turtle.attack()
+						mob = sensor.getMetaByID(mob.id)
+						if not mob then
+							break
+						end
+						normalize(mob)
+						if not turtle.faceAgainst(mob) then
+							break
+						end
+					until not mob
 				end
-				mob = sensor.getMetaByID(mob.id)
-				if mob then
-					normalize(mob)
+				if attacked then
+					break
 				end
-			until not mob
+			end
 		end
 	end
 
