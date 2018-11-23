@@ -84,7 +84,9 @@ while true do
 		os.sleep(3)
 	else
 		Point.eachClosest(turtle.point, mobs, function(b)
-			repeat until not turtle.attackAt(b)
+			if turtle.faceAgainst(b) then
+				repeat until not turtle.attack()
+			end
 		end)
 	end
 
