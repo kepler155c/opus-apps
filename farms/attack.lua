@@ -31,20 +31,39 @@ local function equip(side, item, rawName)
 	turtle.select(1)
 end
 
-local function setHeading()
-	equip('right', 'plethora:scanner', 'plethora:module:2')
-	local scanner = device['plethora:scanner']
-	local facing = scanner.getBlockMeta(0, 0, 0).state.facing
-	turtle.point.heading = Point.facings[facing].heading
+equip('left', 'minecraft:diamond_sword')
+
+equip('right', 'plethora:scanner', 'plethora:module:2')
+local scanner = device['plethora:scanner']
+local facing = scanner.getBlockMeta(0, 0, 0).state.facing
+turtle.point.heading = Point.facings[facing].heading
+
+local scanned = scanner.scan()
+local chest = Util.find(scanned, 'name', 'minecraft:chest')
+if chest then
+	chest.x = Util.round(chest.x) + turtle.point.x
+	chest.y = Util.round(chest.y) + turtle.point.y
+	chest.z = Util.round(chest.z) + turtle.point.z
 end
 
-equip('left', 'minecraft:diamond_sword')
-setHeading()
 equip('right', 'plethora:sensor', 'plethora:module:3')
 
 local sensor = device['plethora:sensor']
 
 turtle.setMovementStrategy('goto')
+
+local function dropOff()
+	if not chest then
+		return
+	end
+	local inv = turtle.getSummedInventory()
+	for _, slot in pairs(inv) do
+		if slot.count >= 16 then
+			turtle.dropDownAt(chest, slot.name)
+		end
+	end
+end
+
 
 while true do
 	local blocks = sensor.sense()
@@ -65,9 +84,9 @@ while true do
 		os.sleep(3)
 	else
 		Point.eachClosest(turtle.point, mobs, function(b)
-			if turtle.faceAgainst(b) then
-				repeat until not turtle.attack()
-			end
+			repeat until not turtle.attackAt(b)
 		end)
 	end
+
+	dropOff()
 end
