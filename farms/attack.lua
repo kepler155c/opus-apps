@@ -9,7 +9,13 @@ local os     = _G.os
 local turtle = _G.turtle
 
 local args = { ... }
-local mob = args[1] or error('Syntax: attack <mob name>')
+local mobType = args[1] or error('Syntax: attack <mob name>')
+
+local Runners = {
+	Cow     = true,
+	Chicken = true,
+	Blaze   = false,
+}
 
 local function equip(side, item, rawName)
 	local equipped = Peripheral.lookup('side/' .. side)
@@ -64,14 +70,17 @@ local function dropOff()
 	end
 end
 
+local function normalize(b)
+	b.x = Util.round(b.x) + turtle.point.x
+	b.y = Util.round(b.y) + turtle.point.y
+	b.z = Util.round(b.z) + turtle.point.z
+end
 
 while true do
 	local blocks = sensor.sense()
 	local mobs = Util.filterInplace(blocks, function(b)
-		if b.name == mob then
-			b.x = Util.round(b.x) + turtle.point.x
-			b.y = Util.round(b.y) + turtle.point.y
-			b.z = Util.round(b.z) + turtle.point.z
+		if b.name == mobType then
+			normalize(b)
 			return true
 		end
 	end)
@@ -83,11 +92,27 @@ while true do
 	if #mobs == 0 then
 		os.sleep(3)
 	else
-		Point.eachClosest(turtle.point, mobs, function(b)
-			if turtle.faceAgainst(b) then
-				repeat until not turtle.attack()
-			end
-		end)
+		if Runners[mobType] then
+			-- if this mob runs away, just attack next closest
+			Point.eachClosest(turtle.point, mobs, function(b)
+				if turtle.faceAgainst(b) then
+					repeat until not turtle.attack()
+				end
+			end)
+			os.sleep(2) --- give a little time for mobs to calm down
+		else
+			-- this mob doesn't run, attack and follow until dead
+			local mob = Point.closest(turtle.point, mobs)
+			repeat
+				if turtle.faceAgainst(mob) then
+					repeat until not turtle.attack()
+				end
+				mob = sensor.getMetaByID(mob.id)
+				if mob then
+					normalize(mob)
+				end
+			until not mob
+		end
 	end
 
 	dropOff()

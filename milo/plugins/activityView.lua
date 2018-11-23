@@ -23,6 +23,7 @@ local activityWizardPage = UI.Window {
     marginRight = 0,
     value = string.format(template, Ansi.yellow, Ansi.reset),
   },
+  timestamp = os.clock(),
 }
 
 function activityWizardPage:isValidType(node)
