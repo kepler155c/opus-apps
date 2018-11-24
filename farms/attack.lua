@@ -57,6 +57,7 @@ equip('right', 'plethora:sensor', 'plethora:module:3')
 local sensor = device['plethora:sensor']
 
 turtle.setMovementStrategy('goto')
+turtle.setPolicy(turtle.policies.attack)
 
 function Point.iterateClosest(spt, ipts)
 	local pts = Util.shallowCopy(ipts)
