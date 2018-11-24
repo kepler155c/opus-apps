@@ -4,7 +4,7 @@ Use 4 furnaces at once to smelt items.
 SETUP:
   Place an introspection module into the turtles inventory.
   Connect with wired modem at bottom of turtle.
-  Place furnaces on each side EXCEPT for bottom and right.
+  Place furnaces on each side EXCEPT for bottom and left.
 
 CONFIGURATION:
   Set turtle as a "Generic Inventory"

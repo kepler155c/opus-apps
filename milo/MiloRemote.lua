@@ -429,7 +429,7 @@ end
 Event.addRoutine(function()
   local sleepTime = 1.5
   while true do
-    os.sleep(sleepTime)
+    os.sleep(socket and sleepTime or 5)
     if config.deposit then
       local neural = device.neuralInterface
       local inv = config.useShield and 'getEquipment' or 'getInventory'

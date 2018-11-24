@@ -9,6 +9,9 @@
     2. Equip the turtle with an introspection module.
 ]]--
 
+
+-- TODO: fix which is primary wired modem
+
 _G.requireInjector(_ENV)
 
 local Config     = require('config')
