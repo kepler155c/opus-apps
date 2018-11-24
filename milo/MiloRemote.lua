@@ -9,10 +9,12 @@ local Util   = require('util')
 
 local colors = _G.colors
 local device = _G.device
+local fs     = _G.fs
 local os     = _G.os
 local socket
 
-local SHIELD_SLOT = 2
+local SHIELD_SLOT  = 2
+local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
 
 local config = Config.load('miloRemote', { displayMode = 0 })
 
@@ -138,6 +140,10 @@ local page = UI.Page {
       [3] = UI.Checkbox {
         formLabel = 'Shield Slot', formKey = 'useShield',
         help = 'Or, use the shield slot for sending'
+      },
+      [4] = UI.Checkbox {
+        formLabel = 'Run on startup', formKey = 'runOnStartup',
+        help = 'Run this program on startup'
       },
       info = UI.TextArea {
         x = 1, ex = -1, y = 6, ey = -4,
@@ -306,6 +312,16 @@ function page:eventHandler(event)
     self:refresh('list')
     self.grid:draw()
     self:setFocus(self.statusBar.filter)
+
+    if config.runOnStartup then
+      if not fs.exists(STARTUP_FILE) then
+        Util.writeFile(STARTUP_FILE,
+          [[os.sleep(1)
+shell.openForegroundTab('packages/milo/MiloRemote')]])
+      end
+    elseif fs.exists(STARTUP_FILE) then
+      fs.delete(STARTUP_FILE)
+    end
 
   elseif event.type == 'form_cancel' then
     self.setup:hide()

@@ -21,9 +21,12 @@ local Peripheral = require('peripheral')
 local Util       = require('util')
 
 local device     = _G.device
+local fs         = _G.fs
 local os         = _G.os
 local peripheral = _G.peripheral
 local turtle     = _G.turtle
+
+local STARTUP_FILE = 'usr/autorun/miloFurni.lua'
 
 local function equip(side, item, rawName)
   local equipped = Peripheral.lookup('side/' .. side)
@@ -50,6 +53,11 @@ local intro = device['plethora:introspection']
 local inv = intro.getInventory()
 local sides = { 'front', 'back', 'right', 'top' }
 
+if not fs.exists(STARTUP_FILE) then
+  Util.writeFile(STARTUP_FILE,
+    [[os.sleep(1)
+shell.openForegroundTab('packages/milo/apps/furni')]])
+end
 -- slot 1: item to cook
 -- slot 2: fuel
 -- slot 3: return
