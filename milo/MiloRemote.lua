@@ -196,7 +196,7 @@ function page:setStatus(status)
   self:sync()
 end
 
-function page:sendRequest(data)
+function page:sendRequest(data, statusMsg)
   local response
 
   if not config.server then
@@ -230,6 +230,9 @@ function page:sendRequest(data)
         end
       end
       if socket then
+        if statusMsg then
+          self:setStatus(statusMsg)
+        end
         if socket:write(data) then
           response = socket:read(2)
           if response then
@@ -244,12 +247,10 @@ function page:sendRequest(data)
           end
         end
         socket:close()
+        socket = nil
       end
     end
     self:setStatus(msg or 'Failed to connect')
-    Event.onTimeout(2, function()
-      self:setStatus('')
-    end)
   end)
 
   return response
@@ -271,8 +272,8 @@ function page.grid:getDisplayValues(row)
   return row
 end
 
-function page:transfer(item, count)
-  local response = self:sendRequest({ request = 'transfer', item = item, count = count })
+function page:transfer(item, count, msg)
+  local response = self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
   if response then
     item.count = response.current - response.count
     self.grid:draw()
@@ -333,22 +334,19 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
   elseif event.type == 'eject' or event.type == 'grid_select' then
     local item = self.grid:getSelected()
     if item then
-      self:setStatus('requesting 1 ...')
-      self:transfer(item, 1)
+      self:transfer(item, 1, 'requesting 1 ...')
     end
 
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
-      self:setStatus('requesting stack ...')
-      self:transfer(item, 'stack')
+      self:transfer(item, 'stack', 'requesting stack ...')
     end
 
   elseif event.type == 'eject_all' then
     local item = self.grid:getSelected()
     if item then
-      self:setStatus('requesting all ...')
-      self:transfer(item, 'all')
+      self:transfer(item, 'all', 'requesting all ...')
     end
 
   elseif event.type == 'eject_specified' then
@@ -357,21 +355,18 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
     if item and count then
       self.statusBar.amount:reset()
       self:setFocus(self.statusBar.filter)
-      self:setStatus('requesting ' .. count .. ' ...')
-      self:transfer(item, count)
+      self:transfer(item, count, 'requesting ' .. count .. ' ...')
     else
       self:setStatus('nope ...')
     end
 
   elseif event.type == 'rescan' then
     self:setFocus(self.statusBar.filter)
-    self:setStatus('rescanning ...')
     self:refresh('scan')
     self.grid:draw()
 
   elseif event.type == 'refresh' then
     self:setFocus(self.statusBar.filter)
-    self:setStatus('updating ...')
     self:refresh('list')
     self.grid:draw()
 
@@ -412,11 +407,33 @@ function page:enable()
   end)
 end
 
+local function splitKey(key)
+  local t = Util.split(key, '(.-):')
+  local item = { }
+  if #t[#t] > 8 then
+    item.nbtHash = table.remove(t)
+  end
+  item.damage = tonumber(table.remove(t))
+  item.name = table.concat(t, ':')
+  return item
+end
+
+function page:expandList(list)
+  local t = { }
+  for k,v in pairs(list) do
+    local item = splitKey(k)
+    item.count, item.displayName = v:match('(%d+):(.+)')
+    item.count = tonumber(item.count) or 0
+    t[k] = item
+  end
+  return t
+end
+
 function page:refresh(requestType)
-  local items = self:sendRequest({ request = requestType })
+  local items = self:sendRequest({ request = requestType }, 'refreshing...')
 
   if items then
-    self.items = items
+    self.items = self:expandList(items)
     self:applyFilter()
   end
 end

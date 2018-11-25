@@ -13,9 +13,12 @@ local context = Milo:getContext()
 
 local function getNameSafe(v)
 	local name
-	pcall(function()
+	local s, m = pcall(function()
 		name = v.getName()
 	end)
+	if not s then
+		_G._debug(m)
+	end
 	return name
 end
 
@@ -25,6 +28,14 @@ local function getManipulatorForUser(user)
 			return v
 		end
 	end
+end
+
+local function compactList(list)
+	local c = { }
+	for k,v in pairs(list) do
+		c[k]= v.count .. ':' .. v.displayName
+	end
+	return c
 end
 
 local function client(socket)
@@ -58,11 +69,11 @@ local function client(socket)
 
 		if data.request == 'scan' then -- full scan of all inventories
 			local items = Milo:mergeResources(Milo:listItems(true))
-			socket:write(items)
+			socket:write(compactList(items))
 
 		elseif data.request == 'list' then
 			local items = Milo:mergeResources(Milo:listItems())
-			socket:write(items)
+			socket:write(compactList(items))
 
 		elseif data.request == 'deposit' then
 			local function deposit()
