@@ -424,6 +424,7 @@ function page:expandList(list)
     local item = splitKey(k)
     item.count, item.displayName = v:match('(%d+):(.+)')
     item.count = tonumber(item.count) or 0
+    item.lname = item.displayName:lower()
     t[k] = item
   end
   return t
