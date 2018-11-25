@@ -11,9 +11,17 @@ local SHIELD_SLOT = 2
 
 local context = Milo:getContext()
 
+local function getNameSafe(v)
+	local name
+	pcall(function()
+		name = v.getName()
+	end)
+	return name
+end
+
 local function getManipulatorForUser(user)
 	for _,v in pairs(device) do
-		if v.type == 'manipulator' and v.getName and v.getName() == user then
+		if v.type == 'manipulator' and v.getName and getNameSafe(v) == user then
 			return v
 		end
 	end
@@ -110,6 +118,7 @@ local function client(socket)
 								slot.count)
 						end)
 					end
+					Milo:clearGrid() -- in case all items do not fit in user's inventory
 				end)
 			end
 
