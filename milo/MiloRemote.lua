@@ -279,7 +279,7 @@ function page.grid:getDisplayValues(row)
 end
 
 function page:transfer(item, count, msg)
-  playSound('block.metal.fall')
+  playSound('ui.button.click')
   local response = self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
   if response then
     item.count = response.current - response.count
@@ -474,7 +474,7 @@ Event.addRoutine(function()
               key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
             })
             if response then
-              playSound('block.lava.pop')
+              playSound('entity.item.pickup')
               local ritem = page.items[response.key]
               if ritem then
                 ritem.count = response.current + item.count
