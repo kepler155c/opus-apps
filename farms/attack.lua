@@ -9,7 +9,9 @@ local os     = _G.os
 local turtle = _G.turtle
 
 local args = { ... }
-local mobType = args[1] or error('Syntax: attack <mob name>')
+local mobType = args[1] or error('Syntax: attack <mob names>')
+
+local mobTypes = Util.transpose(args)
 
 local Runners = {
 	Cow     = true,
@@ -94,7 +96,7 @@ end
 while true do
 	local blocks = sensor.sense()
 	local mobs = Util.filterInplace(blocks, function(b)
-		if b.name == mobType then
+		if mobTypes[b.name] then
 			normalize(b)
 			return true
 		end

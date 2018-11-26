@@ -13,6 +13,8 @@ local fs     = _G.fs
 local os     = _G.os
 local socket
 
+local speaker = device.speaker
+
 local SHIELD_SLOT  = 2
 local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
 
@@ -161,6 +163,12 @@ local page = UI.Page {
   items = { },
 }
 
+local function playSound(sound)
+  if speaker then
+    speaker.playSound('minecraft:' .. sound)
+  end
+end
+
 local function getPlayerName()
   local neural = device.neuralInterface
 
@@ -271,6 +279,7 @@ function page.grid:getDisplayValues(row)
 end
 
 function page:transfer(item, count, msg)
+  playSound('block.metal.fall')
   local response = self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
   if response then
     item.count = response.current - response.count
@@ -465,6 +474,7 @@ Event.addRoutine(function()
               key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
             })
             if response then
+              playSound('block.lava.pop')
               local ritem = page.items[response.key]
               if ritem then
                 ritem.count = response.current + item.count
