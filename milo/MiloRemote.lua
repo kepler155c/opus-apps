@@ -163,9 +163,9 @@ local page = UI.Page {
   items = { },
 }
 
-local function playSound(sound)
+local function playSound(sound, vol)
   if speaker then
-    speaker.playSound('minecraft:' .. sound)
+    speaker.playSound('minecraft:' .. sound, vol or 1)
   end
 end
 
@@ -279,7 +279,7 @@ function page.grid:getDisplayValues(row)
 end
 
 function page:transfer(item, count, msg)
-  playSound('ui.button.click')
+  playSound('ui.button.click', .3)
   local response = self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
   if response then
     item.count = response.current - response.count
