@@ -26,7 +26,6 @@ local depositMode = {
 local displayModes = {
   [0] = { text = 'A', help = 'Showing all items' },
   [1] = { text = 'I', help = 'Showing inventory items' },
-  [2] = { text = 'C', help = 'Showing craftable items' },
 }
 
 local page = UI.Page {
@@ -180,8 +179,7 @@ local function filterItems(t, filter, displayMode)
       if not filter or string.find(v.lname, filter, 1, true) then
         if not displayMode or
           displayMode == 0 or
-          displayMode == 1 and v.count > 0 or
-          displayMode == 2 and v.has_recipe then
+          displayMode == 1 and v.count > 0 then
           table.insert(r, v)
         end
       end
@@ -371,7 +369,7 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
     self.grid:draw()
 
   elseif event.type == 'toggle_display' then
-    config.displayMode = (config.displayMode + 1) % 3
+    config.displayMode = (config.displayMode + 1) % 2
     Util.merge(event.button, displayModes[config.displayMode])
     event.button:draw()
     self:applyFilter()
@@ -422,9 +420,10 @@ function page:expandList(list)
   local t = { }
   for k,v in pairs(list) do
     local item = splitKey(k)
-    item.count, item.displayName = v:match('(%d+):(.+)')
+    item.has_recipe, item.count, item.displayName = v:match('(%d+):(%d+):(.+)')
     item.count = tonumber(item.count) or 0
     item.lname = item.displayName:lower()
+    item.has_recipe = item.has_recipe == '1'
     t[k] = item
   end
   return t

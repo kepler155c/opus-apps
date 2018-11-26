@@ -33,7 +33,7 @@ end
 local function compactList(list)
 	local c = { }
 	for k,v in pairs(list) do
-		c[k]= v.count .. ':' .. v.displayName
+		c[k]= table.concat({ v.has_recipe and 1 or 0, v.count, v.displayName }, ':')
 	end
 	return c
 end
