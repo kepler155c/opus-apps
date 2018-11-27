@@ -2,16 +2,14 @@ local Craft  = require('craft2')
 local itemDB = require('itemDB')
 local Event  = require('event')
 local Milo   = require('milo')
+local Sound  = require('sound')
 local UI     = require('ui')
 local Util   = require('util')
 
 local colors      = _G.colors
 local context     = Milo:getContext()
 local displayMode = Milo:getState('displayMode') or 0
-local peripheral  = _G.peripheral
 local string      = _G.string
-
-local speaker = peripheral.find('speaker')
 
 local displayModes = {
   [0] = { text = 'A', help = 'Showing all items' },
@@ -130,12 +128,6 @@ local listingPage = UI.Page {
   },
 }
 
-local function playSound(sound)
-  if speaker then
-    speaker.playSound('minecraft:' .. sound)
-  end
-end
-
 function listingPage.statusBar:draw()
   return UI.Window.draw(self)
 end
@@ -169,7 +161,7 @@ function listingPage:eventHandler(event)
   elseif event.type == 'eject' or event.type == 'grid_select' then
     local item = self.grid:getSelected()
     if item then
-      playSound('ui.button.click')
+      Sound.play('ui.button.click', .3)
       item.count = Milo:craftAndEject(item, 1)
       self.grid:draw()
     end
@@ -177,7 +169,7 @@ function listingPage:eventHandler(event)
   elseif event.type == 'eject_stack' then
     local item = self.grid:getSelected()
     if item then
-      playSound('ui.button.click')
+      Sound.play('ui.button.click', .3)
       item.count = Milo:craftAndEject(item, itemDB:getMaxCount(item))
       self.grid:draw()
     end
@@ -185,7 +177,7 @@ function listingPage:eventHandler(event)
   elseif event.type == 'eject_all' then
     local item = self.grid:getSelected()
     if item then
-      playSound('ui.button.click')
+      Sound.play('ui.button.click', .3)
       local updated = Milo:getItem(Milo:listItems(), item)
       if updated then
         Milo:craftAndEject(item, updated.count)
@@ -196,7 +188,7 @@ function listingPage:eventHandler(event)
     local item = self.grid:getSelected()
     local count = tonumber(self.statusBar.amount.value)
     if item and count then
-      playSound('ui.button.click')
+      Sound.play('ui.button.click', .3)
       self.statusBar.amount:reset()
       self:setFocus(self.statusBar.filter)
       Milo:craftAndEject(item, count)
@@ -238,6 +230,7 @@ function listingPage:eventHandler(event)
       if Craft.findRecipe(item) then -- or item.is_craftable then
         UI:setPage('craft', self.grid:getSelected())
       else
+        Sound.play('entity.villager.no')
         self.notification:error('No recipe defined')
       end
     end

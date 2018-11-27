@@ -2,6 +2,7 @@ _G.requireInjector(_ENV)
 
 local Config = require('config')
 local Event  = require('event')
+local Sound  = require('sound')
 local Socket = require('socket')
 local sync   = require('sync').sync
 local UI     = require('ui')
@@ -12,8 +13,6 @@ local device = _G.device
 local fs     = _G.fs
 local os     = _G.os
 local socket
-
-local speaker = device.speaker
 
 local SHIELD_SLOT  = 2
 local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
@@ -163,12 +162,6 @@ local page = UI.Page {
   items = { },
 }
 
-local function playSound(sound, vol)
-  if speaker then
-    speaker.playSound('minecraft:' .. sound, vol or 1)
-  end
-end
-
 local function getPlayerName()
   local neural = device.neuralInterface
 
@@ -279,7 +272,7 @@ function page.grid:getDisplayValues(row)
 end
 
 function page:transfer(item, count, msg)
-  playSound('ui.button.click', .3)
+  Sound.play('ui.button.click', .3)
   local response = self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
   if response then
     item.count = response.current - response.count
@@ -364,6 +357,7 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
       self:setFocus(self.statusBar.filter)
       self:transfer(item, count, 'requesting ' .. count .. ' ...')
     else
+      Sound.play('entity.villager.no')
       self:setStatus('nope ...')
     end
 
@@ -474,7 +468,7 @@ Event.addRoutine(function()
               key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
             })
             if response then
-              playSound('entity.item.pickup')
+              Sound.play('entity.item.pickup')
               local ritem = page.items[response.key]
               if ritem then
                 ritem.count = response.current + item.count
