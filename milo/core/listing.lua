@@ -126,6 +126,7 @@ local listingPage = UI.Page {
 
     q = 'quit',
   },
+  allItems = { }
 }
 
 function listingPage.statusBar:draw()

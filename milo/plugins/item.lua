@@ -1,8 +1,9 @@
-local Ansi  = require('ansi')
-local Craft = require('craft2')
-local Milo  = require('milo')
-local UI    = require('ui')
-local Util  = require('util')
+local Ansi   = require('ansi')
+local Craft  = require('craft2')
+local itemDB = require('itemDB')
+local Milo   = require('milo')
+local UI     = require('ui')
+local Util   = require('util')
 
 local colors = _G.colors
 local device = _G.device
@@ -18,11 +19,17 @@ local itemPage = UI.Page {
   form = UI.Form {
     x = 1, y = 2, height = 10, ex = -1,
     [1] = UI.TextEntry {
+      formLabel = 'Name', formKey = 'displayName', help = 'Override display name',
+      shadowText = 'Display name',
+      required = true,
+      limit = 120,
+    },
+    [2] = UI.TextEntry {
       width = 7,
       formLabel = 'Min', formKey = 'low', help = 'Craft if below min',
       validate = 'numeric',
     },
-    [2] = UI.TextEntry {
+    [3] = UI.TextEntry {
       width = 7,
       formLabel = 'Max', formKey = 'limit', help = 'Send to trash if above max',
       validate = 'numeric',
@@ -35,7 +42,7 @@ local itemPage = UI.Page {
       formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
       help = 'Ignore NBT of item',
     },
-    [6] = UI.Button {
+    machineButton = UI.Button {
       x = 2, y = -2, width = 10,
       formLabel = 'Machine',
       event = 'select_machine',
@@ -136,13 +143,14 @@ local itemPage = UI.Page {
 }
 
 function itemPage:enable(item)
+  self.origItem = item
   self.item = Util.shallowCopy(item)
   self.res = item.resource or { }
-
+  self.res.displayName = self.item.displayName
   self.form:setValues(self.res)
-  self.titleBar.title = item.displayName or item.name
 
-  self.form[6].inactive = not Craft.machineLookup[self.item.key]
+  self.titleBar.title = item.displayName or item.name
+  self.form.machineButton.inactive = not Craft.machineLookup[self.item.key]
 
   UI.Page.enable(self)
   self:focusFirst()
@@ -171,7 +179,7 @@ end
   end
 
 function itemPage.rsControl:enable()
-  local devices = self.form[1].choices
+  local devices = self.form[2].choices
   Util.clear(devices)
   for _,dev in pairs(device) do
     if dev.setOutput then
@@ -281,6 +289,12 @@ function itemPage:eventHandler(event)
     local item = self.item
 
     if self.form:save() then
+      if self.res.displayName ~= self.origItem.displayName then
+        self.origItem.displayName = self.res.displayName
+        itemDB:add(self.origItem)
+        itemDB:flush()
+      end
+      self.res.displayName = nil
       Util.prune(self.res, function(v)
         if type(v) == 'boolean' then
           return v

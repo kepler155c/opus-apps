@@ -119,7 +119,15 @@ function itemDB:add(baseItem)
   -- ie. potion of healing, potion of healing II
   -- both show as "Potion of Healing"
 
-  if nItem.name ~= 'minecraft:potion' --[[ HACK ]] then
+  if baseItem.enchantments then
+    nItem.displayName = nItem.displayName .. ': '
+    for k, v in ipairs(baseItem.enchantments) do
+      if k > 1 then
+        nItem.displayName = nItem.displayName .. ', '
+      end
+      nItem.displayName = nItem.displayName .. v.fullName
+    end
+  elseif nItem.name ~= 'minecraft:potion' --[[ HACK ]] then
     for k,item in pairs(self.data) do
       if nItem.name == item.name and
          nItem.displayName == item.displayName then
