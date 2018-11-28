@@ -175,8 +175,7 @@ function Milo:craftAndEject(item, count)
 		return self:eject(item, request.requested)
 	end)
 
-	-- predict that we will eject that amount
-	return request.current - request.count
+	return request
 end
 
 function Milo:makeRequest(item, count, callback)

@@ -155,52 +155,51 @@ function listingPage.grid:getDisplayValues(row)
   return row
 end
 
+function listingPage:eject(amount)
+  local item = self.grid:getSelected()
+  if item and amount then
+    -- get most up-to-date item
+    if item then
+      if amount == 'stack' then
+        amount = item.maxCount or 64
+      elseif amount == 'all' then
+        item = Milo:getItem(Milo:listItems(), item)
+        amount = item.count
+      end
+
+      if amount > 0 then
+        item = Util.shallowCopy(item)
+        self.grid.values[self.grid.sorted[self.grid.index]] = item
+        local request = Milo:craftAndEject(item, amount)
+        item.count = request.current - request.count
+        if request.count + request.craft > 0 then
+          self.grid:draw()
+          Sound.play('ui.button.click', .3)
+          return true
+        end
+      end
+    end
+  end
+  Sound.play('entity.villager.no')
+end
+
 function listingPage:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
 
   elseif event.type == 'eject' or event.type == 'grid_select' then
-    local item = self.grid:getSelected()
-    if item then
-      Sound.play('ui.button.click', .3)
-      item = Util.shallowCopy(item)
-      self.grid.values[self.grid.sorted[self.grid.index]] = item
-      item.count = Milo:craftAndEject(item, 1)
-      self.grid:draw()
-    end
+    self:eject(1)
 
   elseif event.type == 'eject_stack' then
-    local item = self.grid:getSelected()
-    if item then
-      Sound.play('ui.button.click', .3)
-      item = Util.shallowCopy(item)
-      self.grid.values[self.grid.sorted[self.grid.index]] = item
-      item.count = Milo:craftAndEject(item, itemDB:getMaxCount(item))
-      self.grid:draw()
-    end
+    self:eject('stack')
 
   elseif event.type == 'eject_all' then
-    local item = self.grid:getSelected()
-    if item then
-      Sound.play('ui.button.click', .3)
-      local updated = Milo:getItem(Milo:listItems(), item)
-      if updated then
-        item = Util.shallowCopy(item)
-        self.grid.values[self.grid.sorted[self.grid.index]] = item
-        item.count = Milo:craftAndEject(item, updated.count)
-      end
-    end
+    self:eject('all')
 
   elseif event.type == 'eject_specified' then
-    local item = self.grid:getSelected()
-    local count = tonumber(self.statusBar.amount.value)
-    if item and count then
-      Sound.play('ui.button.click', .3)
+    if self:eject(tonumber(self.statusBar.amount.value)) then
       self.statusBar.amount:reset()
       self:setFocus(self.statusBar.filter)
-      item = Util.shallowCopy(item)
-      self.grid.values[self.grid.sorted[self.grid.index]] = item
-      item.count = Milo:craftAndEject(item, count)
     end
 
   elseif event.type == 'network' then
