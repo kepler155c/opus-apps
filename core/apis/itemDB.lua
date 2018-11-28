@@ -97,6 +97,16 @@ function itemDB:get(key)
   end
 end
 
+local function formatTime(t)
+  local m = math.floor(t/60)
+  local s = t % 60
+  if s < 10 then
+    s = '0' .. s
+  end
+
+  return m .. ':' .. s
+end
+
 --[[
   If the base item contains an NBT hash, then the NBT hash uniquely
   identifies this item.
@@ -115,19 +125,33 @@ function itemDB:add(baseItem)
   nItem.maxCount = baseItem.maxCount
   nItem.maxDamage = baseItem.maxDamage
 
-  -- potions can have the same damage, diff nbts, but same names
-  -- ie. potion of healing, potion of healing II
-  -- both show as "Potion of Healing"
-
+  -- enchanted items
   if baseItem.enchantments then
-    nItem.displayName = nItem.displayName .. ': '
+    if nItem.name == 'minecraft:enchanted_book' then
+      nItem.displayName = 'Book: '
+    else
+      nItem.displayName = nItem.displayName .. ': '
+    end
     for k, v in ipairs(baseItem.enchantments) do
       if k > 1 then
         nItem.displayName = nItem.displayName .. ', '
       end
       nItem.displayName = nItem.displayName .. v.fullName
     end
-  elseif nItem.name ~= 'minecraft:potion' --[[ HACK ]] then
+
+  -- potions
+  elseif nItem.name == 'minecraft:potion' or nItem.name == 'minecraft:lingering_potion' then
+    if baseItem.effects then
+      local effect = baseItem.effects[1]
+      if effect.amplifier == 1 then
+        nItem.displayName = nItem.displayName .. ' II'
+      end
+      if effect.duration and effect.duration > 0 then
+        nItem.displayName = string.format('%s (%s)', nItem.displayName, formatTime(effect.duration))
+      end
+    end
+
+  else
     for k,item in pairs(self.data) do
       if nItem.name == item.name and
          nItem.displayName == item.displayName then

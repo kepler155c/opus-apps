@@ -200,39 +200,49 @@ _G._debug('STORAGE: refresh in ' .. timer())
   return cache
 end
 
-function Storage:updateCache(adapter, key, count)
+function Storage:updateCache(adapter, item, count)
   if not adapter.cache then
     adapter.dirty = true
     self.dirty = true
     return
   end
 
+  local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
   local entry = adapter.cache[key]
 
   if not entry then
     if count < 0 then
-      adapter.dirty = true
-      self.dirty = true
+      _G._debug('STORAGE: update cache - count < 0', 4)
     else
-      -- TODO: all items imported should be updated in itemdb
-      -- error here if not
-      local item = itemDB:get(key)
-      if item then
-        entry = Util.shallowCopy(item)
-        entry.count = count
-        entry.key = key
-        adapter.cache[key] = entry
-      else
-_G._debug('STORAGE: item missing details')
-        -- TODO: somehow update itemdb with this maybe new item
-        adapter.dirty = true
-        self.dirty = true
-      end
+      entry = Util.shallowCopy(item)
+      entry.count = count
+      entry.key = key
+      adapter.cache[key] = entry
     end
   else
     entry.count = entry.count + count
     if entry.count <= 0 then
       adapter.cache[key] = nil
+    end
+  end
+
+  if not entry then
+    _G._debug('STORAGE: item missing details')
+    adapter.dirty = true
+    self.dirty = true
+  else
+    local sentry = self.cache[key]
+    if sentry then
+      sentry.count = sentry.count + count
+      if sentry.count <= 0 then
+        self.cache[key] = nil
+      end
+    elseif count > 0 then
+      sentry = Util.shallowCopy(entry)
+      sentry.count = count
+      self.cache[key] = sentry
+    else
+      self.dirty = true
     end
   end
 end
@@ -261,8 +271,7 @@ function Storage:export(target, slot, count, item)
         item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target),
         slot and string.format('[%d]', slot) or '[*]')
 
-      self:updateCache(adapter, key, -amount)
-      self:updateCache(self, key, -amount)
+      self:updateCache(adapter, item, -amount)
     end
     count = count - amount
     total = total + amount
@@ -301,6 +310,19 @@ function Storage:import(source, slot, count, item)
     self:listItems()
   end
 
+  local entry = itemDB:get(key)
+  if not entry then
+    if item.displayName then
+       -- this item already has metadata
+      entry = itemDB:add(item)
+    else
+       -- get the metadata from the device and add to db
+      entry = itemDB:add(device[source].getItemMeta(slot))
+    end
+    itemDB:flush()
+  end
+  item = entry
+
   local function insert(adapter)
     local amount = adapter:insert(slot, count, nil, source)
     if amount > 0 then
@@ -309,8 +331,7 @@ function Storage:import(source, slot, count, item)
         item.displayName or item.name, amount,
         self:_sn(source), slot, self:_sn(adapter.name))
 
-      self:updateCache(adapter, key, amount)
-      self:updateCache(self, key, amount)
+      self:updateCache(adapter, item, amount)
 
       -- record that we have imported this item into storage during this cycle
       self.activity[key] = (self.activity[key] or 0) + amount
@@ -322,7 +343,7 @@ function Storage:import(source, slot, count, item)
   -- find a chest locked with this item
   for node in self:onlineAdapters() do
     if node.lock and node.lock[key] then
-      insert(node.adapter)
+      insert(node.adapter, item)
       if count > 0 and node.void then
         total = total + self:trash(source, slot, count)
         return total
@@ -331,20 +352,6 @@ function Storage:import(source, slot, count, item)
     end
     if count <= 0 then
       return total
-    end
-  end
-
-  if not itemDB:get(item) then
-    if item.displayName then
-       -- this item already has metadata
-      itemDB:add(item)
-    elseif not slot then
-      _G._debug("IMPORT: NO SLOT")
-    elseif not device[source] or not device[source].getItemMeta then
-      _G._debug("IMPORT: DEVICE? : " .. source)
-    else
-       -- get the metadata from the device and add to db
-      itemDB:add(device[source].getItemMeta(slot))
     end
   end
 
