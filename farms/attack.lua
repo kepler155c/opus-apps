@@ -99,7 +99,7 @@ local function dropOff()
 	for _, slot in pairs(inv) do
 		if slot.count >= 16 then
 			local chests = findChests()
-			for c in pairs(Point.iterateClosest(chests)) do
+			for c in Point.iterateClosest(turtle.point, chests) do
 				if turtle.dropDownAt(c, slot.name) then
 					chest = c
 					break
