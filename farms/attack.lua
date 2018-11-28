@@ -11,6 +11,7 @@ local turtle = _G.turtle
 local args = { ... }
 local mobType = args[1] or error('Syntax: attack <mob names>')
 
+local chest    -- a chest/dispenser that is accessible
 local mobTypes = Util.transpose(args)
 
 local Runners = {
@@ -46,16 +47,7 @@ local scanner = device['plethora:scanner']
 local facing = scanner.getBlockMeta(0, 0, 0).state.facing
 turtle.point.heading = Point.facings[facing].heading
 
-local scanned = scanner.scan()
-local chest = Util.find(scanned, 'name', 'minecraft:chest')
-if chest then
-	chest.x = Util.round(chest.x) + turtle.point.x
-	chest.y = Util.round(chest.y) + turtle.point.y
-	chest.z = Util.round(chest.z) + turtle.point.z
-end
-
 equip('right', 'plethora:sensor', 'plethora:module:3')
-
 local sensor = device['plethora:sensor']
 
 turtle.setMovementStrategy('goto')
@@ -72,17 +64,47 @@ function Point.iterateClosest(spt, ipts)
 	end
 end
 
-local function dropOff()
-	if not chest then
-		return
+local function findChests()
+	if chest then
+		return { chest }
 	end
+	equip('right', 'plethora:scanner', 'plethora:module:2')
+	local chests = scanner.scan()
+	equip('right', 'plethora:sensor', 'plethora:module:3')
+
+	Util.filterInplace(chests, function(b)
+		if b.name == 'minecraft:chest' or
+			 b.name == 'minecraft:dispenser' or
+			 b.name == 'minecraft:hopper' then
+			b.x = Util.round(b.x) + turtle.point.x
+			b.y = Util.round(b.y) + turtle.point.y
+			b.z = Util.round(b.z) + turtle.point.z
+			return true
+		end
+	end)
+	return chests
+end
+
+local function dropOff()
 	local inv = turtle.getSummedInventory()
 	for _, slot in pairs(inv) do
 		if slot.count >= 16 then
 			if turtle.getFuelLevel() < 1000 then
 				turtle.refuel(slot.name, 16)
 			end
-			turtle.dropDownAt(chest, slot.name)
+		end
+	end
+
+	inv = turtle.getSummedInventory()
+	for _, slot in pairs(inv) do
+		if slot.count >= 16 then
+			local chests = findChests()
+			for c in pairs(Point.iterateClosest(chests)) do
+				if turtle.dropDownAt(c, slot.name) then
+					chest = c
+					break
+				end
+			end
 		end
 	end
 end
