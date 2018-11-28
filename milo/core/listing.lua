@@ -163,6 +163,8 @@ function listingPage:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       Sound.play('ui.button.click', .3)
+      item = Util.shallowCopy(item)
+      self.grid.values[self.grid.sorted[self.grid.index]] = item
       item.count = Milo:craftAndEject(item, 1)
       self.grid:draw()
     end
@@ -171,6 +173,8 @@ function listingPage:eventHandler(event)
     local item = self.grid:getSelected()
     if item then
       Sound.play('ui.button.click', .3)
+      item = Util.shallowCopy(item)
+      self.grid.values[self.grid.sorted[self.grid.index]] = item
       item.count = Milo:craftAndEject(item, itemDB:getMaxCount(item))
       self.grid:draw()
     end
@@ -181,7 +185,9 @@ function listingPage:eventHandler(event)
       Sound.play('ui.button.click', .3)
       local updated = Milo:getItem(Milo:listItems(), item)
       if updated then
-        Milo:craftAndEject(item, updated.count)
+        item = Util.shallowCopy(item)
+        self.grid.values[self.grid.sorted[self.grid.index]] = item
+        item.count = Milo:craftAndEject(item, updated.count)
       end
     end
 
@@ -192,7 +198,9 @@ function listingPage:eventHandler(event)
       Sound.play('ui.button.click', .3)
       self.statusBar.amount:reset()
       self:setFocus(self.statusBar.filter)
-      Milo:craftAndEject(item, count)
+      item = Util.shallowCopy(item)
+      self.grid.values[self.grid.sorted[self.grid.index]] = item
+      item.count = Milo:craftAndEject(item, count)
     end
 
   elseif event.type == 'network' then
@@ -266,7 +274,7 @@ function listingPage:enable()
     self:sync()
 
     self.timer = Event.onInterval(3, function()
-      for _,v in pairs(self.allItems) do
+      for _,v in pairs(self.grid.values) do
         local c = context.storage.cache[v.key]
         v.count = c and c.count or 0
       end
