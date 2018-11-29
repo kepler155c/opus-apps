@@ -119,11 +119,12 @@ end
 
 local function harvest(blocks)
   turtle.equip('right', 'minecraft:diamond_pickaxe')
-  turtle.select(1)
 
   local dropped
 
   Point.eachClosest(turtle.point, blocks, function(b)
+    turtle.select(1)
+
     if b.action == 'bash' then
       turtle.digForwardAt(b)
 
@@ -192,7 +193,6 @@ local function harvest(blocks)
       if turtle._goto({ x = b.x + hi.xd, z = b.z + hi.zd, heading = h }) then
         if turtle.dig() then
           turtle.place(crops[b.name].seed)
-          turtle.select(1)
         end
       end
     end
