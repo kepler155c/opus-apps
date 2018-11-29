@@ -23,7 +23,6 @@ local Util       = require('util')
 local device     = _G.device
 local fs         = _G.fs
 local os         = _G.os
-local peripheral = _G.peripheral
 local turtle     = _G.turtle
 
 local STARTUP_FILE = 'usr/autorun/miloFurni.lua'
@@ -51,13 +50,43 @@ end
 equip('left', 'plethora:introspection', 'plethora:module:0')
 local intro = device['plethora:introspection']
 local inv = intro.getInventory()
-local sides = { 'front', 'back', 'right', 'top' }
 
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,
     [[os.sleep(1)
 shell.openForegroundTab('packages/milo/apps/furni')]])
 end
+
+local furni
+local localName
+
+print('detecting wired modem connected to furnaces...')
+for _, dev in pairs(device) do
+  if dev.type == 'wired_modem' then
+    local list = dev.getNamesRemote()
+    furni = { }
+    localName = dev.getNameLocal()
+    for _, name in pairs(list) do
+      if device[name].type ~= 'minecraft:furnace' then
+        furni = nil
+        break
+      end
+      table.insert(furni, device[name])
+    end
+  end
+  if furni then
+    print('Using wired modem: '  .. dev.name)
+    print('Furnaces: ' .. #furni)
+    break
+  end
+end
+
+if not furni then
+  error('Turtle must be connected to a second wired_modem connected to furnaces only')
+end
+
+_G.printError([[Program must be restarted if new furnaces are added.]])
+
 -- slot 1: item to cook
 -- slot 2: fuel
 -- slot 3: return
@@ -67,8 +96,8 @@ local active = false
 local function process(list)
   active = false
 
-  for _, side in ipairs(Util.shallowCopy(sides)) do
-    local f = peripheral.call(side, 'list')
+  for _, furnace in ipairs(Util.shallowCopy(furni)) do
+    local f = furnace.list()
 
     -- items to cook
     local item = list[1]
@@ -82,11 +111,11 @@ local function process(list)
       if not cooking or cooking.name == item.name then
         local count = cooking and cooking.count or 0
         if count < 64 then
-          print('cooking : ' .. side)
-          count = inv.pushItems(side, 1, 8, 1)
+          print('cooking : ' .. furnace.name)
+          count = furnace.pullItems(localName, 1, 8, 1)
           item.count = item.count - count
-          Util.removeByValue(sides, side)
-          table.insert(sides, side)
+          Util.removeByValue(furni, furnace)
+          table.insert(furni, furnace)
         end
       end
     end
@@ -94,15 +123,15 @@ local function process(list)
     -- fuel
     local fuel = f[2] or { count = 0 }
     if fuel.count < 8 then
-      print('fueling ' ..side)
-      inv.pushItems(side, 2, 8 - fuel.count, 2)
+      print('fueling ' ..furnace.name)
+      furnace.pullItems(localName, 2, 8 - fuel.count, 2)
     end
 
     local result = f[3]
     if result then
       if not list[3] or result.name == list[3].name then
-        print('pulling from : ' .. side)
-        inv.pullItems(side, 3, result.count, 3)
+        print('pulling from : ' .. furnace.name)
+        furnace.pushItems(localName, 3, result.count, 3)
         list[3] = result
       end
     end
@@ -115,9 +144,12 @@ Event.on('turtle_inventory', function()
   print('processing')
   while true do
     -- furnace block updates can cause errors
-    local s = pcall(process, inv.list())
+    local s, m = pcall(process, inv.list())
     if s and not active then
       break
+    end
+    if s and not m then
+      _G.printError(m)
     end
     os.sleep(3)
   end

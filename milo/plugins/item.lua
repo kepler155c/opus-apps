@@ -160,7 +160,6 @@ function itemPage.machines.grid:isRowValid(_, value)
   local ignores = Util.transpose({ 'storage', 'ignore', 'hidden' })
   if not ignores[value.mtype] then
     local node = context.storage.nodes[value.name]
-_debug(node)
     return node and node.adapter and node.adapter.online and node.adapter.pushItems
   end
 end
@@ -293,6 +292,11 @@ function itemPage:eventHandler(event)
         self.origItem.displayName = self.res.displayName
         itemDB:add(self.origItem)
         itemDB:flush()
+
+        -- TODO: ugh
+        if context.storage.cache[self.origItem.key] then
+          context.storage.cache[self.origItem.key].displayName = self.res.displayName
+        end
       end
       self.res.displayName = nil
       Util.prune(self.res, function(v)
