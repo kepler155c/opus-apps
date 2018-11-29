@@ -1,5 +1,4 @@
 local Craft  = require('craft2')
-local itemDB = require('itemDB')
 local Event  = require('event')
 local Milo   = require('milo')
 local Sound  = require('sound')
@@ -14,35 +13,12 @@ local string      = _G.string
 local displayModes = {
   [0] = { text = 'A', help = 'Showing all items' },
   [1] = { text = 'I', help = 'Showing inventory items' },
-  [2] = { text = 'C', help = 'Showing craftable items' },
 }
-
-local function filterItems(t, filter)
-  if filter or displayMode > 0 then
-    local r = { }
-    if filter then
-      filter = filter:lower()
-    end
-    for _,v in pairs(t) do
-      if not filter or string.find(v.lname, filter, 1, true) then
-        if not displayMode or
-          displayMode == 0 or
-          displayMode == 1 and v.count > 0 or
-          displayMode == 2 and v.has_recipe then
-          table.insert(r, v)
-        end
-      end
-    end
-    return r
-  end
-  return t
-end
 
 local listingPage = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
       { text = 'Learn',   event = 'learn'   },
-      --{ text = 'Forget',  event = 'forget'   },
       { text = 'Craft',   event = 'craft'   },
       { text = 'Edit',    event = 'details' },
       { text = 'Refresh', event = 'refresh', x = -12 },
@@ -222,7 +198,7 @@ function listingPage:eventHandler(event)
     self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'toggle_display' then
-    displayMode = (displayMode + 1) % 3
+    displayMode = (displayMode + 1) % 2
     Util.merge(event.button, displayModes[displayMode])
     event.button:draw()
     self:applyFilter()
@@ -308,6 +284,25 @@ function listingPage:refresh(force)
 end
 
 function listingPage:applyFilter()
+  local function filterItems(t, filter)
+    if filter or displayMode > 0 then
+      local r = { }
+      if filter then
+        filter = filter:lower()
+      end
+      for _,v in pairs(t) do
+        if not filter or string.find(v.lname, filter, 1, true) then
+          if displayMode == 0 or
+            displayMode == 1 and v.count > 0 then
+            table.insert(r, v)
+          end
+        end
+      end
+      return r
+    end
+    return t
+  end
+
   local t = filterItems(self.allItems, self.filter)
   self.grid:setValues(t)
 end

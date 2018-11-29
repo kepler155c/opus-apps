@@ -9,7 +9,8 @@ local os          = _G.os
 local peripheral  = _G.peripheral
 local turtle      = _G.turtle
 
-local CONFIG_FILE = 'usr/config/farm'
+local CONFIG_FILE = 'usr/config/farmer'
+local STARTUP_FILE = 'usr/autorun/farmer.lua'
 
 local scanner = device['plethora:scanner'] or
   turtle.equip('right', 'plethora:module:2') and device['plethora:scanner'] or
@@ -27,14 +28,23 @@ local crops = Util.readTable(CONFIG_FILE) or {
   ['minecraft:cocoa'] =
     { seed = 'minecraft:dye:3', mature = 8, action = 'pick' },
   ['minecraft:reeds'] = { action = 'bash' },
+  ['minecraft:chorus_flower'] = { action = 'bash' },
+  ['minecraft:chorus_plant'] =
+    { seed = 'minecraft:chorus_flower', mature = 0, action = 'bash-smash', },
   ['minecraft:melon_block'] = { action = 'smash' },
   ['minecraft:pumpkin'] = { action = 'smash' },
   ['minecraft:chest'] = { action = 'drop' },
-  ['minecraft:cactus'] = { action = 'bump' },
+  ['minecraft:cactus'] = { action = 'smash' },
 }
 
 if not fs.exists(CONFIG_FILE) then
   Util.writeTable(CONFIG_FILE, crops)
+end
+
+if not fs.exists(STARTUP_FILE) then
+  Util.writeFile(STARTUP_FILE,
+    [[os.sleep(1)
+shell.openForegroundTab('packages/farms/farmer.lua')]])
 end
 
 local retain = Util.transpose {
@@ -70,6 +80,16 @@ local function scan()
     if b.action == 'drop' then
       return doDropOff and b.y == -1
     end
+    if b.action == 'bash-smash' then
+      if b.y == -1 then
+        b.action = 'smash'
+      end
+      if b.y == 0 then
+        b.action = 'bash'
+      end
+      return b.action ~= 'bash-smash'
+    end
+
     if b.action == 'smash' then
       return b.y == -1
     end
@@ -128,7 +148,12 @@ local function harvest(blocks)
       end
 
     elseif b.action == 'smash' then
-      turtle.digDownAt(b)
+      if turtle.digDownAt(b) then
+        if crops[b.name].seed then
+          turtle.placeDown(crops[b.name].seed)
+          turtle.select(1)
+        end
+      end
 
     elseif b.action == 'plant' then
       if turtle.digDownAt(b) then
