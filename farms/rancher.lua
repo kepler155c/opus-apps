@@ -1,17 +1,20 @@
 _G.requireInjector(_ENV)
 
-local Config = require('config')
-local Util   = require('util')
-local InventoryAdapter = require('chestAdapter18')
+local Config     = require('config')
+local Util       = require('util')
+local Adapter    = require('chestAdapter18')
 local Peripheral = require('peripheral')
 
 local device = _G.device
+local fs     = _G.fs
 local os     = _G.os
 local turtle = _G.turtle
 
+local STARTUP_FILE = 'usr/autorun/rancher.lua'
+
 local retain = Util.transpose {
   'minecraft:shears',
-  'minecraft_wheat',
+  'minecraft:wheat',
   'minecraft:diamond_sword',
   'plethora:module:3',
 }
@@ -21,9 +24,56 @@ local config = {
 }
 Config.load('rancher', config)
 
-local sensor = device['plethora:sensor'] or
-  turtle.equip('right', 'plethora:module:3') and device['plethora:sensor'] or
-  error('Plethora sensor required')
+local ANIMALS = {
+  Pig   = { min =  0, food = 'minecraft:carrot' },
+  Sheep = { min = .5, food = 'minecraft:wheat'  },
+  Cow   = { min = .5, food = 'minecraft:wheat'  },
+}
+
+local animal = ANIMALS[config.animal]
+
+local function equip(side, item, rawName)
+  local equipped = Peripheral.lookup('side/' .. side)
+
+  if equipped and equipped.type == item then
+    return true
+  end
+
+  if not turtle.equip(side, rawName or item) then
+    if not turtle.selectSlotWithQuantity(0) then
+      error('No slots available')
+    end
+    turtle.equip(side)
+    if not turtle.equip(side, item) then
+      error('Unable to equip ' .. item)
+    end
+  end
+
+  turtle.select(1)
+end
+
+local function getLocalName()
+  if not device.wired_modem then
+    error('wired modem or chest not found')
+  end
+  return device.wired_modem.getNameLocal()
+end
+
+equip('left', 'minecraft:diamond_sword')
+equip('right', 'plethora:sensor', 'plethora:module:3')
+
+local sensor = device['plethora:sensor']
+local c = Peripheral.lookup('type/minecraft:chest') or error('Missing chest')
+
+local directions = { top = 'down', bottom = 'up' }
+local direction = directions[c.side] or getLocalName()
+local chest = Adapter({ side = c.side, direction = direction }) or error('missing chest')
+_G._p = chest
+if not fs.exists(STARTUP_FILE) then
+  Util.writeFile(STARTUP_FILE,
+    [[os.sleep(1)
+shell.openForegroundTab('packages/farms/rancher.lua')]])
+end
 
 local dispenser = Peripheral.lookup('type/minecraft:dispenser')
 local integrator = Peripheral.lookup('type/redstone_integrator')
@@ -87,8 +137,7 @@ local function butcher()
 
   turtle.eachFilledSlot(function(slot)
     if not retain[slot.name] then
-      turtle.select(slot.index)
-      turtle.dropUp()
+      chest:insert(slot.index, 64)
     end
   end)
 end
@@ -109,9 +158,6 @@ local function breed()
   end
 end
 
-local chest = InventoryAdapter({ side = 'top', direction = 'down' }) or
-    error('missing chest above')
-
 local s, m = turtle.run(function()
   turnOffWater()
 
@@ -120,9 +166,10 @@ local s, m = turtle.run(function()
     if animalCount > config.max_animals then
       turtle.setStatus('Butchering')
       butcher()
-    elseif turtle.getItemCount('minecraft:wheat') == 0 then
-      if chest:provide({ name = 'minecraft:wheat' }, 64) == 0 then
-        turtle.setStatus('Out of wheat')
+    elseif turtle.getItemCount(animal.food) == 0 then
+      if chest:provide({ name = animal.food, damage = 0 }, 64) == 0 then
+        print('Out of ' .. animal.food)
+        turtle.setStatus('Out of food')
       end
     else
       turtle.setStatus('Breeding')

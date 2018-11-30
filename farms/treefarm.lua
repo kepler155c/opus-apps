@@ -23,9 +23,12 @@ _G.requireInjector()
 local Point  = require('point')
 local Util   = require('util')
 
+local fs     = _G.fs
 local os     = _G.os
 local read   = _G.read
 local turtle = _G.turtle
+
+local STARTUP_FILE = 'usr/autorun/treefarm.lua'
 
 local FUEL_BASE = 0
 local FUEL_DIRE = FUEL_BASE + 10
@@ -74,6 +77,12 @@ local state = Util.readTable('usr/config/treefarm') or {
     { x = 1, y = 0, z = 0 }
   }
 }
+
+if not fs.exists(STARTUP_FILE) then
+  Util.writeFile(STARTUP_FILE,
+    [[os.sleep(1)
+shell.openForegroundTab('packages/farms/treefarm.lua')]])
+end
 
 local clock = os.clock()
 
