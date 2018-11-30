@@ -25,6 +25,8 @@ local crops = Util.readTable(CONFIG_FILE) or {
     { seed = 'minecraft:potato', mature = 7, action = 'plant' },
   ['minecraft:beetroots'] =
     { seed = 'minecraft:beetroot_seeds', mature = 3, action = 'plant' },
+  ['minecraft:nether_wart'] =
+    { seed = 'minecraft:nether_wart', mature = 3, action = 'plant' },
   ['minecraft:cocoa'] =
     { seed = 'minecraft:dye:3', mature = 8, action = 'pick' },
   ['minecraft:reeds'] = { action = 'bash' },
@@ -145,21 +147,18 @@ local function harvest(blocks)
 
         dropped = true
         turtle.condense()
-        turtle.select(1)
       end
 
     elseif b.action == 'smash' then
       if turtle.digDownAt(b) then
         if crops[b.name].seed then
           turtle.placeDown(crops[b.name].seed)
-          turtle.select(1)
         end
       end
 
     elseif b.action == 'plant' then
       if turtle.digDownAt(b) then
         turtle.placeDown(crops[b.name].seed)
-        turtle.select(1)
       end
 
     elseif b.action == 'bump' then
@@ -182,7 +181,6 @@ local function harvest(blocks)
         Point.eachClosest(turtle.point, sensed, function(s)
           turtle.suckDownAt(s)
         end)
-        turtle.select(1)
       end
 
     elseif b.action == 'pick' then
