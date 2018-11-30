@@ -15,7 +15,7 @@ local displayModes = {
   [1] = { text = 'I', help = 'Showing inventory items' },
 }
 
-local listingPage = UI.Page {
+local page = UI.Page {
   menuBar = UI.MenuBar {
     buttons = {
       { text = 'Learn',   event = 'learn'   },
@@ -45,7 +45,8 @@ local listingPage = UI.Page {
       { heading = 'Min',  key = 'low'          , width = 4 },
       { heading = 'Max',  key = 'limit'        , width = 4 },
     },
-    sortColumn = 'displayName',
+    sortColumn = Milo:getState('sortColumn') or 'count',
+    inverseSort = Milo:getState('inverseSort'),
   },
   statusBar = UI.StatusBar {
     filter = UI.TextEntry {
@@ -105,11 +106,11 @@ local listingPage = UI.Page {
   allItems = { }
 }
 
-function listingPage.statusBar:draw()
+function page.statusBar:draw()
   return UI.Window.draw(self)
 end
 
-function listingPage.grid:getRowTextColor(row, selected)
+function page.grid:getRowTextColor(row, selected)
   if row.is_craftable then
     return colors.yellow
   end
@@ -119,7 +120,7 @@ function listingPage.grid:getRowTextColor(row, selected)
   return UI.Grid:getRowTextColor(row, selected)
 end
 
-function listingPage.grid:getDisplayValues(row)
+function page.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
   row.count = row.count > 0 and Util.toBytes(row.count)
   if row.low then
@@ -131,7 +132,34 @@ function listingPage.grid:getDisplayValues(row)
   return row
 end
 
-function listingPage:eject(amount)
+function page.grid:sortCompare(a, b)
+  if self.sortColumn ~= 'displayName' then
+    if a[self.sortColumn] == b[self.sortColumn] then
+      if self.inverseSort then
+        return a.displayName > b.displayName
+      end
+      return a.displayName < b.displayName
+    end
+    if a[self.sortColumn] == 0 then
+      return self.inverseSort
+    end
+    if b[self.sortColumn] == 0 then
+      return not self.inverseSort
+    end
+    return a[self.sortColumn] < b[self.sortColumn]
+  end
+  return UI.Grid.sortCompare(self, a, b)
+end
+
+function page.grid:eventHandler(event)
+  if event.type == 'grid_sort' then
+    Milo:setState('sortColumn', event.sortColumn)
+    Milo:setState('inverseSort', event.inverseSort)
+  end
+  return UI.Grid.eventHandler(self, event)
+end
+
+function page:eject(amount)
   local item = self.grid:getSelected()
   if item and amount then
     -- get most up-to-date item
@@ -159,7 +187,7 @@ function listingPage:eject(amount)
   Sound.play('entity.villager.no')
 end
 
-function listingPage:eventHandler(event)
+function page:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
 
@@ -234,7 +262,7 @@ function listingPage:eventHandler(event)
   return true
 end
 
-function listingPage:enable()
+function page:enable()
   local function updateStatus()
     self.statusBar.storageStatus.value =
       context.storage:isOnline() and '' or 'offline'
@@ -268,13 +296,13 @@ function listingPage:enable()
   UI.Page.enable(self)
 end
 
-function listingPage:disable()
+function page:disable()
   Event.off(self.timer)
   Event.off(self.handler)
   UI.Page.disable(self)
 end
 
-function listingPage:refresh(force)
+function page:refresh(force)
   local throttle = function() self.throttle:update() end
 
   self.throttle:enable()
@@ -283,7 +311,7 @@ function listingPage:refresh(force)
   self.throttle:disable()
 end
 
-function listingPage:applyFilter()
+function page:applyFilter()
   local function filterItems(t, filter)
     if filter or displayMode > 0 then
       local r = { }
@@ -292,7 +320,7 @@ function listingPage:applyFilter()
       end
       for _,v in pairs(t) do
         if not filter or string.find(v.lname, filter, 1, true) then
-          if displayMode == 0 or
+          if filter or --displayMode == 0 or
             displayMode == 1 and v.count > 0 then
             table.insert(r, v)
           end
@@ -307,4 +335,4 @@ function listingPage:applyFilter()
   self.grid:setValues(t)
 end
 
-UI:addPage('listing', listingPage)
+UI:addPage('listing', page)

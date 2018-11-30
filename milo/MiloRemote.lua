@@ -12,13 +12,14 @@ local colors = _G.colors
 local device = _G.device
 local fs     = _G.fs
 local os     = _G.os
-local socket
+local string = _G.string
 
 local SHIELD_SLOT  = 2
 local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
 
 local config = Config.load('miloRemote', { displayMode = 0 })
 
+local socket
 local depositMode = {
   [ true ]  = { text = '\25',  textColor = colors.black, help = 'Deposit enabled' },
   [ false ] = { text = '\215', textColor = colors.red,  help = 'Deposit disabled' },
@@ -70,7 +71,8 @@ local page = UI.Page {
       { heading = 'Name', key = 'displayName' },
     },
     values = { },
-    sortColumn = 'displayName',
+    sortColumn = config.sortColumn or 'count',
+    inverseSort = config.inverseSort,
     help = '^(s)tack, ^(a)ll'
   },
   statusBar = UI.Window {
@@ -170,26 +172,6 @@ local function getPlayerName()
   end
 end
 
-local function filterItems(t, filter, displayMode)
-  if filter or displayMode > 0 then
-    local r = { }
-    if filter then
-      filter = filter:lower()
-    end
-    for _,v in pairs(t) do
-      if not filter or string.find(v.lname, filter, 1, true) then
-        if not displayMode or
-          displayMode == 0 or
-          displayMode == 1 and v.count > 0 then
-          table.insert(r, v)
-        end
-      end
-    end
-    return r
-  end
-  return t
-end
-
 function page:setStatus(status)
   self.menuBar.infoBar:setStatus(status)
   self:sync()
@@ -269,6 +251,34 @@ function page.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
   row.count = row.count > 0 and Util.toBytes(row.count) or ''
   return row
+end
+
+function page.grid:sortCompare(a, b)
+  if self.sortColumn ~= 'displayName' then
+    if a[self.sortColumn] == b[self.sortColumn] then
+      if self.inverseSort then
+        return a.displayName > b.displayName
+      end
+      return a.displayName < b.displayName
+    end
+    if a[self.sortColumn] == 0 then
+      return self.inverseSort
+    end
+    if b[self.sortColumn] == 0 then
+      return not self.inverseSort
+    end
+    return a[self.sortColumn] < b[self.sortColumn]
+  end
+  return UI.Grid.sortCompare(self, a, b)
+end
+
+function page.grid:eventHandler(event)
+  if event.type == 'grid_sort' then
+    config.sortColumn = event.sortColumn
+    config.inverseSort = event.inverseSort
+    Config.update('miloRemote', config)
+  end
+  return UI.Grid.eventHandler(self, event)
 end
 
 function page:transfer(item, count, msg)
@@ -442,6 +452,24 @@ function page:refresh(requestType)
 end
 
 function page:applyFilter()
+  local function filterItems(t, filter, displayMode)
+    if filter or displayMode > 0 then
+      local r = { }
+      if filter then
+        filter = filter:lower()
+      end
+      for _,v in pairs(t) do
+        if not filter or string.find(v.lname, filter, 1, true) then
+          if filter or --displayMode == 0 or
+            displayMode == 1 and v.count > 0 then
+            table.insert(r, v)
+          end
+        end
+      end
+      return r
+    end
+    return t
+  end
   local t = filterItems(self.items, self.filter, config.displayMode)
   self.grid:setValues(t)
 end

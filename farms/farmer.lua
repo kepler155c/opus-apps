@@ -67,7 +67,7 @@ local function scan()
   local doDropOff
 
   for _,v in pairs(summed) do
-    if v.count > 48 then
+    if v.count > 32 then
       doDropOff = true
       break
     end
