@@ -25,10 +25,8 @@ local sensor = device['plethora:sensor'] or
   turtle.equip('right', 'plethora:module:3') and device['plethora:sensor'] or
   error('Plethora sensor required')
 
-local dispenser = Peripheral.lookup('type/minecraft:dispenser') or
-  error('Dispenser not found')
-local integrator = Peripheral.lookup('type/redstone_integrator') or
-  error('Integrator not found')
+local dispenser = Peripheral.lookup('type/minecraft:dispenser')
+local integrator = Peripheral.lookup('type/redstone_integrator')
 
 local function pulse()
   integrator.setOutput('north', true)
@@ -37,16 +35,20 @@ local function pulse()
 end
 
 local function turnOffWater()
-  local list = dispenser.list()
-  if list[1].name == 'minecraft:bucket' then
-    pulse()
-    os.sleep(2)
+  if dispenser then
+    local list = dispenser.list()
+    if list[1].name == 'minecraft:bucket' then
+      pulse()
+      os.sleep(2)
+    end
   end
 end
 
 local function turnOnWater()
-  if dispenser.list()[1].name == 'minecraft:water_bucket' then
-    pulse()
+  if dispenser then
+    if dispenser.list()[1].name == 'minecraft:water_bucket' then
+      pulse()
+    end
   end
 end
 
