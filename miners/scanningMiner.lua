@@ -42,6 +42,7 @@ local MAX_FUEL = turtle.getFuelLimit()
 
 local DICTIONARY_FILE = 'usr/config/mining.dictionary'
 local PROGRESS_FILE   = 'usr/config/scanning_mining.progress'
+local STARTUP_FILE = 'usr/autorun/scanningMiner.lua'
 
 local mining
 local ignores = {
@@ -539,6 +540,13 @@ if not fs.exists(DICTIONARY_FILE) or options.setTrash.value then
   print('\nPress enter when ready')
   read()
   addTrash()
+end
+
+if not fs.exists(STARTUP_FILE) then
+  Util.writeFile(STARTUP_FILE,
+    [[os.sleep(1)
+shell.openForegroundTab('scanningMiner.lua')]])
+  print('Autorun program created: ' .. STARTUP_FILE)
 end
 
 Event.addRoutine(function()

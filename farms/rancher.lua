@@ -68,11 +68,12 @@ local c = Peripheral.lookup('type/minecraft:chest') or error('Missing chest')
 local directions = { top = 'down', bottom = 'up' }
 local direction = directions[c.side] or getLocalName()
 local chest = Adapter({ side = c.side, direction = direction }) or error('missing chest')
-_G._p = chest
+
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,
     [[os.sleep(1)
-shell.openForegroundTab('packages/farms/rancher.lua')]])
+shell.openForegroundTab('rancher.lua')]])
+  print('Autorun program created: ' .. STARTUP_FILE)
 end
 
 local dispenser = Peripheral.lookup('type/minecraft:dispenser')

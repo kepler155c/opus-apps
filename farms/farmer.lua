@@ -46,7 +46,8 @@ end
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,
     [[os.sleep(1)
-shell.openForegroundTab('packages/farms/farmer.lua')]])
+shell.openForegroundTab('farmer.lua')]])
+  print('Autorun program created: ' .. STARTUP_FILE)
 end
 
 local retain = Util.transpose {

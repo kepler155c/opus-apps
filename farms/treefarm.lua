@@ -81,7 +81,8 @@ local state = Util.readTable('usr/config/treefarm') or {
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,
     [[os.sleep(1)
-shell.openForegroundTab('packages/farms/treefarm.lua')]])
+shell.openForegroundTab('treefarm.lua')]])
+  print('Autorun program created: ' .. STARTUP_FILE)
 end
 
 local clock = os.clock()
