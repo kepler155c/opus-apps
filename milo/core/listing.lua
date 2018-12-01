@@ -262,7 +262,7 @@ function page:eventHandler(event)
   return true
 end
 
-function page:enable()
+function page:enable(args)
   local function updateStatus()
     self.statusBar.storageStatus.value =
       context.storage:isOnline() and '' or 'offline'
@@ -291,6 +291,15 @@ function page:enable()
       self:sync()
     end)
   end)
+
+  if args and args.filter then
+    self.filter = args.filter
+    self.statusBar.filter.value = args.filter
+  end
+
+  if args and args.message then
+    self.notification:success(args.message)
+  end
 
   self:setFocus(self.statusBar.filter)
   UI.Page.enable(self)

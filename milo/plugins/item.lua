@@ -10,7 +10,7 @@ local device = _G.device
 
 local context = Milo:getContext()
 
-local itemPage = UI.Page {
+local page = UI.Page {
   titleBar = UI.TitleBar {
     title = 'Limit Resource',
     previousPage = true,
@@ -46,7 +46,7 @@ local itemPage = UI.Page {
       x = 2, y = -2, width = 10,
       formLabel = 'Machine',
       event = 'select_machine',
-      text = 'Configure',
+      text = 'Assign',
     },
     infoButton = UI.Button {
       x = 2, y = -2,
@@ -108,7 +108,6 @@ local itemPage = UI.Page {
     grid = UI.ScrollingGrid {
       y = 2, ey = -5,
       disableHeader = true,
-      values = context.config.nodes,
       columns = {
         { heading = 'Name', key = 'displayName'},
       },
@@ -142,42 +141,48 @@ local itemPage = UI.Page {
   notification = UI.Notification { },
 }
 
-function itemPage:enable(item)
+function page:enable(item)
   self.origItem = item
   self.item = Util.shallowCopy(item)
   self.res = item.resource or { }
   self.res.displayName = self.item.displayName
   self.form:setValues(self.res)
-
   self.titleBar.title = item.displayName or item.name
-  self.form.machineButton.inactive = not Craft.machineLookup[self.item.key]
+
+  local machine = Craft.machineLookup[self.item.key]
+  self.form.machineButton.inactive = not machine
+  if machine then
+    self:filterMachines(machine)
+  end
 
   UI.Page.enable(self)
   self:focusFirst()
 end
 
-function itemPage.machines.grid:isRowValid(_, value)
-  local ignores = Util.transpose({ 'storage', 'ignore', 'hidden' })
-  if not ignores[value.mtype] then
-    local node = context.storage.nodes[value.name]
-    return node and node.adapter and node.adapter.online and node.adapter.pushItems
-  end
+function page:filterMachines(machine)
+  local t = Util.filter(context.storage.nodes, function(node)
+    if node.category == 'machine' then
+      return node.adapter and node.adapter.online and node.adapter.pushItems
+    end
+  end)
+  self.machines.grid:setValues(t)
+  self.machines.grid:setSelected('name', machine)
 end
 
-function itemPage.machines.grid:getDisplayValues(row)
+function page.machines.grid:getDisplayValues(row)
   row = Util.shallowCopy(row)
   row.displayName = row.displayName or row.name
   return row
 end
 
-  function itemPage.machines.grid:getRowTextColor(row, selected)
-    if row.name == Craft.machineLookup[itemPage.item.key] then
-      return colors.yellow
-    end
-    return UI.Grid:getRowTextColor(row, selected)
+function page.machines.grid:getRowTextColor(row, selected)
+  if row.name == Craft.machineLookup[page.item.key] then
+    return colors.yellow
   end
+  return UI.Grid:getRowTextColor(row, selected)
+end
 
-function itemPage.rsControl:enable()
+function page.rsControl:enable()
   local devices = self.form[2].choices
   Util.clear(devices)
   for _,dev in pairs(device) do
@@ -193,7 +198,7 @@ function itemPage.rsControl:enable()
   UI.SlideOut.enable(self)
 end
 
-function itemPage.rsControl:eventHandler(event)
+function page.rsControl:eventHandler(event)
   if event.type == 'form_cancel' then
     self:hide()
   elseif event.type == 'form_complete' then
@@ -204,7 +209,7 @@ function itemPage.rsControl:eventHandler(event)
   return true
 end
 
-function itemPage:eventHandler(event)
+function page:eventHandler(event)
   if event.type == 'form_cancel' then
     UI:setPreviousPage()
 
@@ -212,8 +217,6 @@ function itemPage:eventHandler(event)
     self.rsControl:show()
 
   elseif event.type == 'select_machine' then
-    self.machines.grid:update()
-    self.machines.grid:setIndex(1)
     self.machines:show()
 
   elseif event.type == 'reset' then
@@ -334,4 +337,4 @@ function itemPage:eventHandler(event)
   return true
 end
 
-UI:addPage('item', itemPage)
+UI:addPage('item', page)

@@ -48,6 +48,7 @@ function storageView:isValidType(node)
 	return m and m.pullItems and {
 		name = 'Storage',
 		value = 'storage',
+		category = 'storage',
 		help = 'Use for item storage',
 	}
 end
@@ -117,6 +118,7 @@ function lockView:isValidType(node)
 	return m and m.pullItems and {
 		name = 'Storage',
 		value = 'storage',
+		category = 'storage',
 		help = 'Use for item storage',
 	}
 end

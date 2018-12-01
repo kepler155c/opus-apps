@@ -16,15 +16,15 @@ local nodeWizard
 
 local function saveConfig()
 	local t = { }
-	for k,v  in pairs(context.config.nodes) do
+	for k,v  in pairs(context.nodes) do
 		t[k] = v.adapter
 		v.adapter = nil
 	end
 
-	Config.update('milo', context.config)
+	Config.update('milo', context.nodes)
 
 	for k,v  in pairs(t) do
-		context.config.nodes[k].adapter = v
+		context.nodes[k].adapter = v
 	end
 	context.storage:initStorage()
 end
@@ -43,12 +43,13 @@ local networkPage = UI.Page {
 	},
 	grid = UI.ScrollingGrid {
 		y = 2, ey = -3,
-		values = context.config.nodes,
+		values = context.nodes,
 		columns = {
 			{                   key = 'suffix', 		width = 4, justify = 'right' },
 			{ heading = 'Name', key = 'displayName' },
 			{ heading = 'Type', key = 'mtype',      width = 4 },
-			{ heading = 'Pri',  key = 'priority',   width = 3 },
+			{ heading = 'Cat',  key = 'category',   width = 3 },
+			--{ heading = 'Pri',  key = 'priority',   width = 3 },
 		},
 		sortColumn = 'displayName',
 		help = 'Select Node',
@@ -96,16 +97,26 @@ function networkPage.grid:getRowTextColor(row, selected)
 	return UI.Grid:getRowTextColor(row, selected)
 end
 
+function networkPage.grid:sortCompare(a, b)
+	if self.sortColumn == 'displayName' then
+		local an = a.displayName or a.name
+		local bn = b.displayName or b.name
+		return an:lower() < bn:lower()
+	end
+	return UI.Grid.sortCompare(self, a, b)
+end
+
 function networkPage:getList()
 	for _, v in pairs(device) do
-		if not context.config.nodes[v.name] then
+		if not context.nodes[v.name] then
 			local node = {
 				name  = v.name,
 				mtype = 'ignore',
+				category = 'ignore',
 			}
 			for _, page in pairs(nodeWizard.wizard.pages) do
 				if page.isValidType and page:isValidType(node) then
-					context.config.nodes[v.name] = node
+					context.nodes[v.name] = node
 					break
 				end
 			end
@@ -146,7 +157,7 @@ function networkPage:disable()
 end
 
 function networkPage:applyFilter()
-	local t = Util.filter(context.config.nodes, function(v)
+	local t = Util.filter(context.nodes, function(v)
 		return v.mtype ~= 'hidden'
 	end)
 
@@ -173,7 +184,7 @@ function networkPage:eventHandler(event)
 	elseif event.type == 'remove_node' then
 		local node = self.grid:getSelected()
 		if node then
-			context.config.nodes[node.name] = nil
+			context.nodes[node.name] = nil
 			saveConfig()
 		end
 		self:applyFilter()
@@ -412,6 +423,9 @@ end
 
 function nodeWizard.wizard.pages.general:validate()
 	if self.form:save() then
+		_G._p3 = nodeWizard.choices
+		_G._p4 = nodeWizard.node
+		nodeWizard.node.category = Util.find(nodeWizard.choices, 'value', nodeWizard.node.mtype).category
 		for _, page in pairs(nodeWizard.wizard.pages) do
 			page.index = nil
 		end
@@ -442,20 +456,20 @@ function nodeWizard:enable(node)
 	self.node.adapter = adapter
 	node.adapter = adapter
 
-	local choices = {
-		{ name = 'Ignore', value = 'ignore', '' },
-		{ name = 'Hidden', value = 'hidden', help = 'Do not show in list' },
+	self.choices = {
+		{ name = 'Ignore', value = 'ignore', category = 'ignore' },
+		{ name = 'Hidden', value = 'hidden', category = 'ignore', help = 'Do not show in list' },
 	}
 	for _, page in pairs(self.wizard.pages) do
 		if page.isValidType then
 			local choice = page:isValidType(self.node)
-			if choice and not Util.find(choices, 'value', choice.value) then
-				table.insert(choices, 2, choice)
+			if choice and not Util.find(self.choices, 'value', choice.value) then
+				table.insert(self.choices, 2, choice)
 			end
 		end
 	end
 	self.wizard.pages.general.form[1].shadowText = self.node.name
-	self.wizard.pages.general.form[2].choices = choices
+	self.wizard.pages.general.form[2].choices = self.choices
 	self.wizard.pages.general.form:setValues(self.node)
 
 	self.wizard.pages.general:showInventory(self.node)
@@ -491,9 +505,9 @@ function nodeWizard:eventHandler(event)
 			return true
 		end)
 
-		Util.clear(context.config.nodes[self.node.name])
-		Util.merge(context.config.nodes[self.node.name], self.node)
-		context.config.nodes[self.node.name].adapter = adapter
+		Util.clear(context.nodes[self.node.name])
+		Util.merge(context.nodes[self.node.name], self.node)
+		context.nodes[self.node.name].adapter = adapter
 
 		saveConfig()
 

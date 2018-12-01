@@ -133,15 +133,12 @@ function turtleLearnWizard.wizard.pages.confirmation:validate()
 	local recipe, msg = learnRecipe(self)
 
 	if recipe then
-		local listingPage = UI:getPage('listing')
 		local displayName = itemDB:getName(recipe)
 
-		listingPage.statusBar.filter:setValue(displayName)
-		listingPage.notification:success('Learned: ' .. displayName)
-		listingPage.filter = displayName
-		listingPage:refresh()
-		listingPage.grid:draw()
-
+		UI:setPage('listing', {
+			filter = displayName,
+			message = 'Learned: ' .. displayName,
+		})
 		return true
 	else
 		turtleLearnWizard.notification:error(msg)
@@ -149,7 +146,8 @@ function turtleLearnWizard.wizard.pages.confirmation:validate()
 end
 
 function turtleLearnWizard:eventHandler(event)
-	if event.type == 'cancel' or event.type == 'accept' then
+	if event.type == 'cancel' then
+		turtle.emptyInventory()
 		UI:setPage('listing')
 	else
 		return UI.Page.eventHandler(self, event)

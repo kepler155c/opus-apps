@@ -30,6 +30,7 @@ function brewingStandView:isValidType(node)
 	return m and m.type == 'minecraft:brewing_stand'and {
 		name = 'Brewing Stand',
 		value = 'brewingStand',
+		category = 'custom',
 		help = 'Auto-learning brewing stand',
 	}
 end

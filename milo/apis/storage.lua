@@ -10,16 +10,15 @@ local os     = _G.os
 
 local Storage = class()
 
-function Storage:init(args)
+function Storage:init(nodes)
   local defaults = {
-    nodes = { },
+    nodes = nodes or { },
     dirty = true,
     activity = { },
     storageOnline = true,
     lastRefresh = os.clock(),
   }
   Util.merge(self, defaults)
-  Util.merge(self, args)
 
   local modem = Peripheral.get('wired_modem') or error('Wired modem not attached')
   self.localName = modem.getNameLocal()

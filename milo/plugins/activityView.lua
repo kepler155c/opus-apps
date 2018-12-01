@@ -31,6 +31,7 @@ function activityWizardPage:isValidType(node)
   return m and m.type == 'monitor' and {
     name = 'Activity Monitor',
     value = 'activity',
+    category = 'display',
     help = 'Display storage activity'
   }
 end

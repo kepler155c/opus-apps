@@ -11,7 +11,7 @@ local turtle = _G.turtle
 local context = Milo:getContext()
 
 local machineLearnWizard = UI.Page {
-	titleBar = UI.TitleBar { title = 'Learn a crafting recipe' },
+	titleBar = UI.TitleBar { title = 'Select machine' },
 	wizard = UI.Wizard {
 		y = 2, ey = -2,
 		pages = {
@@ -19,7 +19,6 @@ local machineLearnWizard = UI.Page {
 				index = 1,
 				grid = UI.ScrollingGrid {
 					y = 2, ey = -2,
-					values = context.config.nodes,
 					columns = {
 						{ heading = 'Name', key = 'displayName' },
 					},
@@ -47,10 +46,6 @@ Example: Slot 1 is the top slot in a furnace.]],
 local pages = machineLearnWizard.wizard.pages
 local machine
 
-function pages.machines.grid:isRowValid(_, value)
-	return value.mtype == 'machine' and value.adapter and value.adapter.online
-end
-
 function pages.machines.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
 	row.displayName = row.displayName or row.name
@@ -58,7 +53,12 @@ function pages.machines.grid:getDisplayValues(row)
 end
 
 function pages.machines:enable()
-	self.grid:update()
+	local t = Util.filter(context.storage.nodes, function(node)
+		if node.category == 'machine' then
+			return node.adapter and node.adapter.online and node.adapter.pushItems
+		end
+	end)
+	self.grid:setValues(t)
 	UI.Window.enable(self)
 end
 
@@ -122,15 +122,12 @@ function pages.confirmation:validate()
 
 	Milo:saveMachineRecipe(recipe, result, machine.name)
 
-	local listingPage = UI:getPage('listing')
 	local displayName = itemDB:getName(result)
 
-	listingPage.statusBar.filter:setValue(displayName)
-	listingPage.notification:success('Learned: ' .. displayName)
-	listingPage.filter = displayName
-	listingPage:refresh()
-	listingPage.grid:draw()
-
+	UI:setPage('listing', {
+		filter = displayName,
+		message = 'Learned: ' .. displayName,
+	})
 	return true
 end
 
@@ -141,7 +138,7 @@ function machineLearnWizard:disable()
 end
 
 function machineLearnWizard:eventHandler(event)
-	if event.type == 'cancel' or event.type == 'accept' then
+	if event.type == 'cancel' then
 		turtle.emptyInventory()
 		UI:setPage('listing')
 	else

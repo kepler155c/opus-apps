@@ -38,6 +38,7 @@ function wizardPage:isValidType(node)
          {
            name = 'Manipulator',
            value = 'manipulator',
+           category = 'custom',
            help = 'Manipulator w/bound introspection mod'
          }
 end

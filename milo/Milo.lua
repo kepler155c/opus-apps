@@ -33,24 +33,43 @@ if multishell then
   multishell.setTitle(multishell.getCurrent(), 'Milo')
 end
 
-local config = {
-  nodes = { },
-}
-Config.load('milo', config)
+local nodes = Config.load('milo', { })
 
 -- TODO: remove - temporary
-if config.remoteDefaults then
-  config.nodes = config.remoteDefaults
-  config.remoteDefaults = nil
+if nodes.remoteDefaults then
+  nodes.nodes = nodes.remoteDefaults
+  nodes.remoteDefaults = nil
 end
 
 -- TODO: remove - temporary
-for _, node in pairs(config.nodes) do
-  if node.lock and type(node.lock) == 'string' then
-    node.lock = {
-      [ node.lock ] = true,
-    }
+if nodes.nodes then
+  local categories = {
+    input = 'custom',
+    trash = 'custom',
+    machine = 'machine',
+    brewingStand = 'custom',
+    activity = 'display',
+    jobs = 'display',
+    ignore = 'ignore',
+    hidden = 'ignore',
+    manipulator = 'custom',
+    storage = 'storage',
+  }
+  for _, node in pairs(nodes.nodes) do
+    if node.lock and type(node.lock) == 'string' then
+      node.lock = {
+        [ node.lock ] = true,
+      }
+    end
+    if not node.category then
+      node.category = categories[node.mtype]
+      if not node.category then
+        Util.print(node)
+        error('invalid node')
+      end
+    end
   end
+  nodes = nodes.nodes
 end
 
 local function Syntax(msg)
@@ -87,7 +106,7 @@ if not device.workbench then
 end
 
 local context = {
-  config = config,
+  nodes = nodes,
   resources = Util.readTable(Milo.RESOURCE_FILE) or { },
 
   state = { },
@@ -97,7 +116,7 @@ local context = {
   queue = { },
 
   localName = modem.getNameLocal(),
-  storage = Storage(config),
+  storage = Storage(nodes),
   turtleInventory = introspection.getInventory(),
 }
 

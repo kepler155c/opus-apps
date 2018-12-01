@@ -46,6 +46,7 @@ function importView:isValidType(node)
 	return m and m.pullItems and {
 		name = 'Generic Inventory',
 		value = 'machine',
+		category = 'machine',
 		help = 'Chest, furnace... (has an inventory)',
 	}
 end

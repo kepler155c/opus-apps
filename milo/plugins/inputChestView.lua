@@ -26,6 +26,7 @@ function inputChestWizardPage:isValidType(node)
   return m and m.pullItems and {
     name = 'Input Chest',
     value = 'input',
+    category = 'custom',
     help = 'Sends all items to storage',
   }
 end

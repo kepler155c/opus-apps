@@ -58,6 +58,7 @@ function wizardPage:isValidType(node)
   return m and m.pullItems and {
     name = 'Trashcan',
     value = 'trashcan',
+    category = 'custom',
     help = 'An inventory to send unwanted items',
   }
 end

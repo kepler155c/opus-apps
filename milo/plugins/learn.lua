@@ -6,11 +6,15 @@ local context = Milo:getContext()
 local turtle  = _G.turtle
 
 local learnPage = UI.Dialog {
-  height = 6, width = UI.term.width - 6,
+  height = 9, width = UI.term.width - 6,
   title = 'Learn Recipe',
-  chooser = UI.Chooser {
-    x = 8, y = 3,
-    width = 20,
+  grid = UI.ScrollingGrid {
+    x = 2, ex = -2, y = 3, height = 4,
+    disableHeader = true,
+    columns = {
+      { heading = 'Name', key = 'name'},
+    },
+    sortColumn = 'name',
   },
   cancel = UI.Button {
     x = 3, y = -2,
@@ -24,17 +28,15 @@ local learnPage = UI.Dialog {
 }
 
 function learnPage:enable()
-  self.chooser.choices = { }
-
+  local t = { }
   for k in pairs(context.learnTypes) do
-    table.insert(self.chooser.choices, {
+    table.insert(t, {
       name = k,
       value = k,
     })
   end
-  self.chooser.value =
-    Milo:getState('learnType') or
-    self.chooser.choices[1].value
+  self.grid:setValues(t)
+  self.grid:setSelected('name', Milo:getState('learnType') or '')
 
   Milo:pauseCrafting({ key = 'gridInUse', msg = 'Crafting paused' })
   sync.lock(turtle)
@@ -53,12 +55,11 @@ function learnPage:eventHandler(event)
     Milo:resumeCrafting({ key = 'gridInUse' })
     UI:setPreviousPage()
 
-  elseif event.type == 'accept' then
-    local choice = self.chooser.value
+  elseif event.type == 'accept' or event.type == 'grid_select' then
+    local choice = self.grid:getSelected().value
 
     Milo:setState('learnType', choice)
     UI:setPage(context.learnTypes[choice])
-
   else
     return UI.Dialog.eventHandler(self, event)
   end

@@ -27,6 +27,7 @@ function wizardPage:isValidType(node)
   return m and m.type == 'monitor' and {
     name = 'Crafting Monitor',
     value = 'jobs',
+    category = 'display',
     help = 'Display crafting progress / jobs'
   }
 end
