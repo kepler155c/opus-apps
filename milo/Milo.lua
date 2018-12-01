@@ -45,7 +45,7 @@ end
 if nodes.nodes then
   local categories = {
     input = 'custom',
-    trash = 'custom',
+    trashcan = 'custom',
     machine = 'machine',
     brewingStand = 'custom',
     activity = 'display',
