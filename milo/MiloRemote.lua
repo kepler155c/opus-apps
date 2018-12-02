@@ -177,9 +177,62 @@ function page:setStatus(status)
   self:sync()
 end
 
-function page:sendRequest(data, statusMsg)
-  local response
+function page:processMessages(s)
+  Event.addRoutine(function()
+    repeat
+      local response = s:read()
+      if not response then
+        break
+      end
+      if response.type == 'received' then
+        Sound.play('entity.item.pickup')
+        local ritem = self.items[response.key]
+        if ritem then
+          ritem.count = response.count
+          self.grid:draw()
+          self:sync()
+        end
 
+      elseif response.type == 'list' then
+        self.items = self:expandList(response.list)
+        self:applyFilter()
+        self.grid:draw()
+        self.grid:sync()
+
+      elseif response.type == 'transfer' then
+        if response.count > 0 then
+          Sound.play('entity.item.pickup')
+          local item = self.items[response.key]
+          if item then
+            item.count = response.current
+            self.grid:draw()
+            self:sync()
+          end
+        end
+        if response.craft then
+          if response.craft > 0 then
+            self:setStatus(response.craft .. ' crafting ...')
+          elseif response.craft + response.count < response.requested then
+            if response.craft + response.count == 0 then
+              Sound.play('entity.villager.no')
+            end
+            self:setStatus((response.craft + response.count) .. ' available ...')
+          end
+        end
+      end
+      if response.msg then
+        self:setStatus(response.msg)
+      end
+    until not s.connected
+
+    s:close()
+    s = nil
+    self:setStatus('disconnected ...')
+    Sound.play('entity.villager.no')
+  end)
+end
+
+function page:sendRequest(data, statusMsg)
   if not config.server then
     self:setStatus('Invalid configuration')
     return
@@ -202,30 +255,23 @@ function page:sendRequest(data, statusMsg)
           local r = socket:read(2)
           if r and not r.msg then
             self:setStatus('connected ...')
+            self:processMessages(socket)
           else
             msg = r and r.msg or 'Timed out'
             socket:close()
             socket = nil
-            break
           end
         end
       end
       if socket then
         if statusMsg then
           self:setStatus(statusMsg)
+          Event.onTimeout(2, function()
+            self:setStatus('')
+          end)
         end
         if socket:write(data) then
-          response = socket:read(2)
-          if response then
-            if response.msg then
-              self:setStatus(response.msg)
-              response = nil
-            end
-            Event.onTimeout(2, function()
-              self:setStatus('')
-            end)
-            return
-          end
+          return true
         end
         socket:close()
         socket = nil
@@ -233,8 +279,6 @@ function page:sendRequest(data, statusMsg)
     end
     self:setStatus(msg or 'Failed to connect')
   end)
-
-  return response
 end
 
 function page.grid:getRowTextColor(row, selected)
@@ -282,17 +326,8 @@ function page.grid:eventHandler(event)
 end
 
 function page:transfer(item, count, msg)
-  Sound.play('ui.button.click', .3)
-  local response = self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
-  if response then
-    item.count = response.current - response.count
-    self.grid:draw()
-    if response.craft > 0 then
-      self:setStatus(response.craft .. ' crafting ...')
-    elseif response.craft + response.count < response.requested then
-      self:setStatus((response.craft + response.count) .. ' available ...')
-    end
-  end
+  --Sound.play('ui.button.click', .3)
+  self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
 end
 
 function page.setup:eventHandler(event)
@@ -443,12 +478,7 @@ function page:expandList(list)
 end
 
 function page:refresh(requestType)
-  local items = self:sendRequest({ request = requestType }, 'refreshing...')
-
-  if items then
-    self.items = self:expandList(items)
-    self:applyFilter()
-  end
+  self:sendRequest({ request = requestType }, 'refreshing...')
 end
 
 function page:applyFilter()
@@ -486,23 +516,13 @@ Event.addRoutine(function()
       elseif config.server and (config.useShield or config.slot) then
         local s, m = pcall(function()
           local method = neural[inv]
-          local item = method and method().getItemMeta(config.useShield and SHIELD_SLOT or config.slot)
+          local item = method and method().list()[config.useShield and SHIELD_SLOT or config.slot]
           if item then
-            local slotNo = config.useShield and 'shield' or config.slot
-            local response = page:sendRequest({
+            if page:sendRequest({
               request = 'deposit',
-              slot = slotNo,
+              slot = config.useShield and 'shield' or config.slot,
               count = item.count,
-              key = table.concat({ item.name, item.damage, item.nbtHash }, ':')
-            })
-            if response then
-              Sound.play('entity.item.pickup')
-              local ritem = page.items[response.key]
-              if ritem then
-                ritem.count = response.current + item.count
-              end
-              page.grid:draw()
-              page:sync()
+            }) then
               sleepTime = math.max(sleepTime - .25, .25)
             end
           else

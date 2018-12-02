@@ -188,6 +188,7 @@ function Milo:makeRequest(item, count, callback)
 			count = 0,
 			current = current.count,
 			item = item,
+			key = item.key or Milo:uniqueKey(item),
 		}
 	end
 
@@ -208,6 +209,7 @@ function Milo:makeRequest(item, count, callback)
 		count = math.min(count, current.count),
 		current = current.count,
 		item = item,
+		key = item.key or Milo:uniqueKey(item),
 	}
 
 	if request.count > 0 then

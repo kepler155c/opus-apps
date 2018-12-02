@@ -75,14 +75,22 @@ local function client(socket)
 		if not data then
 			break
 		end
+--_G._debug(data)
+		socket.co = coroutine.running()
 
 		if data.request == 'scan' then -- full scan of all inventories
 			local items = Milo:mergeResources(Milo:listItems(true))
-			socket:write(compactList(items))
+			socket:write({
+				type = 'list',
+				list = compactList(items),
+			})
 
 		elseif data.request == 'list' then
 			local items = Milo:mergeResources(Milo:listItems())
-			socket:write(compactList(items))
+			socket:write({
+				type = 'list',
+				list = compactList(items),
+			})
 
 		elseif data.request == 'deposit' then
 			local function deposit()
@@ -97,18 +105,19 @@ local function client(socket)
 				if node then
 					local slot = node.adapter.getItemMeta(slotNo)
 					if slot then
-						context.storage:import(node, slotNo, slot.count, slot)
+						if context.storage:import(node, slotNo, slot.count, slot) then
+							local item = Milo:getItem(Milo:listItems(), slot)
+							if item then
+								socket:write({
+									type = 'received',
+									key = item.key,
+									count = item.count,
+								})
+							end
+						end
 					end
 				end
 			end
-
-			local list = Milo:listItems()
-			local current = list[data.key] and list[data.key].count or 0
-
-			socket:write({
-				key = data.key,
-				current = current,
-			})
 
 			Milo:queueRequest({ }, deposit)
 
@@ -125,17 +134,34 @@ local function client(socket)
 			local function transfer(request)
 				local target = makeNode('inventory')
 				if target then
-					context.storage:export(
+					local amount = context.storage:export(
 						target,
 						nil,
 						request.requested,
 						data.item)
+					local item = Milo:listItems()[request.key]
+					socket:write({
+						type = 'transfer',
+						key = request.key,
+						requested = request.requested,
+						current = item and item.count or 0,
+						count = amount,
+						craft = request.craft,
+					})
 				end
 			end
 
 			local request = Milo:makeRequest(data.item, count, transfer)
-
-			socket:write(request)
+			if (request.craft + request.count == 0) or
+				 (request.craft > 0 and request.count == 0) then
+				socket:write({
+					type = 'transfer',
+					key = request.key,
+					requested = request.requested,
+					count = request.current,
+					craft = request.craft,
+				})
+			end
 		end
 	until not socket.connected
 
