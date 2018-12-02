@@ -351,8 +351,10 @@ local function rawInsert(source, target, slot, qty)
 
   local s, m = pcall(function()
     if isValidTransfer(source, target.name) then
+--_debug('pull %s %s %d %d', source.name, target.name, slot, qty)
       count = source.pullItems(target.name, slot, qty)
     else
+--_debug('push %s %s', target.name, source.name)
       count = target.pushItems(source.name, slot, qty)
     end
   end)
@@ -446,14 +448,23 @@ end
 
 -- When importing items into a locked chest, trash any remaining items if full
 function Storage:trash(source, slot, count)
-  local trashcan = Util.find(self.nodes, 'mtype', 'trashcan')
-  if trashcan and trashcan.adapter and trashcan.adapter.online then
-
-    _G._debug('TRA: %s[%d] (%d)', self:_sn(source.name), slot, count or 64)
-
-    return trashcan.adapter.pullItems(source.name, slot, count)
+  local target = Util.find(self.nodes, 'mtype', 'trashcan')
+  local amount = 0
+  if target and target.adapter and target.adapter.online then
+    local s, m = pcall(function()
+      _G._debug('TRA: %s[%d] (%d)', self:_sn(source.name), slot, count or 64)
+      --return trashcan.adapter.pullItems(source.name, slot, count)
+      if isValidTransfer(source.adapter, target.name) then
+        amount = source.adapter.pushItems(target.name, slot, count)
+      else
+        amount = target.adapter.pullItems(source.name, slot, count)
+      end
+    end)
+    if not s and m then
+      _G._debug(m)
+    end
   end
-  return 0
+  return amount
 end
 
 return Storage
