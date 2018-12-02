@@ -15,12 +15,34 @@ local wizardPage = UI.Window {
   index = 2,
   backgroundColor = colors.cyan,
   [1] = UI.TextArea {
-    x = 2, ex = -2, y = 2, ey = -2,
+    x = 2, ex = -2, y = 2, ey = 3,
     marginRight = 0,
     textColor = colors.yellow,
     value = 'Displays the crafting progress.'
   },
+  form = UI.Form {
+    x = 2, ex = -2, y = 4, ey = -2,
+    manualControls = true,
+    [1] = UI.Chooser {
+      width = 9,
+      formLabel = 'Font Size', formKey = 'textScale',
+      nochoice = 'Small',
+      choices = {
+        { name = 'Small', value = .5, help = '(requires restart)', },
+        { name = 'Large', value = 1,  help = '(requires restart)', },
+      },
+      help = 'Adjust text scaling (requires restart)',
+    },
+  },
 }
+
+function wizardPage:setNode(node)
+  self.form:setValues(node)
+end
+
+function wizardPage:validate()
+  return self.form:save()
+end
 
 function wizardPage:isValidType(node)
   local m = device[node.name]
@@ -44,7 +66,7 @@ local function createPage(node)
   local page = UI.Page {
     parent = UI.Device {
       device = node.adapter,
-      textScale = .5,
+      textScale = node.textScale or .5,
     },
     grid = UI.Grid {
       sortColumn = 'index',

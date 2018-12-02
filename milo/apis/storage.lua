@@ -21,6 +21,11 @@ function Storage:init(nodes)
 
   Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
 _G._debug('%s: %s', e, tostring(dev))
+    if e == 'device_detach' then
+      if self.nodes[dev] then
+        self.nodes[dev].adapter = nil
+      end
+    end
     self:initStorage()
   end)
   Event.onInterval(15, function()

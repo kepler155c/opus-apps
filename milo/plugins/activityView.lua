@@ -11,22 +11,42 @@ local device     = _G.device
 --[[ Configuration Page ]]--
 local template =
 [[%sDisplays the amount of items entering or leaving storage.%s
-
 Right-clicking on the activity monitor will reset the totals.]]
 
-local activityWizardPage = UI.Window {
+local wizardPage = UI.Window {
   title = 'Activity Monitor',
   index = 2,
   backgroundColor = colors.cyan,
   [1] = UI.TextArea {
-    x = 2, ex = -2, y = 2, ey = -2,
+    x = 2, ex = -2, y = 2, ey = 6,
     marginRight = 0,
     value = string.format(template, Ansi.yellow, Ansi.reset),
   },
-  timestamp = os.clock(),
+  form = UI.Form {
+    x = 2, ex = -2, y = 7, ey = -2,
+    manualControls = true,
+    [1] = UI.Chooser {
+      width = 9,
+      formLabel = 'Font Size', formKey = 'textScale',
+      nochoice = 'Small',
+      choices = {
+        { name = 'Small', value = .5, help = '(requires restart)', },
+        { name = 'Large', value = 1,  help = '(requires restart)', },
+      },
+      help = 'Adjust text scaling (requires restart)',
+    },
+  },
 }
 
-function activityWizardPage:isValidType(node)
+function wizardPage:setNode(node)
+  self.form:setValues(node)
+end
+
+function wizardPage:validate()
+  return self.form:save()
+end
+
+function wizardPage:isValidType(node)
   local m = device[node.name]
   return m and m.type == 'monitor' and {
     name = 'Activity Monitor',
@@ -36,18 +56,18 @@ function activityWizardPage:isValidType(node)
   }
 end
 
-function activityWizardPage:isValidFor(node)
+function wizardPage:isValidFor(node)
   return node.mtype == 'activity'
 end
 
-UI:getPage('nodeWizard').wizard:add({ activity = activityWizardPage })
+UI:getPage('nodeWizard').wizard:add({ activity = wizardPage })
 
 --[[ Display ]]--
 local function createPage(node)
   local page = UI.Window {
     parent = UI.Device {
       device = node.adapter,
-      textScale = .5,
+      textScale = node.textScale or .5,
     },
     grid = UI.Grid {
       columns = {
@@ -58,6 +78,7 @@ local function createPage(node)
       },
       sortColumn = 'displayName',
     },
+    timestamp = os.clock(),
   }
 
   function page.grid:getRowTextColor(row, selected)
