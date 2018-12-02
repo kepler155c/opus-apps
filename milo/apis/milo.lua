@@ -134,8 +134,8 @@ end
 function Milo:getTurtleInventory()
 	local list = { }
 
-	for i = 1,16 do
-		local item = self.context.turtleInventory.getItemMeta(i)
+	for i in pairs(self.context.turtleInventory.adapter.list()) do
+		local item = self.context.turtleInventory.adapter.getItemMeta(i)
 		if item and not itemDB:get(item) then
 			itemDB:add(item)
 		end
@@ -225,7 +225,7 @@ function Milo:makeRequest(item, count, callback)
 end
 
 function Milo:eject(item, count)
-	count = self.context.storage:export(self.context.storage.localName, nil, count, item)
+	count = self.context.storage:export(self.context.turtleInventory, nil, count, item)
 	turtle.emptyInventory()
 	return count
 end

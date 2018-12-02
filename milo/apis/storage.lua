@@ -1,9 +1,8 @@
-local class            = require('class')
-local Event            = require('event')
-local InventoryAdapter = require('inventoryAdapter')
-local itemDB           = require('itemDB')
-local Peripheral       = require('peripheral')
-local Util             = require('util')
+local class   = require('class')
+local Event   = require('event')
+local Adapter = require('inventoryAdapter')
+local itemDB  = require('itemDB')
+local Util    = require('util')
 
 local device = _G.device
 local os     = _G.os
@@ -20,9 +19,6 @@ function Storage:init(nodes)
   }
   Util.merge(self, defaults)
 
-  local modem = Peripheral.get('wired_modem') or error('Wired modem not attached')
-  self.localName = modem.getNameLocal()
-
   Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
 _G._debug('%s: %s', e, tostring(dev))
     self:initStorage()
@@ -34,9 +30,13 @@ end
 
 function Storage:showStorage()
   local t = { }
+  local ignores = {
+    ignore = true,
+    hidden = true,
+  }
   for k,v in pairs(self.nodes) do
     local online = v.adapter and v.adapter.online
-    if not online and v.mtype ~= 'ignore' then
+    if not online and not ignores[v.mtype] then
       table.insert(t, k)
     end
   end
@@ -58,18 +58,20 @@ function Storage:initStorage()
 
   _G._debug('Initializing storage')
   for k,v in pairs(self.nodes) do
-    if v.adapter then
-      v.adapter.online = not not device[k]
-    elseif device[k] and device[k].list and device[k].size and device[k].pullItems then
-      v.adapter = InventoryAdapter.wrap({ side = k })
-      v.adapter.online = true
-      v.adapter.dirty = true
-    elseif device[k] then
-      v.adapter = device[k]
-      v.adapter.online = true
-    end
-    if v.mtype == 'storage' then
-      online = online and not not (v.adapter and v.adapter.online)
+    if v.mtype ~= 'hidden' then
+      if v.adapter then
+        v.adapter.online = not not device[k]
+      elseif device[k] and device[k].list and device[k].size and device[k].pullItems then
+        v.adapter = Adapter.wrap({ side = k })
+        v.adapter.online = true
+        v.adapter.dirty = true
+      elseif device[k] then
+        v.adapter = device[k]
+        v.adapter.online = true
+      end
+      if v.mtype == 'storage' then
+        online = online and not not (v.adapter and v.adapter.online)
+      end
     end
   end
 
@@ -247,6 +249,10 @@ function Storage:updateCache(adapter, item, count)
 end
 
 function Storage:_sn(name)
+  if not name then
+    error('Invalid target', 3)
+  end
+
   local node = self.nodes[name]
   if node and node.displayName then
     return node.displayName
@@ -258,16 +264,58 @@ function Storage:_sn(name)
   return table.concat(t, '_')
 end
 
+local function isValidTransfer(adapter, target)
+  for _,v in pairs(adapter.getTransferLocations()) do
+    if v == target then
+      return true
+    end
+  end
+end
+
+local function rawExport(source, target, item, qty, slot)
+  local total = 0
+  local push = isValidTransfer(source, target.name)
+
+  local s, m = pcall(function()
+    local stacks = source.list()
+    for key,stack in Util.rpairs(stacks) do
+      if stack.name == item.name and
+         stack.damage == item.damage and
+         stack.nbtHash == item.nbtHash then
+        local amount = math.min(qty, stack.count)
+        if amount > 0 then
+          if push then
+            amount = source.pushItems(target.name, key, amount, slot)
+          else
+            amount = target.pullItems(source.name, key, amount, slot)
+          end
+        end
+        qty = qty - amount
+        total = total + amount
+        if qty <= 0 then
+          break
+        end
+      end
+    end
+  end)
+
+  if not s and m then
+    _debug(m)
+  end
+
+  return total, m
+end
+
 function Storage:export(target, slot, count, item)
   local total = 0
   local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
 
   local function provide(adapter)
-    local amount = adapter:provide(item, count, slot, target)
+    local amount = rawExport(adapter, target.adapter, item, count, slot)
     if amount > 0 then
 
       _G._debug('EXT: %s(%d): %s -> %s%s',
-        item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target),
+        item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
         slot and string.format('[%d]', slot) or '[*]')
 
       self:updateCache(adapter, item, -amount)
@@ -287,7 +335,7 @@ function Storage:export(target, slot, count, item)
   end
 
   _G._debug('MISS: %s(%d): %s%s %s',
-    item.displayName or item.name, count, self:_sn(target),
+    item.displayName or item.name, count, self:_sn(target.name),
     slot and string.format('[%d]', slot) or '[*]', key)
 
 -- TODO: If there are misses when a slot is specified than something is wrong...
@@ -296,6 +344,23 @@ function Storage:export(target, slot, count, item)
 -- ... so should not reach here
 
   return total
+end
+
+local function rawInsert(source, target, slot, qty)
+  local count = 0
+
+  local s, m = pcall(function()
+    if isValidTransfer(source, target.name) then
+      count = source.pullItems(target.name, slot, qty)
+    else
+      count = target.pushItems(source.name, slot, qty)
+    end
+  end)
+  if not s and m then
+    _debug(m)
+  end
+
+  return count
 end
 
 function Storage:import(source, slot, count, item)
@@ -316,19 +381,19 @@ function Storage:import(source, slot, count, item)
       entry = itemDB:add(item)
     else
        -- get the metadata from the device and add to db
-      entry = itemDB:add(device[source].getItemMeta(slot))
+      entry = itemDB:add(source.adapter.getItemMeta(slot))
     end
     itemDB:flush()
   end
   item = entry
 
   local function insert(adapter)
-    local amount = adapter:insert(slot, count, nil, source)
+    local amount = rawInsert(adapter, source.adapter, slot, count)
     if amount > 0 then
 
       _G._debug('INS: %s(%d): %s[%d] -> %s',
         item.displayName or item.name, amount,
-        self:_sn(source), slot, self:_sn(adapter.name))
+        self:_sn(source.name), slot, self:_sn(adapter.name))
 
       self:updateCache(adapter, item, amount)
 
@@ -384,9 +449,9 @@ function Storage:trash(source, slot, count)
   local trashcan = Util.find(self.nodes, 'mtype', 'trashcan')
   if trashcan and trashcan.adapter and trashcan.adapter.online then
 
-    _G._debug('TRA: %s[%d] (%d)', self:_sn(source), slot, count or 64)
+    _G._debug('TRA: %s[%d] (%d)', self:_sn(source.name), slot, count or 64)
 
-    return trashcan.adapter.pullItems(source, slot, count)
+    return trashcan.adapter.pullItems(source.name, slot, count)
   end
   return 0
 end

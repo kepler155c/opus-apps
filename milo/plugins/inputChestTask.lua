@@ -6,9 +6,9 @@ local InputChest = {
 }
 
 function InputChest:cycle(context)
-	for inventory in context.storage:filterActive('input') do
-		for slot, item in pairs(inventory.adapter.list()) do
-			context.storage:import(inventory.name, slot, item.count, item)
+	for node in context.storage:filterActive('input') do
+		for slot, item in pairs(node.adapter.list()) do
+			context.storage:import(node, slot, item.count, item)
 		end
 	end
 end

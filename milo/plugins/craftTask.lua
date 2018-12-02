@@ -1,6 +1,5 @@
 local Craft  = require('craft2')
 local Milo   = require('milo')
-local sync   = require('sync').sync
 local Util   = require('util')
 
 local context = Milo:getContext()
@@ -63,9 +62,7 @@ function craftTask:cycle()
     if item.requested - item.crafted > 0 then
       local recipe = Craft.findRecipe(key)
       if recipe then
-        sync(turtle, function()
-          self:craft(recipe, item)
-        end)
+        self:craft(recipe, item)
         if item.callback and item.crafted >= item.requested then
           item.callback(item) -- invoke callback
         end

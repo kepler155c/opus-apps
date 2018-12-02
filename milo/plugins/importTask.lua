@@ -44,7 +44,7 @@ function ImportTask:cycle(context)
 			local function importSlot(slotNo)
 				local item = node.adapter.getItemMeta(slotNo)
 				if item and matchesFilter(item) then
-					context.storage:import(node.name, slotNo, item.count, item)
+					context.storage:import(node, slotNo, item.count, item)
 				end
 			end
 

@@ -1,11 +1,9 @@
 local Ansi   = require('ansi')
 local Milo   = require('milo')
-local Sync   = require('sync')
 local UI     = require('ui')
 
 local colors = _G.colors
 local device = _G.device
-local turtle = _G.turtle
 
 --[[ Configuration Screen ]]--
 local wizardPage = UI.Window {
@@ -57,7 +55,7 @@ function wizardPage:validate()
   return self.form:save()
 end
 
-UI:getPage('nodeWizard').wizard:add({ manipulator = wizardPage })
+--UI:getPage('nodeWizard').wizard:add({ manipulator = wizardPage })
 
 --[[ Task ]]--
 local task = {
@@ -72,15 +70,9 @@ function task:cycle(context)
 
   for manipulator in context.storage:filterActive('manipulator', filter) do
     for slot, item in pairs(manipulator.adapter.getEnder().list()) do
-      Sync.sync(turtle, function()
-        manipulator.adapter.getEnder().pushItems(
-          context.localName,
-          slot,
-          item.count)
-        Milo:clearGrid()
-      end)
+      context.storage:import('joebodo:enderChest', slot, item.count, item)
     end
   end
 end
 
-Milo:registerTask(task)
+--Milo:registerTask(task)

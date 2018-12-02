@@ -6,7 +6,7 @@ local colors = _G.colors
 local device = _G.device
 
 local importView = UI.Window {
-	title = 'Import item from machine',
+	title = 'Import item from inventory',
 	index = 4,
 	grid = UI.ScrollingGrid {
 		x = 2, ex = -6, y = 2, ey = -4,

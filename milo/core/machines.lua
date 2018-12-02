@@ -2,7 +2,6 @@ local Config = require('config')
 local Event  = require('event')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
-local sync   = require('sync')
 local UI     = require('ui')
 local Util   = require('util')
 
@@ -48,8 +47,7 @@ local networkPage = UI.Page {
 			{                   key = 'suffix', 		width = 4, justify = 'right' },
 			{ heading = 'Name', key = 'displayName' },
 			{ heading = 'Type', key = 'mtype',      width = 4 },
-			{ heading = 'Cat',  key = 'category',   width = 3 },
-			--{ heading = 'Pri',  key = 'priority',   width = 3 },
+			{ heading = 'Pri',  key = 'priority',   width = 3 },
 		},
 		sortColumn = 'displayName',
 		help = 'Select Node',
@@ -136,7 +134,6 @@ function networkPage:enable()
 		self:getList()
 		self:applyFilter()
 		self.grid:draw()
-		self.grid:sync()
 		updateStatus()
 		self:sync()
 	end)
@@ -331,13 +328,11 @@ function nodeWizard.filter:show(entry, callback, whitelistOnly)
 	self:setFocus(self.form.scan)
 
 	Milo:pauseCrafting({ key = 'gridInUse', msg = 'Crafting paused' })
-	sync.lock(turtle)
 end
 
 function nodeWizard.filter:hide()
 	UI.SlideOut.hide(self)
 	Milo:resumeCrafting({ key = 'gridInUse' })
-	sync.release(turtle)
 end
 
 function nodeWizard.filter:resetGrid()

@@ -2,10 +2,8 @@ local Event  = require('event')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
 local Socket = require('socket')
-local Sync   = require('sync')
 
 local device = _G.device
-local turtle = _G.turtle
 
 local SHIELD_SLOT = 2
 
@@ -61,6 +59,17 @@ local function client(socket)
 		data = 'ok',
 	})
 
+	local function makeNode(devType)
+		local devName = user .. ':' .. devType
+		local adapter = device[devName]
+		if adapter then
+			return {
+				adapter = adapter,
+				name = devName,
+			}
+		end
+	end
+
 	repeat
 		local data = socket:read()
 		if not data then
@@ -77,20 +86,20 @@ local function client(socket)
 
 		elseif data.request == 'deposit' then
 			local function deposit()
-				Sync.sync(turtle, function()
-					if data.slot == 'shield' then
-						manipulator.getEquipment().pushItems(
-							context.localName,
-							SHIELD_SLOT,
-							data.count)
-					else
-						manipulator.getInventory().pushItems(
-							context.localName,
-							data.slot,
-							data.count)
+				local devType = 'inventory'
+				local slotNo = data.slot
+				if data.slot == 'shield' then
+					slotNo = SHIELD_SLOT
+					devType = 'equipment'
+				end
+
+				local node = makeNode(devType)
+				if node then
+					local slot = node.adapter.getItemMeta(slotNo)
+					if slot then
+						context.storage:import(node, slotNo, slot.count, slot)
 					end
-					Milo:clearGrid()
-				end)
+				end
 			end
 
 			local list = Milo:listItems()
@@ -114,23 +123,14 @@ local function client(socket)
 			end
 
 			local function transfer(request)
-				Sync.sync(turtle, function()
-					local transferred = context.storage:export(
-						context.localName,
+				local target = makeNode('inventory')
+				if target then
+					context.storage:export(
+						target,
 						nil,
 						request.requested,
 						data.item)
-
-					if transferred > 0 then
-						turtle.eachFilledSlot(function(slot)
-							manipulator.getInventory().pullItems(
-								context.localName,
-								slot.index,
-								slot.count)
-						end)
-					end
-					Milo:clearGrid() -- in case all items do not fit in user's inventory
-				end)
+				end
 			end
 
 			local request = Milo:makeRequest(data.item, count, transfer)

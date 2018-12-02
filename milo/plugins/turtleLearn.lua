@@ -1,7 +1,6 @@
 local Craft  = require('craft2')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
-local sync   = require('sync')
 local UI     = require('ui')
 local Util   = require('util')
 
@@ -125,7 +124,6 @@ local turtleLearnWizard = UI.Page {
 
 function turtleLearnWizard:disable()
 	Milo:resumeCrafting({ key = 'gridInUse' })
-	sync.release(turtle)
 	UI.Page.disable(self)
 end
 

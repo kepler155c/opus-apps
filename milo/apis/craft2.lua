@@ -35,17 +35,14 @@ local function makeRecipeKey(item)
 end
 
 function Craft.clearGrid(storage)
-	turtle.eachFilledSlot(function(slot)
-		storage:import(storage.localName, slot.index, slot.count, slot)
-	end)
+	local success = true
 
-	for i = 1, 16 do
-		if turtle.getItemCount(i) ~= 0 then
-			return false
+	for index, slot in pairs(storage.turtleInventory.adapter.list()) do
+		if storage:import(storage.turtleInventory, index, slot.count, slot) ~= slot.count then
+			success = false
 		end
 	end
-
-	return true
+	return success
 end
 
 function Craft.getItemCount(items, item)
@@ -77,7 +74,7 @@ function Craft.sumIngredients(recipe)
 end
 
 local function machineCraft(recipe, storage, machineName, request, count, item)
-	local machine = device[machineName]
+	local machine = storage.nodes[machineName]
 	if not machine then
 		request.status = 'machine not found'
 		request.statusCode = Craft.STATUS_ERROR
@@ -85,7 +82,7 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 	end
 
 	for k in pairs(recipe.ingredients) do
-		if machine.getItemMeta(k) then
+		if machine.adapter.getItemMeta(k) then
 			request.status = 'machine in use'
 			request.statusCode = Craft.STATUS_WARNING
 			return
@@ -94,7 +91,7 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 
 	local xferred = { }
 	for k,v in pairs(recipe.ingredients) do
-		local provided = storage:export(machineName, k, count, splitKey(v))
+		local provided = storage:export(machine, k, count, splitKey(v))
 		xferred[k] = {
 			key = v,
 			count = provided,
@@ -103,7 +100,7 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 			-- take back out whatever we put in
 			for k2,v2 in pairs(xferred) do
 				if v2.count > 0 then
-					storage:import(machineName, k2, v2.count, splitKey(v2.key))
+					storage:import(machine, k2, v2.count, splitKey(v2.key))
 				end
 			end
 			request.status = 'Invalid recipe'
@@ -125,7 +122,7 @@ local function turtleCraft(recipe, storage, request, count)
 
 	for k,v in pairs(recipe.ingredients) do
 		local item = splitKey(v)
-		if storage:export(storage.localName, k, count, item) ~= count then
+		if storage:export(storage.turtleInventory, k, count, item) ~= count then
 			request.status = 'unknown error'
 			request.statusCode = Craft.STATUS_ERROR
 			return

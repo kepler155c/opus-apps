@@ -39,7 +39,7 @@ function ExportTask:cycle(context)
 							local _, item = next(items)
 							if item then
 								local count = math.min(item.count, slot.maxCount - slot.count)
-								context.storage:export(node.name, entry.slot, count, item)
+								context.storage:export(node, entry.slot, count, item)
 							end
 							break
 						end
@@ -53,7 +53,7 @@ function ExportTask:cycle(context)
 					local _, item = next(items)
 					if item then
 						local count = math.min(item.count, itemDB:getMaxCount(item))
-						context.storage:export(node.name, entry.slot, count, item)
+						context.storage:export(node, entry.slot, count, item)
 						break
 					end
 				end
@@ -63,7 +63,7 @@ function ExportTask:cycle(context)
 				for key in pairs(entry.filter) do
 					local items = Milo:getMatches(itemDB:splitKey(key), entry)
 					for _,item in pairs(items) do
-						if context.storage:export(node.name, nil, item.count, item) == 0 then
+						if context.storage:export(node, nil, item.count, item) == 0 then
 							-- TODO: really shouldn't break here as there may be room in other slots
 							-- leaving for now for performance reasons
 							break

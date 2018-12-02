@@ -1,9 +1,8 @@
 local Milo   = require('milo')
-local sync   = require('sync')
 local UI     = require('ui')
 
 local context = Milo:getContext()
-local turtle  = _G.turtle
+local turtle = _G.turtle
 
 local learnPage = UI.Dialog {
   height = 9, width = UI.term.width - 6,
@@ -39,7 +38,6 @@ function learnPage:enable()
   self.grid:setSelected('name', Milo:getState('learnType') or '')
 
   Milo:pauseCrafting({ key = 'gridInUse', msg = 'Crafting paused' })
-  sync.lock(turtle)
 
   self:focusFirst()
   UI.Dialog.enable(self)
@@ -51,8 +49,8 @@ end
 
 function learnPage:eventHandler(event)
   if event.type == 'cancel' then
-    sync.release(turtle)
     Milo:resumeCrafting({ key = 'gridInUse' })
+    turtle.emptyInventory()
     UI:setPreviousPage()
 
   elseif event.type == 'accept' or event.type == 'grid_select' then

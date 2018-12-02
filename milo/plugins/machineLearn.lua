@@ -1,6 +1,5 @@
 local itemDB = require('itemDB')
 local Milo   = require('milo')
-local sync   = require('sync')
 local UI     = require('ui')
 local Util   = require('util')
 
@@ -133,7 +132,6 @@ end
 
 function machineLearnWizard:disable()
 	Milo:resumeCrafting({ key = 'gridInUse' })
-	sync.release(turtle)
 	UI.Page.disable(self)
 end
 

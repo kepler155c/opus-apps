@@ -16,7 +16,7 @@ function LimitTask:cycle(context)
 					local amount = count - res.limit
 					for _, item in pairs(items) do
 						amount = amount - context.storage:export(
-							trashcan.name,
+							trashcan,
 							nil,
 							math.min(amount, item.count),
 							item)

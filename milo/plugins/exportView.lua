@@ -6,7 +6,7 @@ local colors = _G.colors
 local device = _G.device
 
 local exportView = UI.Window {
-	title = 'Export item into machine',
+	title = 'Export item into inventory',
 	index = 3,
 	grid = UI.ScrollingGrid {
 		x = 2, ex = -6, y = 2, ey = -4,

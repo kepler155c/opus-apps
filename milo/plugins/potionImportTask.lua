@@ -23,7 +23,7 @@ function PotionImportTask:cycle(context)
 			if not list[5] then
 				local blazePowder = context.storage.cache[BLAZE_POWDER]
 				if blazePowder then
-					context.storage:export(bs.name, 5, 1, blazePowder)
+					context.storage:export(bs, 5, 1, blazePowder)
 				else
 					local item = itemDB:get(BLAZE_POWDER)
 					if item then
@@ -45,7 +45,7 @@ function PotionImportTask:cycle(context)
 
 				for slot = 1, 3 do
 					if list[slot] then
-						context.storage:import(bs.name, slot, 1, list[slot])
+						context.storage:import(bs, slot, 1, list[slot])
 					end
 				end
 			end

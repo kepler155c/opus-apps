@@ -47,7 +47,7 @@ if nodes.nodes then
     input = 'custom',
     trashcan = 'custom',
     machine = 'machine',
-    brewingStand = 'custom',
+    brewingStand = 'machine',
     activity = 'display',
     jobs = 'display',
     ignore = 'ignore',
@@ -105,6 +105,8 @@ if not device.workbench then
   end
 end
 
+local localName = modem.getNameLocal()
+
 local context = {
   nodes = nodes,
   resources = Util.readTable(Milo.RESOURCE_FILE) or { },
@@ -115,20 +117,28 @@ local context = {
   tasks = { },
   queue = { },
 
-  localName = modem.getNameLocal(),
   storage = Storage(nodes),
-  turtleInventory = introspection.getInventory(),
+  turtleInventory = {
+    name = localName,
+    mtype = 'hidden',
+    adapter = introspection.getInventory(),
+  }
 }
 
-device[context.localName] = introspection.getInventory()
+nodes[localName] = context.turtleInventory
+nodes[localName].adapter.name = localName
 
 _G._p = context --debug
 
 Milo:init(context)
 context.storage:initStorage()
 
+-- TODO: fix
+context.storage.turtleInventory = context.turtleInventory
+
 local function loadDirectory(dir)
   for _, file in pairs(fs.list(dir)) do
+_debug('loading: ' .. file)
     local s, m = Util.run(_ENV, fs.combine(dir, file))
     if not s and m then
       error(m or 'Unknown error')
@@ -187,6 +197,12 @@ Event.on('milo_queue', function()
     end
 
     processing = false
+  end
+end)
+
+Event.on('turtle_inventory', function()
+  if not processing and not Milo:isCraftingPaused() then
+    Milo:clearGrid()
   end
 end)
 
