@@ -43,7 +43,7 @@ local page = UI.Page {
   },
   tabs = UI.Tabs {
     x = 1, y = 5, ey = -2,
-    scripts = UI.Grid {
+    scripts = UI.ScrollingGrid {
       tabTitle = 'Run',
       backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
       columns = {
@@ -53,7 +53,7 @@ local page = UI.Page {
       sortColumn = 'label',
       autospace = true,
     },
-    turtles = UI.Grid {
+    turtles = UI.ScrollingGrid {
       tabTitle = 'Select',
       backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
       columns = {
@@ -66,7 +66,7 @@ local page = UI.Page {
       sortColumn = 'label',
       autospace = true,
     },
-    inventory = UI.Grid {
+    inventory = UI.ScrollingGrid {
       backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
       tabTitle = 'Inv',
       columns = {
@@ -78,7 +78,7 @@ local page = UI.Page {
       sortColumn = 'index',
     },
 --[[
-    policy = UI.Grid {
+    policy = UI.ScrollingGrid {
       tabTitle = 'Mod',
       backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
       columns = {
@@ -196,7 +196,7 @@ function page.tabs.inventory:getRowTextColor(row, selected)
   if page.turtle and row.selected then
     return colors.yellow
   end
-  return UI.Grid.getRowTextColor(self, row, selected)
+  return UI.ScrollingGrid.getRowTextColor(self, row, selected)
 end
 
 function page.tabs.inventory:draw()
@@ -217,7 +217,7 @@ function page.tabs.inventory:draw()
   end
   self:adjustWidth()
   self:update()
-  UI.Grid.draw(self)
+  UI.ScrollingGrid.draw(self)
 end
 
 function page.tabs.inventory:eventHandler(event)
@@ -225,7 +225,7 @@ function page.tabs.inventory:eventHandler(event)
     local fn = string.format('turtle.select(%d)', event.selected.index)
     page:runFunction(fn)
   else
-    return UI.Grid.eventHandler(self, event)
+    return UI.ScrollingGrid.eventHandler(self, event)
   end
   return true
 end
@@ -238,14 +238,14 @@ function page.tabs.scripts:draw()
     table.insert(self.values, { label = path, path = fs.combine(SCRIPTS_PATH, path) })
   end
   self:update()
-  UI.Grid.draw(self)
+  UI.ScrollingGrid.draw(self)
 end
 
 function page.tabs.scripts:eventHandler(event)
   if event.type == 'grid_select' then
     page:runScript(event.selected.label)
   else
-    return UI.Grid.eventHandler(self, event)
+    return UI.ScrollingGrid.eventHandler(self, event)
   end
   return true
 end
@@ -269,7 +269,7 @@ function page.tabs.turtles:draw()
     end
   end
   self:update()
-  UI.Grid.draw(self)
+  UI.ScrollingGrid.draw(self)
 end
 
 function page.tabs.turtles:eventHandler(event)
@@ -283,7 +283,7 @@ function page.tabs.turtles:eventHandler(event)
       socket = nil
     end
   else
-    return UI.Grid.eventHandler(self, event)
+    return UI.ScrollingGrid.eventHandler(self, event)
   end
   return true
 end

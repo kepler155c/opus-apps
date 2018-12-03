@@ -3,22 +3,31 @@ _G.requireInjector()
 local Event = require('event')
 local UI    = require('ui')
 
-local colors = _G.colors
-local device = _G.device
-local turtle = _G.turtle
+local colors     = _G.colors
+local peripheral = _G.peripheral
 
-if not turtle then
-  error('This program can only be run on a turtle')
-end
-
-local radio = device.drive or error('No drive attached')
-if radio.side ~= 'top' and radio.side ~= 'bottom' then
-  error('Disk drive must be above or below turtle')
-end
+local speaker = peripheral.find('speaker') or
+  error('Speaker must be attached')
 
 UI:configure('Music', ...)
 
 UI.Button.defaults.backgroundFocusColor = colors.gray
+
+local songs = {
+  { record = 'record.11', title = '11' },
+  { record = 'record.13', title = '13' },
+  { record = 'record.block', title = 'Block' },
+  { record = 'record.cat', title = 'Cat' },
+  { record = 'record.chirp', title = 'Chirp' },
+  { record = 'record.far', title = 'Faf' },
+  { record = 'record.mall', title = 'Mall' },
+  { record = 'record.mellohi', title = 'Mellohi' },
+  { record = 'record.stal', title = 'Stal' },
+  { record = 'record.strad', title = 'Strad' },
+  { record = 'record.wait', title = 'Wait' },
+  { record = 'record.ward', title = 'Ward' },
+}
+local songNo = 1
 
 local page = UI.Page({
   volume = 15,
@@ -168,41 +177,18 @@ function page:setVolume(volume)
 end
 
 function page:seek()
-
-  local actions = {
-    top = {
-      suck = turtle.suckUp,
-      drop = turtle.dropUp,
-    },
-    bottom = {
-      suck = turtle.suckDown,
-      drop = turtle.dropDown,
-    },
-  }
-
-  local slot = turtle.selectOpenSlot()
-  actions[radio.side].suck()
-  repeat
-    slot = slot + 1
-    if (slot > 16) then
-      slot = 1
-    end
-  until turtle.getItemCount(slot) >= 1
-  turtle.select(slot)
-  actions[radio.side].drop()
+  songNo = songNo + 1
+  if songNo > #songs then
+    songNo = 1
+  end
   self:updateStationName()
 end
 
 function page:play(onOff)
   self.playing = onOff
   if self.playing then
-
-    if not radio.hasAudio() then
-      self:seek()
-    end
-
     self:updateStationName()
-    radio.playAudio()
+    speaker.playSound(songs[songNo])
 
     Event.addNamedTimer('songTimer', 180, false, function()
       if self.playing then
@@ -213,7 +199,7 @@ function page:play(onOff)
     end)
 
   else
-    radio.stopAudio()
+    --radio.stopAudio()
   end
 end
 
@@ -223,7 +209,7 @@ function page.stationName:draw()
 end
 
 function page:updateStationName()
-  local title = radio.getAudioTitle()
+  local title = songs[songNo].title
 
   if title then
     self.stationName.value = title
@@ -248,9 +234,7 @@ page:setVolume(page.volume, true)
 
 UI:setPage(page)
 
-turtle.setStatus('Jamming')
 UI:pullEvents()
-turtle.setStatus('idle')
 page:play(false)
 
 UI.term:reset()

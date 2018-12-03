@@ -15,7 +15,6 @@ function Storage:init(nodes)
     dirty = true,
     activity = { },
     storageOnline = true,
-    lastRefresh = os.clock(),
   }
   Util.merge(self, defaults)
 
@@ -148,7 +147,6 @@ end
 
 function Storage:refresh(throttle)
   self.dirty = true
-  self.lastRefresh = os.clock()
 _G._debug('STORAGE: Forcing full refresh')
   for _, adapter in self:onlineAdapters() do
     adapter.dirty = true
