@@ -1,6 +1,6 @@
+local Adapter = require('miniAdapter')
 local class   = require('class')
 local Event   = require('event')
-local Adapter = require('inventoryAdapter')
 local itemDB  = require('itemDB')
 local Util    = require('util')
 
@@ -61,7 +61,7 @@ function Storage:initStorage()
       if v.adapter then
         v.adapter.online = not not device[k]
       elseif device[k] and device[k].list and device[k].size and device[k].pullItems then
-        v.adapter = Adapter.wrap({ side = k })
+        v.adapter = Adapter({ side = k })
         v.adapter.online = true
         v.adapter.dirty = true
       elseif device[k] then

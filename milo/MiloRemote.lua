@@ -244,6 +244,7 @@ function page:sendRequest(data, statusMsg)
     return
   end
 
+  local success
   sync(self, function()
     local msg
     for _ = 1, 2 do
@@ -271,7 +272,8 @@ function page:sendRequest(data, statusMsg)
           end)
         end
         if socket:write(data) then
-          return true
+          success = true
+          return
         end
         socket:close()
         socket = nil
@@ -279,6 +281,8 @@ function page:sendRequest(data, statusMsg)
     end
     self:setStatus(msg or 'Failed to connect')
   end)
+
+  return success
 end
 
 function page.grid:getRowTextColor(row, selected)
@@ -505,8 +509,13 @@ function page:applyFilter()
 end
 
 Event.addRoutine(function()
-  local sleepTime = 1.5
+  local lastTransfer
   while true do
+    local sleepTime = 1.5
+    if lastTransfer and os.clock() - lastTransfer < 3 then
+      sleepTime = .25
+    end
+
     os.sleep(socket and sleepTime or 5)
     if config.deposit then
       local neural = device.neuralInterface
@@ -523,10 +532,8 @@ Event.addRoutine(function()
               slot = config.useShield and 'shield' or config.slot,
               count = item.count,
             }) then
-              sleepTime = math.max(sleepTime - .25, .25)
+              lastTransfer = os.clock()
             end
-          else
-            sleepTime = math.min(sleepTime + .25, 1.5)
           end
         end)
         if not s and m then
