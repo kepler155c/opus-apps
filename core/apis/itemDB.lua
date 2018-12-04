@@ -139,6 +139,10 @@ function itemDB:add(baseItem)
       nItem.displayName = nItem.displayName .. v.fullName
     end
 
+  -- disks
+  elseif baseItem.media then
+    -- don't ignore nbt... as disks can be labeled
+
   -- potions
   elseif nItem.name == 'minecraft:potion' or nItem.name == 'minecraft:lingering_potion' then
     if baseItem.effects then
