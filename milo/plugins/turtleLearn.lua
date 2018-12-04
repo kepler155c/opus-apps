@@ -104,30 +104,19 @@ local function learnRecipe()
 	return recipe
 end
 
-local turtleLearnWizard = UI.Page {
-	titleBar = UI.TitleBar { title = 'Learn a crafting recipe' },
-	wizard = UI.Wizard {
-		y = 2, ey = -3,
-		pages = {
-			confirmation = UI.Window {
-				index = 1,
-				notice = UI.TextArea {
-					x = 2, ex = -2, y = 2, ey = -2,
-					value =
+local pages = {
+	turtleCraft = UI.Window {
+		index = 2,
+		validFor = 'Turtle Crafting',
+		notice = UI.TextArea {
+			x = 2, ex = -2, y = 2, ey = -2,
+			value =
 [[Place recipe in turtle!]],
-				},
-			},
 		},
 	},
-	notification = UI.Notification { },
 }
 
-function turtleLearnWizard:disable()
-	Milo:resumeCrafting({ key = 'gridInUse' })
-	UI.Page.disable(self)
-end
-
-function turtleLearnWizard.wizard.pages.confirmation:validate()
+function pages.turtleCraft:validate()
 	local recipe, msg = learnRecipe(self)
 
 	if recipe then
@@ -139,18 +128,8 @@ function turtleLearnWizard.wizard.pages.confirmation:validate()
 		})
 		return true
 	else
-		turtleLearnWizard.notification:error(msg)
+		self:emit({ type = 'general_error', message = msg })
 	end
 end
 
-function turtleLearnWizard:eventHandler(event)
-	if event.type == 'cancel' then
-		turtle.emptyInventory()
-		UI:setPage('listing')
-	else
-		return UI.Page.eventHandler(self, event)
-	end
-	return true
-end
-
-context.learnTypes['Turtle crafting'] = turtleLearnWizard
+UI:getPage('learnWizard').wizard:add(pages)

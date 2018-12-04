@@ -7,6 +7,7 @@ local Util       = require('util')
 local colors     = _G.colors
 local context    = Milo:getContext()
 local device     = _G.device
+local os         = _G.os
 
 --[[ Configuration Page ]]--
 local template =
@@ -30,10 +31,10 @@ local wizardPage = UI.Window {
       formLabel = 'Font Size', formKey = 'textScale',
       nochoice = 'Small',
       choices = {
-        { name = 'Small', value = .5, help = '(requires restart)', },
-        { name = 'Large', value = 1,  help = '(requires restart)', },
+        { name = 'Small', value = .5 },
+        { name = 'Large', value = 1  },
       },
-      help = 'Adjust text scaling (requires restart)',
+      help = 'Adjust text scaling',
     },
   },
 }
@@ -44,6 +45,10 @@ end
 
 function wizardPage:validate()
   return self.form:save()
+end
+
+function wizardPage:saveNode(node)
+  os.queueEvent('monitor_resize', node.name)
 end
 
 function wizardPage:isValidType(node)
@@ -71,8 +76,8 @@ local function createPage(node)
     },
     grid = UI.Grid {
       columns = {
-        { heading = 'Qty',    key = 'count',       width = 6 },
-        { heading = 'Change', key = 'change',      width = 6 },
+        { heading = 'Qty',    key = 'count',       width = 5 },
+        { heading = 'Change', key = 'change',      width = 5 },
         { heading = 'Rate',   key = 'rate',        width = 6 },
         { heading = 'Name',   key = 'displayName' },
       },
@@ -106,7 +111,6 @@ local function createPage(node)
   function page:reset()
     self.lastItems = nil
     self.grid:setValues({ })
-    self.grid:clear()
     self.grid:draw()
   end
 
@@ -175,6 +179,20 @@ local function createPage(node)
 end
 
 local pages = { }
+
+Event.on('monitor_resize', function(_, side)
+  for node in context.storage:filterActive('activity') do
+    if node.name == side and pages[node.name] then
+      local p = pages[node.name]
+      p.parent:setTextScale(node.textScale or .5)
+      p.parent:resize()
+      p:resize()
+      p:draw()
+      p:sync()
+      break
+    end
+  end
+end)
 
 Event.on('monitor_touch', function(_, side)
   local function filter(node)

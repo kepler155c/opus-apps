@@ -3,7 +3,6 @@ local Milo   = require('milo')
 local Util   = require('util')
 
 local context = Milo:getContext()
-local turtle  = _G.turtle
 
 local craftTask = {
   name = 'crafting',

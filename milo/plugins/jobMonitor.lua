@@ -8,6 +8,7 @@ local Util    = require('util')
 local colors  = _G.colors
 local context = Milo:getContext()
 local device  = _G.device
+local os         = _G.os
 
 --[[ Configuration Screen ]]
 local wizardPage = UI.Window {
@@ -28,16 +29,20 @@ local wizardPage = UI.Window {
       formLabel = 'Font Size', formKey = 'textScale',
       nochoice = 'Small',
       choices = {
-        { name = 'Small', value = .5, help = '(requires restart)', },
-        { name = 'Large', value = 1,  help = '(requires restart)', },
+        { name = 'Small', value = .5 },
+        { name = 'Large', value = 1  },
       },
-      help = 'Adjust text scaling (requires restart)',
+      help = 'Adjust text scaling',
     },
   },
 }
 
 function wizardPage:setNode(node)
   self.form:setValues(node)
+end
+
+function wizardPage:saveNode(node)
+  os.queueEvent('monitor_resize', node.name)
 end
 
 function wizardPage:validate()
@@ -70,7 +75,6 @@ local function createPage(node)
     },
     grid = UI.Grid {
       sortColumn = 'index',
-      backgroundFocusColor = colors.black,
       columns = {
         { heading = 'Qty',      key = 'remaining',   width = 4 },
         { heading = 'Crafting', key = 'displayName', },
@@ -141,6 +145,20 @@ local function createPage(node)
 end
 
 local pages = { }
+
+Event.on('monitor_resize', function(_, side)
+  for node in context.storage:filterActive('jobs') do
+    if node.name == side and pages[node.name] then
+      local p = pages[node.name]
+      p.parent:setTextScale(node.textScale or .5)
+      p.parent:resize()
+      p:resize()
+      p:draw()
+      p:sync()
+      break
+    end
+  end
+end)
 
 Event.on({ 'milo_resume', 'milo_pause' }, function(_, reason)
   for node in context.storage:filterActive('jobs') do

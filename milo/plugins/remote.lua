@@ -75,7 +75,7 @@ local function client(socket)
 		if not data then
 			break
 		end
-_G._debug(data)
+--_G._debug(data)
 		socket.co = coroutine.running()
 
 		if data.request == 'scan' then -- full scan of all inventories

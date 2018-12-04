@@ -234,7 +234,7 @@ function page:eventHandler(event)
     Milo:setState('displayMode', displayMode)
 
   elseif event.type == 'learn' then
-    UI:setPage('learn')
+    UI:setPage('learnWizard')
 
   elseif event.type == 'craft' then
     local item = self.grid:getSelected()
@@ -242,7 +242,6 @@ function page:eventHandler(event)
       if Craft.findRecipe(item) then -- or item.is_craftable then
         UI:setPage('craft', self.grid:getSelected())
       else
-        Sound.play('entity.villager.no')
         self.notification:error('No recipe defined')
       end
     end

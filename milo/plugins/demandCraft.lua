@@ -63,10 +63,7 @@ end
 
 function craftPage.wizard.pages.resources.grid:getDisplayValues(row)
   local function dv(v)
-    if v == 0 then
-      return ''
-    end
-    return Util.toBytes(v)
+    return v == 0 and '' or Util.toBytes(v)
   end
   row = Util.shallowCopy(row)
   row.total = Util.toBytes(row.total)

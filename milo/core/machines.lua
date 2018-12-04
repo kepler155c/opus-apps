@@ -395,6 +395,10 @@ function nodeWizard.wizard.pages.general:enable()
 	self:focusFirst()
 end
 
+function nodeWizard.wizard.pages.general:isValidFor()
+	return false
+end
+
 function nodeWizard.wizard.pages.general:showInventory(node)
 	local inventory
 
@@ -418,29 +422,26 @@ end
 
 function nodeWizard.wizard.pages.general:validate()
 	if self.form:save() then
-		_G._p3 = nodeWizard.choices
-		_G._p4 = nodeWizard.node
 		nodeWizard.node.category = Util.find(nodeWizard.choices, 'value', nodeWizard.node.mtype).category
+
+		nodeWizard.nodePages = { }
+		table.insert(nodeWizard.nodePages, nodeWizard.wizard.pages.general)
 		for _, page in pairs(nodeWizard.wizard.pages) do
-			page.index = nil
-		end
-		local index = 2
-		nodeWizard.wizard.pages.general.index = 1
-		nodeWizard.wizard.pages.confirmation.index = 2
-		for _, page in pairs(nodeWizard.wizard.pages) do
-			if not page.index then
-				if not page.isValidFor or page:isValidFor(nodeWizard.node) then
-					page.index = index
-					index = index + 1
-					if page.setNode then
-						page:setNode(nodeWizard.node)
-					end
+			if not page.isValidFor or page:isValidFor(nodeWizard.node) then
+				table.insert(nodeWizard.nodePages, page)
+				if page.setNode then
+					page:setNode(nodeWizard.node)
 				end
 			end
 		end
-		nodeWizard.wizard.pages.confirmation.index = index
+		table.insert(nodeWizard.nodePages, nodeWizard.wizard.pages.confirmation)
 		return true
 	end
+end
+
+--[[ Confirmation ]]--
+function nodeWizard.wizard.pages.confirmation:isValidFor()
+	return false
 end
 
 --[[ Wizard ]] --
@@ -469,15 +470,15 @@ function nodeWizard:enable(node)
 
 	self.wizard.pages.general:showInventory(self.node)
 
-	-- restore indices
-	for _, page in pairs(self.wizard.pages) do
-		if not page.oindex then
-			page.oindex = page.index
-		end
-		page.index = page.oindex
-	end
+	self.nodePages = { }
+	table.insert(self.nodePages, self.wizard.pages.general)
+	table.insert(self.nodePages, self.wizard.pages.confirmation)
 
 	UI.Page.enable(self)
+end
+
+function nodeWizard.wizard:getPage(index)
+	return nodeWizard.nodePages[index]
 end
 
 function nodeWizard:eventHandler(event)
@@ -499,6 +500,12 @@ function nodeWizard:eventHandler(event)
 			end
 			return true
 		end)
+
+		for _, page in pairs(self.nodePages) do
+			if page.saveNode then
+				page:saveNode(self.node)
+			end
+		end
 
 		Util.clear(context.storage.nodes[self.node.name])
 		Util.merge(context.storage.nodes[self.node.name], self.node)

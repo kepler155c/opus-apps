@@ -112,7 +112,6 @@ local context = {
 
   state = { },
   craftingQueue = { },
-  learnTypes = { },
   tasks = { },
   queue = { },
 

@@ -8,8 +8,8 @@ local template =
 [[%sBrewing stands have the ability to automatically learn recipes.%s
 
 Simply craft potions in the brewing stand as normal except for these conditions.
-1. Place item in top slot first.
-2. At least 1 bottle must be placed in the first slot.
+1. Place item in top slot FIRST.
+2. Place all 3 bottles.
 
 When finished brewing, the recipe will be available upon refreshing.
 

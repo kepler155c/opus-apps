@@ -5,45 +5,37 @@ local Util   = require('util')
 
 local colors = _G.colors
 local device = _G.device
-local turtle = _G.turtle
 
 local context = Milo:getContext()
+local machine
 
-local machineLearnWizard = UI.Page {
-	titleBar = UI.TitleBar { title = 'Select machine' },
-	wizard = UI.Wizard {
-		y = 2, ey = -2,
-		pages = {
-			machines = UI.Window {
-				index = 1,
-				grid = UI.ScrollingGrid {
-					y = 2, ey = -2,
-					columns = {
-						{ heading = 'Name', key = 'displayName' },
-					},
-					sortColumn = 'displayName',
-				},
+local pages = {
+	machines = UI.Window {
+		index = 2,
+		validFor = 'Machine Processing',
+		grid = UI.ScrollingGrid {
+			y = 2, ey = -2,
+			columns = {
+				{ heading = 'Name', key = 'displayName' },
 			},
-			confirmation = UI.Window {
-				index = 2,
-				notice = UI.TextArea {
-					x = 2, ex = -2, y = 2, ey = -2,
-					backgroundColor = colors.black,
-					value =
+			sortColumn = 'displayName',
+		},
+	},
+	confirmation = UI.Window {
+		index = 3,
+		validFor = 'Machine Processing',
+		notice = UI.TextArea {
+			x = 2, ex = -2, y = 2, ey = -2,
+			backgroundColor = colors.black,
+			value =
 [[Place items in slots according to the machine's inventory.
 
 Place the result in the last slot of the turtle.
 
 Example: Slot 1 is the top slot in a furnace.]],
-				},
-			},
 		},
 	},
-	notification = UI.Notification { },
 }
-
-local pages = machineLearnWizard.wizard.pages
-local machine
 
 function pages.machines.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
@@ -64,18 +56,18 @@ end
 function pages.machines:validate()
 	local selected = self.grid:getSelected()
 	if not selected then
-		machineLearnWizard.notification:error('No machines configured')
+		self:emit({ type = 'general_error', message = 'No machines configured' })
 		return
 	end
 
 	machine = device[selected.name]
 	if not machine then
-		machineLearnWizard.notification:error('Machine not found')
+		self:emit({type = 'general_error', message = 'Machine not found' })
 		return
 	end
 
 	if not machine.size then
-		machineLearnWizard.notification:error('Invalid machine')
+		self:emit({ type = 'general_error', message = 'Invalid machine' })
 		return
 	end
 
@@ -90,19 +82,21 @@ function pages.confirmation:validate()
 	inventory[16] = nil
 
 	if not result then
-		machineLearnWizard.notification:error('Result must be placed in last slot')
+		self:emit({ type = 'general_error', message = 'Result must be placed in last slot' })
 		return
 	end
 
 	if Util.empty(inventory) then
-		machineLearnWizard.notification:error('Ingredients not present')
+		self:emit({ type = 'general_error', message = 'Ingredients not present' })
 		return
 	end
 
 	for k in pairs(inventory) do
 		if k > slotCount then
-			machineLearnWizard.notification:error(
-				'Slot ' .. k .. ' is not valid\nThe valid slots are 1 - ' .. machine.size())
+			self:emit({
+				type = 'general_error',
+				message = 'Slot ' .. k .. ' is not valid\nThe valid slots are 1 - ' .. machine.size()
+			})
 			return
 		end
 	end
@@ -130,19 +124,4 @@ function pages.confirmation:validate()
 	return true
 end
 
-function machineLearnWizard:disable()
-	Milo:resumeCrafting({ key = 'gridInUse' })
-	UI.Page.disable(self)
-end
-
-function machineLearnWizard:eventHandler(event)
-	if event.type == 'cancel' then
-		turtle.emptyInventory()
-		UI:setPage('listing')
-	else
-		return UI.Page.eventHandler(self, event)
-	end
-	return true
-end
-
-context.learnTypes['Machine processing'] = machineLearnWizard
+UI:getPage('learnWizard').wizard:add(pages)

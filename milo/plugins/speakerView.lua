@@ -38,15 +38,15 @@ local wizardPage = UI.Window {
 }
 
 function wizardPage:setNode(node)
-  self.node = node
   self.form:setValues(node)
 end
 
+function wizardPage:saveNode(node)
+  Sound.setVolume(node.volume)
+end
+
 function wizardPage:validate()
-  if self.form:save() then
-    Sound.setVolume(self.node.volume)
-    return true
-  end
+  return self.form:save()
 end
 
 function wizardPage:isValidType(node)

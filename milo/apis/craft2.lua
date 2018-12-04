@@ -1,7 +1,6 @@
 local itemDB = require('itemDB')
 local Util   = require('util')
 
-local device = _G.device
 local fs     = _G.fs
 local turtle = _G.turtle
 
@@ -81,8 +80,15 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 		return
 	end
 
+	if not machine.adapter or not machine.adapter.online then
+		request.status = 'machine offline'
+		request.statusCode = Craft.STATUS_ERROR
+		return
+	end
+
+	local list = machine.adapter.list()
 	for k in pairs(recipe.ingredients) do
-		if machine.adapter.getItemMeta(k) then
+		if list[k] then
 			request.status = 'machine in use'
 			request.statusCode = Craft.STATUS_WARNING
 			return
