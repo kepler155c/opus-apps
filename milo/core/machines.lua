@@ -15,15 +15,15 @@ local nodeWizard
 
 local function saveConfig()
 	local t = { }
-	for k,v  in pairs(context.nodes) do
+	for k,v  in pairs(context.storage.nodes) do
 		t[k] = v.adapter
 		v.adapter = nil
 	end
 
-	Config.update('milo', context.nodes)
+	Config.update('milo', context.storage.nodes)
 
 	for k,v  in pairs(t) do
-		context.nodes[k].adapter = v
+		context.storage.nodes[k].adapter = v
 	end
 	context.storage:initStorage()
 end
@@ -42,7 +42,7 @@ local networkPage = UI.Page {
 	},
 	grid = UI.ScrollingGrid {
 		y = 2, ey = -3,
-		values = context.nodes,
+		values = context.storage.nodes,
 		columns = {
 			{                   key = 'suffix', 		width = 4, justify = 'right' },
 			{ heading = 'Name', key = 'displayName' },
@@ -106,7 +106,7 @@ end
 
 function networkPage:getList()
 	for _, v in pairs(device) do
-		if not context.nodes[v.name] then
+		if not context.storage.nodes[v.name] then
 			local node = {
 				name  = v.name,
 				mtype = 'ignore',
@@ -114,7 +114,7 @@ function networkPage:getList()
 			}
 			for _, page in pairs(nodeWizard.wizard.pages) do
 				if page.isValidType and page:isValidType(node) then
-					context.nodes[v.name] = node
+					context.storage.nodes[v.name] = node
 					break
 				end
 			end
@@ -154,7 +154,7 @@ function networkPage:disable()
 end
 
 function networkPage:applyFilter()
-	local t = Util.filter(context.nodes, function(v)
+	local t = Util.filter(context.storage.nodes, function(v)
 		return v.mtype ~= 'hidden'
 	end)
 
@@ -181,7 +181,7 @@ function networkPage:eventHandler(event)
 	elseif event.type == 'remove_node' then
 		local node = self.grid:getSelected()
 		if node then
-			context.nodes[node.name] = nil
+			context.storage.nodes[node.name] = nil
 			saveConfig()
 		end
 		self:applyFilter()
@@ -500,9 +500,9 @@ function nodeWizard:eventHandler(event)
 			return true
 		end)
 
-		Util.clear(context.nodes[self.node.name])
-		Util.merge(context.nodes[self.node.name], self.node)
-		context.nodes[self.node.name].adapter = adapter
+		Util.clear(context.storage.nodes[self.node.name])
+		Util.merge(context.storage.nodes[self.node.name], self.node)
+		context.storage.nodes[self.node.name].adapter = adapter
 
 		saveConfig()
 

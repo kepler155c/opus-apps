@@ -108,7 +108,6 @@ end
 local localName = modem.getNameLocal()
 
 local context = {
-  nodes = nodes,
   resources = Util.readTable(Milo.RESOURCE_FILE) or { },
 
   state = { },

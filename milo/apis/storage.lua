@@ -5,10 +5,11 @@ local itemDB  = require('itemDB')
 local sync    = require('sync').sync
 local Util    = require('util')
 
-local device = _G.device
-local os     = _G.os
+local device   = _G.device
+local os       = _G.os
+local parallel = _G.parallel
 
-local Storage = class()
+local Storage  = class()
 
 function Storage:init(nodes)
   local defaults = {
@@ -164,13 +165,13 @@ end
 
 -- provide a consolidated list of items
 function Storage:listItems(throttle)
-  if not self.dirty then
-    return self.cache
-  end
+  --sync(self, function()
+    if not self.dirty then
+      return self.cache
+    end
 
-  local cache = { }
-  sync(self, function()
-
+    local timer = Timer()
+    local cache = { }
     throttle = throttle or Util.throttle()
 
     local t = { }
@@ -183,12 +184,11 @@ function Storage:listItems(throttle)
       end
     end
 
-    _G._debug('STORAGE: refreshing ' .. #t .. ' inventories')
-    local timer = Timer()
-    parallel.waitForAll(table.unpack(t))
-    _G._debug('STORAGE: refresh in ' .. timer())
+    if #t > 0 then
+      _G._debug('STORAGE: refreshing ' .. #t .. ' inventories')
+      parallel.waitForAll(table.unpack(t))
+    end
 
-    local timer = Timer()
     for _, adapter in self:onlineAdapters() do
       if adapter.dirty then
         _G._debug('STORAGE: refreshing ' .. adapter.name)
@@ -211,11 +211,11 @@ function Storage:listItems(throttle)
       end
     end
     itemDB:flush()
-    _G._debug('STORAGE: cached in ' .. timer())
+    _G._debug('STORAGE: refresh in ' .. timer())
 
     self.dirty = false
     self.cache = cache
-  end)
+  --end)
   return self.cache
 end
 
