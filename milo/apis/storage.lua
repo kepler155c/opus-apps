@@ -2,6 +2,7 @@ local Adapter = require('miniAdapter')
 local class   = require('class')
 local Event   = require('event')
 local itemDB  = require('itemDB')
+local sync    = require('sync').sync
 local Util    = require('util')
 
 local device = _G.device
@@ -168,35 +169,54 @@ function Storage:listItems(throttle)
   end
 
   local cache = { }
-  throttle = throttle or Util.throttle()
+  sync(self, function()
 
-  local timer = Timer()
-  for _, adapter in self:onlineAdapters() do
-    if adapter.dirty then
-      _G._debug('STORAGE: refreshing ' .. adapter.name)
-      adapter:listItems(throttle)
-      adapter.dirty = false
-    end
-    local rcache = adapter.cache or { }
-    for key,v in pairs(rcache) do
-      local entry = cache[key]
-      if not entry then
-        entry = Util.shallowCopy(v)
-        entry.count = v.count
-        entry.key = key
-        cache[key] = entry
-      else
-        entry.count = entry.count + v.count
+    throttle = throttle or Util.throttle()
+
+    local t = { }
+    for _, adapter in self:onlineAdapters() do
+      if adapter.dirty then
+        table.insert(t, function()
+          adapter:listItems(throttle)
+          adapter.dirty = false
+        end)
       end
-
-      throttle()
     end
-  end
-_G._debug('STORAGE: refresh in ' .. timer())
 
-  self.dirty = false
-  self.cache = cache
-  return cache
+    _G._debug('STORAGE: refreshing ' .. #t .. ' inventories')
+    local timer = Timer()
+    parallel.waitForAll(table.unpack(t))
+    _G._debug('STORAGE: refresh in ' .. timer())
+
+    local timer = Timer()
+    for _, adapter in self:onlineAdapters() do
+      if adapter.dirty then
+        _G._debug('STORAGE: refreshing ' .. adapter.name)
+        --adapter:listItems(throttle)
+        --adapter.dirty = false
+      end
+      local rcache = adapter.cache or { }
+      for key,v in pairs(rcache) do
+        local entry = cache[key]
+        if not entry then
+          entry = Util.shallowCopy(v)
+          entry.count = v.count
+          entry.key = key
+          cache[key] = entry
+        else
+          entry.count = entry.count + v.count
+        end
+
+        throttle()
+      end
+    end
+    itemDB:flush()
+    _G._debug('STORAGE: cached in ' .. timer())
+
+    self.dirty = false
+    self.cache = cache
+  end)
+  return self.cache
 end
 
 function Storage:updateCache(adapter, item, count)

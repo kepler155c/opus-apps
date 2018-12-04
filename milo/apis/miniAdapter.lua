@@ -49,7 +49,6 @@ function Adapter:listItems(throttle)
       throttle()
     end
   end
-  itemDB:flush()
 
   self.cache = cache
 end
