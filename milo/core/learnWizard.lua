@@ -18,6 +18,9 @@ local learnPage = UI.Page {
           },
           sortColumn = 'name',
         },
+        accelerators = {
+          grid_select = 'nextView',
+        },
       },
     },
   },
