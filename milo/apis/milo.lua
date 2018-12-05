@@ -1,6 +1,7 @@
 local Config = require('config')
 local Craft  = require('craft2')
 local itemDB = require('itemDB')
+local Sound  = require('sound')
 local Util   = require('util')
 
 local os     = _G.os
@@ -228,6 +229,7 @@ end
 
 function Milo:eject(item, count)
 	count = self.context.storage:export(self.context.turtleInventory, nil, count, item)
+	Sound.play('ui.button.click')
 	turtle.emptyInventory()
 	return count
 end

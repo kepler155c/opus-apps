@@ -157,5 +157,10 @@ Event.on('turtle_inventory', function()
   print('idle')
 end)
 
+Event.onInterval(5, function()
+  -- for some reason, it keeps stalling ...
+  os.queueEvent('turtle_inventory')
+end)
+
 os.queueEvent('turtle_inventory')
 Event.pullEvents()

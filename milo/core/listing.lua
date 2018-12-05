@@ -178,7 +178,6 @@ function page:eject(amount)
         item.count = request.current - request.count
         if request.count + request.craft > 0 then
           self.grid:draw()
-          Sound.play('ui.button.click')
           return true
         end
       end
