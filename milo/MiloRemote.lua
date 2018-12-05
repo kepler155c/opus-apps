@@ -21,8 +21,8 @@ local config = Config.load('miloRemote', { displayMode = 0 })
 
 local socket
 local depositMode = {
-  [ true ]  = { text = '\25',  textColor = colors.black, help = 'Deposit enabled' },
-  [ false ] = { text = '\215', textColor = colors.red,  help = 'Deposit disabled' },
+  [ true  ] = { text = '\25',  textColor = colors.black, help = 'Deposit enabled' },
+  [ false ] = { text = '\215', textColor = colors.red,   help = 'Deposit disabled' },
 }
 
 local displayModes = {
@@ -34,12 +34,6 @@ local page = UI.Page {
   menuBar = UI.MenuBar {
     y = 1, height = 1,
     buttons = {
-      {
-        name = 'depositToggle',
-        text = '\215',
-        x = -15,
-        event = 'toggle_deposit'
-      },
       {
         text = 'Refresh',
         x = -12,
@@ -78,7 +72,7 @@ local page = UI.Page {
   statusBar = UI.Window {
     y = -1,
     filter = UI.TextEntry {
-      x = 1, ex = -9,
+      x = 1, ex = -12,
       limit = 50,
       shadowText = 'filter',
       backgroundColor = colors.cyan,
@@ -88,7 +82,7 @@ local page = UI.Page {
       },
     },
     amount = UI.TextEntry {
-      x = -8, ex = -4,
+      x = -11, ex = -7,
       limit = 3,
       shadowText = '1',
       shadowTextColor = colors.gray,
@@ -98,6 +92,11 @@ local page = UI.Page {
         [ 'enter' ] = 'eject_specified',
       },
       help = 'Request amount',
+    },
+    depositToggle = UI.Button {
+      x = -6,
+      event = 'toggle_deposit',
+      text = '\215',
     },
     display = UI.Button {
       x = -3,
@@ -351,8 +350,8 @@ function page:eventHandler(event)
 
   elseif event.type == 'toggle_deposit' then
     config.deposit = not config.deposit
-    Util.merge(self.menuBar.depositToggle, depositMode[config.deposit])
-    self.menuBar:draw()
+    Util.merge(self.statusBar.depositToggle, depositMode[config.deposit])
+    self.statusBar:draw()
     self:setStatus(depositMode[config.deposit].help)
     Config.update('miloRemote', config)
 
@@ -445,7 +444,7 @@ end
 
 function page:enable()
   self:setFocus(self.statusBar.filter)
-  Util.merge(self.menuBar.depositToggle, depositMode[config.deposit])
+  Util.merge(self.statusBar.depositToggle, depositMode[config.deposit])
   UI.Page.enable(self)
   if not config.server then
     self.setup:show()

@@ -5,6 +5,7 @@ local Util   = require('util')
 
 local colors = _G.colors
 local device = _G.device
+local turtle = _G.turtle
 
 local context = Milo:getContext()
 local machine
@@ -114,13 +115,14 @@ function pages.confirmation:validate()
 	end
 
 	Milo:saveMachineRecipe(recipe, result, machine.name)
+	turtle.emptyInventory()
 
 	local displayName = itemDB:getName(result)
-
 	UI:setPage('listing', {
 		filter = displayName,
 		message = 'Learned: ' .. displayName,
 	})
+
 	return true
 end
 
