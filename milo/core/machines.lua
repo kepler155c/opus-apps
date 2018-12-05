@@ -1,4 +1,3 @@
-local Config = require('config')
 local Event  = require('event')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
@@ -12,21 +11,6 @@ local turtle = _G.turtle
 local context = Milo:getContext()
 
 local nodeWizard
-
-local function saveConfig()
-	local t = { }
-	for k,v  in pairs(context.storage.nodes) do
-		t[k] = v.adapter
-		v.adapter = nil
-	end
-
-	Config.update('milo', context.storage.nodes)
-
-	for k,v  in pairs(t) do
-		context.storage.nodes[k].adapter = v
-	end
-	context.storage:initStorage()
-end
 
 local networkPage = UI.Page {
 	titleBar = UI.TitleBar {
@@ -173,7 +157,7 @@ end
 function networkPage:eventHandler(event)
 	if event.type == 'grid_select' then
 		if not device[event.selected.name] then
-			self.notification:error('Unable to edit while disconnected')
+			UI:setPage('machineMover', event.selected)
 		else
 			UI:setPage('nodeWizard', event.selected)
 		end
@@ -182,7 +166,7 @@ function networkPage:eventHandler(event)
 		local node = self.grid:getSelected()
 		if node then
 			context.storage.nodes[node.name] = nil
-			saveConfig()
+			context.storage:saveConfiguration()
 		end
 		self:applyFilter()
 		self.grid:draw()
@@ -511,7 +495,7 @@ function nodeWizard:eventHandler(event)
 		Util.merge(context.storage.nodes[self.node.name], self.node)
 		context.storage.nodes[self.node.name].adapter = adapter
 
-		saveConfig()
+		context.storage:saveConfiguration()
 
 		UI:setPreviousPage()
 

@@ -1,5 +1,6 @@
 local Adapter = require('miniAdapter')
 local class   = require('class')
+local Config = require('config')
 local Event   = require('event')
 local itemDB  = require('itemDB')
 local sync    = require('sync').sync
@@ -82,6 +83,22 @@ function Storage:initStorage()
     os.queueEvent(self.storageOnline and 'storage_online' or 'storage_offline', online)
     _G._debug('Storage: %s', self.storageOnline and 'online' or 'offline')
   end
+end
+
+function Storage:saveConfiguration()
+  local t = { }
+  for k,v  in pairs(self.nodes) do
+    t[k] = v.adapter
+    v.adapter = nil
+  end
+
+  -- TODO: Should be named 'storage'
+  Config.update('milo', self.nodes)
+
+  for k,v  in pairs(t) do
+    self.nodes[k].adapter = v
+  end
+  self:initStorage()
 end
 
 function Storage:getSingleNode(mtype)
