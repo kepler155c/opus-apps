@@ -105,7 +105,7 @@ local function client(socket)
 				if node then
 					local slot = node.adapter.getItemMeta(slotNo)
 					if slot then
-						if context.storage:import(node, slotNo, slot.count, slot) then
+						if context.storage:import(node, slotNo, slot.count, slot) > 0 then
 							local item = Milo:getItem(Milo:listItems(), slot)
 							if item then
 								socket:write({

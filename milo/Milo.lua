@@ -85,7 +85,16 @@ Turtle must be connected to:
   error(msg)
 end
 
-local modem = Peripheral.get('wired_modem')
+local modem
+for _,v in pairs(device) do
+  if v.type == 'wired_modem' then
+    if modem then
+      Syntax('Only 1 wired modem can be connected')
+    end
+    modem = v
+  end
+end
+
 if not modem or not modem.getNameLocal then
   Syntax('Wired modem missing')
 end
