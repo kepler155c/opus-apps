@@ -329,7 +329,6 @@ function page.grid:eventHandler(event)
 end
 
 function page:transfer(item, count, msg)
-  --Sound.play('ui.button.click', .3)
   self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
 end
 

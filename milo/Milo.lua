@@ -1,23 +1,17 @@
 --[[
-  Provides: autocrafting, resource limits, on-demand crafting, storage stocker.
-
-  Using a turtle allows for crafting of items eliminating the need for AE/RS
-  molecular assemblers / crafters.
+  Provides: autocrafting, resource limits, on-demand crafting.
 
   Turtle crafting:
     1. The turtle must have a crafting table equipped.
     2. Equip the turtle with an introspection module.
 ]]--
 
-
--- TODO: fix which is primary wired modem
-
 _G.requireInjector(_ENV)
 
 local Config     = require('config')
 local Event      = require('event')
 local Milo       = require('milo')
-local Peripheral = require('peripheral')
+local Sound      = require('sound')
 local Storage    = require('storage')
 local UI         = require('ui')
 local Util       = require('util')
@@ -145,9 +139,9 @@ context.storage.turtleInventory = context.turtleInventory
 
 local function loadDirectory(dir)
   for _, file in pairs(fs.list(dir)) do
-_debug('loading: ' .. file)
     local s, m = Util.run(_ENV, fs.combine(dir, file))
     if not s and m then
+      _G.printError('Error loading: ' .. file)
       error(m or 'Unknown error')
     end
   end
@@ -169,6 +163,7 @@ end
 Milo:clearGrid()
 
 UI:setPage(UI:getPage('listing'))
+Sound.play('ui.toast.challenge_complete')
 
 local processing
 

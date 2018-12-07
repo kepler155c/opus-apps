@@ -139,6 +139,7 @@ local function client(socket)
 						nil,
 						request.requested,
 						data.item)
+
 					local item = Milo:listItems()[request.key]
 					socket:write({
 						type = 'transfer',
