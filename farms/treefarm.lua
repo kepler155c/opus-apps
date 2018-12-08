@@ -6,7 +6,7 @@ _G.requireInjector()
     Area around turtle must be flat and can only be dirt or grass
       (10 blocks in each direction from turtle)
     Turtle must have: crafting table, chest
-    Turtle must have a pick equipped on the RIGHT side
+    Turtle must have a pick equipped on the LEFT side
 
   Optional:
     Add additional sapling types that can grow with a single sapling
