@@ -1,0 +1,6 @@
+{
+	title = 'Programs for the neural interface',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/neural',
+	description = [[ WIP ]],
+	licence = 'MIT',
+}

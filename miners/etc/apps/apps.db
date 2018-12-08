@@ -1,0 +1,11 @@
+{
+	[ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
+		title = "Miner",
+		category = "Apps",
+		icon = "    \0315\\\030 \031  \
+ \0304\031f _ \030 \031c/\0315\\\
+ \0304   ",
+		run = "simpleMiner.lua",
+		requires = 'turtle',
+	},
+}

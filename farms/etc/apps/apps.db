@@ -1,0 +1,23 @@
+{
+	[ "8d1b0a73bedc0dc492377c2f6ab880940b97ec6e" ] = {
+		title = "Treefarm",
+		icon = "\030 \031f \0305 \030    \030d \030  \
+\0305\031f \030d  \030  \030d \0305 \030d \
+\030 \031f \030c \030  \0304 \030  \030c \030  ",
+		category = "Farms",
+		run = "treefarm.lua",
+		requires = "turtle",
+	},
+	[ "ff892e4e9538168021ccf2c7add8a46bf97fb180" ] = {
+		title = "Rancher",
+		category = "Farms",
+		run = "rancher.lua",
+		requires = "turtle",
+	},
+	[ "e5c4e470299e30c9eea1e25de228c14db8c1fd40" ] = {
+		title = "Farmer",
+		category = "Farms",
+		run = "farmer.lua",
+		requires = "turtle",
+	},
+}

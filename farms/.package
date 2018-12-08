@@ -1,0 +1,13 @@
+{
+	required = {
+		'core',
+	},
+	title = 'Programs for farming resources',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/farms',
+	description = [[Includes: 
+ * Tree Farm
+ * Cow/Sheep Rancher
+ * Farmer
+]],
+	licence = 'MIT',
+}
