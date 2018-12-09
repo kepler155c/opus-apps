@@ -60,7 +60,7 @@ end
 
 function page:applyFilter()
   local t = Util.filter(context.storage.nodes, function(v)
-    return v.mtype ~= 'hidden' and device[v.name]
+    return v.mtype == 'ignore' and device[v.name]
   end)
 
   self.grid:setValues(t)

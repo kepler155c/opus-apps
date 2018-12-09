@@ -91,7 +91,7 @@ local page = UI.Page {
     buttons = {
       --{ text = 'Mine',   event = 'mine' },
       { text = 'Ignore', event = 'ignore' },
-      { text = 'Ignore All', event = 'ignore_all' },
+      { text = 'Abort',  event = 'abort', x = -8 },
     },
   },
   grid = UI.Grid {
@@ -121,17 +121,17 @@ function page:eventHandler(event)
       dictionary:write()
 
     elseif event.type == 'ignore' then
-      dictionary:ignore(t.name, t.damage)
-      dictionary:write()
-      self.grid:draw()
-
-    elseif event.type == 'ignore_all' then
       dictionary:ignore(t.name)
       dictionary:write()
       self.grid:draw()
+
     end
   end
-  if event.type == 'quit' then
+
+  if event.type == 'abort' then
+    turtle.abort(true)
+
+  elseif event.type == 'quit' then
     turtle.abort(true)
   end
   UI.Page.eventHandler(self, event)
@@ -333,6 +333,7 @@ local function scan()
   equip('left', 'plethora:module')
   local blocks = peripheral.call('left', 'scan')
   equip('left', 'minecraft:diamond_pickaxe')
+  local throttle = Util.throttle()
 
   local bedrock = -256
   local counts = { }
@@ -344,6 +345,7 @@ local function scan()
     b.x = b.x + turtle.point.x
     b.y = b.y + turtle.point.y
     b.z = b.z + turtle.point.z
+    throttle()
 
     if b.name == 'minecraft:bedrock' then
       if b.y > bedrock then
@@ -353,17 +355,15 @@ local function scan()
   end
 
   Util.filterInplace(blocks, function(b)
-    if b.y >= 0 or
-       (b.action == 'liquid_fuel' and b.y <= bedrock) then
-      return false
-
-    elseif b.action == 'liquid_fuel' and b.damage > 0 then
-      return false
-
-    elseif b.y >= bedrock then
+    throttle()
+    if b.y >= bedrock then
       b.action = dictionary:get(b.name, b.metadata) or 'mine'
 
       if ignores[b.action] then
+        return false
+      end
+
+      if b.action == 'liquid_fuel' and (b.y <= bedrock or b.metadata > 0) then
         return false
       end
 
@@ -411,6 +411,8 @@ local function scan()
     -- Get the action again in case the user has ignored via UI
     b.action = dictionary:get(b.name, b.metadata) or 'mine'
     if b.action == 'suck' or b.action == 'mine' then
+      status('mining: ' .. table.concat({ b.x, b.y, b.z }, ', '))
+
       if b.action == 'suck' then
         local pt = turtle.moveAgainst(b)
         collectDrops(turtle.getAction(pt.direction).suck)
@@ -609,6 +611,7 @@ Event.addRoutine(function()
   end
 
   status(success and 'finished' or turtle.isAborted() and 'aborting' or 'error')
+  turtle.gotoY(0)
   if turtle._goto({ x = 0, y = 0, z = 0 }) then
     unload()
   end
