@@ -31,7 +31,7 @@ local options = {
   chunks      = { arg = 'c', type = 'number', value = -1,
                  desc = 'Number of chunks to mine' },
   setTrash    = { arg = 's', type = 'flag',   value = false,
-                 desc = 'Set trash items' },
+                 desc = 'Add ignore items' },
   help        = { arg = 'h', type = 'flag',   value = false,
                  desc = 'Displays the options' },
 }
