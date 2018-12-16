@@ -62,7 +62,7 @@ function Storage:init()
   Util.merge(self, defaults)
   self.nodes = Config.load('storage', { })
 
-  if not self.nodes then -- TODO: temporary
+  if Util.empty(self.nodes) then -- TODO: temporary
     loadOld(self)
   end
 
