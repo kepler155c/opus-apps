@@ -1,6 +1,6 @@
 local Adapter = require('miniAdapter')
 local class   = require('class')
-local Config = require('config')
+local Config  = require('config')
 local Event   = require('event')
 local itemDB  = require('itemDB')
 local sync    = require('sync').sync
@@ -12,14 +12,59 @@ local parallel = _G.parallel
 
 local Storage  = class()
 
-function Storage:init(nodes)
+local function loadOld(storage)
+  storage.nodes = Config.load('milo', { })
+
+  -- TODO: remove - temporary
+  if storage.nodes.remoteDefaults then
+    storage.nodes.nodes = storage.nodes.remoteDefaults
+    storage.nodes.remoteDefaults = nil
+  end
+
+  -- TODO: remove - temporary
+  if storage.nodes.nodes then
+    local categories = {
+      input = 'custom',
+      trashcan = 'custom',
+      machine = 'machine',
+      brewingStand = 'machine',
+      activity = 'display',
+      jobs = 'display',
+      ignore = 'ignore',
+      hidden = 'ignore',
+      manipulator = 'custom',
+      storage = 'storage',
+    }
+    for _, node in pairs(storage.nodes.nodes) do
+      if node.lock and type(node.lock) == 'string' then
+        node.lock = {
+          [ node.lock ] = true,
+        }
+      end
+      if not node.category then
+        node.category = categories[node.mtype]
+        if not node.category then
+          Util.print(node)
+          error('invalid node')
+        end
+      end
+    end
+    storage.nodes = storage.nodes.nodes
+  end
+end
+
+function Storage:init()
   local defaults = {
-    nodes = nodes or { },
     dirty = true,
     activity = { },
     storageOnline = true,
   }
   Util.merge(self, defaults)
+  self.nodes = Config.load('storage', { })
+
+  if not self.nodes then -- TODO: temporary
+    loadOld(self)
+  end
 
   Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
 _G._debug('%s: %s', e, tostring(dev))
@@ -93,7 +138,7 @@ function Storage:saveConfiguration()
   end
 
   -- TODO: Should be named 'storage'
-  Config.update('milo', self.nodes)
+  Config.update('storage', self.nodes)
 
   for k,v  in pairs(t) do
     self.nodes[k].adapter = v

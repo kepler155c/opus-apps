@@ -15,6 +15,10 @@ if not turtle.select('minecraft:bucket') then
 	error('bucket required')
 end
 
+if turtle.getFuelLevel() == 0 then
+	error('Need some fuel to begin')
+end
+
 local s, m = turtle.run(function()
 	turtle.setMovementStrategy('goto')
 

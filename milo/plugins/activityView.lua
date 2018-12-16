@@ -196,7 +196,7 @@ end)
 
 Event.on('monitor_touch', function(_, side)
   local function filter(node)
-    return node.adapter.name == side and pages[node.name]
+    return node.adapter.side == side and pages[node.name]
   end
   for node in context.storage:filterActive('activity', filter) do
     pages[node.name]:reset()

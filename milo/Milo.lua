@@ -8,7 +8,6 @@
 
 _G.requireInjector(_ENV)
 
-local Config     = require('config')
 local Event      = require('event')
 local Milo       = require('milo')
 local Sound      = require('sound')
@@ -27,49 +26,10 @@ if multishell then
   multishell.setTitle(multishell.getCurrent(), 'Milo')
 end
 
-local nodes = Config.load('milo', { })
-
--- TODO: remove - temporary
-if nodes.remoteDefaults then
-  nodes.nodes = nodes.remoteDefaults
-  nodes.remoteDefaults = nil
-end
-
--- TODO: remove - temporary
-if nodes.nodes then
-  local categories = {
-    input = 'custom',
-    trashcan = 'custom',
-    machine = 'machine',
-    brewingStand = 'machine',
-    activity = 'display',
-    jobs = 'display',
-    ignore = 'ignore',
-    hidden = 'ignore',
-    manipulator = 'custom',
-    storage = 'storage',
-  }
-  for _, node in pairs(nodes.nodes) do
-    if node.lock and type(node.lock) == 'string' then
-      node.lock = {
-        [ node.lock ] = true,
-      }
-    end
-    if not node.category then
-      node.category = categories[node.mtype]
-      if not node.category then
-        Util.print(node)
-        error('invalid node')
-      end
-    end
-  end
-  nodes = nodes.nodes
-end
-
 local function Syntax(msg)
   print([[
 Turtle must be equipped with:
-  * Introspection module
+  * Introspection module (unbound)
   * Workbench
 
 Turtle must be connected to:
@@ -118,7 +78,7 @@ local context = {
   tasks = { },
   queue = { },
 
-  storage = Storage(nodes),
+  storage = Storage(),
   turtleInventory = {
     name = localName,
     mtype = 'hidden',
@@ -126,8 +86,8 @@ local context = {
   }
 }
 
-nodes[localName] = context.turtleInventory
-nodes[localName].adapter.name = localName
+context.storage.nodes[localName] = context.turtleInventory
+context.storage.nodes[localName].adapter.name = localName
 
 _G._p = context --debug
 
