@@ -49,17 +49,17 @@ function page:eventHandler(event)
 	UI.Page.eventHandler(self, event)
 end
 
-Event.onInterval(1, function()
-	page.grid:setValues(sensor.sense())
+Event.onInterval(.5, function()
+	local entities = sensor.sense()
+	local meta = ni.getMetaOwner()
+	Util.filterInplace(entities, function(e) return e.id ~= meta.id end)
+
+	canvas:clear()
+	Project:drawPoints(meta, entities, 'X', 0xFFDF50AA)
+
+	page.grid:setValues(entities)
 	page.grid:draw()
 	page:sync()
-	local meta = ni.getMetaOwner()
-	canvas:clear()
-	for _, b in pairs(page.grid.values) do
-		if b.id ~= meta.id then
-			Project:draw(meta, b, 'X', 0xFFDF50AA)
-		end
-	end
 end)
 
 UI:setPage(page)

@@ -98,9 +98,9 @@ local function dropOff()
 	inv = turtle.getSummedInventory()
 	for _, slot in pairs(inv) do
 		if slot.count >= 16 or turtle.getSlot(8).count > 0 then
-			local chests = findChests()
-			for c in Point.iterateClosest(turtle.point, chests) do
-				if slot.name ~= 'plethora:module' then
+			if slot.name ~= 'plethora:module' then
+				local chests = findChests()
+				for c in Point.iterateClosest(turtle.point, chests) do
 					if turtle.dropDownAt(c, slot.name) then
 						chest = c
 						break
