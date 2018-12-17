@@ -85,7 +85,7 @@ function Project:draw(meta, b, text, color)
       x = math.min(math.max(x, 1), self.cx - 10 * getCharSize(d))
       y = math.min(math.max(self.cy - y, 1), self.cy - 10 * getCharSize(d))
 
-      self.canvas.addDot({ x, y }, color, 4)
+      self.canvas.addDot({ x, y }, color, 32 / d)
     end
   end
 end

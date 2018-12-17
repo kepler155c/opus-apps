@@ -1,5 +1,3 @@
---_G.requireInjector(_ENV)
-
 local Event   = require('event')
 local Project = require('neural.project')
 local UI      = require('ui')
@@ -35,6 +33,7 @@ local page = UI.Page {
 		q = 'quit',
 	},
 }
+
 function page.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
 	row.x = math.floor(row.x)
@@ -65,3 +64,5 @@ end)
 
 UI:setPage(page)
 UI:pullEvents()
+
+canvas:clear()
