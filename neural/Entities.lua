@@ -22,10 +22,12 @@ local config = Config.load('Entities', { })
 local page = UI.Page {
 	menuBar = UI.MenuBar {
 		buttons = {
-			{ text = 'Project', event = 'project' },
+			{ text = 'Projector', event = 'project' },
+			{ text = 'Totals',    event = 'totals'  },
 		},
 	},
 	grid = UI.ScrollingGrid {
+		y = 2,
 		columns = {
 			{ heading = 'Name', key = 'displayName' },
 			{ heading = '  X',    key = 'x', width = 3, justify = 'right' },
@@ -51,6 +53,11 @@ end
 function page:eventHandler(event)
 	if event.type == 'quit' then
 		Event.exitPullEvents()
+
+	elseif event.type == 'project' then
+		config.totals = not config.totals
+		Config.update('Entities', config)
+
 	elseif event.type == 'project' then
 		config.projecting = not config.projecting
 		if config.projecting then
@@ -60,6 +67,7 @@ function page:eventHandler(event)
 		end
 		Config.update('Entities', config)
 	end
+
 	UI.Page.eventHandler(self, event)
 end
 
@@ -71,6 +79,18 @@ Event.onInterval(.5, function()
 		local meta = ni.getMetaOwner()
 		Project.canvas:clear()
 		Project:drawPoints(meta, entities, 'X', 0xFFDF50AA)
+	end
+
+	if config.totals then
+		local t = { }
+		for _,v in pairs(entities) do
+			if t[v.displayName] then
+				t[v.displayName].z = t[v.displayName].z + 1
+			else
+				t[v.displayName] = { displayName = v.displayName, z = 1 }
+			end
+		end
+		entities = t
 	end
 
 	page.grid:setValues(entities)
