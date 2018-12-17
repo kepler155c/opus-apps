@@ -13,6 +13,8 @@ if not sensor or not sensor.sense then
 	error('Plethora sensor must be equipped')
 end
 
+local id = sensor.getID()
+
 UI:configure('Entities', ...)
 
 local config = Config.load('Entities', { })
@@ -63,10 +65,10 @@ end
 
 Event.onInterval(.5, function()
 	local entities = sensor.sense()
-	local meta = ni.getMetaOwner()
-	Util.filterInplace(entities, function(e) return e.id ~= meta.id end)
+	Util.filterInplace(entities, function(e) return e.id ~= id end)
 
 	if config.projecting then
+		local meta = ni.getMetaOwner()
 		Project.canvas:clear()
 		Project:drawPoints(meta, entities, 'X', 0xFFDF50AA)
 	end
