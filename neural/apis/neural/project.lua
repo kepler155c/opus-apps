@@ -52,7 +52,7 @@ function Project:isOnScreen(x, y, d) -- determines if something is visible
   return (x >= 1 and x - getCharSize(d) < self.cx) and (y >= 1 and y - getCharSize(d) < self.cy)
 end
 
-function Project:draw(meta, b, text, color)
+function Project:drawPoints(meta, pts, text, color)
   local yaw = math.rad(meta.yaw)
   local pitch = math.rad(meta.pitch)
 
@@ -72,20 +72,22 @@ function Project:draw(meta, b, text, color)
     return newx,newy,newz
   end
 
-  local x,y,z = rotate(b.x - meta.x, -b.y + meta.y, b.z - meta.z)
-  local d = math.sqrt(x * x + y * y + z * z)
+  for _, b in pairs(pts) do
+    local x,y,z = rotate(b.x - meta.x, -b.y + meta.y, b.z - meta.z)
+    local d = math.sqrt(x * x + y * y + z * z)
 
-  if hintToBehind and z < 0 then z = 0.001 end
+    if hintToBehind and z < 0 then z = 0.001 end
 
-  if z >= 0 or hintToBehind then -- render only if point is visible OR hintToBehind is enabled
-    x,y = toPerspective(x, y, -z)
-    x,y = self:ndcToSpc(x, y)
+    if z >= 0 or hintToBehind then -- render only if point is visible OR hintToBehind is enabled
+      x,y = toPerspective(x, y, -z)
+      x,y = self:ndcToSpc(x, y)
 
-    if hintToBehind or self:isOnScreen(x, y, d) then
-      x = math.min(math.max(x, 1), self.cx - 10 * getCharSize(d))
-      y = math.min(math.max(self.cy - y, 1), self.cy - 10 * getCharSize(d))
+      if hintToBehind or self:isOnScreen(x, y, d) then
+        x = math.min(math.max(x, 1), self.cx - 10 * getCharSize(d))
+        y = math.min(math.max(self.cy - y, 1), self.cy - 10 * getCharSize(d))
 
-      self.canvas.addDot({ x, y }, color, 32 / d)
+        self.canvas.addDot({ x, y }, color, 32 / d)
+      end
     end
   end
 end
