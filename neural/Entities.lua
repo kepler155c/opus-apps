@@ -44,8 +44,8 @@ local page = UI.Page {
 
 function page.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
-	row.x = math.floor(row.x)
-	row.y = math.floor(row.y)
+	row.x = row.x and math.floor(row.x) or ''
+	row.y = row.y and math.floor(row.y) or ''
 	row.z = math.floor(row.z)
 	return row
 end
@@ -54,7 +54,7 @@ function page:eventHandler(event)
 	if event.type == 'quit' then
 		Event.exitPullEvents()
 
-	elseif event.type == 'project' then
+	elseif event.type == 'totals' then
 		config.totals = not config.totals
 		Config.update('Entities', config)
 

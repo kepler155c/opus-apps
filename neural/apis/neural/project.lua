@@ -52,7 +52,7 @@ function Project:isOnScreen(x, y, d) -- determines if something is visible
   return (x >= 1 and x - getCharSize(d) < self.cx) and (y >= 1 and y - getCharSize(d) < self.cy)
 end
 
-function Project:drawPoints(meta, pts, text, color)
+function Project:drawPoints(meta, pts, isBlock, color)
   local yaw = math.rad(meta.yaw)
   local pitch = math.rad(meta.pitch)
 
@@ -73,7 +73,14 @@ function Project:drawPoints(meta, pts, text, color)
   end
 
   for _, b in pairs(pts) do
-    local x,y,z = rotate(b.x - meta.x, -b.y + meta.y, b.z - meta.z)
+
+    if isBlock then
+      --b.x = b.x - .5
+      --b.y = b.y - 1
+      --b.z = b.z - .5
+    end
+
+    local x, y, z = rotate(b.x - meta.x, -b.y + meta.y, b.z - meta.z)
     local d = math.sqrt(x * x + y * y + z * z)
 
     if hintToBehind and z < 0 then z = 0.001 end
