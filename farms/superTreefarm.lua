@@ -35,7 +35,8 @@ local FUEL_DIRE = FUEL_BASE + 10
 local FUEL_GOOD = FUEL_BASE + 2000
 
 local MIN_CHARCOAL = 24
-local MAX_SAPLINGS = 32
+local MIN_SAPLINGS = 32
+local MAX_SAPLINGS = 64
 
 local GRID = {
   TL = { x =  8, y = 0, z = -7 },
@@ -70,6 +71,7 @@ local OAK_LOG        = 'minecraft:log:0'
 local OAK_PLANK      = 'minecraft:planks:0'
 local SAPLING        = 'minecraft:sapling:0'
 local SCANNER        = 'plethora:module:2'
+local SENSOR         = 'plethora:module:3'
 local STICK          = 'minecraft:stick:0'
 local STONE          = 'minecraft:stone:0'
 local TORCH          = 'minecraft:torch:0'
@@ -328,10 +330,12 @@ local function createFurnace()
       return true -- try again later
     end
     print('Adding a furnace')
-    getCobblestone(8)
+    if not turtle.has(FURNACE) then
+      getCobblestone(8)
+    end
 
     if turtle.has(FURNACE) or craftItem(FURNACE) then
-      -- turtle.drop(COBBLESTONE)
+      turtle.drop(COBBLESTONE)
       local furnacePt = { x = GRID.BL.x + 2, y = 1, z = GRID.BL.z + 2 }
       turtle.placeAt(furnacePt, FURNACE)
       setState('furnace', furnacePt)
@@ -380,8 +384,8 @@ local function dropOffItems()
     if state.chest and
        slots[CHARCOAL] and
        slots[CHARCOAL].count >= MIN_CHARCOAL and
-       (turtle.getItemCount(LOG) > 0 or
-        turtle.getItemCount(LOG2) > 0) then
+       (turtle.getItemCount(LOG) > 16 or
+        turtle.getItemCount(LOG2) > 16) then
 
       print('Storing logs')
       turtle.pathfind(Point.above(state.chest))
@@ -461,8 +465,28 @@ local function randomSapling()
   return sapling
 end
 
+local function sense(pt, filter, blocks)
+  turtle.pathfind(pt, { blocks = Util.shallowCopy(state.trees) })
+
+  equip('left', 'plethora:sensor', SENSOR)
+  local raw = peripheral.call('left', 'sense')
+  equip('left', PICKAXE)
+
+  Util.reduce(raw, function(acc, b)
+    Point.rotate(b, state.home.heading)
+    b.x = Util.round(b.x) + turtle.point.x
+    b.y = Util.round(b.y) + turtle.point.y
+    b.z = Util.round(b.z) + turtle.point.z
+    if filter(b) then
+      table.insert(acc, b)
+    end
+  end, blocks)
+
+  return blocks
+end
+
 local function scan(pt, filter)
-  turtle.pathfind(pt)
+  turtle.pathfind(pt, { blocks = Util.shallowCopy(state.trees) })
 
   equip('left', 'plethora:scanner', SCANNER)
   local raw = peripheral.call('left', 'scan')
@@ -496,8 +520,10 @@ local function plantTrees()
   end, { })
 
   Point.eachClosest(turtle.point, plant, function(pt)
-    turtle.digAt(pt)
-    turtle.placeAt(pt, randomSapling())
+    if turtle.moveAgainst(pt, { blocks = Util.shallowCopy(state.trees) }) then
+      turtle.digAt(pt)
+      turtle.placeAt(pt, randomSapling())
+    end
     turtle.select(1)
   end)
 end
@@ -519,38 +545,63 @@ local function fellTrees(blocks)
 
   desperateRefuel(FUEL_DIRE)
 
-  turtle.setPolicy("digAttack")
-
+  if turtle.point.y == 0 then
+    turtle.up()
+  end
   for pt in Point.iterateClosest(turtle.point, blocks) do
-    turtle.digAt(pt)
+    if pt.sapling then
+      turtle.suckDownAt(pt)
+    else
+      turtle.digAt(pt)
+    end
   end
 
   desperateRefuel(FUEL_BASE + 100)
   turtle.clearMoveCallback()
-  turtle.setPolicy("attackOnly")
 
   return true
 end
 
 local function fell()
-  local filter = function(b)
-    return b.y > 0 and (b.name == LEAVES or b.name == LEAVES2 or b.name == LOG or b.name == LOG2)
+  local leaves = false
+
+  local slots = turtle.getSummedInventory()
+  for _, sapling in pairs(ALL_SAPLINGS) do
+    if not slots[sapling] or slots[sapling].count < MIN_SAPLINGS then
+      leaves = true
+      break
+    end
+  end
+
+  local function filter(b)
+    return b.y > 0 and (b.name == LOG or b.name == LOG2)
+  end
+
+  local function saplingFilter(b)
+    if b.y == 0 and string.find(b.displayName, 'sapling', 1, true) then
+      b.sapling = true
+      return true
+    end
   end
 
   local blocks = scan(HOME_PT, filter)
+
+  if leaves then
+    sense(HOME_PT, saplingFilter, blocks)
+  end
 
   if #blocks > 0 then
     print('Chopping')
 
     local fuel = turtle.getFuelLevel()
 
-    fellTrees(blocks)
-
     turtle.setPolicy("digAttack")
-    blocks = scan(HIGH_PT, filter)
-    turtle.setPolicy("attackOnly")
 
     fellTrees(blocks)
+    fellTrees(scan(HIGH_PT, filter))
+
+    turtle.pathfind(HOME_PT, { blocks = Util.shallowCopy(state.trees) })
+    turtle.setPolicy("attackOnly")
 
     print('Used ' .. (fuel - turtle.getFuelLevel()) .. ' fuel')
 
@@ -647,8 +698,13 @@ local function startupCheck()
 
   local slots = turtle.getSummedInventory()
 
-  if not slots[CHEST] or not slots[CRAFTING_TABLE] or not slots[SCANNER] then
-    error('A chest and crafting table must be in inventory')
+  if not slots[CHEST] or not slots[CRAFTING_TABLE] or not slots[SCANNER] or not slots[SENSOR] then
+    error([[
+Required:
+  * chest
+  * crafting table
+  * block scanner
+  * entity sensor]])
   end
 
   if not fs.exists(STARTUP_FILE) then

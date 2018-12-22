@@ -594,6 +594,12 @@ Event.addRoutine(function()
     z = turtle.point.z - mining.home.z,
   })
 
+  if math.abs(turtle.point.x) > 500 or math.abs(turtle.point.z) > 500 then
+    _G.printError('WARNING: distance > 500')
+    print('waiting for 30 seconds to begin')
+    os.sleep(30)
+  end
+
   if not fs.exists(PROGRESS_FILE) then
     Util.writeTable(PROGRESS_FILE, mining)
   end
