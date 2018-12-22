@@ -13,7 +13,7 @@ if not sensor or not sensor.sense then
 	error('Plethora sensor must be equipped')
 end
 
-local id = sensor.getID()
+local id = sensor.getID and sensor.getID() or ''
 
 UI:configure('Entities', ...)
 
