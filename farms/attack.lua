@@ -53,17 +53,6 @@ local sensor = device['plethora:sensor']
 turtle.setMovementStrategy('goto')
 turtle.setPolicy(turtle.policies.attack)
 
-function Point.iterateClosest(spt, ipts)
-	local pts = Util.shallowCopy(ipts)
-	return function()
-		local pt = Point.closest(spt, pts)
-		if pt then
-			Util.removeByValue(pts, pt)
-			return pt
-		end
-	end
-end
-
 local function findChests()
 	if chest then
 		return { chest }
@@ -109,6 +98,7 @@ local function dropOff()
 			end
 		end
 	end
+	turtle.select(1)
 end
 
 local function normalize(b)

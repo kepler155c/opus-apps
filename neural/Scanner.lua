@@ -8,7 +8,7 @@ local device     = _G.device
 local peripheral = _G.peripheral
 
 local scanner = device.neuralInterface or device['plethora:scanner'] or peripheral.find('manipulator')
-if not scanner or not scanner.sense then
+if not scanner or not scanner.scan then
 	error('Plethora scanner must be equipped')
 end
 

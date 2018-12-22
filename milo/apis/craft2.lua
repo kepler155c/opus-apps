@@ -206,7 +206,7 @@ function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 		count = canCraft
 	end
 
-_G._debug({'eval', recipe.result, count })
+--_G._debug({'eval', recipe.result, count })
 
 	--local maxCount = math.floor((recipe.maxCount or 64) / recipe.count)
 	local maxCount = recipe.maxCount or math.floor(64 / recipe.count)
@@ -239,7 +239,7 @@ _G._debug({'eval', recipe.result, count })
 	while canCraft > 0 do
 		local batch = math.min(canCraft, maxCount)
 		local machine = Craft.machineLookup[recipe.result]
-_G._debug({ 'crafting', recipe.result, batch })
+--_G._debug({ 'crafting', recipe.result, batch })
 		if machine then
 			if not machineCraft(recipe, storage, machine, request, batch, origItem) then
 				break
