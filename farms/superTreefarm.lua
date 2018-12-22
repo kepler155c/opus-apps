@@ -546,7 +546,9 @@ local function fell()
 
     fellTrees(blocks)
 
+    turtle.setPolicy("digAttack")
     blocks = scan(HIGH_PT, filter)
+    turtle.setPolicy("attackOnly")
 
     fellTrees(blocks)
 
