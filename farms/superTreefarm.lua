@@ -63,6 +63,7 @@ local DIRT           = 'minecraft:dirt:0'
 local FURNACE        = 'minecraft:furnace:0'
 local MODEM          = 'computercraft:peripheral:1'
 local LEAVES         = 'minecraft:leaves'
+local LEAVES2        = 'minecraft:leaves2'
 local LOG            = 'minecraft:log'
 local LOG2           = 'minecraft:log2'
 local OAK_LOG        = 'minecraft:log:0'
@@ -532,9 +533,11 @@ local function fellTrees(blocks)
 end
 
 local function fell()
-  local blocks = scan(HOME_PT, function(b)
-      return b.y > 0 and (b.name == LEAVES or b.name == LOG or b.name == LOG2)
-  end)
+  local filter = function(b)
+    return b.y > 0 and (b.name == LEAVES or b.name == LEAVES2 or b.name == LOG or b.name == LOG2)
+  end
+
+  local blocks = scan(HOME_PT, filter)
 
   if #blocks > 0 then
     print('Chopping')
@@ -543,9 +546,7 @@ local function fell()
 
     fellTrees(blocks)
 
-    blocks = scan(HIGH_PT, function(b)
-      return b.y > 0 and (b.name == LEAVES or b.name == LOG or b.name == LOG2)
-    end)
+    blocks = scan(HIGH_PT, filter)
 
     fellTrees(blocks)
 
