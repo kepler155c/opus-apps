@@ -1,0 +1,40 @@
+A very efficient mining program utilizing Plethora's block scanner.
+
+Requirements
+============
+ * Advanced Turtle
+ * Diamond Pickaxe
+ * Ender Modem
+ * Block Scanner
+ * Bucket
+ * Ability to connect remotely (neural interface or pocket computer)
+ * GPS
+
+Setup
+=====
+The turtle is meant to be accessed via VNC (see the Wireless Networking help topic).
+
+Provide the turtle with roughly 1000 fuel. The turtle will refuel while mining with either lava or fuel (mainly lava once found).
+
+Place the turtle at the center of the area you would like to mine. For best performance, set the turtle at a Y location that is a multiple of 16 (16, 32, 48, 64, etc). Place into the turtle the diamond pickaxe, block scanner, ender modem, cobblestone, and bucket. Additionally, add any blocks that you want to exclude from mining (such as stone, gravel, etc). Run:
+
+> scanningMiner
+
+Options
+=======
+-c : number of chunks to mine
+-s : add additional blocks to ignore
+
+Any time the turtle restarts, the program will restart and continue mining where it left off. The startup program is usr/autorun/scanningMiner.lua.
+
+Remote Access
+=============
+While the miner is running, you can update the blocks to exclude. Select a block and hit 'Ignore' in the menubar. The abort button will cause the miner to stop mining and return to the starting point. Note that the abort may not be immediate.
+
+Changing mining locations
+=========================
+If you move the miner to a new location, remove the usr/config/scanning_miner.progress file.
+
+Config file
+===========
+The ignore blocks are added to usr/config/mining.dictionary. This file can be edited if needed.

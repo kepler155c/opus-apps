@@ -1,14 +1,37 @@
-local Config  = require('config')
-local Event   = require('event')
-local Project = require('neural.project')
-local UI      = require('ui')
-local Util    = require('util')
+local Config     = require('config')
+local Event      = require('event')
+local Peripheral = require('peripheral')
+local Project    = require('neural.project')
+local UI         = require('ui')
+local Util       = require('util')
 
 local device     = _G.device
 local peripheral = _G.peripheral
+local turtle     = _G.turtle
+
+local function equip(side, item, rawName)
+	if turtle then
+		local equipped = Peripheral.lookup('side/' .. side)
+
+		if equipped and equipped.type == item then
+			return equipped
+		end
+
+		if turtle.equip(side, rawName or item) then
+			equipped = Peripheral.lookup('side/' .. side)
+		end
+
+		turtle.select(1)
+		return equipped
+	end
+end
 
 local ni = device.neuralInterface
-local sensor = ni or device['plethora:sensor'] or peripheral.find('manipulator')
+local sensor = ni or
+	device['plethora:sensor'] or
+	peripheral.find('manipulator') or
+	equip('left', 'pletora:sensor', 'plethora:module:3')
+
 if not sensor or not sensor.sense then
 	error('Plethora sensor must be equipped')
 end

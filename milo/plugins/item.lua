@@ -161,7 +161,7 @@ end
 
 function page:filterMachines(machine)
   local t = Util.filter(context.storage.nodes, function(node)
-    if node.category == 'machine' then
+    if node.category == 'machine' or node.category == 'custom' then -- TODO: - need a setting instead (ie. canCraft)
       return node.adapter and node.adapter.online and node.adapter.pushItems
     end
   end)
