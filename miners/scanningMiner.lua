@@ -456,6 +456,7 @@ local function mineChunk()
     if pts[i].y > mining.home.y - 8 then
       pts[i].y = mining.home.y - 8
     end
+    pts[i].y = math.max(pts[i].y, 8)
     pts[i].y = pts[i].y - mining.home.y -- abs to rel
   end
 
@@ -546,7 +547,8 @@ end
 
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,
-    [[os.sleep(1)
+    [[print('sleeping for 10 seconds')
+os.sleep(10)
 shell.openForegroundTab('scanningMiner.lua')]])
   print('Autorun program created: ' .. STARTUP_FILE)
 end
@@ -594,10 +596,27 @@ Event.addRoutine(function()
     z = turtle.point.z - mining.home.z,
   })
 
-  if math.abs(turtle.point.x) > 500 or math.abs(turtle.point.z) > 500 then
-    _G.printError('WARNING: distance > 500')
-    print('waiting for 30 seconds to begin')
+  local distance = Point.distance(
+    { x = turtle.point.x, y = 0, z = turtle.point.z },
+    { x = mining.x, y = 0, z = mining.z }
+  )
+  local maxDistance = Point.distance(
+    { x = 0, y = 0, z = 0 },
+    { x = mining.x + 16, y = 0, z = mining.z + 16 }
+  )
+
+  _G._debug({ distance = distance, maxDistance = maxDistance })
+
+  if distance > maxDistance then
+    term.clear()
+    term.setCursorPos(1, 1)
+    _G.printError('WARNING\n\nTurtle is outside the mining area\n')
+    print('Max distance:     ' .. math.floor(maxDistance))
+    print('Distance to home: ' .. math.floor(distance))
+    print('\nIf in a new location, delete usr/config/scanning_miner.progress')
+    print('\nWaiting for 30 seconds to begin')
     os.sleep(30)
+    page:sync()
   end
 
   if not fs.exists(PROGRESS_FILE) then
@@ -608,6 +627,10 @@ Event.addRoutine(function()
   turtle.setDigPolicy(turtle.digPolicies.turtleSafe)
   turtle.setMovementStrategy('goto')
   status('mining')
+
+  Event.onTerminate(function()
+    turtle.abort(true)
+  end)
 
   if isFinished() then
     success = false
@@ -624,10 +647,6 @@ Event.addRoutine(function()
   turtle.reset()
 
   Event.exitPullEvents()
-end)
-
-Event.onTerminate(function()
-  turtle.abort(true)
 end)
 
 UI:setPage(page)

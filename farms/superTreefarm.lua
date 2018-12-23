@@ -548,7 +548,7 @@ local function fellTrees(blocks)
   end
   for pt in Point.iterateClosest(turtle.point, blocks) do
     if pt.sapling then
-      turtle.suckDownAt(pt)
+      repeat until not turtle.suckDownAt(pt)
     else
       turtle.digAt(pt)
     end
