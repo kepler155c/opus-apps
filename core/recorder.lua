@@ -14,8 +14,6 @@ local version = "Version 1.1.6"
 -- Original code by Bomb Bloke
 -- Modified to integrate with opus os
 
-_G.requireInjector()
-
 local Util = require('util')
 
 local multishell = _ENV.multishell
@@ -151,7 +149,7 @@ end
 local tabId = multishell.getCurrent()
 
 _G.device.keyboard.addHotkey('control-p', function()
-  os.queueEvent('recorder_stop')
+	os.queueEvent('recorder_stop')
 end)
 
 local tabs = multishell.getTabs()

@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Event        = require('event')
 local ChestAdapter = require('chestAdapter18')
 local Point        = require('point')

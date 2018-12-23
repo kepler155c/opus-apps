@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Event = require('event')
 local UI    = require('ui')
 local Util  = require('util')

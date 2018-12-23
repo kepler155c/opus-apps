@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Terminal = require('terminal')
 local Util     = require('util')
 

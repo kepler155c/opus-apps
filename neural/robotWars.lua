@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Angle = require('neural.angle')
 local ni    = require('neural.interface')
 local Util  = require('util')

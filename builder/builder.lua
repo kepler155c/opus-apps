@@ -2,8 +2,6 @@ if not _G.turtle and not _G.commands then
   error('Must be run on a turtle or a command computer')
 end
 
-_G.requireInjector()
-
 local Adapter   = require('inventoryAdapter')
 local Event     = require('event')
 local GPS       = require('gps')

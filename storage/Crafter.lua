@@ -24,8 +24,6 @@
    MMMMMM
 ]]--
 
-_G.requireInjector()
-
 local InventoryAdapter = require('inventoryAdapter')
 local Config         = require('config')
 local Event          = require('event')

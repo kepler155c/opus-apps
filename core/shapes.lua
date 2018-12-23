@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local GPS    = require('gps')
 local Socket = require('socket')
 local UI     = require('ui')

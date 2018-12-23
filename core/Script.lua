@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Config = require('config')
 local Event  = require('event')
 local Socket = require('socket')

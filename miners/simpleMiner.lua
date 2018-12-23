@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Pathing = require('turtle.pathfind')
 local Point   = require('point')
 local Util    = require('util')

@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Angle = require('neural.angle')
 local GPS   = require('gps')
 local Mobs  = require('neural.mobs')
@@ -16,20 +14,20 @@ local uid = ni.getID and ni.getID() or error('Introspection module is required')
 local pos = { x = 0, y = 0, z = 0 }
 
 local function findTargets()
-  local l = ni.sense()
-  table.sort(l, function(e1, e2)
-    return Point.distance(e1, pos) < Point.distance(e2, pos)
-  end)
+	local l = ni.sense()
+	table.sort(l, function(e1, e2)
+		return Point.distance(e1, pos) < Point.distance(e2, pos)
+	end)
 
-  local targets = { }
-  for _,v in ipairs(l) do
-    if v.id ~= uid and Mobs.getNames()[v.name] then
-      if math.abs(v.y) < 2 and Point.distance(v, pos) < 16 then -- pitch is broken
-        table.insert(targets, v)
-      end
-    end
-  end
-  return #targets > 0 and targets
+	local targets = { }
+	for _,v in ipairs(l) do
+		if v.id ~= uid and Mobs.getNames()[v.name] then
+			if math.abs(v.y) < 2 and Point.distance(v, pos) < 16 then -- pitch is broken
+				table.insert(targets, v)
+			end
+		end
+	end
+	return #targets > 0 and targets
 end
 
 local function shootAt(targets)
@@ -69,11 +67,11 @@ while true do
 			print('walking to starting point')
 			local s, m = ni.goTo(pt.x, pt.y, pt.z)
 			Util.print({ s, m })
-		  os.sleep(.05)
-		  while ni.isWalking() do
-		    os.sleep(0)
-		  end
-		  Util.print('done walking')
+			os.sleep(.05)
+			while ni.isWalking() do
+				os.sleep(0)
+			end
+			Util.print('done walking')
 		end
 		os.sleep(1)
 	else

@@ -80,8 +80,6 @@
                      name/monitor_1 - specify the exact name of the peripheral
 ]]--
 
-_G.requireInjector()
-
 local Ansi           = require('ansi')
 local Config         = require('config')
 local Craft          = require('turtle.craft')

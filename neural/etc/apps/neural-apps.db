@@ -19,9 +19,14 @@
     category = "Neural",
     run = "neuralRemote.lua",
   },
-  [ "Entities" ] = {
-    title = "Entities",
+  [ "Sensor" ] = {
+    title = "Sensor",
     category = "Neural",
     run = "Entities.lua",
+  },
+  [ "Scanner" ] = {
+    title = "Scanner",
+    category = "Neural",
+    run = "Scanner.lua",
   },
 }

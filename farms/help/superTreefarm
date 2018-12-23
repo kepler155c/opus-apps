@@ -1,0 +1,35 @@
+An advanced tree farming program for use when you have gathered enough resources to fulfill the requirements (see the treefarm program for a day 1 tree farming program).
+
+The turtle will refuel itself from charcoal that it will make from the logs gathered (no fuel is required initially).
+
+Requirements
+============
+* Advanced Turtle
+* Diamond Pickaxe
+* Standard Modem
+* Block Scanner
+* Entity Sensor
+* Crafting Table
+* Vanilla Chest
+* GPS
+
+Setup
+=====
+> pastebin run uzghlbnc
+> package install farms
+> reboot
+
+The tree farm fits exactly in one chunk. It's best to have a mostly level ground around the center of the farming area as the turtle will only collect saplings that have fallen to the same level as the turtle.
+
+To align the turtle perfectly in one chunk, position the turtle 8 blocks diagonally from the bottom left corner.
+
+Place a sapling directly in front of the turtle and place all the required items into the inventory.
+
+To start the program, run:
+
+> superTreefarm
+A startup file is created automatically the first time the program is run (usr/autorun/superTreefarm.lua).
+
+Tips
+====
+At any time, you can add additional saplings into the turtle's inventory. The modem is only needed for GPS. Wireless network can be disabled via System->Networking.

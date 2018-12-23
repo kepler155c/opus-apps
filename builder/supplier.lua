@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Event      = require('event')
 local Logger     = require('logger')
 local MEProvider = require('meProvider')
@@ -30,7 +28,7 @@ if Util.getVersion() == 1.8 then
 end
 
 if not device.wireless_modem then
-	error('No wireless modem detected')
+  error('No wireless modem detected')
 end
 
 Logger.filter('modem_send', 'event', 'ui')
@@ -230,36 +228,36 @@ function Builder:finish()
 end
 
 function Builder:gotoBuilder()
-	if Builder.lastPoint then
+  if Builder.lastPoint then
     turtle.setStatus('tracking')
-		while true do
-			local pt = Point.copy(Builder.lastPoint)
-			pt.y = pt.y + 3
-			if turtle.point.y ~= pt.y then
-				turtle.gotoY(pt.y)
-			else
-				local distance = Point.turtleDistance(turtle.point, pt)
-				if distance <= 3 then
-					Builder:log('Synchronized')
-					break
-				end
+    while true do
+      local pt = Point.copy(Builder.lastPoint)
+      pt.y = pt.y + 3
+      if turtle.point.y ~= pt.y then
+        turtle.gotoY(pt.y)
+      else
+        local distance = Point.turtleDistance(turtle.point, pt)
+        if distance <= 3 then
+          Builder:log('Synchronized')
+          break
+        end
 
-				if turtle.point.heading % 2 == 0 then
-					if turtle.point.x == pt.x then
-						turtle.headTowardsZ(pt.z)
-						moveTowardsZ(pt.z)
-					else
-						moveTowardsX(pt.x)
-					end
-				elseif turtle.point.z ~= pt.z then
-					moveTowardsZ(pt.z)
-				else
-					turtle.headTowardsX(pt.x)
-					moveTowardsX(pt.x)
-				end
-			end
-		end
-	end
+        if turtle.point.heading % 2 == 0 then
+          if turtle.point.x == pt.x then
+            turtle.headTowardsZ(pt.z)
+            moveTowardsZ(pt.z)
+          else
+            moveTowardsX(pt.x)
+          end
+        elseif turtle.point.z ~= pt.z then
+          moveTowardsZ(pt.z)
+        else
+          turtle.headTowardsX(pt.x)
+          moveTowardsX(pt.x)
+        end
+      end
+    end
+  end
 end
 
 Message.addHandler('builder',
@@ -385,8 +383,8 @@ Event.on('turtle_abort',
 
 local function onTheWay() -- parallel routine
   while true do
-	  local _, _, _, id, msg, _ = os.pullEvent('modem_message')
-	  if Builder.ready then
+    local _, _, _, id, msg, _ = os.pullEvent('modem_message')
+    if Builder.ready then
       if id == __BUILDER_ID and msg and msg.type then
         if msg.type == 'needSupplies' then
           Message.send(__BUILDER_ID, 'gotSupplies', { supplies = true })

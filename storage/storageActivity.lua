@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local InventoryAdapter = require('inventoryAdapter')
 local Event            = require('event')
 local UI               = require('ui')

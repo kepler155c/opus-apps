@@ -1,5 +1,3 @@
-_G.requireInjector()
-
 local Ansi   = require('ansi')
 local SHA1   = require('sha1')
 local UI     = require('ui')
