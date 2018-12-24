@@ -448,24 +448,23 @@ local function makeKey(b)
   return table.concat({ b.x, b.y, b.z }, ':')
 end
 
-local function sense(pt, filter, blocks)
-  turtle.pathfind(pt, { blocks = Util.shallowCopy(state.trees) })
-
+local function findDroppedSaplings()
   equip('left', 'plethora:sensor', SENSOR)
   local raw = peripheral.call('left', 'sense')
   equip('left', PICKAXE)
 
-  Util.reduce(raw, function(acc, b)
+  local sensed = Util.reduce(raw, function(acc, b)
     Point.rotate(b, state.home.heading)
     b.x = Util.round(b.x) + turtle.point.x
     b.y = Util.round(b.y) + turtle.point.y
     b.z = Util.round(b.z) + turtle.point.z
-    if filter(b) then
+    if b.y == 0 and b.x > -6 and string.find(b.displayName, 'sapling', 1, true) then
+      b.sapling = true
       acc[makeKey(b)] = b
     end
-  end, blocks)
+  end, { })
 
-  return blocks
+  return sensed
 end
 
 local function scan(pt, filter)
@@ -551,16 +550,18 @@ local function fell()
   local function filter(b)
     return b.y >= 0 and (b.name == LOG or b.name == LOG2 or b.name == SAPLING)
   end
-  local function saplingFilter(b)
-    -- b.x > -6 so we don't take out the furnace
-    if b.y == 0 and b.x > -6 and string.find(b.displayName, 'sapling', 1, true) then
-      b.sapling = true
-      return true
-    end
-  end
 
   -- low scan
   local blocks = scan(HOME_PT, filter)
+  local sensed = { }
+
+  -- determine if we need saplings
+  local slots = turtle.getSummedInventory()
+  if not Util.every(ALL_SAPLINGS, function(sapling)
+      return slots[sapling] and slots[sapling].count >= MIN_SAPLINGS
+    end) then
+    sensed = findDroppedSaplings()
+  end
 
   if not Util.every(blocks, function(b) return b.y < 6 end) then
     -- tree might be above low scan range, do a scan higher up
@@ -569,15 +570,7 @@ local function fell()
     turtle.setPolicy("attackOnly")
   end
 
-  -- determine if we need saplings
-  local slots = turtle.getSummedInventory()
-  if not Util.every(ALL_SAPLINGS, function(sapling)
-      return slots[sapling] and slots[sapling].count >= MIN_SAPLINGS
-    end) then
-
-    -- need saplings add sapling entities
-    sense(HOME_PT, saplingFilter, blocks)
-  end
+  Util.merge(blocks, sensed)
 
   -- add any locations that need saplings
   plantTrees(blocks)
