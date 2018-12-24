@@ -303,7 +303,6 @@ local function getCobblestone(count)
 end
 
 local function createFurnace()
-
   if not state.furnace then
     if turtle.getFuelLevel() < FUEL_BASE + 100 then
       return true -- try again later
@@ -320,6 +319,7 @@ local function createFurnace()
       setState('furnace', furnacePt)
     end
   end
+  turtle.addWorldBlock(state.furnace)
 end
 
 local function createChests()
@@ -458,7 +458,7 @@ local function findDroppedSaplings()
     b.x = Util.round(b.x) + turtle.point.x
     b.y = Util.round(b.y) + turtle.point.y
     b.z = Util.round(b.z) + turtle.point.z
-    if b.y == 0 and b.x > -6 and string.find(b.displayName, 'sapling', 1, true) then
+    if b.y == 0 and string.find(b.displayName, 'sapling', 1, true) then
       b.sapling = true
       acc[makeKey(b)] = b
     end
@@ -468,7 +468,7 @@ local function findDroppedSaplings()
 end
 
 local function scan(pt, filter)
-  turtle.pathfind(pt, { blocks = Util.shallowCopy(state.trees) })
+  turtle.pathfind(pt)
 
   equip('left', 'plethora:scanner', SCANNER)
   local raw = peripheral.call('left', 'scan')
@@ -565,9 +565,7 @@ local function fell()
 
   if not Util.every(blocks, function(b) return b.y < 6 end) then
     -- tree might be above low scan range, do a scan higher up
-    turtle.setPolicy("digAttack")
     blocks = scan(HIGH_PT, filter)
-    turtle.setPolicy("attackOnly")
   end
 
   Util.merge(blocks, sensed)
@@ -580,12 +578,7 @@ local function fell()
 
     local fuel = turtle.getFuelLevel()
 
-    turtle.setPolicy("digAttack")
-
     fellTrees(blocks)
-
-    turtle.pathfind(HOME_PT, { blocks = Util.shallowCopy(state.trees) })
-    turtle.setPolicy("attackOnly")
 
     print('Used ' .. (fuel - turtle.getFuelLevel()) .. ' fuel')
   end
@@ -610,7 +603,9 @@ local function moreTrees()
   for x = -2, 2, 1 do
     for z = -2, 2, 2 do
       if x ~= 0 or z ~= 0 then
-        table.insert(state.trees, { x = x, y = 0, z = z })
+        local tree = { x = x, y = 0, z = z }
+        table.insert(state.trees, tree)
+        turtle.addWorldBlock(tree)
       end
     end
   end
@@ -658,6 +653,16 @@ local function findHome()
     ey = 16,
     ez = GRID.BR.z,
   })
+
+  turtle.setPersistent(true)
+  for _, tree in pairs(state.trees) do
+    turtle.addWorldBlock(tree)
+  end
+end
+
+local function returnHome()
+  turtle.pathfind(HOME_PT)
+  return true
 end
 
 local function updateClock()
@@ -700,25 +705,26 @@ end
 local tasks = {
   { desc = 'Startup check',      fn = startupCheck       },
   { desc = 'Finding home',       fn = findHome           },
-  { desc = 'Emptying furnace',   fn = emptyFurnace       },
+  { desc = 'Creating furnace',   fn = createFurnace      },
+  { desc = 'Creating chest',     fn = createChests       },
   { desc = 'Adding trees',       fn = moreTrees          },
+  { desc = 'Emptying furnace',   fn = emptyFurnace       },
   { desc = 'Chopping',           fn = fell               },
   { desc = 'Snacking',           fn = eatSaplings        },
-  { desc = 'Creating chest',     fn = createChests       },
-  { desc = 'Creating furnace',   fn = createFurnace      },
   { desc = 'Making charcoal',    fn = makeSingleCharcoal },
   { desc = 'Making charcoal',    fn = makeCharcoal       },
   { desc = 'Placing torches',    fn = placeTorches       },
   { desc = 'Refueling',          fn = refuel             },
   { desc = 'Dropping off items', fn = dropOffItems       },
   { desc = 'Condensing',         fn = turtle.condense    },
+  { desc = 'Returning home',     fn = returnHome         },
   { desc = 'Sleeping',           fn = updateClock        },
 }
 
 --local s, m = turtle.run(function()
   turtle.reset()
-  turtle.addFeatures('level', 'crafting')
-  turtle.setPolicy("attack")
+  turtle.addFeatures('crafting')
+  turtle.setPolicy("digAttack")
 
   while not turtle.isAborted() do
     print('fuel: ' .. turtle.getFuelLevel())
