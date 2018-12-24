@@ -1,23 +1,3 @@
---[[
-  Requirements:
-    Place turtle against an oak tree or oak sapling
-    Area around turtle must be flat and can only be dirt or grass
-      (10 blocks in each direction from turtle)
-    Turtle must have: crafting table, chest
-    Turtle must have a pick equipped on the LEFT side
-
-  Optional:
-    Add additional sapling types that can grow with a single sapling
-
-  Notes:
-    If the turtle does not get any saplings from the initial tree, place
-    down another sapling in front of the turtle.
-
-    The program will be able to survive server restarts as long as it has
-    created the cobblestone line. If the program is stopped before that time,
-    place the turtle in the original position before restarting the program.
-]]--
-
 local GPS        = require('gps')
 local Peripheral = require('peripheral')
 local Point      = require('point')
@@ -67,7 +47,8 @@ local LOG            = 'minecraft:log'
 local LOG2           = 'minecraft:log2'
 local OAK_LOG        = 'minecraft:log:0'
 local OAK_PLANK      = 'minecraft:planks:0'
-local SAPLING        = 'minecraft:sapling:0'
+local OAK_SAPLING    = 'minecraft:sapling:0'
+local SAPLING        = 'minecraft:sapling'
 local SCANNER        = 'plethora:module:2'
 local SENSOR         = 'plethora:module:3'
 local STICK          = 'minecraft:stick:0'
@@ -75,7 +56,7 @@ local STONE          = 'minecraft:stone:0'
 local TORCH          = 'minecraft:torch:0'
 
 local ALL_SAPLINGS = {
-  SAPLING
+  OAK_SAPLING
 }
 
 local state = Util.readTable('usr/config/superTreefarm') or {
@@ -334,7 +315,7 @@ local function createFurnace()
 
     if turtle.has(FURNACE) or craftItem(FURNACE) then
       turtle.drop(COBBLESTONE)
-      local furnacePt = { x = GRID.BL.x + 2, y = 1, z = GRID.BL.z + 2 }
+      local furnacePt = { x = GRID.BL.x + 1, y = 1, z = GRID.BL.z + 1 }
       turtle.placeAt(furnacePt, FURNACE)
       setState('furnace', furnacePt)
     end
@@ -444,14 +425,14 @@ local function placeTorches()
 end
 
 local function randomSapling()
-  local sapling = SAPLING
+  local sapling = OAK_SAPLING
 
   if #state.trees > 1 then
     ALL_SAPLINGS = { }
 
     local slots = turtle.getFilledSlots()
     for _, slot in pairs(slots) do
-      if slot.name == 'minecraft:sapling' then
+      if slot.name == SAPLING then
         table.insert(ALL_SAPLINGS, slot.key)
       end
     end
@@ -461,6 +442,10 @@ local function randomSapling()
   end
 
   return sapling
+end
+
+local function makeKey(b)
+  return table.concat({ b.x, b.y, b.z }, ':')
 end
 
 local function sense(pt, filter, blocks)
@@ -476,7 +461,7 @@ local function sense(pt, filter, blocks)
     b.y = Util.round(b.y) + turtle.point.y
     b.z = Util.round(b.z) + turtle.point.z
     if filter(b) then
-      table.insert(acc, b)
+      acc[makeKey(b)] = b
     end
   end, blocks)
 
@@ -496,33 +481,28 @@ local function scan(pt, filter)
     b.y = b.y + turtle.point.y
     b.z = b.z + turtle.point.z
     if filter(b) then
-      table.insert(acc, b)
+      acc[makeKey(b)] = b
     end
   end, { })
 
   return blocks
 end
 
-local function plantTrees()
-  local blocks = scan(HOME_PT, function(b)
-    return b.name == 'minecraft:sapling'
-  end)
-
-  local plant = Util.reduce(state.trees, function(acc, b)
-    for _, sapling in pairs(blocks) do
-      if sapling.x == b.x and sapling.z == b.z then
-        return
+local function plantTrees(blocks)
+  Util.each(state.trees, function(sapling)
+    local key = makeKey(sapling)
+    local b = blocks[key]
+    if b then
+      if b.name == SAPLING then
+        blocks[key] = nil
+      else
+        b.plant = randomSapling()
       end
+      return
     end
-    table.insert(acc, b)
-  end, { })
-
-  Point.eachClosest(turtle.point, plant, function(pt)
-    if turtle.moveAgainst(pt, { blocks = Util.shallowCopy(state.trees) }) then
-      turtle.digAt(pt)
-      turtle.placeAt(pt, randomSapling())
-    end
-    turtle.select(1)
+    b = Util.shallowCopy(sapling)
+    b.plant = randomSapling()
+    blocks[key] = b
   end)
 end
 
@@ -547,8 +527,15 @@ local function fellTrees(blocks)
     turtle.up()
   end
   for pt in Point.iterateClosest(turtle.point, blocks) do
-    if pt.sapling then
-      repeat until not turtle.suckDownAt(pt)
+    if pt.y == 0 then
+      if pt.sapling then
+        repeat until not turtle.suckDownAt(pt)
+      else
+        turtle.digDownAt(pt)
+        if pt.plant then
+          turtle.placeDown(pt.plant)
+        end
+      end
     else
       turtle.digAt(pt)
     end
@@ -561,34 +548,41 @@ local function fellTrees(blocks)
 end
 
 local function fell()
-  local leaves = false
-
-  local slots = turtle.getSummedInventory()
-  for _, sapling in pairs(ALL_SAPLINGS) do
-    if not slots[sapling] or slots[sapling].count < MIN_SAPLINGS then
-      leaves = true
-      break
-    end
-  end
-
   local function filter(b)
-    return b.y > 0 and (b.name == LOG or b.name == LOG2)
+    return b.y >= 0 and (b.name == LOG or b.name == LOG2 or b.name == SAPLING)
   end
-
   local function saplingFilter(b)
-    if b.y == 0 and string.find(b.displayName, 'sapling', 1, true) then
+    -- b.x > -6 so we don't take out the furnace
+    if b.y == 0 and b.x > -6 and string.find(b.displayName, 'sapling', 1, true) then
       b.sapling = true
       return true
     end
   end
 
+  -- low scan
   local blocks = scan(HOME_PT, filter)
 
-  if leaves then
+  if not Util.every(blocks, function(b) return b.y < 6 end) then
+    -- tree might be above low scan range, do a scan higher up
+    turtle.setPolicy("digAttack")
+    blocks = scan(HIGH_PT, filter)
+    turtle.setPolicy("attackOnly")
+  end
+
+  -- determine if we need saplings
+  local slots = turtle.getSummedInventory()
+  if not Util.every(ALL_SAPLINGS, function(sapling)
+      return slots[sapling] and slots[sapling].count >= MIN_SAPLINGS
+    end) then
+
+    -- need saplings add sapling entities
     sense(HOME_PT, saplingFilter, blocks)
   end
 
-  if #blocks > 0 then
+  -- add any locations that need saplings
+  plantTrees(blocks)
+
+  if not Util.empty(blocks) then
     print('Chopping')
 
     local fuel = turtle.getFuelLevel()
@@ -596,14 +590,11 @@ local function fell()
     turtle.setPolicy("digAttack")
 
     fellTrees(blocks)
-    fellTrees(scan(HIGH_PT, filter))
 
     turtle.pathfind(HOME_PT, { blocks = Util.shallowCopy(state.trees) })
     turtle.setPolicy("attackOnly")
 
     print('Used ' .. (fuel - turtle.getFuelLevel()) .. ' fuel')
-
-    plantTrees()
   end
 
   return true
@@ -614,7 +605,7 @@ local function moreTrees()
     return
   end
 
-  if not state.chest or turtle.getItemCount('minecraft:sapling') < 15 then
+  if not state.chest or turtle.getItemCount(OAK_SAPLING) < 15 then
     return true
   end
 

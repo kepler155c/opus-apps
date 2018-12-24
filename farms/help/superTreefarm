@@ -30,6 +30,8 @@ To start the program, run:
 > superTreefarm
 A startup file is created automatically the first time the program is run (usr/autorun/superTreefarm.lua).
 
+If the turtle does not get any saplings from the initial tree, place down another sapling in front of the turtle.
+
 Tips
 ====
 At any time, you can add additional saplings into the turtle's inventory. The modem is only needed for GPS. Wireless network can be disabled via System->Networking.
