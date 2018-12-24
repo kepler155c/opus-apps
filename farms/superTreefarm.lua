@@ -564,6 +564,7 @@ local function fell()
   local blocks = scan(HOME_PT, filter)
   if not Util.every(blocks, function(b) return b.y < 6 end) then
     -- tree might be above low scan range, do a scan higher up
+    equip('left', PICKAXE)
     blocks = scan(HIGH_PT, filter)
   end
 
