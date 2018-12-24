@@ -451,7 +451,6 @@ end
 local function findDroppedSaplings()
   equip('left', 'plethora:sensor', SENSOR)
   local raw = peripheral.call('left', 'sense')
-  equip('left', PICKAXE)
 
   local sensed = Util.reduce(raw, function(acc, b)
     Point.rotate(b, state.home.heading)
@@ -472,7 +471,6 @@ local function scan(pt, filter)
 
   equip('left', 'plethora:scanner', SCANNER)
   local raw = peripheral.call('left', 'scan')
-  equip('left', PICKAXE)
 
   local blocks = Util.reduce(raw, function(acc, b)
     Point.rotate(b, state.home.heading)
@@ -487,7 +485,7 @@ local function scan(pt, filter)
   return blocks
 end
 
-local function plantTrees(blocks)
+local function getPlantLocations(blocks)
   Util.each(state.trees, function(sapling)
     local key = makeKey(sapling)
     local b = blocks[key]
@@ -551,8 +549,7 @@ local function fell()
     return b.y >= 0 and (b.name == LOG or b.name == LOG2 or b.name == SAPLING)
   end
 
-  -- low scan
-  local blocks = scan(HOME_PT, filter)
+  local fuel = turtle.getFuelLevel()
   local sensed = { }
 
   -- determine if we need saplings
@@ -563,6 +560,8 @@ local function fell()
     sensed = findDroppedSaplings()
   end
 
+  -- low scan
+  local blocks = scan(HOME_PT, filter)
   if not Util.every(blocks, function(b) return b.y < 6 end) then
     -- tree might be above low scan range, do a scan higher up
     blocks = scan(HIGH_PT, filter)
@@ -571,12 +570,11 @@ local function fell()
   Util.merge(blocks, sensed)
 
   -- add any locations that need saplings
-  plantTrees(blocks)
+  getPlantLocations(blocks)
 
+  equip('left', PICKAXE)
   if not Util.empty(blocks) then
     print('Chopping')
-
-    local fuel = turtle.getFuelLevel()
 
     fellTrees(blocks)
 
