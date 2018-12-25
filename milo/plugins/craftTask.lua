@@ -1,5 +1,6 @@
 local Craft  = require('craft2')
 local Milo   = require('milo')
+local Sound  = require('sound')
 local Util   = require('util')
 
 local context = Milo:getContext()
@@ -61,6 +62,7 @@ function craftTask:cycle()
     if item.requested - item.crafted > 0 then
       local recipe = Craft.findRecipe(key)
       if recipe then
+        Sound.play('entity.experience_orb.pickup')
         self:craft(recipe, item)
         if item.callback and item.crafted >= item.requested then
           item.callback(item) -- invoke callback

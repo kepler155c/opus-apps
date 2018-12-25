@@ -3,12 +3,12 @@ _G.requireInjector(_ENV)
 local Config     = require('config')
 local Util       = require('util')
 local Adapter    = require('chestAdapter18')
-local Peripheral = require('peripheral')
 
-local device = _G.device
-local fs     = _G.fs
-local os     = _G.os
-local turtle = _G.turtle
+local device     = _G.device
+local fs         = _G.fs
+local os         = _G.os
+local peripheral = _G.peripheral
+local turtle     = _G.turtle
 
 local STARTUP_FILE = 'usr/autorun/rancher.lua'
 
@@ -33,23 +33,12 @@ local ANIMALS = {
 local animal = ANIMALS[config.animal]
 
 local function equip(side, item, rawName)
-  local equipped = Peripheral.lookup('side/' .. side)
-
-  if equipped and equipped.type == item then
-    return true
-  end
-
-  if not turtle.equip(side, rawName or item) then
-    if not turtle.selectSlotWithQuantity(0) then
-      error('No slots available')
-    end
-    turtle.equip(side)
-    if not turtle.equip(side, item) then
+  if peripheral.getType(side) ~= item then
+    if not turtle.equip(side, rawName or item) then
       error('Unable to equip ' .. item)
     end
+    turtle.select(1)
   end
-
-  turtle.select(1)
 end
 
 local function getLocalName()
