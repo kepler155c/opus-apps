@@ -203,9 +203,9 @@ local s, m = turtle.run(function()
   local facing = scanner.getBlockMeta(0, 0, 0).state.facing
   turtle.point.heading = Point.facings[facing].heading
 
+  turtle.setStatus(string.format('Farming (fuel: %s)', Util.toBytes(turtle.getFuelLevel())))
   print('Fuel: ' .. turtle.getFuelLevel())
 
-  --turtle.setPolicy('digOnly')
   turtle.setMovementStrategy('goto')
   repeat
     local blocks, harvestCount = scan()
@@ -216,6 +216,7 @@ local s, m = turtle.run(function()
     end
     os.sleep(10)
     if turtle.getFuelLevel() < 10 then
+      turtle.setStatus('Out of fuel')
       error('Out of fuel')
     end
   until turtle.isAborted()

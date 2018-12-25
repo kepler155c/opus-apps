@@ -17,7 +17,7 @@ while true do
 	turtle.placeDown('minecraft:bucket:0')
 	turtle.placeDown('minecraft:glass_bottle:0')
 	for k,v in pairs(turtle.getInventory()) do
-		if v.name == 'minecraft:concrete_powder' then
+		if v.name == 'minecraft:concrete_powder' or v.name == 'minecraft:gravel' then
 			turtle.select(k)
 			for _ = 1, v.count do
 				turtle.placeDown()
