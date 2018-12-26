@@ -26,13 +26,20 @@ local id = sensor.getID and sensor.getID() or ''
 
 UI:configure('Entities', ...)
 
-local config = Config.load('Entities', { })
+local config = Config.load('Entities', {
+	ignore = { }
+})
+if not config.ignore then
+	config.ignore = { }
+end
 
 local page = UI.Page {
 	menuBar = UI.MenuBar {
 		buttons = {
 			{ text = 'Projector', event = 'project' },
 			{ text = 'Totals',    event = 'totals'  },
+			{ text = 'Ignore',    event = 'ignore'  },
+			{ text = 'Details',   event = 'detail'  },
 		},
 	},
 	grid = UI.ScrollingGrid {
@@ -49,6 +56,22 @@ local page = UI.Page {
 	accelerators = {
 		q = 'quit',
 	},
+	detail = UI.SlideOut {
+		menuBar = UI.MenuBar {
+			buttons = {
+				{ text = 'Back',  event = 'hide' },
+			},
+		},
+		grid = UI.ScrollingGrid {
+			y = 2,
+			columns = {
+				{ heading = 'Name',  key = 'name' },
+				{ heading = 'Value', key = 'value' },
+			},
+			sortColumn = 'name',
+			autospace = true,
+		},
+	},
 }
 
 function page.grid:getDisplayValues(row)
@@ -59,12 +82,68 @@ function page.grid:getDisplayValues(row)
 	return row
 end
 
+function page.detail:show(entity)
+	self.entity = entity  -- to allow for debugging in Lua
+
+	local function update()
+		local t = { }
+		for k,v in pairs(self.entity) do
+			if type(v) ~= 'table' then
+				table.insert(t, {
+					name = k,
+					value = type(v) == 'string' and v or tostring(v),
+				})
+			end
+		end
+		return t
+	end
+
+	if entity.id then
+		self.handler = Event.onInterval(.5, function()
+			local e = sensor.getMetaByID(self.entity.id)
+			if e then
+				self.entity = e
+				self.grid:setValues(update())
+				self.grid:draw()
+				self.grid:sync()
+			end
+		end)
+	end
+
+	self.grid:setValues(update())
+	return UI.SlideOut.show(self)
+end
+
+function page.detail:hide()
+	if self.handler then
+		Event.off(self.handler)
+		self.handler = nil
+	end
+	return UI.SlideOut.hide(self)
+end
+
 function page:eventHandler(event)
 	if event.type == 'quit' then
 		Event.exitPullEvents()
 
 	elseif event.type == 'totals' then
 		config.totals = not config.totals
+		Config.update('Entities', config)
+
+	elseif event.type == 'detail' or event.type == 'grid_select' then
+		local selected = self.grid:getSelected()
+		if selected then
+			self.detail:show(selected)
+		end
+
+	elseif event.type == 'hide' then
+		self.detail:hide()
+
+	elseif event.type == 'ignore' then
+		local selected = self.grid:getSelected()
+		if selected then
+			config.ignore[selected.name] = true
+		end
 		Config.update('Entities', config)
 
 	elseif event.type == 'project' then
@@ -82,7 +161,7 @@ end
 
 Event.onInterval(.5, function()
 	local entities = sensor.sense()
-	Util.filterInplace(entities, function(e) return e.id ~= id end)
+	Util.filterInplace(entities, function(e) return e.id ~= id and not config.ignore[e.name] end)
 
 	if config.projecting then
 		local meta = ni.getMetaOwner()
@@ -93,10 +172,10 @@ Event.onInterval(.5, function()
 	if config.totals then
 		local t = { }
 		for _,v in pairs(entities) do
-			if t[v.displayName] then
-				t[v.displayName].z = t[v.displayName].z + 1
+			if t[v.name] then
+				t[v.name].z = t[v.name].z + 1
 			else
-				t[v.displayName] = { displayName = v.displayName, z = 1 }
+				t[v.name] = { displayName = v.displayName, z = 1, name = v.name }
 			end
 		end
 		entities = t
