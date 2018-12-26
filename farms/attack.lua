@@ -1,11 +1,9 @@
-_G.requireInjector(_ENV)
-
+local Peripheral = require('peripheral')
 local Point      = require('point')
 local Util       = require('util')
 
 local device     = _G.device
 local os         = _G.os
-local peripheral = _G.peripheral
 local turtle     = _G.turtle
 
 local args = { ... }
@@ -21,12 +19,23 @@ local Runners = {
 }
 
 local function equip(side, item, rawName)
-	if peripheral.getType(side) ~= item then
-		if not turtle.equip(side, rawName or item) then
+	local equipped = Peripheral.lookup('side/' .. side)
+
+	if equipped and equipped.type == item then
+		return true
+	end
+
+	if not turtle.equip(side, rawName or item) then
+		if not turtle.selectSlotWithQuantity(0) then
+			error('No slots available')
+		end
+		turtle.equip(side)
+		if not turtle.equip(side, item) then
 			error('Unable to equip ' .. item)
 		end
-		turtle.select(1)
 	end
+
+	turtle.select(1)
 end
 
 equip('left', 'minecraft:diamond_sword')
