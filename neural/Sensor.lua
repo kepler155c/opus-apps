@@ -22,8 +22,6 @@ if not sensor or not sensor.sense then
 	error('Plethora sensor must be equipped')
 end
 
-local id = sensor.getID and sensor.getID() or ''
-
 UI:configure('Entities', ...)
 
 local config = Config.load('Entities', {
@@ -161,7 +159,7 @@ end
 
 Event.onInterval(.5, function()
 	local entities = sensor.sense()
-	Util.filterInplace(entities, function(e) return e.id ~= id and not config.ignore[e.name] end)
+	Util.filterInplace(entities, function(e) return not config.ignore[e.name] end)
 
 	if config.projecting then
 		local meta = ni.getMetaOwner()

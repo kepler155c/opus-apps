@@ -1,4 +1,5 @@
 local GPS        = require('gps')
+local Peripheral = require('peripheral')
 local Point      = require('point')
 local Util       = require('util')
 
@@ -67,12 +68,23 @@ local state = Util.readTable('usr/config/superTreefarm') or {
 local clock = os.clock()
 
 local function equip(side, item, rawName)
-  if peripheral.getType(side) == item or turtle.equip(side, rawName or item) then
-    turtle.select(1)
+  local equipped = Peripheral.lookup('side/' .. side)
+
+  if equipped and equipped.type == item then
     return true
   end
 
-  error('Unable to equip ' .. (rawName or item))
+  if not turtle.equip(side, rawName or item) then
+    if not turtle.selectSlotWithQuantity(0) then
+      error('No slots available')
+    end
+    turtle.equip(side)
+    if not turtle.equip(side, item) then
+      error('Unable to equip ' .. (rawName or item))
+    end
+  end
+
+  turtle.select(1)
 end
 
 local function inspect(fn)
@@ -668,7 +680,7 @@ local function updateClock()
 end
 
 local function startupCheck()
-  equip('right', MODEM, 'modem')
+  equip('right', 'modem', MODEM)
   equip('left', PICKAXE)
 
   local slots = turtle.getSummedInventory()

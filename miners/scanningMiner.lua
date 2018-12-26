@@ -55,6 +55,7 @@ local dictionary = {
     [ 'minecraft:chest'              ] = 'suck',
     [ 'minecraft:lava'               ] = 'liquid_fuel',
     [ 'minecraft:flowing_lava'       ] = 'liquid_fuel',
+    [ 'minecraft:mob_spawner'        ] = 'ignore',
     [ 'minecraft:bedrock'            ] = 'ignore',
     [ 'minecraft:flowing_water'      ] = 'ignore',
     [ 'minecraft:water'              ] = 'ignore',

@@ -22,7 +22,7 @@
   [ "Sensor" ] = {
     title = "Sensor",
     category = "Neural",
-    run = "Entities.lua",
+    run = "Sensor.lua",
   },
   [ "Scanner" ] = {
     title = "Scanner",
