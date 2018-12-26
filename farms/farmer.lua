@@ -203,7 +203,7 @@ local s, m = turtle.run(function()
   local facing = scanner.getBlockMeta(0, 0, 0).state.facing
   turtle.point.heading = Point.facings[facing].heading
 
-  turtle.setStatus(string.format('Farming (fuel: %s)', Util.toBytes(turtle.getFuelLevel())))
+  turtle.setStatus('farming')
   print('Fuel: ' .. turtle.getFuelLevel())
 
   turtle.setMovementStrategy('goto')

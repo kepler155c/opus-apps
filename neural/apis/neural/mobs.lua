@@ -1,12 +1,13 @@
 local Mobs = { }
 
 local hostiles = {
-  ancient_golem = true,
   BabySkeleton = true,
   BabyZombie = true,
   Bat = true,
   Creeper = true,
   Husk = true,
+  LavaSlime = true,
+  PigZombie = true,
   Skeleton = true,
   Slime = true,
   Spider = true,
@@ -16,7 +17,7 @@ local hostiles = {
 }
 
 function Mobs.getNames()
-	return hostiles
+  return hostiles
 end
 
 return Mobs

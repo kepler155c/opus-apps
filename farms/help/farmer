@@ -1,0 +1,47 @@
+An efficient crop farmer. The turtle will harvest and replant the same crop in it's place.
+
+The turtle will NOT refuel itself. You can use the lavaRefuel program (core package) to fuel the turtle as needed.
+
+Requirements
+============
+ * Turtle (advanced recommended)
+ * Diamond Pickaxe
+ * Block Scanner
+ * Vanilla Chest
+
+Setup
+=====
+> pastebin run uzghlbnc
+> package install farms
+> reboot
+
+Prepare the area to be farmed by planting crops on a level area (with a few exceptions - see crop list below). The farm can be any size.
+
+Place a vanilla chest (or several) around the farm for the turtle to drop items into.
+
+Place the turtle 1 level above the crops. The turtle will harvest crops immediately below.
+
+Place into the turtle the block scanner and diamond pickaxe. Add in some of the items used for replanting.
+
+To start the program, run:
+
+> farmer
+
+A startup file is created automatically the first time the program is run (usr/autorun/farmer.lua).
+
+Crop List
+=========
+ * Wheat
+ * Carrots
+ * Potatoes
+ * Beetroots
+ * Nether wart
+ * Reeds
+ * Melon
+ * Pumpkin
+ * Cactus: Plant 1 level below the other crops
+ * Cocoa beans: The cocoa beans must be at the same level as the turtle. Recommended to plant at the edge of the farm.
+
+Configuration
+=============
+After the program is run initially, a configuration file is created (usr/config/farmer). This file can be edited to add custom plants or upgrade the vanilla chest to a larger chest (from a mod). If any changes are made, the program will need to be restarted.
