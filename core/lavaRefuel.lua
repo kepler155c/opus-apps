@@ -7,16 +7,20 @@ local turtle = _G.turtle
 
 local MAX_FUEL = turtle.getFuelLimit()
 
+if turtle.getFuelLevel() == 0 then
+	error('Need some fuel to begin')
+end
+
+if not turtle.has('minecraft:bucket') then
+	error('bucket required')
+end
+
 local scanner = device['plethora:scanner'] or
 	turtle.equip('right', 'plethora:module:2') and device['plethora:scanner'] or
 	error('Plethora scanner required')
 
 if not turtle.select('minecraft:bucket') then
 	error('bucket required')
-end
-
-if turtle.getFuelLevel() == 0 then
-	error('Need some fuel to begin')
 end
 
 local s, m = turtle.run(function()
@@ -42,7 +46,6 @@ local s, m = turtle.run(function()
 				end
 			end
 		end
-		print(y .. ': ' .. #t)
 		Point.eachClosest(turtle.point, t, function(b)
 			if turtle.getFuelLevel() >= (MAX_FUEL - 1000) then
 				return true
@@ -56,6 +59,9 @@ end)
 
 turtle.gotoY(0)
 turtle._goto({ x = 0, y = 0, z = 0 })
+
+turtle.unequip('right')
+print('Fuel: ' .. turtle.getFuelLevel())
 
 if not s and m then
 	error(m)

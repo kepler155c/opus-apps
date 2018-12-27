@@ -1,5 +1,4 @@
 local GPS        = require('gps')
-local Peripheral = require('peripheral')
 local Point      = require('point')
 local Util       = require('util')
 
@@ -55,9 +54,7 @@ local STICK          = 'minecraft:stick:0'
 local STONE          = 'minecraft:stone:0'
 local TORCH          = 'minecraft:torch:0'
 
-local ALL_SAPLINGS = {
-  OAK_SAPLING
-}
+local ALL_SAPLINGS = { }
 
 local state = Util.readTable('usr/config/superTreefarm') or {
   trees = {
@@ -68,20 +65,37 @@ local state = Util.readTable('usr/config/superTreefarm') or {
 local clock = os.clock()
 
 local function equip(side, item, rawName)
-  local equipped = Peripheral.lookup('side/' .. side)
-
-  if equipped and equipped.type == item then
+  -- is it already equipped on the correct side?
+  local equipped = peripheral.getType(side)
+  if equipped == item then
     return true
   end
 
-  if not turtle.equip(side, rawName or item) then
+  -- is it equipped on the opposite side?
+  -- will not work for non-peripheral items :(
+  local osides = { left = 'right', right = 'left' }
+  if peripheral.getType(osides[side]) == item then
+    if not turtle.selectSlotWithQuantity(0) then
+      error('No slots available')
+    end
+    turtle.equip(osides[side])
+
+  elseif not turtle.has(rawName or item) then
+    -- don't have the item - unequip that side to see if it's the correct item
     if not turtle.selectSlotWithQuantity(0) then
       error('No slots available')
     end
     turtle.equip(side)
-    if not turtle.equip(side, item) then
-      error('Unable to equip ' .. (rawName or item))
-    end
+  end
+
+  -- TODO: if the non-peripheral item was equipped on the other side, then this will not work
+
+  if not turtle.has(rawName or item) then
+    error('Missing ' .. (rawName or item))
+  end
+
+  if not turtle.equip(side, rawName or item) then
+    error('Unable to equip ' .. (rawName or item))
   end
 
   turtle.select(1)
@@ -372,8 +386,8 @@ local function dropOffItems()
       turtle.dropDown(LOG2)
 
       for _, sapling in pairs(ALL_SAPLINGS) do
-        if slots[sapling] and slots[sapling].count > MAX_SAPLINGS then
-          turtle.dropDown(sapling, slots[sapling].count - MAX_SAPLINGS)
+        if sapling.count > MAX_SAPLINGS then
+          turtle.dropDown(sapling.key, sapling.count - MAX_SAPLINGS)
         end
       end
 
@@ -385,13 +399,11 @@ local function dropOffItems()
 end
 
 local function eatSaplings()
-  local slots = turtle.getSummedInventory()
-
-  for _, sapling in pairs(ALL_SAPLINGS) do
-    if slots[sapling] and slots[sapling].count > MAX_SAPLINGS then
-      turtle.refuel(sapling, slots[sapling].count - MAX_SAPLINGS)
+  Util.each(ALL_SAPLINGS, function(sapling)
+    if sapling.count > MAX_SAPLINGS then
+      turtle.refuel(sapling.key, sapling.count - MAX_SAPLINGS)
     end
-  end
+  end)
   return true
 end
 
@@ -400,8 +412,11 @@ local function placeTorches()
     return
   end
 
+  local slots = turtle.getSummedInventory()
   if turtle.getFuelLevel() > 100 and
-     turtle.canCraft(TORCH, 4, turtle.getSummedInventory()) then
+     slots[CHARCOAL] and
+     slots[CHARCOAL].count >= MIN_CHARCOAL and
+     turtle.canCraft(TORCH, 4, slots) then
 
     print('Placing torches')
 
@@ -412,36 +427,42 @@ local function placeTorches()
           table.insert(pts, { x = x, y = 0, z = z })
         end
       end
+      turtle.addWorldBlocks(pts)
       Point.eachClosest(turtle.point, pts, function(pt)
-        turtle.placeAt(pt, TORCH)
+        turtle.placeDownAt(pt, TORCH)
       end)
       turtle.refuel(STICK)
       turtle.refuel(OAK_PLANK)
-      setState('torches', true)
+      setState('torches', pts)
     end
   end
 
   return true
 end
 
-local function randomSapling()
-  local sapling = OAK_SAPLING
+local function countSaplings()
+  local slots = turtle.getSummedInventory()
+  ALL_SAPLINGS = { }
 
-  if #state.trees > 1 then
-    ALL_SAPLINGS = { }
-
-    local slots = turtle.getFilledSlots()
-    for _, slot in pairs(slots) do
-      if slot.name == SAPLING then
-        table.insert(ALL_SAPLINGS, slot.key)
-      end
-    end
-    if #ALL_SAPLINGS > 0 then
-      sapling = ALL_SAPLINGS[math.random(1, #ALL_SAPLINGS)]
+  for _, slot in pairs(slots) do
+    if slot.name == SAPLING then
+      table.insert(ALL_SAPLINGS, slot)
     end
   end
+  if #ALL_SAPLINGS == 0 then
+    table.insert(ALL_SAPLINGS, { name = OAK_SAPLING, count = 0 })
+  end
 
-  return sapling
+  return true
+end
+
+local function randomSapling()
+  local sapling = ALL_SAPLINGS[math.random(1, #ALL_SAPLINGS)]
+
+  if sapling.count > 0 then
+    sapling.count = sapling.count - 1
+    return sapling.key
+  end
 end
 
 local function makeKey(b)
@@ -499,7 +520,9 @@ local function getPlantLocations(blocks)
     end
     b = Util.shallowCopy(sapling)
     b.plant = randomSapling()
-    blocks[key] = b
+    if b.plant then
+      blocks[key] = b
+    end
   end)
 end
 
@@ -521,6 +544,9 @@ local function fellTrees(blocks)
   desperateRefuel(FUEL_DIRE)
 
   if turtle.point.y == 0 then
+    if #state.trees == 1 and turtle.getFuelLevel() == 0 then
+      turtle.dig()
+    end
     turtle.up()
   end
   for pt in Point.iterateClosest(turtle.point, blocks) do
@@ -554,11 +580,10 @@ local function fell()
   local sensed = { }
 
   -- determine if we need saplings
-  local slots = turtle.getSummedInventory()
   if not Util.every(ALL_SAPLINGS, function(sapling)
-      return slots[sapling] and slots[sapling].count >= MIN_SAPLINGS
+      return sapling.count >= MIN_SAPLINGS
     end) then
-    sensed = findDroppedSaplings()
+      sensed = findDroppedSaplings()
   end
 
   -- low scan
@@ -655,8 +680,9 @@ local function findHome()
   })
 
   turtle.setPersistent(true)
-  for _, tree in pairs(state.trees) do
-    turtle.addWorldBlock(tree)
+  turtle.addWorldBlocks(state.trees)
+  if state.torches and type(state.torches) == 'table' then
+    turtle.addWorldBlocks(state.trees)
   end
 end
 
@@ -707,13 +733,14 @@ local tasks = {
   { desc = 'Finding home',       fn = findHome           },
   { desc = 'Creating furnace',   fn = createFurnace      },
   { desc = 'Creating chest',     fn = createChests       },
+  { desc = 'Counting saplings',  fn = countSaplings      },
   { desc = 'Adding trees',       fn = moreTrees          },
   { desc = 'Emptying furnace',   fn = emptyFurnace       },
   { desc = 'Chopping',           fn = fell               },
   { desc = 'Snacking',           fn = eatSaplings        },
   { desc = 'Making charcoal',    fn = makeSingleCharcoal },
   { desc = 'Making charcoal',    fn = makeCharcoal       },
-  { desc = 'Placing torches',    fn = placeTorches       },
+--  { desc = 'Placing torches',    fn = placeTorches       },
   { desc = 'Refueling',          fn = refuel             },
   { desc = 'Dropping off items', fn = dropOffItems       },
   { desc = 'Condensing',         fn = turtle.condense    },
