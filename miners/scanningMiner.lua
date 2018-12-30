@@ -331,7 +331,7 @@ local function equip(side, item)
 end
 
 local function scan()
-  equip('left', 'plethora:module')
+  equip('left', 'plethora:module:2')
   local blocks = peripheral.call('left', 'scan')
   equip('left', 'minecraft:diamond_pickaxe')
   local throttle = Util.throttle()
