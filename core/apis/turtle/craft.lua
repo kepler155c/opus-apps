@@ -150,6 +150,7 @@ function Craft.craftRecipe(recipe, count, inventoryAdapter)
 		count = count - maxCount
 	until count <= 0
 
+	clearGrid(inventoryAdapter)
 	turtle.select(1)
 	return crafted * recipe.count
 end

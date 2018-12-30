@@ -15,7 +15,7 @@ local FUEL_GOOD = FUEL_BASE + 2000
 
 local MIN_CHARCOAL = 24
 local MIN_SAPLINGS = 32
-local MAX_SAPLINGS = 64
+local MAX_SAPLINGS = 48
 
 local GRID = {
   TL = { x =  8, y = 0, z = -7 },
@@ -740,7 +740,7 @@ local tasks = {
   { desc = 'Snacking',           fn = eatSaplings        },
   { desc = 'Making charcoal',    fn = makeSingleCharcoal },
   { desc = 'Making charcoal',    fn = makeCharcoal       },
---  { desc = 'Placing torches',    fn = placeTorches       },
+  --{ desc = 'Placing torches',    fn = placeTorches       },
   { desc = 'Refueling',          fn = refuel             },
   { desc = 'Dropping off items', fn = dropOffItems       },
   { desc = 'Condensing',         fn = turtle.condense    },

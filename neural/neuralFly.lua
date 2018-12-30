@@ -65,8 +65,8 @@ local function hover()
     local pitch = 295
     local yaw = yap(wp.x - pt.x, wp.y, wp.z - pt.z)
 
-    if pt.y < wp.y + 16 and meta.motionY < 0 then
-      ni.launch(yaw, pitch, math.min(4, math.min(4, -meta.motionY * math.abs(pt.y - (wp.y + 16)) / 2)))
+    if pt.y < wp.y + 100 and meta.motionY < 0 then
+      ni.launch(yaw, pitch, math.min(4, math.min(4, -meta.motionY * math.abs(pt.y - (wp.y + 100)) / 2)))
     end
 
   until distance(wp, pt) < 2

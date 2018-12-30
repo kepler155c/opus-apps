@@ -1,0 +1,51 @@
+A miner requiring few resources to start automated mining on day 1. Additional miners can be added to increase the amount of resources collected. The miner will mine chunks in a spiral around the central starting point.
+
+Requirements
+============
+ * Turtle (standard or advanced)
+ * Diamond Pickaxe
+ * Bucket
+ * Cobblestone
+ * Chest (any kind)
+
+Setup
+=====
+> pastebin run uzghlbnc
+> package install miners
+> reboot
+
+Provide the turtle with roughly 1000 fuel. The turtle will refuel while mining with either lava or coal (mainly lava once found).
+
+Place the turtle at the center of the area you would like to mine. Place a chest above the turtle.
+
+Equip the turtle with a diamond pickaxe, and place into the inventory the cobblestone and bucket. Additionally, add any blocks that you want to exclude from mining (such as stone, gravel, etc).
+
+To start mining, run:
+
+> simpleMiner
+
+Options:
+
+-c : number of chunks to mine
+-s : add additional blocks to ignore
+-r : resume mining
+
+This turtle will NOT resume mining automatically. It is recommended to stop mining before leaving the session (or the mining area). To stop the turtle from mining, break the drop off chest that was placed above the turtle initially. When the turtle attempts to drop off items, it will detect the missing chest and stop mining.
+
+Alternatively, when you gather enough resources, you can equip the miner with a modem and send an abort command to the turtle to stop mining (abort command can be sent from the Turtles program).
+
+Additional Miners
+=================
+To add additional miners, place any new miners in a spot that the first turtles has already mined (indicated by the cobble on the floor).
+
+Locating a Lost Miner
+=====================
+During mining, the turtle will place a cobblestone block above the column being mined to indicate that the spot is being actively mined. To find the turtle, located the cobblestone block in this position and dig down to the miner.
+
+Changing mining locations
+=========================
+If you move the miner to a new location, remove the usr/config/miner.progress file.
+
+Config file
+===========
+The ignore blocks are added to usr/config/mining.trash. This file can be edited if needed.

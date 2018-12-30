@@ -1,0 +1,70 @@
+Builds structures using schematic files with a turtle or a command computer. Schematics can be downloaded from sites such as http://www.planetminecraft.com.
+
+Requirements
+============
+ * Advanced Mining Turtle
+ * Chest (any type)
+ * Wrench (any mod)
+
+Alternatively
+
+ * Command Computer
+ * Chest (any type)
+
+Installation
+============
+> pastebin run uzghlbnc
+> package install core
+> package install builder
+> reboot
+
+Setup
+=====
+Place the turtle or command computer on top of a chest at the corner of the build location.
+
+Copy a schematic file to the turtle/command computer (see downloading instructions if on a server)
+
+Building
+========
+Run:
+> builder <schematic file>
+
+The first time you run the program, you must select a wrench. Place a wrench into the chest. Go to the supplies list and double-click the SelectAWrench item. Select the wrench and apply.
+
+If interrupted during building, you can resume by placing the turtle back in the original location and restarting the program.
+
+Wrenches
+========
+EnderIO, Thermal Expansion, and Applied Energistics wrenches will work (only wrenches that can spin pistons will work).
+
+To determine if a wrench can be used, right click the side of a piston with the wrench. If the piston rotates, then the wrench can be used. Some wrenches work better than others.
+
+Downloading schematics
+======================
+Single Player
+-------------
+Simply copy a schematic file into the computer's folder.
+
+Multiplayer
+-----------
+Option 1: Use wget if the schematic is available for download (unreliable).
+
+Option 2: Transferring via pastebin (reliable)
+To create a base64 file from a command line, do:
+
+* linux / max:
+
+base64 -w0 NAME.schematic > NAME.schematic.base64
+
+* windows (I haven't tried this - but google said this will work):
+
+certutil -encode NAME.schematic tmp.b64 && findstr /v /c:- tmp.b64 > NAME.schematic.base64
+Upload the base64 file to pastebin.
+
+To download and convert the base64 file back into a schematic file, do:
+
+> base64dl.lua <filename> <url> 
+
+You can download a simple test schematic using:
+
+> base64dl.lua chicken.schematic https://pastebin.com/raw/vxpHBUky

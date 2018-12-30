@@ -12,6 +12,7 @@ local function equip(side, rawName)
 	return turtle and turtle.equip(side, rawName) and peripheral.wrap(side)
 end
 
+local target = nil
 local ni = device.neuralInterface
 local sensor = ni or
 	device['plethora:sensor'] or
@@ -57,7 +58,8 @@ local page = UI.Page {
 	detail = UI.SlideOut {
 		menuBar = UI.MenuBar {
 			buttons = {
-				{ text = 'Back',  event = 'hide' },
+				{ text = 'Projector', event = 'project-target' },
+				{ text = 'Back',      event = 'hide', x = -6 },
 			},
 		},
 		grid = UI.ScrollingGrid {
@@ -131,6 +133,7 @@ function page:eventHandler(event)
 	elseif event.type == 'detail' or event.type == 'grid_select' then
 		local selected = self.grid:getSelected()
 		if selected then
+			target = selected.name
 			self.detail:show(selected)
 		end
 
@@ -144,7 +147,11 @@ function page:eventHandler(event)
 		end
 		Config.update('Entities', config)
 
-	elseif event.type == 'project' then
+	elseif event.type == 'project' or event.type == 'project-target' then
+		if event.type == 'project' then
+			target = nil
+		end
+
 		config.projecting = not config.projecting
 		if config.projecting then
 			Project:init(ni.canvas())
@@ -164,7 +171,11 @@ Event.onInterval(.5, function()
 	if config.projecting then
 		local meta = ni.getMetaOwner()
 		Project.canvas:clear()
-		Project:drawPoints(meta, entities, 'X', 0xFFDF50AA)
+		local t = entities
+		if target then
+			t = Util.filter(entities, function(e) return e.name == target end)
+		end
+		Project:drawPoints(meta, t, 'X', 0xFFDF50AA)
 	end
 
 	if config.totals then
