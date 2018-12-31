@@ -131,16 +131,28 @@ local function turtleCraft(recipe, storage, request, count)
 		if storage:export(storage.turtleInventory, k, count, item) ~= count then
 			request.status = 'unknown error'
 			request.statusCode = Craft.STATUS_ERROR
+_debug(item)
 			return
 		end
 	end
 
 	turtle.select(1)
 	if turtle.craft() then
-		request.crafted = request.crafted + count * recipe.count
-		request.status = 'crafted'
-		request.statusCode = Craft.STATUS_SUCCESS
+		local l = storage.turtleInventory.adapter.list()
+		local crafted = l[1]
+		if recipe.result ~= itemDB:makeKey(crafted) then
+			_debug('expected: ' .. recipe.result)
+			_debug('got: ' .. itemDB:makeKey(crafted))
+			request.aborted = true
+			request.status = 'Failed to craft: ' .. recipe.result
+			request.statusCode = Craft.STATUS_ERROR
+		else
+			request.crafted = request.crafted + count * recipe.count
+			request.status = 'crafted'
+			request.statusCode = Craft.STATUS_SUCCESS
+		end
 	else
+		_debug('just failed')
 		request.status = 'Failed to craft'
 		request.statusCode = Craft.STATUS_ERROR
 	end
@@ -174,19 +186,34 @@ function Craft.craftRecipe(recipe, count, storage, origItem)
 	return Craft.craftRecipeInternal(recipe, count, storage, origItem)
 end
 
-local function adjustCounts(recipe, count, ingredients)
+local function adjustCounts(recipe, count, ingredients, storage)
 	-- decrement ingredients used
 	for key,icount in pairs(Craft.sumIngredients(recipe)) do
 		ingredients[key].count = ingredients[key].count - (icount * count)
+		if ingredients[key].count == 0 and not storage.cache[key] then
+			--
+		elseif not storage.cache[key] then
+			_debug({ key, ingredients[key].count, 'nocache' })
+		elseif storage.cache[key].count ~= ingredients[key].count then
+			_debug({ key, ingredients[key].count, storage.cache[key].count })
+
+		end
 	end
 
 	-- increment crafted
 	local result = ingredients[recipe.result]
 	result.count = result.count + (count * recipe.count)
+
+
 end
 
 function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 	local request = origItem.ingredients[recipe.result]
+
+	if request.aborted then
+_debug('aborted')
+		return 0
+	end
 
 	if origItem.pending[recipe.result] then
 		request.status = 'processing'
@@ -234,7 +261,7 @@ function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 			end
 		end
 	end
-
+_G._p = origItem.ingredients
 	local crafted = 0
 	while canCraft > 0 do
 		local batch = math.min(canCraft, maxCount)
@@ -248,7 +275,7 @@ function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 			break
 		end
 
-		adjustCounts(recipe, batch, origItem.ingredients)
+		adjustCounts(recipe, batch, origItem.ingredients, storage)
 
 		crafted = crafted + batch
 		canCraft = canCraft - maxCount

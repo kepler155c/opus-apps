@@ -26,9 +26,14 @@ local craftPage = UI.Page {
           x = 6, y = 4,
           value = 'Eject',
         },
-        eject = UI.Checkbox {
+        eject = UI.Chooser {
           x = 15, y = 4, width = 7,
           value = true,
+          nochoice = 'No',
+          choices = {
+            { name = 'Yes', value = true },
+            { name = 'No', value = false },
+          },
         },
       },
       resources = UI.Window {

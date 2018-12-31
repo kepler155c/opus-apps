@@ -9,7 +9,7 @@ local turtle = _G.turtle
 
 local context = Milo:getContext()
 
-local function learnRecipe(ignoreNBT)
+local function learnRecipe()
 	local ingredients = Milo:getTurtleInventory()
 
 	if not ingredients then
@@ -83,10 +83,6 @@ local function learnRecipe(ignoreNBT)
 
 	newRecipe.count = recipe.count
 
-	if ignoreNBT then
-		recipe.nbtHash = nil
-	end
-
 	local key = Milo:uniqueKey(recipe)
 	if recipe.maxCount ~= 64 then
 		newRecipe.maxCount = recipe.maxCount
@@ -95,16 +91,10 @@ local function learnRecipe(ignoreNBT)
 		if ingredient.maxDamage > 0 then
 			-- ingredient.damage = '*'               -- I don't think this is right
 		end
-		if ignoreNBT then
-			ingredient.nbtHash = nil
-		end
 		ingredients[k] = Milo:uniqueKey(ingredient)
 	end
 
-	context.userRecipes[key] = newRecipe
-	Util.writeTable(Craft.USER_RECIPES, context.userRecipes)
-	Craft.loadRecipes()
-
+	Milo:updateRecipe(key, newRecipe)
 	turtle.emptyInventory()
 
 	return recipe
@@ -115,29 +105,15 @@ local pages = {
 		index = 2,
 		validFor = 'Turtle Crafting',
 		notice = UI.Text {
-			x = 2, y = 2,
+			x = 3, y = 2,
 			textColor = colors.yellow,
 			value = 'Place recipe in turtle',
-		},
-		ignoreNBT = UI.Checkbox {
-			x = 3, y = 4,
-			help = 'Ignore damage of item',
-			value = true,
-		},
-		text = UI.Text {
-			x = 7, y = 4,
-			value = 'Ignore NBT (recommended)',
-		},
-		ignoreInfo = UI.TextArea {
-			x = 2, ex = -2, y = 6, ey = -2,
-			textColor = colors.yellow,
-			value = 'Some items contain unique NBT information. This information can be ignored for most items.',
 		},
 	},
 }
 
 function pages.turtleCraft:validate()
-	local recipe, msg = learnRecipe(self, self.ignoreNBT.value)
+	local recipe, msg = learnRecipe()
 
 	if recipe then
 		local displayName = itemDB:getName(recipe)

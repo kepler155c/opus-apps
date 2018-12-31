@@ -234,6 +234,17 @@ function Milo:eject(item, count)
 	return count
 end
 
+function Milo:updateRecipe(result, recipe)
+	-- save the recipe
+	if recipe then
+		recipe = Util.shallowCopy(recipe)
+		recipe.result = nil
+	end
+	self.context.userRecipes[result] = recipe
+	Util.writeTable(Craft.USER_RECIPES, self.context.userRecipes)
+	Craft.loadRecipes()
+end
+
 function Milo:saveMachineRecipe(recipe, result, machine)
 	local key = Milo:uniqueKey(result)
 
