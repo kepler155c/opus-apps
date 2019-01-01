@@ -1,9 +1,5 @@
 --[[
   Provides: autocrafting, resource limits, on-demand crafting.
-
-  Turtle crafting:
-    1. The turtle must have a crafting table equipped.
-    2. Equip the turtle with an introspection module.
 ]]--
 
 _G.requireInjector(_ENV)
@@ -28,12 +24,12 @@ end
 
 local function Syntax(msg)
   print([[
-Turtle must be equipped with:
-  * Introspection module (unbound)
+Turtle must be provided with:
+  * Introspection module (never bound)
   * Workbench
 
 Turtle must be connected to:
-  * Wired modem
+  * Wired modem (activated)
 ]])
 
   error(msg)
@@ -99,10 +95,12 @@ context.storage.turtleInventory = context.turtleInventory
 
 local function loadDirectory(dir)
   for _, file in pairs(fs.list(dir)) do
-    local s, m = Util.run(_ENV, fs.combine(dir, file))
-    if not s and m then
-      _G.printError('Error loading: ' .. file)
-      error(m or 'Unknown error')
+    if not fs.isDir(fs.combine(dir, file)) then
+      local s, m = Util.run(_ENV, fs.combine(dir, file))
+      if not s and m then
+        _G.printError('Error loading: ' .. file)
+        error(m or 'Unknown error')
+      end
     end
   end
 end

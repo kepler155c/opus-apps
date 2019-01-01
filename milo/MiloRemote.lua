@@ -1,5 +1,3 @@
-_G.requireInjector(_ENV)
-
 local Config = require('config')
 local Event  = require('event')
 local Sound  = require('sound')
@@ -12,14 +10,16 @@ local colors = _G.colors
 local device = _G.device
 local fs     = _G.fs
 local os     = _G.os
+local shell  = _ENV.shell
 local string = _G.string
 
 local SHIELD_SLOT  = 2
 local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
 
-local config = Config.load('miloRemote', { displayMode = 0 })
+local context = {
+  state = Config.load('miloRemote', { displayMode = 0 }),
+}
 
-local socket
 local depositMode = {
   [ true  ] = { text = '\25',  textColor = colors.black, help = 'Deposit enabled' },
   [ false ] = { text = '\215', textColor = colors.red,   help = 'Deposit disabled' },
@@ -40,17 +40,10 @@ local page = UI.Page {
         event = 'refresh'
       },
       {
+        name = 'config',
         text = '\206',
         x = -3,
-        dropdown = {
-          { text = 'Setup', event = 'setup' },
-          UI.MenuBar.spacer,
-          {
-            text = 'Rescan storage',
-            event = 'rescan',
-            help = 'Rescan all inventories'
-          },
-        },
+
       },
     },
     infoBar = UI.StatusBar {
@@ -65,8 +58,8 @@ local page = UI.Page {
       { heading = 'Name', key = 'displayName' },
     },
     values = { },
-    sortColumn = config.sortColumn or 'count',
-    inverseSort = config.inverseSort,
+    sortColumn = context.state.sortColumn or 'count',
+    inverseSort = context.state.inverseSort,
     help = '^(s)tack, ^(a)ll'
   },
   statusBar = UI.Window {
@@ -101,8 +94,8 @@ local page = UI.Page {
     display = UI.Button {
       x = -3,
       event = 'toggle_display',
-      text = displayModes[config.displayMode].text,
-      help = displayModes[config.displayMode].help,
+      text = displayModes[context.state.displayMode].text,
+      help = displayModes[context.state.displayMode].help,
     },
   },
   accelerators = {
@@ -121,7 +114,6 @@ local page = UI.Page {
     },
     form = UI.Form {
       x = 2, ex = -2, y = 2, ey = -1,
-      values = config,
       [1] = UI.TextEntry {
         formLabel = 'Server', formKey = 'server',
         help = 'ID for the server',
@@ -188,15 +180,19 @@ function page:processMessages(s)
         local ritem = self.items[response.key]
         if ritem then
           ritem.count = response.count
-          self.grid:draw()
-          self:sync()
+          if self.enabled then
+            self.grid:draw()
+            self:sync()
+          end
         end
 
       elseif response.type == 'list' then
         self.items = self:expandList(response.list)
         self:applyFilter()
-        self.grid:draw()
-        self.grid:sync()
+        if self.enabled then
+          self.grid:draw()
+          self.grid:sync()
+        end
 
       elseif response.type == 'transfer' then
         if response.count > 0 then
@@ -204,8 +200,10 @@ function page:processMessages(s)
           local item = self.items[response.key]
           if item then
             item.count = response.current
-            self.grid:draw()
-            self:sync()
+            if self.enabled then
+              self.grid:draw()
+              self:sync()
+            end
           end
         end
         if response.craft then
@@ -232,7 +230,7 @@ function page:processMessages(s)
 end
 
 function page:sendRequest(data, statusMsg)
-  if not config.server then
+  if not context.state.server then
     self:setStatus('Invalid configuration')
     return
   end
@@ -247,35 +245,35 @@ function page:sendRequest(data, statusMsg)
   sync(self, function()
     local msg
     for _ = 1, 2 do
-      if not socket or not socket.connected then
+      if not context.socket or not context.socket.connected then
         self:setStatus('connecting ...')
-        socket, msg = Socket.connect(config.server, 4242)
-        if socket then
-          socket:write(player)
-          local r = socket:read(2)
+        context.socket, msg = Socket.connect(context.state.server, 4242)
+        if context.socket then
+          context.socket:write(player)
+          local r = context.socket:read(2)
           if r and not r.msg then
             self:setStatus('connected ...')
-            self:processMessages(socket)
+            self:processMessages(context.socket)
           else
             msg = r and r.msg or 'Timed out'
-            socket:close()
-            socket = nil
+            context.socket:close()
+            context.socket = nil
           end
         end
       end
-      if socket then
+      if context.socket then
         if statusMsg then
           self:setStatus(statusMsg)
           Event.onTimeout(2, function()
             self:setStatus('')
           end)
         end
-        if socket:write(data) then
+        if context.socket:write(data) then
           success = true
           return
         end
-        socket:close()
-        socket = nil
+        context.socket:close()
+        context.socket = nil
       end
     end
     self:setStatus(msg or 'Failed to connect')
@@ -321,9 +319,9 @@ end
 
 function page.grid:eventHandler(event)
   if event.type == 'grid_sort' then
-    config.sortColumn = event.sortColumn
-    config.inverseSort = event.inverseSort
-    Config.update('miloRemote', config)
+    context.state.sortColumn = event.sortColumn
+    context.state.inverseSort = event.inverseSort
+    Config.update('miloRemote', context.state)
   end
   return UI.Grid.eventHandler(self, event)
 end
@@ -344,24 +342,24 @@ function page:eventHandler(event)
     UI:exitPullEvents()
 
   elseif event.type == 'setup' then
-    self.setup.form:setValues(config)
+    self.setup.form:setValues(context.state)
     self.setup:show()
 
   elseif event.type == 'toggle_deposit' then
-    config.deposit = not config.deposit
-    Util.merge(self.statusBar.depositToggle, depositMode[config.deposit])
+    context.state.deposit = not context.state.deposit
+    Util.merge(self.statusBar.depositToggle, depositMode[context.state.deposit])
     self.statusBar:draw()
-    self:setStatus(depositMode[config.deposit].help)
-    Config.update('miloRemote', config)
+    self:setStatus(depositMode[context.state.deposit].help)
+    Config.update('miloRemote', context.state)
 
   elseif event.type == 'form_complete' then
-    Config.update('miloRemote', config)
+    Config.update('miloRemote', context.state)
     self.setup:hide()
     self:refresh('list')
     self.grid:draw()
     self:setFocus(self.statusBar.filter)
 
-    if config.runOnStartup then
+    if context.state.runOnStartup then
       if not fs.exists(STARTUP_FILE) then
         Util.writeFile(STARTUP_FILE,
           [[os.sleep(1)
@@ -408,6 +406,9 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
       self:setStatus('nope ...')
     end
 
+  elseif event.type == 'plugin' then
+    event.button.callback(context)
+
   elseif event.type == 'rescan' then
     self:setFocus(self.statusBar.filter)
     self:refresh('scan')
@@ -419,13 +420,13 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
     self.grid:draw()
 
   elseif event.type == 'toggle_display' then
-    config.displayMode = (config.displayMode + 1) % 2
-    Util.merge(event.button, displayModes[config.displayMode])
+    context.state.displayMode = (context.state.displayMode + 1) % 2
+    Util.merge(event.button, displayModes[context.state.displayMode])
     event.button:draw()
     self:applyFilter()
     self:setStatus(event.button.help)
     self.grid:draw()
-    Config.update('miloRemote', config)
+    Config.update('miloRemote', context.state)
 
   elseif event.type == 'text_change' and event.element == self.statusBar.filter then
     self.filter = event.text
@@ -443,9 +444,9 @@ end
 
 function page:enable()
   self:setFocus(self.statusBar.filter)
-  Util.merge(self.statusBar.depositToggle, depositMode[config.deposit])
+  Util.merge(self.statusBar.depositToggle, depositMode[context.state.deposit])
   UI.Page.enable(self)
-  if not config.server then
+  if not context.state.server then
     self.setup:show()
   end
   Event.onTimeout(.1, function()
@@ -502,7 +503,7 @@ function page:applyFilter()
     end
     return t
   end
-  local t = filterItems(self.items, self.filter, config.displayMode)
+  local t = filterItems(self.items, self.filter, context.state.displayMode)
   self.grid:setValues(t)
 end
 
@@ -514,20 +515,20 @@ Event.addRoutine(function()
       sleepTime = .25
     end
 
-    os.sleep(socket and sleepTime or 5)
-    if config.deposit then
+    os.sleep(context.socket and sleepTime or 5)
+    if context.state.deposit then
       local neural = device.neuralInterface
-      local inv = config.useShield and 'getEquipment' or 'getInventory'
+      local inv = context.state.useShield and 'getEquipment' or 'getInventory'
       if not neural or not neural[inv] then
         _G._debug('missing Introspection module')
-      elseif config.server and (config.useShield or config.slot) then
+      elseif context.state.server and (context.state.useShield or context.state.slot) then
         local s, m = pcall(function()
           local method = neural[inv]
-          local item = method and method().list()[config.useShield and SHIELD_SLOT or config.slot]
+          local item = method and method().list()[context.state.useShield and SHIELD_SLOT or context.state.slot]
           if item then
             if page:sendRequest({
               request = 'deposit',
-              slot = config.useShield and 'shield' or config.slot,
+              slot = context.state.useShield and 'shield' or context.state.slot,
               count = item.count,
             }) then
               lastTransfer = os.clock()
@@ -542,9 +543,50 @@ Event.addRoutine(function()
   end
 end)
 
+context.page = page
+
+function context:getState(key)
+  return self.state[key]
+end
+
+function context:setState(key, value)
+  self.state[key] = value
+  Config.update('miloRemote', self.state)
+end
+
+local function loadDirectory(dir)
+  local dropdown = {
+    { text = 'Setup', event = 'setup' },
+    UI.MenuBar.spacer,
+    {
+      text = 'Rescan storage',
+      event = 'rescan',
+      help = 'Rescan all inventories'
+    },
+  }
+
+  for _, file in pairs(fs.list(dir)) do
+    local s, m = Util.run(_ENV, fs.combine(dir, file), context)
+    if not s and m then
+      _G.printError('Error loading: ' .. file)
+      error(m or 'Unknown error')
+    elseif s and m then
+      table.insert(dropdown, {
+        text = m.menuItem,
+        event = 'plugin',
+        callback = m.callback,
+      })
+    end
+  end
+  page.menuBar.config:add({ dropmenu = UI.DropMenu { buttons = dropdown } })
+end
+
+local programDir = fs.getDir(shell.getRunningProgram())
+loadDirectory(fs.combine(programDir, 'plugins/remote'))
+
 UI:setPage(page)
 UI:pullEvents()
 
-if socket then
-  socket:close()
+if context.socket then
+  context.socket:close()
 end
