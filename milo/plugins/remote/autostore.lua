@@ -10,6 +10,10 @@ local ni     = device.neuralInterface
 
 local context = args[1]
 
+if not context.state.autostore then
+	context.state.autostore = { }
+end
+
 local page = UI.Page {
 	titleBar = UI.TitleBar {
 		backgroundColor = colors.gray,
