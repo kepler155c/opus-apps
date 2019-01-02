@@ -45,6 +45,11 @@ local page = UI.Page {
 	},
 }
 
+local function makeKey(item)
+	local damage = item.maxDamage == 0 and item.damage
+	return itemDB:makeKey({ name = item.name, damage = damage })
+end
+
 function page.tabs.inventory:enable()
 	local inv = ni.getInventory().list()
 	local list = { }
@@ -58,11 +63,12 @@ function page.tabs.inventory:enable()
 			end
 			if cItem then
 				cItem = Util.shallowCopy(cItem)
-				cItem.key = key
+				cItem.key = makeKey(cItem)
 				list[key] = cItem
 			end
 		end
 	end
+
 	self.grid:setValues(list)
 	itemDB:flush()
 
@@ -79,10 +85,11 @@ end
 function page.tabs.inventory:eventHandler(event)
 	if event.type == 'grid_select' then
 		local autostore = context.state.autostore or { }
-		if autostore[event.selected.key] then
-			autostore[event.selected.key] = nil
+		local key = makeKey(event.selected)
+		if autostore[key] then
+			autostore[key] = nil
 		else
-			autostore[event.selected.key] = true
+			autostore[key] = true
 		end
 		context:setState('autostore', autostore)
 		self.grid:draw()
@@ -106,7 +113,7 @@ end
 
 function page.tabs.autostore:eventHandler(event)
 	if event.type == 'grid_select' then
-		local key = itemDB:makeKey(event.selected)
+		local key = makeKey(event.selected)
 		context.state.autostore[key] = nil
 		context:setState('autostore', context.state.autostore)
 		Util.removeByValue(self.grid.values, event.selected)
@@ -131,10 +138,15 @@ Event.onInterval(5, function()
 
 		if empty then
 			for k,v in pairs(inv) do
-				local key = itemDB:makeKey(v)
-				if context.state.autostore[key] then
-					ni.getInventory().pushItems(target, k, v.count, slot)
-					break
+				local item = itemDB:get(v)
+				if not item then
+					item = itemDB:add(ni.getInventory().getItemMeta(k))
+				end
+				if item then
+					if context.state.autostore[makeKey(item)] then
+						ni.getInventory().pushItems(target, k, v.count, slot)
+						break
+					end
 				end
 			end
 		end

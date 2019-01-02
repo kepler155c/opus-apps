@@ -4,7 +4,9 @@ local hostiles = {
   BabySkeleton = true,
   BabyZombie = true,
   Bat = true,
+  Blaze = true,
   Creeper = true,
+  Ghast = true,
   Husk = true,
   LavaSlime = true,
   PigZombie = true,
@@ -12,6 +14,7 @@ local hostiles = {
   Slime = true,
   Spider = true,
   Witch = true,
+  WitherSkeleton = true,
   Zombie = true,
   ZombieVillager = true,
 }
