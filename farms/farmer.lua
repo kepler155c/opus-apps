@@ -9,8 +9,15 @@ local os          = _G.os
 local peripheral  = _G.peripheral
 local turtle      = _G.turtle
 
-local CONFIG_FILE = 'usr/config/farmer'
+local CONFIG_FILE  = 'usr/config/farmer'
 local STARTUP_FILE = 'usr/autorun/farmer.lua'
+local MIN_FUEL     = 2500
+
+local FUEL = Util.transpose {
+  'minecraft:coal:0',
+  'minecraft:coal:1',
+  'minecraft:blaze_rod:0',
+}
 
 local scanner = device['plethora:scanner'] or
   turtle.equip('right', 'plethora:module:2') and device['plethora:scanner'] or
@@ -148,6 +155,22 @@ local function harvest(blocks)
 
         dropped = true
         turtle.condense()
+
+        if turtle.getFuelLevel() < MIN_FUEL then
+          local inv = peripheral.wrap('bottom')
+          if inv and inv.list then
+            for k, v in pairs(inv.list()) do
+              if FUEL[table.concat({ v.name, v.damage }, ':')] then
+                local count = inv.pushItems('up', k, v.count)
+                if count > 0 then
+                  turtle.refuel(v.name, v.count)
+                  print('Fuel: ' .. turtle.getFuelLevel())
+                  break
+                end
+              end
+            end
+          end
+        end
       end
 
     elseif b.action == 'smash' then

@@ -24,7 +24,7 @@ local page = UI.Page {
 		y = 2,
 		inventory = UI.Window {
 			tabTitle = 'Inventory',
-			grid = UI.Grid {
+			grid = UI.ScrollingGrid {
 				y = 2, ey = -2,
 				columns = {
 					{ heading = 'Name', key = 'displayName' },
@@ -34,7 +34,7 @@ local page = UI.Page {
 		},
 		autostore = UI.Window {
 			tabTitle = 'Sending',
-			grid = UI.Grid {
+			grid = UI.ScrollingGrid {
 				y = 2, ey = -2,
 				columns = {
 					{ heading = 'Name', key = 'displayName' },
@@ -73,21 +73,7 @@ function page.tabs.inventory.grid:getRowTextColor(row)
 	if context.state.autostore[row.key] then
 		return colors.yellow
 	end
-	return UI.Grid.getRowTextColor(self, row)
-end
-
-function page.tabs.autostore:enable()
-	local list = { }
-
-	for key in pairs(context.state.autostore or { }) do
-		local cItem = itemDB:get(key)
-		if cItem then
-			table.insert(list, cItem)
-		end
-	end
-	self.grid:setValues(list)
-
-	return UI.Window.enable(self)
+	return UI.ScrollingGrid.getRowTextColor(self, row)
 end
 
 function page.tabs.inventory:eventHandler(event)
@@ -102,6 +88,20 @@ function page.tabs.inventory:eventHandler(event)
 		self.grid:draw()
 		return true
 	end
+end
+
+function page.tabs.autostore:enable()
+	local list = { }
+
+	for key in pairs(context.state.autostore or { }) do
+		local cItem = itemDB:get(key)
+		if cItem then
+			table.insert(list, cItem)
+		end
+	end
+	self.grid:setValues(list)
+
+	return UI.Window.enable(self)
 end
 
 function page.tabs.autostore:eventHandler(event)
