@@ -1,6 +1,8 @@
 local Config     = require('config')
 local Event      = require('event')
+local Mobs       = require('neural.mobs')
 local Project    = require('neural.project')
+local Sound      = require('sound')
 local UI         = require('ui')
 local Util       = require('util')
 
@@ -12,6 +14,7 @@ local function equip(side, rawName)
 	return turtle and turtle.equip(side, rawName) and peripheral.wrap(side)
 end
 
+local lastWarning = os.clock()
 local target = nil
 local ni = device.neuralInterface
 local sensor = ni or
@@ -176,6 +179,13 @@ Event.onInterval(.5, function()
 			t = Util.filter(entities, function(e) return e.name == target end)
 		end
 		Project:drawPoints(meta, t, 'X', 0xFFDF50AA)
+	end
+
+	if os.clock() > lastWarning + 5 then
+		if Util.any(entities, function(e) return Mobs.getNames()[e.name] end) then
+			lastWarning = os.clock()
+			Sound.play('entity.player.breath')
+		end
 	end
 
 	if config.totals then
