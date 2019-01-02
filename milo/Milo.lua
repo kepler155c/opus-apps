@@ -96,7 +96,7 @@ context.storage.turtleInventory = context.turtleInventory
 local function loadDirectory(dir)
   for _, file in pairs(fs.list(dir)) do
     if not fs.isDir(fs.combine(dir, file)) then
-      local s, m = Util.run(_ENV, fs.combine(dir, file))
+      local s, m = Util.run(_ENV, fs.combine(dir, file), context)
       if not s and m then
         _G.printError('Error loading: ' .. file)
         error(m or 'Unknown error')

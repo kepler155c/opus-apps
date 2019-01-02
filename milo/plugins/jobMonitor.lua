@@ -2,6 +2,7 @@ local Craft   = require('craft2')
 local Event   = require('event')
 local itemDB  = require('itemDB')
 local Milo    = require('milo')
+local Sound   = require('sound')
 local UI      = require('ui')
 local Util    = require('util')
 
@@ -74,6 +75,7 @@ local function createPage(node)
       textScale = node.textScale or .5,
     },
     grid = UI.Grid {
+      ey = -6,
       sortColumn = 'index',
       columns = {
         { heading = 'Qty',      key = 'remaining',   width = 4 },
@@ -85,6 +87,28 @@ local function createPage(node)
   --      { heading = 'count',   key = 'count', width = 4     },
         { heading = 'crafted',   key = 'crafted',  width = 5    },
   --      { heading = 'Progress', key = 'progress',    width = 8 },
+      },
+    },
+    buttons = UI.Window {
+      y = -5, height = 5,
+      backgroundColor = colors.gray,
+      prevButton = UI.Button {
+        x = 2, y = 2, height = 3, width = 5,
+        event = 'previous',
+        backgroundColor = colors.lightGray,
+        text = ' < '
+      },
+      cancelButton = UI.Button {
+        x = 8, y = 2, height = 3, ex = -8,
+        event = 'cancel_job',
+        backgroundColor = colors.lightGray,
+        text = 'Cancel Job'
+      },
+      nextButton = UI.Button {
+        x = -6, y = 2, height = 3, width = 5,
+        event = 'next',
+        backgroundColor = colors.lightGray,
+        text = ' > '
       },
     },
   }
@@ -137,28 +161,36 @@ local function createPage(node)
       UI.Grid:getRowTextColor(row, selected)
   end
 
-  page:enable()
-  page:draw()
-  page:sync()
+  -- no sorting allowed
+  function page:setInverseSort() end
+  function page:setSortColumn() end
 
+  function page:eventHandler(event)
+    if event.type == 'cancel_job' then
+      Sound.play('entity.villager.no', .5)
+
+    elseif event.type == 'next' then
+      self.grid:nextPage()
+
+    elseif event.type == 'previous' then
+      self.grid:previousPage()
+
+    else
+      return UI.Page.eventHandler(self, event)
+    end
+
+    Event.onTimeout(.1, function()
+      self:setFocus(self.grid)
+      self:sync()
+    end)
+    return true
+  end
+
+  UI:setPage(page)
   return page
 end
 
 local pages = { }
-
-Event.on('monitor_resize', function(_, side)
-  for node in context.storage:filterActive('jobs') do
-    if node.name == side and pages[node.name] then
-      local p = pages[node.name]
-      p.parent:setTextScale(node.textScale or .5)
-      p.parent:resize()
-      p:resize()
-      p:draw()
-      p:sync()
-      break
-    end
-  end
-end)
 
 Event.on({ 'milo_resume', 'milo_pause' }, function(_, reason)
   for node in context.storage:filterActive('jobs') do

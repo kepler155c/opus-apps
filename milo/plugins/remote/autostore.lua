@@ -17,7 +17,7 @@ end
 local page = UI.Page {
 	titleBar = UI.TitleBar {
 		backgroundColor = colors.gray,
-		title = 'Auto send items to storage',
+		title = 'Auto deposit items',
 		previousPage = true,
 	},
 	tabs = UI.Tabs {
@@ -33,7 +33,7 @@ local page = UI.Page {
 			},
 		},
 		autostore = UI.Window {
-			tabTitle = 'Sending',
+			tabTitle = 'Deposit',
 			grid = UI.ScrollingGrid {
 				y = 2, ey = -2,
 				columns = {
@@ -154,7 +154,7 @@ Event.onInterval(5, function()
 end)
 
 return {
-	menuItem = 'Autostore',
+	menuItem = 'Auto-deposit',
 	callback = function()
 		UI:setPage(page)
 	end,

@@ -131,7 +131,7 @@ local function turtleCraft(recipe, storage, request, count)
 		if storage:export(storage.turtleInventory, k, count, item) ~= count then
 			request.status = 'unknown error'
 			request.statusCode = Craft.STATUS_ERROR
-_debug(item)
+_debug('failed to export: ' .. item.name)
 			return
 		end
 	end

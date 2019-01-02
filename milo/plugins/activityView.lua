@@ -69,12 +69,13 @@ UI:getPage('nodeWizard').wizard:add({ activity = wizardPage })
 
 --[[ Display ]]--
 local function createPage(node)
-  local page = UI.Window {
+  local page = UI.Page {
     parent = UI.Device {
       device = node.adapter,
       textScale = node.textScale or .5,
     },
     grid = UI.Grid {
+      ey = -6,
       columns = {
         { heading = 'Qty',    key = 'count',       width = 5 },
         { heading = 'Change', key = 'change',      width = 5 },
@@ -82,6 +83,28 @@ local function createPage(node)
         { heading = 'Name',   key = 'displayName' },
       },
       sortColumn = 'displayName',
+    },
+    buttons = UI.Window {
+      y = -5, height = 5,
+      backgroundColor = colors.gray,
+      prevButton = UI.Button {
+        x = 2, y = 2, height = 3, width = 5,
+        event = 'previous',
+        backgroundColor = colors.lightGray,
+        text = ' < '
+      },
+      resetButton = UI.Button {
+        x = 8, y = 2, height = 3, ex = -8,
+        event = 'reset',
+        backgroundColor = colors.lightGray,
+        text = 'Reset'
+      },
+      nextButton = UI.Button {
+        x = -6, y = 2, height = 3, width = 5,
+        event = 'next',
+        backgroundColor = colors.lightGray,
+        text = ' > '
+      },
     },
     timestamp = os.clock(),
   }
@@ -106,6 +129,27 @@ local function createPage(node)
     row.rate = Util.toBytes(row.rate)
 
     return row
+  end
+
+  function page:eventHandler(event)
+    if event.type == 'reset' then
+      self:reset()
+
+    elseif event.type == 'next' then
+      self.grid:nextPage()
+
+    elseif event.type == 'previous' then
+      self.grid:previousPage()
+
+    else
+      return UI.Page.eventHandler(self, event)
+    end
+
+    Event.onTimeout(.1, function()
+      self:setFocus(self.grid)
+      self:sync()
+    end)
+    return true
   end
 
   function page:reset()
@@ -171,38 +215,11 @@ local function createPage(node)
     page:sync()
   end
 
-  page:enable()
-  page:draw()
-  page:sync()
-
+  UI:setPage(page)
   return page
 end
 
 local pages = { }
-
-Event.on('monitor_resize', function(_, side)
-  for node in context.storage:filterActive('activity') do
-    if node.name == side and pages[node.name] then
-      local p = pages[node.name]
-      p.parent:setTextScale(node.textScale or .5)
-      p.parent:resize()
-      p:resize()
-      p:draw()
-      p:sync()
-      break
-    end
-  end
-end)
-
-Event.on('monitor_touch', function(_, side)
-  local function filter(node)
-    return node.adapter.side == side and pages[node.name]
-  end
-  for node in context.storage:filterActive('activity', filter) do
-    pages[node.name]:reset()
-    pages[node.name]:sync()
-  end
-end)
 
 --[[ Task ]]--
 local ActivityTask = {
