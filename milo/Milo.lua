@@ -85,8 +85,6 @@ local context = {
 context.storage.nodes[localName] = context.turtleInventory
 context.storage.nodes[localName].adapter.name = localName
 
-_G._p = context --debug
-
 Milo:init(context)
 context.storage:initStorage()
 
@@ -135,8 +133,6 @@ Event.on('milo_cycle', function()
       if not s and m then
         _G._debug(task.name .. ' crashed')
         _G._debug(m)
-        -- _G.printError(task.name .. ' crashed')
-        -- _G.printError(m)
       end
     end
     processing = false

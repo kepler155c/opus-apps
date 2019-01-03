@@ -149,7 +149,7 @@ Event.on('turtle_inventory', function()
     if s and not active then
       break
     end
-    if s and not m then
+    if not s and m then
       _G.printError(m)
     end
     os.sleep(3)

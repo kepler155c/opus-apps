@@ -27,7 +27,6 @@ local directions = Util.transpose {
 }
 
 Event.on('turtle_inventory', function()
-  print('processing')
   local s, m = pcall(function()
     local direction
 
@@ -43,10 +42,11 @@ Event.on('turtle_inventory', function()
     end
 
     turtle.eachFilledSlot(function(s)
+      print('sending')
       enderChest().pullItems(direction, s.index)
     end)
   end)
-  if s and not m then
+  if not s and m then
     _G.printError(m)
   end
   print('idle')
