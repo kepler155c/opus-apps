@@ -168,10 +168,12 @@ function page:eject(amount)
         amount = item.maxCount or 64
       elseif amount == 'all' then
         item = Milo:getItem(Milo:listItems(), item)
-        amount = item.count
+        if item then
+          amount = item.count
+        end
       end
 
-      if amount > 0 then
+      if item and amount > 0 then
         item = Util.shallowCopy(item)
         self.grid.values[self.grid.sorted[self.grid.index]] = item
         local request = Milo:craftAndEject(item, amount)

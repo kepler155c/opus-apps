@@ -128,6 +128,8 @@ function Storage:initStorage()
     os.queueEvent(self.storageOnline and 'storage_online' or 'storage_offline', online)
     _G._debug('Storage: %s', self.storageOnline and 'online' or 'offline')
   end
+
+  self:listItems()
 end
 
 function Storage:saveConfiguration()

@@ -69,11 +69,18 @@ UI:getPage('nodeWizard').wizard:add({ activity = wizardPage })
 
 --[[ Display ]]--
 local function createPage(node)
+  local monitor = UI.Device {
+    device = node.adapter,
+    textScale = node.textScale or .5,
+  }
+
+  function monitor:resize()
+    self.textScale = node.textScale or .5
+    UI.Device.resize(self)
+  end
+
   local page = UI.Page {
-    parent = UI.Device {
-      device = node.adapter,
-      textScale = node.textScale or .5,
-    },
+    parent = monitor,
     grid = UI.Grid {
       ey = -6,
       columns = {
@@ -161,7 +168,7 @@ local function createPage(node)
   function page:refresh()
     local t = context.storage.cache
 
-    if not self.lastItems then
+    if t and not self.lastItems then
       self.lastItems = { }
       for k,v in pairs(t) do
         self.lastItems[k] = {

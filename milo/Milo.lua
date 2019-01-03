@@ -184,4 +184,6 @@ os.queueEvent(
   context.storage:isOnline() and 'storage_online' or 'storage_offline',
   context.storage:isOnline())
 
+--os.queueEvent('milo_cycle')
+
 UI:pullEvents()

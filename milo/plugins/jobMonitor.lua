@@ -67,13 +67,19 @@ end
 UI:getPage('nodeWizard').wizard:add({ jobs = wizardPage })
 
 --[[ Display ]]
--- TODO: some way to cancel a job
 local function createPage(node)
+  local monitor = UI.Device {
+    device = node.adapter,
+    textScale = node.textScale or .5,
+  }
+
+  function monitor:resize()
+    self.textScale = node.textScale or .5
+    UI.Device.resize(self)
+  end
+
   local page = UI.Page {
-    parent = UI.Device {
-      device = node.adapter,
-      textScale = node.textScale or .5,
-    },
+    parent = monitor,
     grid = UI.Grid {
       ey = -6,
       sortColumn = 'index',
