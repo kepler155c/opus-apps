@@ -39,9 +39,7 @@ function page:enable(item)
       v:setItem(item)
     end
   end
-
-  self.tabs:selectTab(self.tabs[1])
-
+  self.tabs:selectTab(tabs[1])
   UI.Page.enable(self)
 end
 

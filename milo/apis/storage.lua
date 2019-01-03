@@ -139,7 +139,6 @@ function Storage:saveConfiguration()
     v.adapter = nil
   end
 
-  -- TODO: Should be named 'storage'
   Config.update('storage', self.nodes)
 
   for k,v  in pairs(t) do
