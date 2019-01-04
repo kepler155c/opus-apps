@@ -487,23 +487,23 @@ local function findDroppedSaplings()
   return sensed
 end
 
-local function scan(pt, filter)
+local function scan(pt, filter, blocks)
   turtle.pathfind(pt)
 
   equip('left', 'plethora:scanner', SCANNER)
   local raw = peripheral.call('left', 'scan')
 
-  local blocks = Util.reduce(raw, function(acc, b)
-    Point.rotate(b, state.home.heading)
-    b.x = b.x + turtle.point.x
-    b.y = b.y + turtle.point.y
-    b.z = b.z + turtle.point.z
-    if filter(b) then
-      acc[makeKey(b)] = b
+  return Util.reduce(raw, function(acc, b)
+    if b.y >= 0 then
+      Point.rotate(b, state.home.heading)
+      b.x = b.x + turtle.point.x
+      b.y = b.y + turtle.point.y
+      b.z = b.z + turtle.point.z
+      if filter(b) then
+        acc[makeKey(b)] = b
+      end
     end
-  end, { })
-
-  return blocks
+  end, blocks or { })
 end
 
 local function getPlantLocations(blocks)
@@ -588,10 +588,13 @@ local function fell()
 
   -- low scan
   local blocks = scan(HOME_PT, filter)
-  if not Util.every(blocks, function(b) return b.y < 6 end) then
+
+  local pt = Util.shallowCopy(HOME_PT)
+  while Util.any(blocks, function(b) return b.y > pt.y + 6 end) do
     -- tree might be above low scan range, do a scan higher up
     equip('left', PICKAXE)
-    blocks = scan(HIGH_PT, filter)
+    pt.y = pt.y + 8
+    blocks = scan(pt, filter, blocks)
   end
 
   Util.merge(blocks, sensed)
@@ -616,7 +619,7 @@ local function moreTrees()
     return
   end
 
-  if not state.chest or turtle.getItemCount(OAK_SAPLING) < 15 then
+  if not state.chest or turtle.getItemCount(OAK_SAPLING) < 2 then
     return true
   end
 
@@ -626,7 +629,7 @@ local function moreTrees()
 
   state.trees = { }
   for x = -2, 2, 1 do
-    for z = -2, 2, 2 do
+    for z = -2, 2, 1 do
       if x ~= 0 or z ~= 0 then
         local tree = { x = x, y = 0, z = z }
         table.insert(state.trees, tree)
@@ -640,7 +643,10 @@ local function moreTrees()
   setState('trees', state.trees)
 
   Point.eachClosest(turtle.point, state.trees, function(pt)
-    turtle.placeDownAt(pt, randomSapling())
+    local sapling = randomSapling()
+    if sapling then
+      turtle.placeDownAt(pt, sapling)
+    end
   end)
 end
 
@@ -675,7 +681,7 @@ local function findHome()
     y  = GRID.TL.y,
     z  = GRID.TL.z,
     ex = GRID.BR.x,
-    ey = 16,
+    ey = 32,
     ez = GRID.BR.z,
   })
 
