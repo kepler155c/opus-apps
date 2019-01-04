@@ -9,8 +9,6 @@
     Plethora scanner
     Bucket
 --]]
-_G.requireInjector(_ENV)
-
 local Event   = require('event')
 local GPS     = require('gps')
 local Point   = require('point')

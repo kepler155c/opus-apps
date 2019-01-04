@@ -33,8 +33,8 @@ function ExportTask:cycle(context)
 						for key in pairs(entry.filter) do
 							local filterItem = Milo:splitKey(key)
 							if (slot.name == filterItem.name and
-									entry.ignoreDamage or slot.damage == filterItem.damage and
-									entry.ignoreNbtHash or slot.nbtHash == filterItem.nbtHash) then
+									(entry.ignoreDamage or slot.damage == filterItem.damage) and
+									(entry.ignoreNbtHash or slot.nbtHash == filterItem.nbtHash)) then
 
 								local items = Milo:getMatches(filterItem, entry)
 								local _, item = next(items)

@@ -1,9 +1,3 @@
---[[
-  Provides: autocrafting, resource limits, on-demand crafting.
-]]--
-
-_G.requireInjector(_ENV)
-
 local Event      = require('event')
 local Milo       = require('milo')
 local Sound      = require('sound')
