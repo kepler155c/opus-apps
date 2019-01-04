@@ -24,19 +24,10 @@ function Adapter:listItems(throttle)
       local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
 
       local entry = cache[key]
-      if not entry then
-        local cached = itemDB:get(v, function() return self.getItemMeta(k) end)
-        if cached then
-          entry = cached
-          entry.count = 0
-          cache[key] = entry
-        else
-          _G._debug('Adapter: failed to get item details')
-        end
-      end
-
       if entry then
         entry.count = entry.count + v.count
+      else
+        cache[key] = itemDB:get(v, function() return self.getItemMeta(k) end)
       end
       throttle()
     end

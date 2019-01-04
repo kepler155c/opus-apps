@@ -1,4 +1,3 @@
-local Craft  = require('craft2')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
 local UI     = require('ui')
@@ -6,8 +5,6 @@ local Util   = require('util')
 
 local colors = _G.colors
 local turtle = _G.turtle
-
-local context = Milo:getContext()
 
 local function learnRecipe()
 	local ingredients = Milo:getTurtleInventory()
