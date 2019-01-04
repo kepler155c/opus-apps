@@ -80,8 +80,7 @@ function ExportTask:cycle(context)
 			end
 		end)
 		if not s and m then
-			_G._debug('Importer error')
-			_G._debug(m)
+			_G._debug('EXPORTER error: ' .. m)
 		end
 	end
 end

@@ -248,16 +248,10 @@ function Storage:listItems(throttle)
     end
 
     if #t > 0 then
-      _G._debug('STORAGE: refreshing ' .. #t .. ' inventories')
       parallel.waitForAll(table.unpack(t))
     end
 
     for _, adapter in self:onlineAdapters() do
-      if adapter.dirty then
-        _G._debug('STORAGE: refreshing ' .. adapter.name)
-        --adapter:listItems(throttle)
-        --adapter.dirty = false
-      end
       local rcache = adapter.cache or { }
       for key,v in pairs(rcache) do
         local entry = cache[key]
@@ -274,7 +268,7 @@ function Storage:listItems(throttle)
       end
     end
     itemDB:flush()
-    _G._debug('STORAGE: refresh in ' .. timer())
+    _G._debug('STORAGE: refresh '  .. #t .. ' inventories in ' .. timer())
 
     self.dirty = false
     self.cache = cache
@@ -330,19 +324,8 @@ function Storage:updateCache(adapter, item, count)
 end
 
 function Storage:_sn(name)
-  if not name then
-    error('Invalid target', 3)
-  end
-
   local node = self.nodes[name]
-  if node and node.displayName then
-    return node.displayName
-  end
-  local t = { name:match(':(.+)_(%d+)$') }
-  if #t ~= 2 then
-    return name
-  end
-  return table.concat(t, '_')
+  return node and node.displayName or name
 end
 
 local function isValidTransfer(adapter, target)

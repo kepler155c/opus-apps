@@ -1,4 +1,5 @@
-local Milo = require('milo')
+local itemDB = require('itemDB')
+local Milo   = require('milo')
 
 local ImportTask = {
 	name = 'importer',
@@ -42,25 +43,30 @@ function ImportTask:cycle(context)
 					return itemMatchesFilter(item)
 				end
 
+				local list = node.adapter.list()
+
 				local function importSlot(slotNo)
-					local item = node.adapter.getItemMeta(slotNo)
+					local item = itemDB:get(list[slotNo], function()
+						return node.adapter.getItemMeta(slotNo)
+					end)
 					if item and matchesFilter(item) then
 						context.storage:import(node, slotNo, item.count, item)
 					end
 				end
 
 				if type(entry.slot) == 'number' then
-					importSlot(entry.slot)
+					if list[entry.slot] then
+						importSlot(entry.slot)
+					end
 				else
-					for i in pairs(node.adapter.list()) do
+					for i in pairs(list) do
 						importSlot(i)
 					end
 				end
 			end
 		end)
 		if not s and m then
-			_G._debug('Importer error')
-			_G._debug(m)
+			_G._debug('IMPORTER error: ' .. m)
 		end
 	end
 end
