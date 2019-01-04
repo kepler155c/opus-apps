@@ -75,7 +75,7 @@ function Milo:resetCraftingStatus()
 
 	for _,key in pairs(Util.keys(self.context.craftingQueue)) do
 		local item = self.context.craftingQueue[key]
-		if item.crafted >= item.requested then
+		if item.crafted >= item.requested or item.aborted then
 			self.context.craftingQueue[key] = nil
 		end
 	end
@@ -135,12 +135,10 @@ end
 function Milo:getTurtleInventory()
 	local list = { }
 
-	for i in pairs(self.context.turtleInventory.adapter.list()) do
-		local item = self.context.turtleInventory.adapter.getItemMeta(i)
-		if item and not itemDB:get(item) then
-			itemDB:add(item)
-		end
-		list[i] = item
+	for i, v in pairs(self.context.turtleInventory.adapter.list()) do
+		list[i] = itemDB:get(v, function()
+			return self.context.turtleInventory.adapter.getItemMeta(i)
+		end)
 	end
 
 	itemDB:flush()

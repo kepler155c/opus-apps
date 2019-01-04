@@ -25,15 +25,7 @@ function Adapter:listItems(throttle)
 
       local entry = cache[key]
       if not entry then
-        local cached = itemDB:get(v)
-        if cached then
-          cached = Util.shallowCopy(cached)
-        else
-          cached = self.getItemMeta(k)
-          if cached then
-            cached = Util.shallowCopy(itemDB:add(cached))
-          end
-        end
+        local cached = itemDB:get(v, function() return self.getItemMeta(k) end)
         if cached then
           entry = cached
           entry.count = 0

@@ -51,7 +51,26 @@ function itemDB:splitKey(key, item)
   return item
 end
 
-function itemDB:get(key)
+function itemDB:get(key, populateFn)
+  if not key then error('itemDB:get: key is required', 2) end
+  if type(key) == 'string' then
+    key = self:splitKey(key)
+  else
+    key = Util.shallowCopy(key)
+  end
+
+  local item = self:_get(key)
+  if not item and populateFn then
+    item = populateFn()
+    if item then
+      item = self:add(item)
+    end
+  end
+
+  return item and Util.merge(key, item)
+end
+
+function itemDB:_get(key)
   if not key then error('itemDB:get: key is required', 2) end
   if type(key) == 'string' then
     key = self:splitKey(key)

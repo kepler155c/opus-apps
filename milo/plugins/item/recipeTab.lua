@@ -18,6 +18,10 @@ local recipeTab = UI.Window {
     },
     sortColumn = 'slot',
   },
+  ignoreResultNBT = UI.Button {
+    x = 2, y = -2,
+    text = 'Ignore Result NBT', event = 'ignore_result_nbt',
+  },
   ignoreNBT = UI.Button {
     x = -13, y = -2,
     text = 'Ignore NBT', event = 'ignore_nbt',
@@ -38,12 +42,33 @@ function recipeTab:setItem(item)
         key = v,
       })
     end
+    local key = itemDB:splitKey(self.recipe.result)
+    self.ignoreResultNBT.inactive = not key.nbtHash
   end
   self.grid:setValues(t)
 end
 
 function recipeTab:eventHandler(event)
-  if event.type == 'ignore_nbt' then
+  if event.type == 'ignore_result_nbt' then
+    -- remove old entry
+    Milo:updateRecipe(self.recipe.result)
+
+    local item = itemDB:splitKey(self.recipe.result)
+    item.nbtHash = nil
+    self.recipe.result = itemDB:makeKey(item)
+
+    -- add updated entry
+    Milo:updateRecipe(self.recipe.result, self.recipe)
+
+    self.ignoreResultNBT.inactive = true
+    self:emit({ type = 'info_message', message = 'Recipe updated' })
+
+  elseif event.type == 'grid_focus_row' then
+    local key = itemDB:splitKey(event.selected.key)
+    self.ignoreNBT.inactive = not key.nbtHash
+    self.ignoreNBT:draw()
+
+  elseif event.type == 'ignore_nbt' then
     local selected = self.grid:getSelected()
     local item = itemDB:splitKey(selected.key)
     item.nbtHash = nil

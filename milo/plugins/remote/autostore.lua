@@ -57,12 +57,8 @@ function page.tabs.inventory:enable()
 	for k, item in pairs(inv) do
 		local key = itemDB:makeKey(item)
 		if not list[key] then
-			local cItem = itemDB:get(item)
-			if not cItem then
-				cItem = itemDB:add(ni.getInventory().getItemMeta(k))
-			end
+			local cItem = itemDB:get(item, function() return ni.getInventory().getItemMeta(k) end)
 			if cItem then
-				cItem = Util.shallowCopy(cItem)
 				cItem.key = makeKey(cItem)
 				list[key] = cItem
 			end
@@ -138,10 +134,7 @@ Event.onInterval(5, function()
 
 		if empty then
 			for k,v in pairs(inv) do
-				local item = itemDB:get(v)
-				if not item then
-					item = itemDB:add(ni.getInventory().getItemMeta(k))
-				end
+				local item = itemDB:get(v, function() ni.getInventory().getItemMeta(k) end)
 				if item then
 					if context.state.autostore[makeKey(item)] then
 						ni.getInventory().pushItems(target, k, v.count, slot)

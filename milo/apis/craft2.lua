@@ -131,6 +131,7 @@ local function turtleCraft(recipe, storage, request, count)
 		if storage:export(storage.turtleInventory, k, count, item) ~= count then
 			request.status = 'unknown error'
 			request.statusCode = Craft.STATUS_ERROR
+
 _debug('failed to export: ' .. item.name)
 			return
 		end
@@ -203,17 +204,10 @@ local function adjustCounts(recipe, count, ingredients, storage)
 	-- increment crafted
 	local result = ingredients[recipe.result]
 	result.count = result.count + (count * recipe.count)
-
-
 end
 
 function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 	local request = origItem.ingredients[recipe.result]
-
-	if request.aborted then
-_debug('aborted')
-		return 0
-	end
 
 	if origItem.pending[recipe.result] then
 		request.status = 'processing'
@@ -279,6 +273,12 @@ _G._p = origItem.ingredients
 
 		crafted = crafted + batch
 		canCraft = canCraft - maxCount
+	end
+
+	if request.aborted then
+		origItem.aborted = true
+_debug('aborted')
+		return 0
 	end
 
 	return crafted * recipe.count

@@ -1,7 +1,6 @@
 local Craft  = require('craft2')
 local itemDB = require('itemDB')
 local Milo   = require('milo')
-local Util   = require('util')
 
 local BLAZE_POWDER = "minecraft:blaze_powder:0"
 
@@ -26,12 +25,7 @@ function PotionImportTask:cycle(context)
 				if blazePowder then
 					context.storage:export(bs, 5, 1, blazePowder)
 				else
-					local item = itemDB:get(BLAZE_POWDER)
-					if item then
-						item = Util.shallowCopy(item)
-					else
-						item = Milo:splitKey(BLAZE_POWDER)
-					end
+					local item = itemDB:get(BLAZE_POWDER) or Milo:splitKey(BLAZE_POWDER)
 					item.requested = 1
 					Milo:requestCrafting(item)
 				end
