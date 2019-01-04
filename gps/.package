@@ -1,0 +1,6 @@
+{
+	title = 'GPS',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/gps',
+	description = [[A single turtle GPS]],
+	licence = 'MIT',
+}
