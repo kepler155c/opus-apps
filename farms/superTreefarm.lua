@@ -25,7 +25,6 @@ local GRID = {
 }
 
 local HOME_PT = { x = 0, y = 0, z = 0, heading = 0 }
-local HIGH_PT = { x = 0, y = 8, z = 0, heading = 0 }
 
 local DIG_BLACKLIST = {
   [ 'minecraft:furnace'     ] = true,
@@ -457,6 +456,7 @@ local function countSaplings()
 end
 
 local function randomSapling()
+  countSaplings()
   local sapling = ALL_SAPLINGS[math.random(1, #ALL_SAPLINGS)]
 
   if sapling.count > 0 then
