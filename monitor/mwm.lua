@@ -37,6 +37,7 @@ else
 end
 
 monitor.setTextScale(.5)
+monitor.setBackgroundColor(colors.gray)
 monitor.clear()
 
 local monDim, termDim = { }, { }

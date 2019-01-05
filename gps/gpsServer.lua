@@ -66,7 +66,7 @@ local function server()
 	local modems = Config.load('gpsServer')
 	local computers = { }
 
-	if #modems == 0 then
+	if Util.empty(modems) then
 		error('Missing usr/config/gpsServer configuration file')
 	end
 
@@ -80,7 +80,7 @@ local function server()
 		if e == "modem_message" then
 			-- We received a message from a modem
 			local side, channel, computerId, sMessage, distance = p1, p2, p3, p4, p5
-			if channel == gps.CHANNEL_GPS and sMessage == "PING" then
+			if channel == gps.CHANNEL_GPS and sMessage == "PING" and distance then
 				-- We received a ping message on the GPS channel, send a response
 				local modem = modems[side]
 				if modem then
