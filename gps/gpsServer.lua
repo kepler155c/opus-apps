@@ -21,29 +21,31 @@ local function build()
 		 not turtle.has(CABLE, 4) or
 		 not turtle.has(ENDER_MODEM, 4) then
 		error([[Place into inventory:
- * 8 Wired modem (blocks)
- * 4 Network cables
+ * 5 Wired modem (blocks)
+ * 8 Network cables
  * 4 Ender modems]])
 	end
 
 	local blocks = {
-		{ x =  1, y = 0, z =  0, b = WIRED_MODEM },
+		{ x =  0, y = 0, z =  0, b = WIRED_MODEM },
+
+		{ x =  1, y = 0, z =  0, b = CABLE },
 		{ x =  2, y = 0, z =  0, b = CABLE },
 		{ x =  2, y = 1, z =  0, b = CABLE },
 		{ x =  2, y = 2, z =  0, b = WIRED_MODEM },
 		{ x =  2, y = 3, z =  0, b = ENDER_MODEM },
 
-		{ x = -1, y = 0, z =  0, b = WIRED_MODEM },
+		{ x = -1, y = 0, z =  0, b = CABLE },
 		{ x = -2, y = 0, z =  0, b = CABLE },
 		{ x = -2, y = 1, z =  0, b = CABLE },
 		{ x = -2, y = 2, z =  0, b = WIRED_MODEM },
 		{ x = -2, y = 3, z =  0, b = ENDER_MODEM },
 
-		{ x =  0, y = 0, z =  1, b = WIRED_MODEM },
+		{ x =  0, y = 0, z =  1, b = CABLE },
 		{ x =  0, y = 0, z =  2, b = WIRED_MODEM },
 		{ x =  0, y = 1, z =  2, b = ENDER_MODEM },
 
-		{ x =  0, y = 0, z = -1, b = WIRED_MODEM },
+		{ x =  0, y = 0, z = -1, b = CABLE },
 		{ x =  0, y = 0, z = -2, b = WIRED_MODEM },
 		{ x =  0, y = 1, z = -2, b = ENDER_MODEM },
 	}
@@ -73,36 +75,42 @@ local function server()
 	for k, modem in pairs(modems) do
 		Util.merge(modem, peripheral.wrap(k))
 		modem.open(gps.CHANNEL_GPS)
+		--modem.open(999)
+	end
+
+	local function getPosition(computerId, modem, distance)
+		local computer = memoize(computers, computerId, function() return { } end)
+		table.insert(computer, {
+			position = vector.new(modem.x, modem.y, modem.z),
+			distance = distance,
+		})
+		if #computer == 4 then
+			local pt = GPS.trilaterate(computer)
+			if pt then
+				positions[computerId] = pt
+				term.clear()
+				for k,v in pairs(positions) do
+					Util.print('ID: %d: %s %s %s', k, v.x, v.y, v.z)
+				end
+			end
+			computers[computerId] = nil
+		end
 	end
 
 	while true do
-		local e, p1, p2, p3, p4, p5 = os.pullEvent( "modem_message" )
+		local e, side, channel, computerId, message, distance = os.pullEvent( "modem_message" )
 		if e == "modem_message" then
-			-- We received a message from a modem
-			local side, channel, computerId, sMessage, distance = p1, p2, p3, p4, p5
-			if channel == gps.CHANNEL_GPS and sMessage == "PING" and distance then
-				-- We received a ping message on the GPS channel, send a response
-				local modem = modems[side]
-				if modem then
-					local computer = memoize(computers, computerId, function() return { } end)
-					table.insert(computer, {
-						position = vector.new(modem.x, modem.y, modem.z), distance = distance
-					})
-					if #computer == 4 then
-						local pt = GPS.trilaterate(computer)
-						if pt then
-							positions[computerId] = pt
-							term.clear()
-							for k,v in pairs(positions) do
-								Util.print('ID: %d: %s %s %s', k, v.x, v.y, v.z)
-							end
-						end
-						computers[computerId] = nil
-					end
+			if distance and modems[side] then
+				if channel == gps.CHANNEL_GPS and message == "PING" then
 					for _, modem in pairs(modems) do
-						modem.transmit( computerId, gps.CHANNEL_GPS, { modem.x, modem.y, modem.z })
+						modem.transmit(computerId, gps.CHANNEL_GPS, { modem.x, modem.y, modem.z })
 					end
+					getPosition(computerId, modems[side], distance)
 				end
+
+				--if channel == gps.CHANNEL_GPS or channel == 999 then
+				--	getPosition(computerId, modems[side], distance)
+				--end
 			end
 		end
 	end
@@ -113,7 +121,7 @@ if args[1] == 'build' then
 
 	turtle.setPoint({ x = 0, y = -y, z = 0, heading = 0 })
 	build()
-	turtle._goto({ x = 0, y = 0, z = 0, heading = 0 })
+	turtle._goto({ x = 0, y = 1, z = 0, heading = 0 })
 
 	print('Activate all modems')
 	print('Press enter when ready')
@@ -138,5 +146,5 @@ elseif args[1] == 'server' then
 
 else
 
-	error('Syntax: gps [build|server]')
+	error('Syntax: gpsServer [build | server]')
 end

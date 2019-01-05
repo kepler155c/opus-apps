@@ -23,7 +23,7 @@ local page = UI.Page {
       { text = 'Edit',    event = 'details' },
       { text = 'Refresh', event = 'refresh', x = -12 },
       {
-        text = '\206',
+        text = '\187',
         x = -3,
         dropdown = {
           { text = 'Setup', event = 'network' },
@@ -58,6 +58,8 @@ local page = UI.Page {
       backgroundFocusColor = colors.cyan,
       accelerators = {
         [ 'enter' ] = 'eject',
+        [ 'up' ] = 'grid_up',
+        [ 'down' ] = 'grid_down',
       },
     },
     storageStatus = UI.Text {
@@ -216,6 +218,12 @@ function page:eventHandler(event)
       UI:setPage('item', item)
     end
 
+  elseif event.type == 'grid_up' then
+    self.grid:emit({ type = 'scroll_up' })
+
+  elseif event.type == 'grid_down' then
+    self.grid:emit({ type = 'scroll_down' })
+
   elseif event.type == 'refresh' then
     self:refresh()
     self.grid:draw()
@@ -253,6 +261,7 @@ function page:eventHandler(event)
       self.filter = nil
     end
     self:applyFilter()
+    self.grid:setIndex(1)
     self.grid:draw()
     self.statusBar.filter:focus()
 
