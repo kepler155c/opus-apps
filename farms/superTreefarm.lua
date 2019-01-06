@@ -476,7 +476,7 @@ local function findDroppedSaplings()
   local sensed = Util.reduce(raw, function(acc, b)
     Point.rotate(b, state.home.heading)
     b.x = Util.round(b.x) + turtle.point.x
-    b.y = Util.round(b.y) + turtle.point.y
+    b.y = math.floor(b.y) + turtle.point.y
     b.z = Util.round(b.z) + turtle.point.z
     if b.y == 0 and string.find(b.displayName, 'sapling', 1, true) then
       b.sapling = true

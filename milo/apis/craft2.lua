@@ -191,14 +191,6 @@ local function adjustCounts(recipe, count, ingredients, storage)
 	-- decrement ingredients used
 	for key,icount in pairs(Craft.sumIngredients(recipe)) do
 		ingredients[key].count = ingredients[key].count - (icount * count)
-		if ingredients[key].count == 0 and not storage.cache[key] then
-			--
-		elseif not storage.cache[key] then
-			_debug({ key, ingredients[key].count, 'nocache' })
-		elseif storage.cache[key].count ~= ingredients[key].count then
-			_debug({ key, ingredients[key].count, storage.cache[key].count })
-
-		end
 	end
 
 	-- increment crafted
@@ -232,30 +224,37 @@ function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 	--local maxCount = math.floor((recipe.maxCount or 64) / recipe.count)
 	local maxCount = recipe.maxCount or math.floor(64 / recipe.count)
 
-	for key,icount in pairs(Craft.sumIngredients(recipe)) do
-		local itemCount = Craft.getItemCount(origItem.ingredients, key)
-		local need = icount * count
-		if recipe.craftingTools and recipe.craftingTools[key] then
-			need = 1
-		end
-		maxCount = math.min(maxCount, itemDB:getMaxCount(key))
-		if itemCount < need then
-			local irecipe = Craft.findRecipe(key)
-			if not irecipe then
-				return 0
-			end
+	repeat
+		local craftedIngredient
 
-			local iqty = need - itemCount
-			local crafted = Craft.craftRecipeInternal(irecipe, iqty, storage, origItem)
-			if not origItem.forceCrafting and crafted < iqty then
-				return 0
+		for key,icount in pairs(Craft.sumIngredients(recipe)) do
+			local itemCount = Craft.getItemCount(origItem.ingredients, key)
+			local need = icount * count
+			if recipe.craftingTools and recipe.craftingTools[key] then
+				need = 1
 			end
-			if origItem.forceCrafting and crafted < iqty then
-				canCraft = math.floor((itemCount + crafted) / icount)
+			maxCount = math.min(maxCount, itemDB:getMaxCount(key))
+			if itemCount < need then
+				local irecipe = Craft.findRecipe(key)
+				if not irecipe then
+					return 0
+				end
+
+				local iqty = need - itemCount
+				local crafted = Craft.craftRecipeInternal(irecipe, iqty, storage, origItem)
+				if not origItem.forceCrafting and crafted < iqty then
+					return 0
+				end
+				if origItem.forceCrafting and crafted < iqty then
+					canCraft = math.floor((itemCount + crafted) / icount)
+				end
+				if crafted > 0 then
+					craftedIngredient = true
+				end
 			end
 		end
-	end
-_G._p = origItem.ingredients
+	until not craftedIngredient
+
 	local crafted = 0
 	while canCraft > 0 do
 		local batch = math.min(canCraft, maxCount)
