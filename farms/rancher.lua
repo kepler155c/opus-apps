@@ -1,5 +1,3 @@
-_G.requireInjector(_ENV)
-
 local Adapter    = require('chestAdapter18')
 local Config     = require('config')
 local Peripheral = require('peripheral')
@@ -52,22 +50,12 @@ local function equip(side, item, rawName)
   turtle.select(1)
 end
 
-local function getLocalName()
-  if not device.wired_modem then
-    error('wired modem or chest not found')
-  end
-  return device.wired_modem.getNameLocal()
-end
-
 equip('left', 'minecraft:diamond_sword')
 equip('right', 'plethora:sensor', 'plethora:module:3')
 
 local sensor = device['plethora:sensor']
-local c = Peripheral.lookup('type/minecraft:chest') or error('Missing chest')
 
-local directions = { top = 'down', bottom = 'up' }
-local direction = directions[c.side] or getLocalName()
-local chest = Adapter({ side = c.side, direction = direction }) or error('missing chest')
+local chest = Adapter({ side = 'bottom', direction = 'up' }) or error('missing chest')
 
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,
@@ -76,53 +64,23 @@ shell.openForegroundTab('rancher.lua')]])
   print('Autorun program created: ' .. STARTUP_FILE)
 end
 
-local dispenser = Peripheral.lookup('type/minecraft:dispenser')
-local integrator = Peripheral.lookup('type/redstone_integrator')
-
-local function pulse()
-  integrator.setOutput('north', true)
-  os.sleep(.25)
-  integrator.setOutput('north', false)
-end
-
-local function turnOffWater()
-  if dispenser then
-    local list = dispenser.list()
-    if list[1].name == 'minecraft:bucket' then
-      pulse()
-      os.sleep(2)
-    end
-  end
-end
-
-local function turnOnWater()
-  if dispenser then
-    if dispenser.list()[1].name == 'minecraft:water_bucket' then
-      pulse()
-    end
-  end
-end
-
 local function getAnimalCount()
   local blocks = sensor.sense()
 
   local grown = 0
   local babies = 0
-  local xpCount = 0
 
   Util.filterInplace(blocks, function(v)
     if v.name == config.animal then
       if v.y > -.5 then grown  = grown  + 1 end
       if v.y < -.5 then babies = babies + 1 end
       return v.y > -.5
-    elseif v.name == 'XPOrb' then
-      xpCount = xpCount + 1
     end
   end)
 
-  Util.print('%d grown, %d babies, %d xp', grown, babies, xpCount)
+  Util.print('%d grown, %d babies', grown, babies)
 
-  return #blocks, xpCount
+  return #blocks
 end
 
 local function butcher()
@@ -160,10 +118,10 @@ local function breed()
 end
 
 local s, m = turtle.run(function()
-  turnOffWater()
+  print('Configured animal: ' .. config.animal)
 
   repeat
-    local animalCount, xpCount = getAnimalCount()
+    local animalCount = getAnimalCount()
     if animalCount > config.max_animals then
       turtle.setStatus('Butchering')
       butcher()
@@ -175,11 +133,6 @@ local s, m = turtle.run(function()
     else
       turtle.setStatus('Breeding')
       breed()
-    end
-    if xpCount > 2 then
-      turnOnWater()
-      os.sleep(8)
-      turnOffWater()
     end
     os.sleep(5)
   until turtle.isAborted()

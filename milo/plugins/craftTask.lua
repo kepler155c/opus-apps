@@ -57,17 +57,15 @@ end
 end
 
 function craftTask:cycle()
-  local playSound = true
-
   for _,key in pairs(Util.keys(context.craftingQueue)) do
     local item = context.craftingQueue[key]
     if item.requested - item.crafted > 0 then
       local recipe = Craft.findRecipe(key)
       if recipe then
 
-        if playSound then
+        if not item.playedSound then
           Sound.play('entity.experience_orb.pickup')
-          playSound = false
+          item.playedSound = true
         end
 
         self:craft(recipe, item)
