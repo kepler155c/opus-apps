@@ -76,7 +76,7 @@ local function dropOff()
 	local inv = turtle.getSummedInventory()
 	for _, slot in pairs(inv) do
 		if slot.count >= 16 then
-			if turtle.getFuelLevel() < 1000 then
+			if turtle.getFuelLevel() < 5000 then
 				turtle.refuel(slot.name, 16)
 			end
 		end

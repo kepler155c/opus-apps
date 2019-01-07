@@ -57,16 +57,29 @@ end
 end
 
 function craftTask:cycle()
+  local playSound = true
+
   for _,key in pairs(Util.keys(context.craftingQueue)) do
     local item = context.craftingQueue[key]
     if item.requested - item.crafted > 0 then
       local recipe = Craft.findRecipe(key)
       if recipe then
-        Sound.play('entity.experience_orb.pickup')
-        self:craft(recipe, item)
-        if item.callback and item.crafted >= item.requested then
-          item.callback(item) -- invoke callback
+
+        if playSound then
+          Sound.play('entity.experience_orb.pickup')
+          playSound = false
         end
+
+        self:craft(recipe, item)
+
+        if item.crafted >= item.requested then
+          item.status = 'crafted'
+          item.statusCode = Craft.STATUS_SUCCESS
+          if item.callback then
+            item.callback(item) -- invoke callback
+          end
+        end
+
       elseif not context.controllerAdapter then
         item.status = '(no recipe)'
         item.statusCode = Craft.STATUS_ERROR

@@ -41,9 +41,8 @@ local page = UI.Page {
       },
       {
         name = 'config',
-        text = '\206',
+        text = '\187',
         x = -3,
-
       },
     },
     infoBar = UI.StatusBar {
@@ -72,6 +71,8 @@ local page = UI.Page {
       backgroundFocusColor = colors.cyan,
       accelerators = {
         [ 'enter' ] = 'eject',
+        [ 'up' ] = 'grid_up',
+        [ 'down' ] = 'grid_down',
       },
     },
     amount = UI.TextEntry {
@@ -413,6 +414,12 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
     self:setFocus(self.statusBar.filter)
     self:refresh('scan')
     self.grid:draw()
+
+  elseif event.type == 'grid_up' then
+    self.grid:emit({ type = 'scroll_up' })
+
+  elseif event.type == 'grid_down' then
+    self.grid:emit({ type = 'scroll_down' })
 
   elseif event.type == 'refresh' then
     self:setFocus(self.statusBar.filter)
