@@ -342,7 +342,28 @@ end
 
 local function rawExport(source, target, item, qty, slot)
   local total = 0
-  local push = isValidTransfer(source, target.name)
+  local transfer
+
+  if isValidTransfer(source, target.name) then
+    transfer = function(key, amount)
+      return source.pushItems(target.name, key, amount, slot)
+    end
+  else --if isValidTransfer(target, source.name) then
+    transfer = function(key, amount)
+      return target.pullItems(source.name, key, amount, slot)
+    end
+  end
+  --[[
+    -- TODO: mass storage will require a transfer chest (or something)
+  elseif isValidTransfer(source, 'minecraft:chest_0') then
+    transfer = function(key, amount)
+      local a = source.pushItems('minecraft:chest_0', key, amount, 1)
+      return target.pullItems('minecraft:chest_0', 1, amount, slot)
+    end
+  else
+    ...
+  end
+  ]]
 
   local s, m = pcall(function()
     local stacks = source.list()
@@ -352,11 +373,7 @@ local function rawExport(source, target, item, qty, slot)
          stack.nbtHash == item.nbtHash then
         local amount = math.min(qty, stack.count)
         if amount > 0 then
-          if push then
-            amount = source.pushItems(target.name, key, amount, slot)
-          else
-            amount = target.pullItems(source.name, key, amount, slot)
-          end
+          amount = transfer(key, amount, slot)
         end
         qty = qty - amount
         total = total + amount
@@ -380,12 +397,12 @@ function Storage:export(target, slot, count, item)
 
   local function provide(adapter)
     local amount = rawExport(adapter, target.adapter, item, count, slot)
+
+    _G._debug('EXT: %s(%d): %s -> %s%s',
+      item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
+      slot and string.format('[%d]', slot) or '[*]')
+
     if amount > 0 then
-
-      _G._debug('EXT: %s(%d): %s -> %s%s',
-        item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
-        slot and string.format('[%d]', slot) or '[*]')
-
       self:updateCache(adapter, item, -amount)
     end
     count = count - amount
@@ -459,12 +476,12 @@ function Storage:import(source, slot, count, item)
 
   local function insert(adapter)
     local amount = rawInsert(adapter, source.adapter, slot, count)
+
+    _G._debug('INS: %s(%d): %s[%d] -> %s',
+      item.displayName or item.name, amount,
+      self:_sn(source.name), slot, self:_sn(adapter.name))
+
     if amount > 0 then
-
-      _G._debug('INS: %s(%d): %s[%d] -> %s',
-        item.displayName or item.name, amount,
-        self:_sn(source.name), slot, self:_sn(adapter.name))
-
       self:updateCache(adapter, item, amount)
 
       -- record that we have imported this item into storage during this cycle

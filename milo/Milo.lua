@@ -81,8 +81,6 @@ context.storage.nodes[localName].adapter.name = localName
 
 Milo:init(context)
 context.storage:initStorage()
-
--- TODO: fix
 context.storage.turtleInventory = context.turtleInventory
 
 local function loadDirectory(dir)

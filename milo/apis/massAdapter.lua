@@ -12,7 +12,8 @@ function Adapter:init(args)
   self._rawList = self.list
 
   function self.list()
-    -- wait for up to 1 sec until any items that have been inserted into interface are added to the system
+    -- wait for up to 1 sec until any items that have been inserted
+    -- into interface are added to the system
     for _ = 0, 20 do
       if #self._rawList() == 0 then
         break
@@ -35,12 +36,20 @@ function Adapter:init(args)
   end
 
   function self.pushItems(target, key, amount, slot)
+_debug('pushing items')
     local item = self.findItem(itemDB:splitKey(key))
     if item and item.export then
       return item.export(target, amount, slot)
     end
     return 0
   end
+
+  function self.pullItems(target, key, amount, slot)
+_debug('pulling items')
+    _debug({target, key, amount, slot })
+    return 0
+  end
+
 end
 
 return Adapter

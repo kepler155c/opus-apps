@@ -39,4 +39,5 @@ function wizardPage:validate()
   return true
 end
 
-UI:getPage('nodeWizard').wizard:add({ inputChest = wizardPage })
+-- disable until a way is found to transfer between 2 non-transferrable nodes
+-- UI:getPage('nodeWizard').wizard:add({ inputChest = wizardPage })
