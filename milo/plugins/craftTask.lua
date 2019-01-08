@@ -63,9 +63,9 @@ function craftTask:cycle()
       local recipe = Craft.findRecipe(key)
       if recipe then
 
-        if not item.playedSound then
+        if not item.notified then
           Sound.play('entity.experience_orb.pickup')
-          item.playedSound = true
+          item.notified = true
         end
 
         self:craft(recipe, item)

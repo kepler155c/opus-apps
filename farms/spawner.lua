@@ -3,8 +3,11 @@ local Point      = require('point')
 local Util       = require('util')
 
 local device     = _G.device
+local fs         = _G.fs
 local os         = _G.os
 local turtle     = _G.turtle
+
+local STARTUP_FILE = 'usr/autorun/spawner.lua'
 
 local mobTypes = Util.transpose({ ... })
 
@@ -41,18 +44,22 @@ local data = scanner.scan()
 local spawners = Util.findAll(data, 'name', 'minecraft:mob_spawner')
 local spawner = Point.closest(turtle.point, spawners) or error('spawner not in range')
 
-turtle._goto(Point.below(spawner))
-
 Util.filterInplace(data, function(b)
 	return b.name == 'minecraft:chest' or
 		 b.name == 'minecraft:dispenser' or
 		 b.name == 'minecraft:hopper'
 end)
 local chest = Point.closest(spawner, data) or error('missing drop off chest')
-turtle._goto(Point.above(chest))
 
 equip('right', 'plethora:sensor', 'plethora:module:3')
 local sensor = device['plethora:sensor']
+
+if not fs.exists(STARTUP_FILE) then
+  Util.writeFile(STARTUP_FILE,
+    [[os.sleep(1)
+shell.openForegroundTab('spawner.lua')]])
+  print('Autorun program created: ' .. STARTUP_FILE)
+end
 
 turtle.setMovementStrategy('goto')
 turtle.setPolicy(turtle.policies.attack)
@@ -128,13 +135,10 @@ while true do
 		error('Out of fuel')
 	end
 
-print(#mobs)
 	if #mobs == 0 then
-print('sleeping')
 		os.sleep(3)
 	else
 		Point.eachClosest(turtle.point, mobs, function(b)
-print('attack: ' .. b.id)
 			local strategy = getAttackStrategy(b.name)
 			if strategy.attack(b) then
 				while true do

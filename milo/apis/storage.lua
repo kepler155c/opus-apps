@@ -109,7 +109,11 @@ function Storage:initStorage()
       if v.adapter then
         v.adapter.online = not not device[k]
       elseif device[k] and device[k].list and device[k].size and device[k].pullItems then
-        v.adapter = Adapter({ side = k })
+        if v.adapterType then
+          v.adapter = require(v.adapterType)({ side = k })
+        else
+          v.adapter = Adapter({ side = k })
+        end
         v.adapter.online = true
         v.adapter.dirty = true
       elseif device[k] then

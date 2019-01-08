@@ -17,7 +17,7 @@ local SHIELD_SLOT  = 2
 local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
 
 local context = {
-  state = Config.load('miloRemote', { displayMode = 0 }),
+  state = Config.load('miloRemote', { displayMode = 0, deposit = true }),
 }
 
 local depositMode = {
@@ -441,6 +441,7 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
       self.filter = nil
     end
     self:applyFilter()
+    self.grid:setIndex(1)
     self.grid:draw()
 
   else
@@ -454,6 +455,7 @@ function page:enable()
   Util.merge(self.statusBar.depositToggle, depositMode[context.state.deposit])
   UI.Page.enable(self)
   if not context.state.server then
+    self.setup.form:setValues(context.state)
     self.setup:show()
   end
   Event.onTimeout(.1, function()
