@@ -11,6 +11,7 @@ local Craft = {
 	STATUS_SUCCESS = 'success',
 
 	RECIPES_DIR    = 'packages/core/etc/recipes',
+	USER_DIR       = 'usr/etc/recipes',
 	USER_RECIPES   = 'usr/config/recipes.db',
 	MACHINE_LOOKUP = 'usr/config/machine_crafting.db',
 }
@@ -414,10 +415,11 @@ function Craft.loadRecipes()
 
 	Util.merge(Craft.recipes, (Util.readTable(fs.combine(Craft.RECIPES_DIR, 'minecraft.db')) or { }).recipes)
 
-	local config = Util.readTable('usr/config/recipeBooks.db') or { }
-	for _, book in pairs(config) do
-		local recipeFile = Util.readTable(book)
-		Util.merge(Craft.recipes, recipeFile.recipes)
+	if fs.exists(Craft.USER_DIR) then
+		for _, file in pairs(fs.list(Craft.USER_DIR)) do
+			local recipeFile = Util.readTable(fs.combine(Craft.USER_DIR, file))
+			Util.merge(Craft.recipes, recipeFile.recipes)
+		end
 	end
 
 	local recipes = Util.readTable(Craft.USER_RECIPES) or { }

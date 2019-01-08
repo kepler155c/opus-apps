@@ -1,0 +1,20 @@
+{
+  {
+    url = "https://pastebin.com/raw/dMCDeCie",
+    version = "MC 1.8+",
+    localName = "appliedenergistics2",
+    name = "Applied Energistics",
+  },
+  {
+    url = "https://pastebin.com/raw/Y6bQMUeE",
+    version = "MC 1.8+",
+    localName = "botania",
+    name = "Botania",
+  },
+  {
+    url = "https://pastebin.com/raw/YPWgiFFW",
+    version = "MC 1.8+",
+    localName = "computercraft",
+    name = "Computercraft",
+  },
+}
