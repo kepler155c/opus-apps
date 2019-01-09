@@ -106,7 +106,8 @@ end
 
 local function moveAgainst(b)
 	if turtle.faceAgainst(b) then
-		return turtle.attack()
+		repeat until not turtle.attack()
+		return true
 	end
 end
 
