@@ -57,7 +57,7 @@ local sensor = device['plethora:sensor']
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,
     string.format([[os.sleep(1)
-shell.openForegroundTab('spawner.lua %s')]], table.concat(mobTypes, ' ')))
+shell.openForegroundTab('spawner.lua %s')]], table.concat({ ... }, ' ')))
   print('Autorun program created: ' .. STARTUP_FILE)
 end
 
@@ -139,7 +139,7 @@ while true do
 	if #mobs == 0 then
 		os.sleep(3)
 	else
-		Point.eachClosest(turtle.point, mobs, function(b)
+		for b in Point.iterateClosest(turtle.point, mobs) do
 			local strategy = getAttackStrategy(b.name)
 			if strategy.attack(b) then
 				while true do
@@ -154,7 +154,7 @@ while true do
 				end
 				break
 			end
-		end)
+		end
 	end
 
 	dropOff()
