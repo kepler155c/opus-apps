@@ -57,7 +57,7 @@ local sensor = device['plethora:sensor']
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,
     string.format([[os.sleep(1)
-shell.openForegroundTab('spawner.lua %s')]], table.concat(mobTypes, ' '))
+shell.openForegroundTab('spawner.lua %s')]], table.concat(mobTypes, ' ')))
   print('Autorun program created: ' .. STARTUP_FILE)
 end
 
