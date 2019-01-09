@@ -9,7 +9,7 @@ local turtle     = _G.turtle
 
 local STARTUP_FILE = 'usr/autorun/spawner.lua'
 
-local mobTypes = Util.transpose({ ... })
+local mobTypes = { }
 
 local function equip(side, item, rawName)
 	local equipped = Peripheral.lookup('side/' .. side)
@@ -127,6 +127,12 @@ end
 while true do
 	local blocks = sensor.sense()
 	local mobs = Util.filterInplace(blocks, function(b)
+		if mobTypes[b.name] == nil then
+			local mob = sensor.getMetaByID(b.id)
+			mobTypes[b.name] = mob and (not not mob.isAlive) -- health
+			print(b.name .. ' ' .. tostring(mobTypes[b.name]))
+		end
+
 		if mobTypes[b.name] then
 			return normalize(b)
 		end
