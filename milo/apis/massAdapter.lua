@@ -36,7 +36,6 @@ function Adapter:init(args)
   end
 
   function self.pushItems(target, key, amount, slot)
-_debug('pushing items')
     local item = self.findItem(itemDB:splitKey(key))
     if item and item.export then
       return item.export(target, amount, slot)
@@ -45,8 +44,7 @@ _debug('pushing items')
   end
 
   function self.pullItems(target, key, amount, slot)
-_debug('pulling items')
-    _debug({target, key, amount, slot })
+    _G._debug({target, key, amount, slot })
     return 0
   end
 
