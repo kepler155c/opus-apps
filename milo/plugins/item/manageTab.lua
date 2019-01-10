@@ -43,7 +43,7 @@ function manageTab:setItem(item)
   self.item = Util.shallowCopy(item)
   self.res = item.resource or { }
   self.res.displayName = self.item.displayName
-  manageTab.form:setValues(self.res)
+  self.form:setValues(self.res)
 end
 
 function manageTab:eventHandler(event)
