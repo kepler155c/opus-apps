@@ -3,7 +3,7 @@ local UI     = require('ui')
 
 local os     = _G.os
 
-local config = Config.load('store')
+local config = Config.load('shop')
 
 local storeTab = UI.Window {
   tabTitle = 'Store',
@@ -47,14 +47,14 @@ function storeTab:eventHandler(event)
   if event.type == 'clear' then
     self.form:setValues({ })
     config[self.item.key] = nil
-    Config.update('store', config)
+    Config.update('shop', config)
     os.queueEvent('store_refresh')
     self.form:draw()
 
   elseif event.type == 'update' then
     if self.form:save() then
       config[self.item.key] = self.form.values
-      Config.update('store', config)
+      Config.update('shop', config)
       os.queueEvent('store_refresh')
       self:emit({ type = 'success_message', message = 'Updated' })
     end

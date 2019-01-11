@@ -128,9 +128,11 @@ end)
 
 Event.on('store_provide', function(_, item, quantity)
   local count = 0
-  local key = Util.find(config, 'name', item)
-  if key then
-    count = Milo:eject(itemDB:splitKey(item), quantity)
+  for k, v in pairs(config) do
+    if v.name == item then
+      count = Milo:eject(itemDB:splitKey(k), quantity)
+      break
+    end
   end
   os.queueEvent('store_provided', item, count)
 end)
