@@ -6,7 +6,6 @@ local UI         = require('ui')
 local Util       = require('util')
 
 local colors     = _G.colors
-local context    = Milo:getContext()
 local os         = _G.os
 
 local config = Config.load('store')
@@ -127,16 +126,26 @@ Event.on('store_refresh', function()
   config = Config.load('store')
 end)
 
+Event.on('store_provide', function(_, item, quantity)
+  local count = 0
+  local key = Util.find(config, 'name', item)
+  if key then
+    count = Milo:eject(itemDB:splitKey(item), quantity)
+  end
+  os.queueEvent('store_provided', item, count)
+end)
+
 --[[ Task ]]--
 local StoreTask = {
   name = 'store',
   priority = 30,
 }
 
-function StoreTask:cycle()
+function StoreTask:cycle(context)
   for node in context.storage:filterActive('store') do
     if not pages[node.name] then
       pages[node.name] = createPage(node)
+      os.queueEvent('open_store', node.domain, node.password)
     end
     -- update the display
     pages[node.name]:update()

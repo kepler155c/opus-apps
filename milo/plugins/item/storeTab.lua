@@ -7,17 +7,19 @@ local config = Config.load('store')
 
 local storeTab = UI.Window {
   tabTitle = 'Store',
-  index = 1,
+  index = 6,
   form = UI.Form {
-    x = 1, ex = -1, ey = -1,
+    x = 2, ex = -2, y = 2, ey = -2,
     manualControls = true,
     [1] = UI.TextEntry {
       formLabel = 'Name', formKey = 'name',
       help = 'Unique name used when paying for an item',
       required = true,
+      width = 16,
       limit = 64,
     },
     [2] = UI.TextEntry {
+      width = 6,
       formLabel = 'Price', formKey = 'price',
       help = 'Per item cost',
       required = true,
