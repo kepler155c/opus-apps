@@ -1,16 +1,19 @@
 local programDir = fs.getDir(shell.getRunningProgram())
 os.loadAPI(programDir .. '/'.. 'json')
 
-local w = require("w")
-local r = require("r")
-local k = require("k")
+local w   = require("w")
+local r   = require("r")
+local k   = require("k")
 local jua = require("jua")
-local await = jua.await
 
-local fs = _G.fs
-local json = _G.json
-local os = _G.os
+local await     = jua.await
+local fs        = _G.fs
+local json      = _G.json
+local os        = _G.os
+local rs        = _G.rs
 local textutils = _G.textutils
+
+rs.setOutput('top', false)
 
 r.init(jua)
 w.init(jua)
@@ -22,6 +25,7 @@ local privatekey
 local address
 
 jua.on("terminate", function()
+  rs.setOutput('top', false)
   jua.stop()
   _G.printError("Terminated")
 end)
@@ -32,9 +36,9 @@ local function getItemDetails(item)
     local t = f.readAll()
     f.close()
     t = textutils.unserialize(t)
-    for k, v in pairs(t) do
+    for key, v in pairs(t) do
       if v.name == item then
-        return k, v.price
+        return key, v.price
       end
     end
   end
@@ -73,6 +77,7 @@ local function handleTransaction(transaction)
 
   local count = math.floor(value / price)
   local uid = math.random()
+  print('requesting %d of %s', count, itemId)
   os.queueEvent('store_provide', itemId, count, uid)
   local timerId = os.startTimer(5)
   while true do
@@ -97,7 +102,8 @@ jua.on('open_store', function(_, _domain, _password)
   domain = _domain
   password = _password
 
-print('opening store for: ' .. domain)
+  rs.setOutput('top', true)
+  print('opening store for: ' .. domain)
 
   privatekey = k.toKristWalletFormat(password)
   address = k.makev2address(privatekey)

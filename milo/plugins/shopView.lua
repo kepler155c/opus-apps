@@ -24,55 +24,92 @@ local function createPage(node)
 
   local page = UI.Page {
     parent = monitor,
+    header = UI.Window {
+      backgroundColor = colors.blue,
+      ey = 3,
+    },
     grid = UI.Grid {
-      ey = -6,
+      y = 4, ey = -7,
+      headerHeight = 3,
+      headerBackgroundColor = colors.gray,
+      backgroundSelectedColor = colors.black,
+      unfocusedBackgroundSelectedColor = colors.gray,
       columns = {
-        { heading = 'Qty',     key = 'count',      width = 5 },
-        { heading = 'Price',   key = 'price',      width = 5 },
+        { heading = 'Stock',   key = 'count',     width = 6, justify = 'right' },
+        { heading = '  Price', key = 'price',     width = 9, justify = 'right' },
         { heading = 'Name',    key = 'displayName' },
-        { heading = 'Address', key = 'address',    width = 20 },
+        { heading = 'Address', key = 'address',   width = 16 },
       },
       sortColumn = 'displayName',
     },
-    buttons = UI.Window {
-      y = -5, height = 5,
+    footer = UI.Window {
+      y = -6,
       backgroundColor = colors.gray,
       prevButton = UI.Button {
-        x = 2, y = 2, height = 3, width = 5,
+        x = 2, y = 3, height = 3, width = 5,
         event = 'previous',
         backgroundColor = colors.lightGray,
-        text = ' < '
+        text = ' \017 ',
       },
       nextButton = UI.Button {
-        x = -6, y = 2, height = 3, width = 5,
+        x = -6, y = 3, height = 3, width = 5,
         event = 'next',
         backgroundColor = colors.lightGray,
-        text = ' > '
+        text = ' \016 ',
       },
+      info = UI.Window {
+        x = 9, ex = -9,
+        textColor = colors.white,
+      }
     },
     timestamp = os.clock(),
   }
 
+  function page.header:draw()
+    self:clear()
+    if node.header then
+      self:centeredWrite(2, node.header, nil, colors.white)
+    end
+  end
+
+  function page.footer.info:draw()
+    self:clear()
+    local selected = page.grid:getSelected()
+
+    if selected then
+      if selected.info then
+        self:centeredWrite(2, selected.info)
+      end
+
+      self:centeredWrite(4, 'To purchase:')
+      self:centeredWrite(5, string.format('/pay %s@%s.kst <amount>', selected.name, node.domain))
+    end
+  end
+
   function page.grid:getRowTextColor(row, selected)
     if row.count == 0 then
-      return colors.gray
+      return colors.lightGray
     end
     return UI.Grid:getRowTextColor(row, selected)
   end
 
   function page.grid:getDisplayValues(row)
     row = Util.shallowCopy(row)
-    row.count = Util.toBytes(row.count)
-    row.address = row.name .. '@' .. node.domain
+    row.count = Util.toBytes(row.count) .. ' x'
+    row.price = row.price .. ' kst '
+    row.address = row.name
     return row
   end
 
   function page:eventHandler(event)
     if event.type == 'next' then
-      self.grid:nextPage()
+      self.grid:emit({ type = 'scroll_down' })
 
     elseif event.type == 'previous' then
-      self.grid:previousPage()
+      self.grid:emit({ type = 'scroll_up' })
+
+    elseif event.type == 'grid_focus_row' then
+      self.footer:draw()
 
     else
       return UI.Page.eventHandler(self, event)
@@ -90,19 +127,13 @@ local function createPage(node)
     self.grid.values = { }
     for k,v in pairs(config) do
       local item = list[k]
-      if item then
+      if item and item.count > 0 then
         table.insert(self.grid.values, {
           displayName = item.displayName,
           count = item.count,
           name = v.name,
           price = v.price,
-        })
-      else
-        table.insert(self.grid.values, {
-          displayName = itemDB:getName(k),
-          count = 0,
-          name = v.name,
-          price = v.price,
+          info = v.info,
         })
       end
     end
@@ -128,7 +159,7 @@ end)
 
 Event.on('store_provide', function(_, item, quantity, uid)
   Milo:queueRequest({ }, function()
-    local count = Milo:eject(item, quantity)
+    local count = Milo:eject(itemDB:splitKey(item), quantity)
     os.queueEvent('store_provided', uid, count)
   end)
 end)
@@ -140,7 +171,7 @@ local StoreTask = {
 }
 
 function StoreTask:cycle(context)
-  for node in context.storage:filterActive('store') do
+  for node in context.storage:filterActive('shop') do
     if not pages[node.name] then
       pages[node.name] = createPage(node)
       os.queueEvent('open_store', node.domain, node.password)

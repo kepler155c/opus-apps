@@ -1,0 +1,1 @@
+shell.openTab('swshop')

@@ -25,6 +25,11 @@ local storeTab = UI.Window {
       required = true,
       validate = 'numeric',
     },
+    [3] = UI.TextEntry {
+      limit = 64,
+      formLabel = 'Extra Info', formKey = 'info',
+      help = 'Additional info to display for item',
+    },
     clearButton = UI.Button {
       x = 2, y = -2,
       event = 'clear',
@@ -58,6 +63,7 @@ function storeTab:eventHandler(event)
       os.queueEvent('store_refresh')
       self:emit({ type = 'success_message', message = 'Updated' })
     end
+
   else
     return
   end

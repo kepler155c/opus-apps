@@ -13,9 +13,9 @@ local wizardPage = UI.Window {
     manualControls = true,
 		[1] = UI.TextEntry {
 			formLabel = 'Domain', formKey = 'domain',
-			help = 'Krist wallet address',
+			help = 'Krist wallet domain (minus .kst)',
 			limit = 64,
-      shadowText = 'example.kst',
+      shadowText = 'example',
       required = true,
 		},
 		[2] = UI.TextEntry {
@@ -25,7 +25,14 @@ local wizardPage = UI.Window {
       required = true,
 			help = 'Krist wallet password',
 		},
-    [3] = UI.Chooser {
+		[3] = UI.TextEntry {
+			formLabel = 'Header', formKey = 'header',
+			help = 'Text to show in header',
+			limit = 64,
+      shadowText = "xxxx's shop",
+      required = false,
+		},
+    [4] = UI.Chooser {
       width = 9,
       formLabel = 'Font Size', formKey = 'textScale',
       nochoice = 'Small',
@@ -54,14 +61,14 @@ function wizardPage:isValidType(node)
   local m = device[node.name]
   return m and m.type == 'monitor' and {
     name = 'Store Front',
-    value = 'store',
+    value = 'shop',
     category = 'display',
     help = 'Add a store front display'
   }
 end
 
 function wizardPage:isValidFor(node)
-  return node.mtype == 'store'
+  return node.mtype == 'shop'
 end
 
 UI:getPage('nodeWizard').wizard:add({ storeFront = wizardPage })
