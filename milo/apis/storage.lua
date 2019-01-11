@@ -116,6 +116,10 @@ function Storage:initStorage()
         end
         v.adapter.online = true
         v.adapter.dirty = true
+
+        if v.adapter.isOn and not v.adapter.isOn() then -- turtle
+          v.adapter.turnOn()
+        end
       elseif device[k] then
         v.adapter = device[k]
         v.adapter.online = true

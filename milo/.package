@@ -5,7 +5,9 @@
 	title = 'Milo: Advanced inventory management',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/milo',
 	description = [[Provides AE style crafting in computercraft.
-	Includes Importing, exporting, autocrafting, replenish and limits, and much more.
-	Includes over 200 standard Minecraft recipes.]],
+
+Includes: importing, exporting, autocrafting, replenish, limits and much more.
+
+Includes over 200 standard Minecraft recipes.]],
 	licence = 'MIT',
 }

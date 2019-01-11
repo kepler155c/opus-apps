@@ -111,7 +111,7 @@ function pages.confirmation:validate()
 	}
 
 	for k,v in pairs(inventory) do
-		recipe.ingredients[k] = Milo:uniqueKey(v)
+		recipe.ingredients[k] = itemDB:makeKey(v)
 	end
 
 	Milo:saveMachineRecipe(recipe, result, machine.name)

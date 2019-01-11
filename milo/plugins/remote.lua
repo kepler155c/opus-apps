@@ -106,7 +106,7 @@ local function client(socket)
 					local slot = node.adapter.getItemMeta(slotNo)
 					if slot then
 						if context.storage:import(node, slotNo, slot.count, slot) > 0 then
-							local item = Milo:getItem(Milo:listItems(), slot)
+							local item = Milo:getItem(slot)
 							if item then
 								socket:write({
 									type = 'received',
@@ -127,7 +127,7 @@ local function client(socket)
 			if count == 'stack' then
 				count = itemDB:getMaxCount(data.item)
 			elseif count == 'all' then
-				local item = Milo:getItem(Milo:listItems(), data.item)
+				local item = Milo:getItem(data.item)
 				count = item and item.count or 0
 			end
 

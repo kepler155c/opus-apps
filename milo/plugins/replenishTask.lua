@@ -1,3 +1,4 @@
+local itemDB = require('itemDB')
 local Milo   = require('milo')
 
 local ReplenishTask = {
@@ -8,7 +9,7 @@ local ReplenishTask = {
 function ReplenishTask:cycle(context)
   for k,res in pairs(context.resources) do
     if res.low then
-      local item = Milo:splitKey(k)
+      local item = itemDB:splitKey(k)
       item.key = k
 
       local _, count = Milo:getMatches(item, res)
@@ -27,7 +28,7 @@ function ReplenishTask:cycle(context)
           replenish = true,
         })
       else
-        local request = context.craftingQueue[Milo:uniqueKey(item)]
+        local request = context.craftingQueue[itemDB:makeKey(item)]
         if request and request.replenish then
           --request.count = request.crafted
         end

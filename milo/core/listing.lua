@@ -169,7 +169,7 @@ function page:eject(amount)
       if amount == 'stack' then
         amount = item.maxCount or 64
       elseif amount == 'all' then
-        item = Milo:getItem(Milo:listItems(), item)
+        item = Milo:getItem(item)
         if item then
           amount = item.count
         end

@@ -1,0 +1,6 @@
+{
+	title = 'Switchcraft basic shop',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/swshop',
+	description = 'Modification of the k store by Lemmmy',
+	licence = 'MIT',
+}

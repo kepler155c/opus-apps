@@ -39,11 +39,12 @@ local manageTab = UI.Window {
 }
 
 function manageTab:setItem(item)
-  self.origItem = item
-  self.item = Util.shallowCopy(item)
-  self.res = item.resource or { }
+  self.item = item
+  self.res = Util.shallowCopy(context.resources[item.key] or { })
   self.res.displayName = self.item.displayName
   self.form:setValues(self.res)
+
+  -- TODO: ignore damage should not be active if there is not a maxDamage value
 end
 
 function manageTab:eventHandler(event)
@@ -51,19 +52,17 @@ function manageTab:eventHandler(event)
     UI:setPreviousPage()
 
   elseif event.type == 'form_complete' then
-    local item = self.item
-
     if self.form:save() then
-      if self.res.displayName ~= self.origItem.displayName then
-        self.origItem.displayName = self.res.displayName
-        itemDB:add(self.origItem)
+      if self.res.displayName ~= self.item.displayName then
+        self.item.displayName = self.res.displayName
+        itemDB:add(self.item)
         itemDB:flush()
-
-        -- TODO: ugh
-        if context.storage.cache[self.origItem.key] then
-          context.storage.cache[self.origItem.key].displayName = self.res.displayName
+        if context.storage.cache[self.item.key] then
+          context.storage.cache[self.item.key].displayName = self.res.displayName
         end
+        --context.storage:setDirty()
       end
+
       self.res.displayName = nil
       Util.prune(self.res, function(v)
         if type(v) == 'boolean' then
@@ -75,20 +74,14 @@ function manageTab:eventHandler(event)
       end)
 
       local newKey = {
-        name = item.name,
-        damage = self.res.ignoreDamage and 0 or item.damage,
-        nbtHash = not self.res.ignoreNbtHash and item.nbtHash or nil,
+        name = self.item.name,
+        damage = self.res.ignoreDamage and 0 or self.item.damage,
+        nbtHash = not self.res.ignoreNbtHash and self.item.nbtHash or nil,
       }
 
-      for k,v in pairs(context.resources) do
-        if v == self.res then
-          context.resources[k] = nil
-          break
-        end
-      end
-
+      context.resources[self.item.key] = nil
       if not Util.empty(self.res) then
-        context.resources[Milo:uniqueKey(newKey)] = self.res
+        context.resources[itemDB:makeKey(newKey)] = self.res
       end
 
       Milo:saveResources()

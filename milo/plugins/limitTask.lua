@@ -1,4 +1,5 @@
-local Milo = require('milo')
+local itemDB = require('itemDB')
+local Milo   = require('milo')
 
 local LimitTask = {
 	name = 'limiter',
@@ -11,7 +12,7 @@ function LimitTask:cycle(context)
 	if trashcan then
 		for key,res in pairs(context.resources) do
 			if res.limit then
-				local items, count = Milo:getMatches(Milo:splitKey(key), res)
+				local items, count = Milo:getMatches(itemDB:splitKey(key), res)
 				if count > res.limit then
 					local amount = count - res.limit
 					for _, item in pairs(items) do

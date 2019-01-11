@@ -340,7 +340,7 @@ function nodeWizard.filter:eventHandler(event)
 	elseif event.type == 'scan_turtle' then
 		local inventory = Milo:getTurtleInventory()
 		for _,item in pairs(inventory) do
-			self.entry.filter[Milo:uniqueKey(item)] = true
+			self.entry.filter[itemDB:makeKey(item)] = true
 		end
 		self:resetGrid()
 		self.grid:update()
@@ -359,7 +359,7 @@ function nodeWizard.filter:eventHandler(event)
 		self.form:save()
 		self.entry.filter = { }
 		for _,v in pairs(self.grid.values) do
-			self.entry.filter[Milo:uniqueKey(v)] = true
+			self.entry.filter[itemDB:makeKey(v)] = true
 		end
 		self:hide()
 		self.callback()

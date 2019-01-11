@@ -17,12 +17,12 @@ function ImportTask:cycle(context)
 
 				local function itemMatchesFilter(item)
 					if not entry.ignoreDamage and not entry.ignoreNbtHash then
-						local key = Milo:uniqueKey(item)
+						local key = itemDB:makeKey(item)
 						return entry.filter[key]
 					end
 
 					for key in pairs(entry.filter) do
-						local v = Milo:splitKey(key)
+						local v = itemDB:splitKey(key)
 						if item.name == v.name and
 							(entry.ignoreDamage or item.damage == v.damage) and
 							(entry.ignoreNbtHash or item.nbtHash == v.nbtHash) then

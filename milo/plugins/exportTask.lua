@@ -31,7 +31,7 @@ function ExportTask:cycle(context)
 					if slot then
 						-- something is in the slot, find what we can export
 						for key in pairs(entry.filter) do
-							local filterItem = Milo:splitKey(key)
+							local filterItem = itemDB:splitKey(key)
 							if (slot.name == filterItem.name and
 									(entry.ignoreDamage or slot.damage == filterItem.damage) and
 									(entry.ignoreNbtHash or slot.nbtHash == filterItem.nbtHash)) then
@@ -50,7 +50,7 @@ function ExportTask:cycle(context)
 
 					-- slot is empty - export first matching item we have in storage
 					for key in pairs(entry.filter) do
-						local items = Milo:getMatches(Milo:splitKey(key), entry)
+						local items = Milo:getMatches(itemDB:splitKey(key), entry)
 						local _, item = next(items)
 						if item then
 							local count = math.min(item.count, itemDB:getMaxCount(item))

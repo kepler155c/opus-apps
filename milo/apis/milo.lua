@@ -47,27 +47,17 @@ end
 
 function Milo:getState(key)
 	if not self.state then
-		self.state = { }
-		Config.load('milo.state', self.state)
+		self.state = Config.load('milo.state')
 	end
 	return self.state[key]
 end
 
 function Milo:setState(key, value)
 	if not self.state then
-		self.state = { }
-		Config.load('milo.state', self.state)
+		self.state = Config.load('milo.state')
 	end
 	self.state[key] = value
 	Config.update('milo.state', self.state)
-end
-
-function Milo:uniqueKey(item)
-	return table.concat({ item.name, item.damage, item.nbtHash }, ':')
-end
-
-function Milo:splitKey(key)
-	return itemDB:splitKey(key)
 end
 
 function Milo:resetCraftingStatus()
@@ -85,18 +75,8 @@ function Milo:registerTask(task)
 	table.insert(self.context.tasks, task)
 end
 
-function Milo:getItem(items, inItem, ignoreDamage, ignoreNbtHash)
-	if not ignoreDamage and not ignoreNbtHash then
-		return items[inItem.key or self:uniqueKey(inItem)]
-	end
-
-	for _,item in pairs(items) do
-		if item.name == inItem.name and
-			(ignoreDamage or item.damage == inItem.damage) and
-			(ignoreNbtHash or item.nbtHash == inItem.nbtHash) then
-			return item
-		end
-	end
+function Milo:getItem(inItem)
+	return self:listItems()[inItem.key or itemDB:makeKey(inItem)]
 end
 
 -- returns a list of items that matches along with a total count
@@ -106,7 +86,7 @@ function Milo:getMatches(item, flags)
 	local items = self:listItems()
 
 	if not flags.ignoreDamage and not flags.ignoreNbtHash then
-		local key = item.key or Milo:uniqueKey(item)
+		local key = item.key or itemDB:makeKey(item)
 		local v = items[key]
 		if v then
 			t[key] = Util.shallowCopy(v)
@@ -146,7 +126,7 @@ function Milo:getTurtleInventory()
 end
 
 function Milo:requestCrafting(item)
-	local key = Milo:uniqueKey(item)
+	local key = itemDB:makeKey(item)
 
 	if not self.context.craftingQueue[key] then
 		item.crafted = 0
@@ -157,7 +137,7 @@ function Milo:requestCrafting(item)
 	end
 end
 
--- queue up an action that reliees on the crafting grid
+-- queue up an action that relies on the crafting grid
 function Milo:queueRequest(request, callback)
 	if Util.empty(self.context.queue) then
 		os.queueEvent('milo_queue')
@@ -178,7 +158,7 @@ function Milo:craftAndEject(item, count)
 end
 
 function Milo:makeRequest(item, count, callback)
-	local current = Milo:getItem(Milo:listItems(), item) or { count = 0 }
+	local current = self:getItem(item) or { count = 0 }
 
 	if count <= 0 then
 		return {
@@ -187,18 +167,18 @@ function Milo:makeRequest(item, count, callback)
 			count = 0,
 			current = current.count,
 			item = item,
-			key = item.key or Milo:uniqueKey(item),
+			key = item.key or itemDB:makeKey(item),
 		}
 	end
 
 	local toCraft = count - math.min(current.count, count)
 	if toCraft > 0 then
-		local recipe = Craft.findRecipe(self:uniqueKey(item))
+		local recipe = Craft.findRecipe(itemDB:makeKey(item))
 		if not recipe then
 			toCraft = 0
 		else
 			-- if you ask for 1 stick, getCraftableAmount will return 4 (obviously)
-			toCraft = math.min(toCraft, Craft.getCraftableAmount(recipe, toCraft, Milo:listItems(), { }))
+			toCraft = math.min(toCraft, Craft.getCraftableAmount(recipe, toCraft, self:listItems(), { }))
 		end
 	end
 
@@ -208,11 +188,11 @@ function Milo:makeRequest(item, count, callback)
 		count = math.min(count, current.count),
 		current = current.count,
 		item = item,
-		key = item.key or Milo:uniqueKey(item),
+		key = item.key or itemDB:makeKey(item),
 	}
 
 	if request.count > 0 then
-		Milo:queueRequest(request, callback)
+		self:queueRequest(request, callback)
 	end
 
 	if request.craft > 0 then
@@ -244,7 +224,7 @@ function Milo:updateRecipe(result, recipe)
 end
 
 function Milo:saveMachineRecipe(recipe, result, machine)
-	local key = Milo:uniqueKey(result)
+	local key = itemDB:makeKey(result)
 
 	-- save the recipe
 	self.context.userRecipes[key] = recipe
@@ -261,32 +241,29 @@ function Milo:mergeResources(t)
 	t = Util.shallowCopy(t)
 
 	for k,v in pairs(self.context.resources) do
-		local key = itemDB:splitKey(k)
-		local item = self:getItem(t, key)
+		local item = t[k]
 		if item then
 			item = Util.shallowCopy(item)
 		else
-			item = key
+			item = itemDB:splitKey(k)
 			item.count = 0
 			item.key = k
 		end
 		Util.merge(item, v)
-		item.resource = v
-		t[item.key] = item
+		t[k] = item
 	end
 
 	for k in pairs(Craft.recipes) do
-		local v = itemDB:splitKey(k)
-		local item = self:getItem(t, v)
+		local item = t[k]
 		if not item then
-			item = v
+			item = itemDB:splitKey(k)
 			item.count = 0
 			item.key = k
 		else
 			item = Util.shallowCopy(item)
 		end
-		t[item.key] = item
 		item.has_recipe = true
+		t[k] = item
 	end
 
 	for key in pairs(Craft.machineLookup) do
@@ -294,7 +271,7 @@ function Milo:mergeResources(t)
 		if item then
 			item = Util.shallowCopy(item)
 			item.is_craftable = true
-			t[item.key] = item
+			t[key] = item
 		end
 	end
 

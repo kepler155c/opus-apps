@@ -25,7 +25,7 @@ function PotionImportTask:cycle(context)
 				if blazePowder then
 					context.storage:export(bs, 5, 1, blazePowder)
 				else
-					local item = itemDB:get(BLAZE_POWDER) or Milo:splitKey(BLAZE_POWDER)
+					local item = itemDB:get(BLAZE_POWDER) or itemDB:splitKey(BLAZE_POWDER)
 					item.requested = 1
 					Milo:requestCrafting(item)
 				end
@@ -35,7 +35,7 @@ function PotionImportTask:cycle(context)
 				-- brewing has completd
 
 				if self.brewQueue[bs.name] and list[1] then
-					local key = Milo:uniqueKey(list[1])
+					local key = itemDB:makeKey(list[1])
 					if not Craft.findRecipe(key) then
 						Milo:saveMachineRecipe(self.brewQueue[bs.name], list[1], bs.name)
 					end
@@ -68,7 +68,7 @@ function PotionImportTask:cycle(context)
 
 			if valid() then
 				for i = 1, 4 do
-					recipe.ingredients[i] = Milo:uniqueKey(list[i])
+					recipe.ingredients[i] = itemDB:makeKey(list[i])
 				end
 
 				self.brewQueue[bs.name] = recipe

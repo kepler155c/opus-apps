@@ -8,7 +8,7 @@ local Util       = require('util')
 local colors     = _G.colors
 local os         = _G.os
 
-local config = Config.load('store')
+local config = Config.load('shop')
 
 --[[ Display ]]--
 local function createPage(node)
@@ -123,18 +123,14 @@ local pages = { }
 
 -- called when an item to sell has been changed
 Event.on('store_refresh', function()
-  config = Config.load('store')
+  config = Config.load('shop')
 end)
 
-Event.on('store_provide', function(_, item, quantity)
-  local count = 0
-  for k, v in pairs(config) do
-    if v.name == item then
-      count = Milo:eject(itemDB:splitKey(k), quantity)
-      break
-    end
-  end
-  os.queueEvent('store_provided', item, count)
+Event.on('store_provide', function(_, item, quantity, uid)
+  Milo:queueRequest({ }, function()
+    local count = Milo:eject(item, quantity)
+    os.queueEvent('store_provided', uid, count)
+  end)
 end)
 
 --[[ Task ]]--

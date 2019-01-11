@@ -55,7 +55,7 @@ local function learnRecipe()
 					]]--
 					maxCount = 1
 
-					newRecipe.craftingTools[Milo:uniqueKey(tool)] = true
+					newRecipe.craftingTools[itemDB:makeKey(tool)] = true
 					v1.craftingTool = true
 					break
 				end
@@ -80,7 +80,7 @@ local function learnRecipe()
 
 	newRecipe.count = recipe.count
 
-	local key = Milo:uniqueKey(recipe)
+	local key = itemDB:makeKey(recipe)
 	if recipe.maxCount ~= 64 then
 		newRecipe.maxCount = recipe.maxCount
 	end
@@ -88,7 +88,7 @@ local function learnRecipe()
 		if ingredient.maxDamage > 0 then
 			-- ingredient.damage = '*'               -- I don't think this is right
 		end
-		ingredients[k] = Milo:uniqueKey(ingredient)
+		ingredients[k] = itemDB:makeKey(ingredient)
 	end
 
 	Milo:updateRecipe(key, newRecipe)
