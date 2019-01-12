@@ -71,6 +71,7 @@ local function createPage(node)
     if node.header then
       self:centeredWrite(2, node.header, nil, colors.white)
     end
+    self:write(self.width - 15, 3, 'powered by Milo', nil, colors.lightGray)
   end
 
   function page.footer.info:draw()
@@ -88,8 +89,8 @@ local function createPage(node)
   end
 
   function page.grid:getRowTextColor(row, selected)
-    if row.count == 0 then
-      return colors.lightGray
+    if selected then
+      return colors.yellow
     end
     return UI.Grid:getRowTextColor(row, selected)
   end
@@ -147,6 +148,14 @@ local function createPage(node)
     page:sync()
   end
 
+  local chars = { '\183', '\7', '\186', '\7' }
+  Event.onInterval(1, function()
+    local ch = chars[math.floor(os.clock() % #chars) + 1]
+    page.header:write(2, 2, ch)
+    page.header:write(page.header.width - 1, 2, ch)
+    page:sync()
+  end)
+
   UI:setPage(page)
   return page
 end
@@ -162,7 +171,7 @@ Event.on('store_provide', function(_, item, quantity, uid)
   Milo:queueRequest({ }, function()
     local count = Milo:eject(itemDB:splitKey(item), quantity)
     os.queueEvent('store_provided', uid, count)
-    Sound.play('entity.villager.no')
+    Sound.play('entity.villager.yes')
   end)
 end)
 

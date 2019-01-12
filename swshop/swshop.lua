@@ -77,7 +77,7 @@ local function handleTransaction(transaction)
 
   local count = math.floor(value / price)
   local uid = math.random()
-  print('requesting %d of %s', count, itemId)
+  print(string.format('requesting %d of %s', count, itemId))
   os.queueEvent('store_provide', itemId, count, uid)
   local timerId = os.startTimer(5)
   while true do
