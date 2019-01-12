@@ -18,7 +18,9 @@ end
 
 local function findID(url)
   local found = gfind(url, idPatt)
-  return tonumber(found[#found]:sub(found[#found]:find("%d+")))
+  if found then
+    return tonumber(found[#found]:sub(found[#found]:find("%d+")))
+  end
 end
 
 local function newID()
@@ -42,7 +44,7 @@ function init(jua)
   jua = jua
   jua.on("http_success", function(event, url, handle)
     local id = findID(url)
-    if callbackRegistry[id] then
+    if id and callbackRegistry[id] then
       callbackRegistry[id](true, trimID(url), handle)
       table.remove(callbackRegistry, id)
     end
@@ -50,7 +52,7 @@ function init(jua)
 
   jua.on("http_failure", function(event, url, handle)
     local id = findID(url)
-    if callbackRegistry[id] then
+    if id and callbackRegistry[id] then
       callbackRegistry[id](false, trimID(url), handle)
       table.remove(callbackRegistry, id)
     end
