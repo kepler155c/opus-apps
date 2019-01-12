@@ -1,3 +1,7 @@
+local fs        = _G.fs
+local os        = _G.os
+local shell     = _ENV.shell
+
 local programDir = fs.getDir(shell.getRunningProgram())
 os.loadAPI(programDir .. '/'.. 'json')
 
@@ -7,9 +11,7 @@ local k   = require("k")
 local jua = require("jua")
 
 local await     = jua.await
-local fs        = _G.fs
 local json      = _G.json
-local os        = _G.os
 local rs        = _G.rs
 local textutils = _G.textutils
 
@@ -19,10 +21,15 @@ r.init(jua)
 w.init(jua)
 k.init(jua, json, w, r)
 
-local domain
-local password
-local privatekey
-local address
+local function Syntax()
+  error('Syntax: swshop [domain] [password]')
+end
+
+local args = { ... }
+local domain = args[1] or Syntax()
+local password = args[2] or Syntax()
+local privatekey = k.toKristWalletFormat(password)
+local address = k.makev2address(privatekey)
 
 jua.on("terminate", function()
   rs.setOutput('top', false)
@@ -78,7 +85,7 @@ local function handleTransaction(transaction)
   local count = math.floor(value / price)
   local uid = math.random()
   print(string.format('requesting %d of %s', count, itemId))
-  os.queueEvent('store_provide', itemId, count, uid)
+  os.queueEvent('shop_provide', itemId, count, uid)
   local timerId = os.startTimer(5)
   while true do
     local e, p1, p2 = os.pullEvent()
@@ -87,7 +94,7 @@ local function handleTransaction(transaction)
       refundTransaction(value, "error=Timed out attempting to provide items")
       break
 
-    elseif e == 'store_provided' and p1 == uid then
+    elseif e == 'shop_provided' and p1 == uid then
       local extra = value - (price * p2)
       if extra > 0 then
         print('extra: ' .. extra)
@@ -98,28 +105,23 @@ local function handleTransaction(transaction)
   end
 end
 
-jua.on('open_store', function(_, _domain, _password)
-  domain = _domain
-  password = _password
-
-  rs.setOutput('top', true)
+local function connect()
   print('opening store for: ' .. domain)
-
-  privatekey = k.toKristWalletFormat(password)
-  address = k.makev2address(privatekey)
 
   local success, ws = await(k.connect, privatekey)
   assert(success, "Failed to get websocket URL")
 
   print("Connected to websocket.")
+  rs.setOutput('top', true)
 
   success = await(ws.subscribe, "ownTransactions", function(data)
     local transaction = data.transaction
     handleTransaction(transaction)
   end)
   assert(success, "Failed to subscribe to event")
-end)
+end
 
 jua.go(function()
   print("Ready")
+  connect()
 end)

@@ -7,9 +7,32 @@ local UI         = require('ui')
 local Util       = require('util')
 
 local colors     = _G.colors
+local multishell = _ENV.multishell
 local os         = _G.os
+local shell      = _ENV.shell
 
 local config = Config.load('shop')
+local shopTab
+
+local function startShop(node)
+  if shopTab then
+    multishell.terminate(shopTab)
+  end
+  shopTab = shell.openTab('/packages/swshop/swshop.lua', node.domain, node.password)
+end
+
+-- node has been reconfigured
+Event.on('shop_restart', function(_, node)
+  startShop(node)
+end)
+
+-- milo is being terminated
+Event.on('terminate', function()
+  if shopTab then
+    multishell.terminate(shopTab)
+    shopTab = nil
+  end
+end)
 
 --[[ Display ]]--
 local function createPage(node)
@@ -163,14 +186,15 @@ end
 local pages = { }
 
 -- called when an item to sell has been changed
-Event.on('store_refresh', function()
+Event.on('shop_refresh', function()
   config = Config.load('shop')
 end)
 
-Event.on('store_provide', function(_, item, quantity, uid)
+-- called from the shop when an item has been purchased
+Event.on('shop_provide', function(_, item, quantity, uid)
   Milo:queueRequest({ }, function()
     local count = Milo:eject(itemDB:splitKey(item), quantity)
-    os.queueEvent('store_provided', uid, count)
+    os.queueEvent('shop_provided', uid, count)
     Sound.play('entity.villager.yes')
   end)
 end)
@@ -184,8 +208,8 @@ local StoreTask = {
 function StoreTask:cycle(context)
   for node in context.storage:filterActive('shop') do
     if not pages[node.name] then
+      startShop(node)
       pages[node.name] = createPage(node)
-      os.queueEvent('open_store', node.domain, node.password)
     end
     -- update the display
     pages[node.name]:update()

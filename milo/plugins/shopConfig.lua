@@ -2,6 +2,7 @@ local UI         = require('ui')
 
 local colors     = _G.colors
 local device     = _G.device
+local os         = _G.os
 
 --[[ Configuration Page ]]--
 local wizardPage = UI.Window {
@@ -9,7 +10,7 @@ local wizardPage = UI.Window {
   index = 2,
   backgroundColor = colors.cyan,
   form = UI.Form {
-    x = 2, ex = -2, y = 2, ey = -4,
+    x = 2, ex = -2, y = 2, ey = -2,
     manualControls = true,
 		[1] = UI.TextEntry {
 			formLabel = 'Domain', formKey = 'domain',
@@ -31,6 +32,11 @@ local wizardPage = UI.Window {
 			limit = 64,
       shadowText = "xxxx's shop",
       required = false,
+		},
+		warning = UI.Text {
+      x = 2, y = -1,
+      textColor = colors.yellow,
+      value = 'swshop Package must be installed',
 		},
     [4] = UI.Chooser {
       width = 9,
@@ -54,7 +60,7 @@ function wizardPage:validate()
 end
 
 function wizardPage:saveNode(node)
--- queue event ??
+  os.queueEvent('shop_restart', node)
 end
 
 function wizardPage:isValidType(node)

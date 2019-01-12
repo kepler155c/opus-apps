@@ -31,7 +31,10 @@ end
 
 local function findID(url)
   local found = gfind(url, idPatt)
-  return tonumber(found[#found]:sub(found[#found]:find("%d+")))
+  local id = tonumber(found[#found]:sub(found[#found]:find("%d+")))
+  _debug('id: ')
+  _debug(id)
+  return id
 end
 
 local function newID()

@@ -5,6 +5,7 @@ local Storage    = require('storage')
 local UI         = require('ui')
 local Util       = require('util')
 
+local colors     = _G.colors
 local device     = _G.device
 local fs         = _G.fs
 local multishell = _ENV.multishell
@@ -172,6 +173,11 @@ os.queueEvent(
   context.storage:isOnline() and 'storage_online' or 'storage_offline',
   context.storage:isOnline())
 
---os.queueEvent('milo_cycle')
-
 UI:pullEvents()
+
+for _, node in pairs(context.storage.nodes) do
+  if node.category == 'display' and node.adapter and node.adapter.clear then
+    node.adapter.setBackgroundColor(colors.black)
+    node.adapter.clear()
+  end
+end

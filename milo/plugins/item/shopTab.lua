@@ -53,14 +53,14 @@ function storeTab:eventHandler(event)
     self.form:setValues({ })
     config[self.item.key] = nil
     Config.update('shop', config)
-    os.queueEvent('store_refresh')
+    os.queueEvent('shop_refresh')
     self.form:draw()
 
   elseif event.type == 'update' then
     if self.form:save() then
       config[self.item.key] = self.form.values
       Config.update('shop', config)
-      os.queueEvent('store_refresh')
+      os.queueEvent('shop_refresh')
       self:emit({ type = 'success_message', message = 'Updated' })
     end
 
