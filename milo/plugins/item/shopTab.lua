@@ -15,7 +15,7 @@ local storeTab = UI.Window {
       formLabel = 'Name', formKey = 'name',
       help = 'Unique name used when paying for an item',
       required = true,
-      width = 16,
+      width = 12,
       limit = 64,
     },
     [2] = UI.TextEntry {

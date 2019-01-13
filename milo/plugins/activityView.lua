@@ -95,19 +95,19 @@ local function createPage(node)
       y = -1,
       backgroundColor = colors.gray,
       prevButton = UI.Button {
-        x = 2, width = 5,
+        x = 1, width = 5,
         event = 'previous',
         backgroundColor = colors.lightGray,
         text = ' < '
       },
       resetButton = UI.Button {
-        x = 8, ex = -8,
+        x = 6, ex = -6,
         event = 'reset',
         backgroundColor = colors.lightGray,
         text = 'Reset'
       },
       nextButton = UI.Button {
-        x = -6, width = 5,
+        x = -5, width = 5,
         event = 'next',
         backgroundColor = colors.lightGray,
         text = ' > '

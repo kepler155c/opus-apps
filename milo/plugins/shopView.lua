@@ -62,7 +62,7 @@ local function createPage(node)
         { heading = 'Stock',   key = 'count',     width = 6, justify = 'right' },
         { heading = '  Price', key = 'price',     width = 9, justify = 'right' },
         { heading = 'Name',    key = 'displayName' },
-        { heading = 'Address', key = 'address',   width = 16 },
+        { heading = 'Address', key = 'address',   width = 12 },
       },
       sortColumn = 'displayName',
     },
