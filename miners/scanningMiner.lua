@@ -38,6 +38,8 @@ local MIN_FUEL = 7500
 local LOW_FUEL = 1500
 local MAX_FUEL = turtle.getFuelLimit()
 
+local HOME_PT = { x = 0, y = 0, z = 0 }
+
 local DICTIONARY_FILE = 'usr/config/mining.dictionary'
 local PROGRESS_FILE   = 'usr/config/scanning_mining.progress'
 local STARTUP_FILE = 'usr/autorun/scanningMiner.lua'
@@ -104,6 +106,7 @@ local page = UI.Page {
   statusBar = UI.StatusBar {
     columns = {
       { key = 'status' },
+      { key = 'distance', width = 4 },
       { key = 'fuel', width = 6 },
     },
   },
@@ -475,7 +478,7 @@ local function mineChunk()
 
     if turtle.getFuelLevel() < LOW_FUEL then
       refuel()
-      local veryMinFuel = Point.turtleDistance(turtle.point, { x = 0, y = 0, z = 0 }) + 512
+      local veryMinFuel = Point.turtleDistance(turtle.point, HOME_PT) + 512
       if turtle.getFuelLevel() < veryMinFuel then
         error('Not enough fuel to continue')
       end
@@ -571,6 +574,7 @@ Event.addRoutine(function()
 
   turtle.setMoveCallback(function()
     page.statusBar:setValue('fuel', Util.toBytes(turtle.getFuelLevel()))
+    page.statusBar:setValue('distance', math.floor(Point.distance(turtle.point, HOME_PT)))
     page.statusBar:draw()
     page:sync()
   end)
@@ -600,7 +604,7 @@ Event.addRoutine(function()
     { x = mining.x, y = 0, z = mining.z }
   )
   local maxDistance = Point.distance(
-    { x = 0, y = 0, z = 0 },
+    HOME_PT,
     { x = mining.x + 16, y = 0, z = mining.z + 16 }
   )
 
@@ -640,7 +644,7 @@ Event.addRoutine(function()
 
   status(success and 'finished' or turtle.isAborted() and 'aborting' or 'error')
   turtle.gotoY(0)
-  if turtle._goto({ x = 0, y = 0, z = 0 }) then
+  if turtle._goto(HOME_PT) then
     unload()
   end
   turtle.reset()

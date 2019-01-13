@@ -121,7 +121,14 @@ local function connect()
   assert(success, "Failed to subscribe to event")
 end
 
-jua.go(function()
-  print("Ready")
-  connect()
+local s, m = pcall(function()
+  jua.go(function()
+    print("Ready")
+    connect()
+  end)
 end)
+
+rs.setOutput('top', false)
+if not s then
+  error(m)
+end

@@ -169,15 +169,17 @@ Event.on({ 'storage_offline', 'storage_online' }, function()
   end
 end)
 
+Event.on('terminate', function()
+  for _, node in pairs(context.storage.nodes) do
+    if node.category == 'display' and node.adapter and node.adapter.clear then
+      node.adapter.setBackgroundColor(colors.black)
+      node.adapter.clear()
+    end
+  end
+end)
+
 os.queueEvent(
   context.storage:isOnline() and 'storage_online' or 'storage_offline',
   context.storage:isOnline())
 
 UI:pullEvents()
-
-for _, node in pairs(context.storage.nodes) do
-  if node.category == 'display' and node.adapter and node.adapter.clear then
-    node.adapter.setBackgroundColor(colors.black)
-    node.adapter.clear()
-  end
-end

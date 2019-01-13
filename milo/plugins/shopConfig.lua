@@ -10,7 +10,7 @@ local wizardPage = UI.Window {
   index = 2,
   backgroundColor = colors.cyan,
   form = UI.Form {
-    x = 2, ex = -2, y = 2, ey = -2,
+    x = 2, ex = -2, y = 1, ey = -2,
     manualControls = true,
 		[1] = UI.TextEntry {
 			formLabel = 'Domain', formKey = 'domain',
@@ -33,11 +33,6 @@ local wizardPage = UI.Window {
       shadowText = "xxxx's shop",
       required = false,
 		},
-		warning = UI.Text {
-      x = 2, y = -1,
-      textColor = colors.yellow,
-      value = 'swshop Package must be installed',
-		},
     [4] = UI.Chooser {
       width = 9,
       formLabel = 'Font Size', formKey = 'textScale',
@@ -48,6 +43,11 @@ local wizardPage = UI.Window {
       },
       help = 'Adjust text scaling',
     },
+		warning = UI.Text {
+      x = 2, y = -1,
+      textColor = colors.orange,
+      value = 'Package swshop must be installed',
+		},
   },
 }
 
