@@ -82,7 +82,7 @@ local function createPage(node)
   local page = UI.Page {
     parent = monitor,
     grid = UI.Grid {
-      ey = -6,
+      ey = -2,
       columns = {
         { heading = 'Qty',    key = 'count',       width = 5 },
         { heading = 'Change', key = 'change',      width = 5 },
@@ -92,22 +92,22 @@ local function createPage(node)
       sortColumn = 'displayName',
     },
     buttons = UI.Window {
-      y = -5, height = 5,
+      y = -1,
       backgroundColor = colors.gray,
       prevButton = UI.Button {
-        x = 2, y = 2, height = 3, width = 5,
+        x = 2, width = 5,
         event = 'previous',
         backgroundColor = colors.lightGray,
         text = ' < '
       },
       resetButton = UI.Button {
-        x = 8, y = 2, height = 3, ex = -8,
+        x = 8, ex = -8,
         event = 'reset',
         backgroundColor = colors.lightGray,
         text = 'Reset'
       },
       nextButton = UI.Button {
-        x = -6, y = 2, height = 3, width = 5,
+        x = -6, width = 5,
         event = 'next',
         backgroundColor = colors.lightGray,
         text = ' > '

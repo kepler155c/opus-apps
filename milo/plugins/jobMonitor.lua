@@ -81,7 +81,7 @@ local function createPage(node)
   local page = UI.Page {
     parent = monitor,
     grid = UI.Grid {
-      ey = -6,
+      --ey = -6,
       sortColumn = 'index',
       columns = {
         { heading = 'Qty',      key = 'remaining',   width = 4 },
@@ -95,6 +95,7 @@ local function createPage(node)
   --      { heading = 'Progress', key = 'progress',    width = 8 },
       },
     },
+--[[
     buttons = UI.Window {
       y = -5, height = 5,
       backgroundColor = colors.gray,
@@ -117,6 +118,7 @@ local function createPage(node)
         text = ' > '
       },
     },
+]]
   }
 
   function page:updateList(craftList)
