@@ -60,8 +60,8 @@ local function createPage(node)
       unfocusedBackgroundSelectedColor = colors.gray,
       columns = {
         { heading = 'Stock',   key = 'count',     width = 6, justify = 'right' },
-        { heading = '  Price', key = 'price',     width = 9, justify = 'right' },
         { heading = 'Name',    key = 'displayName' },
+        { heading = '   Price', key = 'price',     width = 9, justify = 'right' },
         { heading = 'Address', key = 'address',   width = 12 },
       },
       sortColumn = 'displayName',
@@ -120,8 +120,8 @@ local function createPage(node)
 
   function page.grid:getDisplayValues(row)
     row = Util.shallowCopy(row)
-    row.count = Util.toBytes(row.count) .. ' x'
-    row.price = row.price .. ' kst '
+    row.count = Util.toBytes(row.count) .. ' '
+    row.price = string.format('%s kst ', row.price)
     row.address = row.name
     return row
   end

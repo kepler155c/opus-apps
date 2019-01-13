@@ -101,7 +101,7 @@ local function createPage(node)
         text = ' < '
       },
       resetButton = UI.Button {
-        x = 6, ex = -6,
+        x = 7, ex = -7,
         event = 'reset',
         backgroundColor = colors.lightGray,
         text = 'Reset'
