@@ -20,6 +20,16 @@ function Milo:getContext()
 	return self.context
 end
 
+function Milo:registerPlugin(plugin)
+	for pluginType, value in pairs(plugin) do
+		if not self.context.plugins[pluginType] then
+			self.context.plugins[pluginType] = { value }
+		else
+			table.insert(self.context.plugins[pluginType], value)
+		end
+	end
+end
+
 function Milo:pauseCrafting(reason)
 	local _, key = Util.find(self.context.state, 'key', reason.key)
 	if not key then

@@ -61,4 +61,4 @@ function machinesTab:eventHandler(event)
   end
 end
 
-return machinesTab
+return { itemTab = machinesTab }

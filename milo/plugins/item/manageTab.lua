@@ -93,4 +93,4 @@ function manageTab:eventHandler(event)
   return true
 end
 
-return manageTab
+return { itemTab = manageTab }

@@ -1,28 +1,8 @@
+local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
 
-local fs     = _G.fs
-local shell  = _ENV.shell
-
-local function loadDirectory(dir)
-  local tabs = { }
-  for _, file in pairs(fs.list(dir)) do
-    if not fs.isDir(fs.combine(dir, file)) then
-      local s, m = Util.run(_ENV, fs.combine(dir, file))
-      if not s and m then
-        _G.printError('Error loading: ' .. file)
-        error(m or 'Unknown error')
-      end
-      table.insert(tabs, m)
-    end
-  end
-  return tabs
-end
-
-local programDir = fs.getDir(shell.getRunningProgram())
-local tabs = loadDirectory(fs.combine(programDir, 'plugins/item'))
-
-table.sort(tabs, function(a, b) return a.index < b.index end)
+local context = Milo:getContext()
 
 local page = UI.Page {
   titleBar = UI.TitleBar {
@@ -34,12 +14,21 @@ local page = UI.Page {
 }
 
 function page:enable(item)
-  for _, v in pairs(tabs) do
+  if not self.tabs then
+    table.sort(context.plugins.itemTab, function(a, b) return a.index < b.index end)
+    local t = Util.shallowCopy(context.plugins.itemTab)
+    t.y = 2
+    t.ey = -2
+
+    self:add({ tabs = UI.Tabs(t) })
+  end
+
+  for _, v in pairs(context.plugins.itemTab) do
     if v.UIElement then
       v:setItem(item)
     end
   end
-  self.tabs:selectTab(tabs[1])
+  self.tabs:selectTab(context.plugins.itemTab[1])
   UI.Page.enable(self)
 end
 
@@ -68,11 +57,5 @@ function page:eventHandler(event)
   end
   return true
 end
-
-local t = Util.shallowCopy(tabs)
-t.y = 2
-t.ey = -2
-
-page:add({ tabs = UI.Tabs(t) })
 
 UI:addPage('item', page)

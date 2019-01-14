@@ -43,4 +43,4 @@ function infoTab:draw()
 	UI.Window.draw(self)
 end
 
-return infoTab
+return { itemTab = infoTab }

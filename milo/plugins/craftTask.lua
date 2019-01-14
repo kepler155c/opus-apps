@@ -35,25 +35,7 @@ function craftTask:craft(recipe, item)
   item.ingredients[recipe.result].total = item.count
   item.ingredients[recipe.result].crafted = item.crafted
 
---[[
-_G._p2 = item
-if not item.history then
-  item.history = { }
-end
-local t = Util.shallowCopy(item)
-t.history = { input = { }, output = { } }
-for k,v in pairs(item.ingredients) do
-  t.history.input[k] = Util.shallowCopy(v)
-end
-table.insert(item.history, t)
-]]
   Craft.craftRecipe(recipe, item.requested - item.crafted, context.storage, item)
-
---[[
-for k,v in pairs(item.ingredients) do
-  t.history.output[k] = Util.shallowCopy(v)
-end
-]]
 end
 
 function craftTask:cycle()

@@ -52,4 +52,4 @@ function resetTab:eventHandler(event)
   end
 end
 
-return resetTab
+return { itemTab = resetTab }

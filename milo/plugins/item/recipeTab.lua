@@ -87,4 +87,4 @@ function recipeTab:eventHandler(event)
   end
 end
 
-return recipeTab
+return { itemTab = recipeTab }

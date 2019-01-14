@@ -43,11 +43,6 @@ local wizardPage = UI.Window {
       },
       help = 'Adjust text scaling',
     },
-		warning = UI.Text {
-      x = 2, y = -1,
-      textColor = colors.orange,
-      value = 'Package swshop must be installed',
-		},
   },
 }
 

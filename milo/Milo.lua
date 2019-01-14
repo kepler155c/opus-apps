@@ -68,6 +68,7 @@ local context = {
   craftingQueue = { },
   tasks = { },
   queue = { },
+  plugins = { },
 
   storage = Storage(),
   turtleInventory = {
@@ -84,14 +85,22 @@ Milo:init(context)
 context.storage:initStorage()
 context.storage.turtleInventory = context.turtleInventory
 
+local function loadPlugin(file)
+  local s, plugin = Util.run(_ENV, file, context)
+  if not s and plugin then
+    _G.printError('Error loading: ' .. file)
+    error(plugin or 'Unknown error')
+  end
+
+  if plugin and type(plugin) == 'table' then
+    Milo:registerPlugin(plugin)
+  end
+end
+
 local function loadDirectory(dir)
   for _, file in pairs(fs.list(dir)) do
     if not fs.isDir(fs.combine(dir, file)) then
-      local s, m = Util.run(_ENV, fs.combine(dir, file), context)
-      if not s and m then
-        _G.printError('Error loading: ' .. file)
-        error(m or 'Unknown error')
-      end
+      loadPlugin(fs.combine(dir, file))
     end
   end
 end
@@ -99,6 +108,11 @@ end
 local programDir = fs.getDir(shell.getRunningProgram())
 loadDirectory(fs.combine(programDir, 'core'))
 loadDirectory(fs.combine(programDir, 'plugins'))
+loadDirectory(fs.combine(programDir, 'plugins/item'))
+
+for k in pairs(Milo:getState('plugins') or { }) do
+  loadPlugin(k)
+end
 
 table.sort(context.tasks, function(a, b)
   return a.priority < b.priority

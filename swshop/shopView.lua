@@ -49,7 +49,7 @@ local function createPage(node)
   local page = UI.Page {
     parent = monitor,
     header = UI.Window {
-      backgroundColor = colors.blue,
+      backgroundColor = colors.cyan,
       ey = 3,
     },
     grid = UI.Grid {
@@ -201,7 +201,7 @@ end)
 
 --[[ Task ]]--
 local StoreTask = {
-  name = 'store',
+  name = 'shop',
   priority = 30,
 }
 

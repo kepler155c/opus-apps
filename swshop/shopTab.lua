@@ -5,11 +5,11 @@ local os     = _G.os
 
 local config = Config.load('shop')
 
-local storeTab = UI.Window {
+local shopTab = UI.Window {
   tabTitle = 'Store',
-  index = 6,
+  index = 2,
   form = UI.Form {
-    x = 2, ex = -2, y = 2, ey = -2,
+    x = 2, ex = -2, y = 1, ey = -2,
     manualControls = true,
     [1] = UI.TextEntry {
       formLabel = 'Name', formKey = 'name',
@@ -43,12 +43,12 @@ local storeTab = UI.Window {
   },
 }
 
-function storeTab:setItem(item)
+function shopTab:setItem(item)
   self.item = item
   self.form:setValues(config[item.key] or { })
 end
 
-function storeTab:eventHandler(event)
+function shopTab:eventHandler(event)
   if event.type == 'clear' then
     self.form:setValues({ })
     config[self.item.key] = nil
@@ -70,4 +70,4 @@ function storeTab:eventHandler(event)
   return true
 end
 
-return storeTab
+return { itemTab = shopTab }
