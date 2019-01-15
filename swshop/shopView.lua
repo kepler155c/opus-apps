@@ -94,7 +94,7 @@ local function createPage(node)
     if node.header then
       self:centeredWrite(2, node.header, nil, colors.white)
     end
-    self:write(self.width - 15, 3, 'powered by Milo', nil, colors.lightGray)
+    self:write(self.width - 15, 3, 'powered by Milo', nil, colors.gray)
   end
 
   function page.footer.info:draw()

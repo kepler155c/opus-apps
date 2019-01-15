@@ -456,7 +456,6 @@ local function countSaplings()
 end
 
 local function randomSapling()
-  countSaplings()
   local sapling = ALL_SAPLINGS[math.random(1, #ALL_SAPLINGS)]
 
   if sapling.count > 0 then
@@ -507,6 +506,8 @@ local function scan(pt, filter, blocks)
 end
 
 local function getPlantLocations(blocks)
+  countSaplings()
+
   Util.each(state.trees, function(sapling)
     local key = makeKey(sapling)
     local b = blocks[key]
@@ -642,6 +643,7 @@ local function moreTrees()
 
   setState('trees', state.trees)
 
+  countSaplings()
   Point.eachClosest(turtle.point, state.trees, function(pt)
     local sapling = randomSapling()
     if sapling then

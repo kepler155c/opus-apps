@@ -99,7 +99,7 @@ local page = UI.Page {
     y = 2, ey = -2,
     sortColumn = 'name',
     columns = {
-      { heading = 'Count',    key = 'count', width = 5 },
+      { heading = 'Count',    key = 'count', width = 5, justify = 'right' },
       { heading = 'Resource', key = 'displayName' },
     },
   },
@@ -107,7 +107,7 @@ local page = UI.Page {
     columns = {
       { key = 'status' },
       { key = 'distance', width = 4 },
-      { key = 'fuel', width = 6 },
+      { key = 'fuel', width = 5 },
     },
   },
   accelerators = {
