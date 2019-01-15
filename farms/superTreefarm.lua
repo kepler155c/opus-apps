@@ -756,7 +756,7 @@ local tasks = {
   { desc = 'Sleeping',           fn = updateClock        },
 }
 
---local s, m = turtle.run(function()
+local s, m = turtle.run(function()
   turtle.reset()
   turtle.addFeatures('crafting')
   turtle.setPolicy("digAttack")
@@ -772,8 +772,8 @@ local tasks = {
       end
     end
   end
---end)
+end)
 
---if not s then
---  error(m or 'Failed')
---end
+if not s then
+  error(m or 'Failed')
+end
