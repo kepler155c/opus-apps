@@ -18,6 +18,15 @@ if not scanner or not scanner.scan then
 	error('Plethora scanner must be equipped')
 end
 
+local function locate()
+  for _ = 1, 3 do
+    local pt = GPS.getPoint()
+    if pt then
+      return pt
+    end
+  end
+end
+
 local spt = GPS.getPoint() or error('GPS failure')
 local blockTypes = { } -- blocks types requested to mine
 local turtles    = { }
@@ -82,6 +91,10 @@ local function run(id)
   Event.addRoutine(function()
     local turtle = hijackTurtle(id)
 
+    if turtle.getFuelLevel(id) < 100 then
+      return
+    end
+
     local function emptySlots(retain)
       local slots = turtle.getFilledSlots()
       for _,slot in pairs(slots) do
@@ -92,11 +105,20 @@ local function run(id)
       end
     end
 
+    local function enableGPS()
+      for _ = 1, 3 do
+        if turtle.enableGPS() then
+          return
+        end
+      end
+      error('GPS locate failed')
+    end
+
     if turtle then
       turtles[id] = turtle
 
       turtle.resetState()
-      turtle.enableGPS()
+      enableGPS()
       turtle.setPolicy('turtleSafe')
 
       repeat
@@ -114,6 +136,11 @@ local function run(id)
           turtle._goto(spt)
           emptySlots({ })
         end
+        if turtle.getFuelLevel() < 100 then
+          turtle._goto(spt)
+          emptySlots({ })
+          break
+        end
       until abort
     end
     turtle._goto(spt)
@@ -128,7 +155,11 @@ function page.info:draw()
 end
 
 function page:scan()
-  local gpt = GPS.getPoint() or error('GPS locate failed')
+  local gpt = GPS.getPoint()
+  if not gpt then
+    _debug('gps failed')
+    return
+  end
   local rawBlocks = scanner:scan()
 
   self.totals = Util.reduce(rawBlocks,
@@ -204,7 +235,8 @@ end)
 Event.onInterval(1, function()
   if not abort then
     for k,v in pairs(network) do
-      if v.active and v.distance and v.distance < 16 and not turtles[k] then
+      if v.active and v.distance and v.distance < 16 and
+        not turtles[k] and v.fuel and v.fuel > 100 then
         turtles[k] = run(k)
       elseif not v.active and turtles[k] then
         turtles[k] = nil
@@ -224,7 +256,7 @@ UI:setPage(page)
 
 Event.onTerminate(function()
   abort = true
-  spt = Point.above(GPS.getPoint())
+  spt = Point.above(locate())
 end)
 
 Event.pullEvents()
