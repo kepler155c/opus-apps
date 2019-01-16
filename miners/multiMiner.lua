@@ -120,6 +120,7 @@ local function run(id)
       turtle.resetState()
       enableGPS()
       turtle.setPolicy('turtleSafe')
+      turtle.setMovementStrategy('goto')
 
       repeat
         local pt = getNextPoint(turtle)
@@ -175,16 +176,18 @@ function page:scan()
       end
 
       -- add relevant blocks to queue
+      b.x = gpt.x + b.x
+      b.y = gpt.y + b.y
+      b.z = gpt.z + b.z
+      b.pkey = table.concat({ b.x, b.y, b.z }, ':')
       if blockTypes[b.key] then
-        b.x = gpt.x + b.x
-        b.y = gpt.y + b.y
-        b.z = gpt.z + b.z
-        b.pkey = table.concat({ b.x, b.y, b.z }, ':')
         if not Util.any(turtles, function(t)
               return t.pt and t.pt.pkey == b.pkey
             end) then
           queue[b.pkey] = b
         end
+      else
+        queue[b.pkey] = nil
       end
 		end,
 		{ })
@@ -208,8 +211,9 @@ function page:eventHandler(event)
     self.grid:draw()
 
   elseif event.type == 'abort' then
+    spt = Point.above(locate())
     abort = true
-
+  
   elseif event.type == 'grid_select' then
     local key = self.grid:getSelected().key
     if blockTypes[key] then
@@ -255,8 +259,8 @@ page.grid:setValues(page.totals)
 UI:setPage(page)
 
 Event.onTerminate(function()
-  abort = true
   spt = Point.above(locate())
+  abort = true
 end)
 
 Event.pullEvents()
