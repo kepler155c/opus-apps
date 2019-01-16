@@ -165,6 +165,10 @@ function itemDB:add(baseItem)
       nItem.displayName = nItem.displayName .. ': ' .. baseItem.media.recordTitle
     end
 
+  -- turtles / computers / etc
+  elseif baseItem.computer then
+    nItem.displayName = baseItem.computer.label or baseItem.displayName
+
   -- potions
   elseif nItem.name == 'minecraft:potion' or nItem.name == 'minecraft:lingering_potion' then
     if baseItem.effects then

@@ -3,7 +3,6 @@ local GPS     = require('gps')
 local itemDB  = require('itemDB')
 local Point   = require('point')
 local Socket  = require('socket')
-local sync    = require('sync').sync
 local Util    = require('util')
 local UI      = require('ui')
 
@@ -22,25 +21,27 @@ end
 local spt = GPS.getPoint() or error('GPS failure')
 local blockTypes = { } -- blocks types requested to mine
 local turtles    = { }
-local rawBlocks  = { } -- scanner data
 local queue      = { } -- actual blocks to mine
 local abort
 
 local page = UI.Page {
 	menuBar = UI.MenuBar {
 		buttons = {
-			{ text = 'Scan',   event = 'scan' },
-			{ text = 'Totals', event = 'totals' },
+			{ text = 'Scan',  event = 'scan' },
+			{ text = 'Abort', event = 'abort' },
 		},
 	},
 	grid = UI.ScrollingGrid {
-		y = 2,
+		y = 2, ey = -4,
 		columns = {
 			{ heading = 'Name',  key = 'displayName' },
 			{ heading = 'Count', key = 'count', width = 5, justify = 'right' },
 		},
 		sortColumn = 'displayName',
-	},
+  },
+  info = UI.Window {
+    y = -3,
+  }
 }
 
 local function hijackTurtle(remoteId)
@@ -69,20 +70,28 @@ local function hijackTurtle(remoteId)
 end
 
 local function getNextPoint(turtle)
-  local pt
-  sync(turtles, function()
-    if #queue == 0 then
-      queue = page:getBlocksToMine() or { }
-    end
-    pt = Point.closest(turtle.getPoint(), queue)
-    Util.removeByValue(queue, pt)
-  end)
-  return pt
+  local pt = Point.closest(turtle.getPoint(), queue)
+  if pt then
+    turtle.pt = pt
+    queue[pt.pkey] = nil
+    return pt
+  end
 end
 
 local function run(id)
   Event.addRoutine(function()
     local turtle = hijackTurtle(id)
+
+    local function emptySlots(retain)
+      local slots = turtle.getFilledSlots()
+      for _,slot in pairs(slots) do
+        if not retain[slot.key] then
+          turtle.select(slot.index)
+          turtle.dropUp(64)
+        end
+      end
+    end
+
     if turtle then
       turtles[id] = turtle
 
@@ -97,6 +106,14 @@ local function run(id)
         else
           os.sleep(1)
         end
+        if turtle.getItemCount(15) > 0 then
+          emptySlots(blockTypes)
+          turtle.condense()
+        end
+        if turtle.getItemCount(15) > 0 then
+          turtle._goto(spt)
+          emptySlots({ })
+        end
       until abort
     end
     turtle._goto(spt)
@@ -104,42 +121,42 @@ local function run(id)
   end)
 end
 
-function page:getBlocksToMine()
-  if Util.size(blockTypes) > 0 then
-    self:scan()
-    return Util.reduce(rawBlocks,
-      function(acc, b)
-        local key = table.concat({ b.name, b.metadata }, ':')
-        if blockTypes[key] then
-          table.insert(acc, b)
-        end
-      end, { })
-  end
+function page.info:draw()
+  self:clear()
+  self:write(2, 1, 'Turtles: ' .. Util.size(turtles))
+  self:write(2, 2, 'Queue:   ' .. Util.size(queue))
 end
 
 function page:scan()
-  rawBlocks = scanner:scan()
   local gpt = GPS.getPoint() or error('GPS locate failed')
+  local rawBlocks = scanner:scan()
 
-  self.grid:setValues(Util.reduce(rawBlocks,
+  self.totals = Util.reduce(rawBlocks,
     function(acc, b)
-      local key = table.concat({ b.name, b.metadata }, ':')
-      local entry = acc[key]
+      b.key = table.concat({ b.name, b.metadata }, ':')
+      local entry = acc[b.key]
       if not entry then
-        b.displayName = itemDB:getName(key)
+        b.displayName = itemDB:getName(b.key)
         b.count = 1
-        b.key = key
-        acc[key] = b
+        acc[b.key] = b
 			else
-				entry.count = entry.count + 1
+        entry.count = entry.count + 1
       end
-      b.x = gpt.x + b.x
-      b.y = gpt.y + b.y
-      b.z = gpt.z + b.z
-		end,
-		{ }))
 
-	self.grid:draw()
+      -- add relevant blocks to queue
+      if blockTypes[b.key] then
+        b.x = gpt.x + b.x
+        b.y = gpt.y + b.y
+        b.z = gpt.z + b.z
+        b.pkey = table.concat({ b.x, b.y, b.z }, ':')
+        if not Util.any(turtles, function(t)
+              return t.pt and t.pt.pkey == b.pkey
+            end) then
+          queue[b.pkey] = b
+        end
+      end
+		end,
+		{ })
 end
 
 function page.grid:getDisplayValues(row)
@@ -156,34 +173,58 @@ end
 
 function page:eventHandler(event)
 	if event.type == 'scan' then
-		self:scan()
+    self.grid:setValues(self.totals)
+    self.grid:draw()
+
+  elseif event.type == 'abort' then
+    abort = true
 
   elseif event.type == 'grid_select' then
-    blockTypes[self.grid:getSelected().key] = true
+    local key = self.grid:getSelected().key
+    if blockTypes[key] then
+      for k,v in pairs(queue) do
+        if v.key == key then
+          queue[k] = nil
+        end
+      end
+      blockTypes[key] = nil
+    else
+      blockTypes[self.grid:getSelected().key] = true
+    end
     self.grid:draw()
   end
 
 	UI.Page.eventHandler(self, event)
 end
 
+Event.onInterval(3, function()
+  page:scan()
+end)
+
 Event.onInterval(1, function()
   if not abort then
     for k,v in pairs(network) do
       if v.active and v.distance and v.distance < 16 and not turtles[k] then
         turtles[k] = run(k)
+      elseif not v.active and turtles[k] then
+        turtles[k] = nil
       end
     end
   elseif Util.size(turtles) == 0 then
     Event.exitPullEvents()
   end
+  page.info:draw()
+  page.info:sync()
 end)
 
 page:scan()
+page.grid:setValues(page.totals)
+
 UI:setPage(page)
 
 Event.onTerminate(function()
   abort = true
-  spt = GPS.getPoint()
+  spt = Point.above(GPS.getPoint())
 end)
 
 Event.pullEvents()
