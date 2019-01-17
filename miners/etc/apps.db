@@ -1,11 +1,28 @@
 {
 	[ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
-		title = "Miner",
-		category = "Apps",
+		title = "Simple",
+		category = "Mining",
 		icon = "    \0315\\\030 \031  \
  \0304\031f _ \030 \031c/\0315\\\
  \0304   ",
 		run = "simpleMiner.lua",
 		requires = 'turtle',
+	},
+	[ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
+		title = "Scanning",
+		category = "Mining",
+		icon = "    \0315\\\030 \031  \
+ \0304\031f _ \030 \031c/\0315\\\
+ \0304   ",
+		run = "scanningMiner.lua",
+		requires = 'turtle',
+	},
+	[ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
+		title = "Multi",
+		category = "Mining",
+		icon = "    \0315\\\030 \031  \
+ \0304\031f _ \030 \031c/\0315\\\
+ \0304   ",
+		run = "multiMiner.lua",
 	},
 }

@@ -402,12 +402,12 @@ function Storage:export(target, slot, count, item)
   local function provide(adapter)
     local amount = rawExport(adapter, target.adapter, item, count, slot)
 
-    _G._debug('EXT: %s(%d): %s -> %s%s',
-      item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
-      slot and string.format('[%d]', slot) or '[*]')
-
     if amount > 0 then
       self:updateCache(adapter, item, -amount)
+
+      _G._debug('EXT: %s(%d): %s -> %s%s',
+      item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
+      slot and string.format('[%d]', slot) or '[*]')
     end
     count = count - amount
     total = total + amount
@@ -481,12 +481,12 @@ function Storage:import(source, slot, count, item)
   local function insert(adapter)
     local amount = rawInsert(adapter, source.adapter, slot, count)
 
-    _G._debug('INS: %s(%d): %s[%d] -> %s',
-      item.displayName or item.name, amount,
-      self:_sn(source.name), slot, self:_sn(adapter.name))
-
     if amount > 0 then
       self:updateCache(adapter, item, amount)
+
+      _G._debug('INS: %s(%d): %s[%d] -> %s',
+      item.displayName or item.name, amount,
+      self:_sn(source.name), slot, self:_sn(adapter.name))
 
       -- record that we have imported this item into storage during this cycle
       self.activity[key] = (self.activity[key] or 0) + amount

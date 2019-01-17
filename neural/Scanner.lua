@@ -103,6 +103,7 @@ end
 function page.detail:eventHandler(event)
 	if event.type == 'grid_select' then
 		projecting = event.selected
+		_G._p = scanner.getBlockMeta(projecting.x, projecting.y, projecting.z)
 	else
 		return UI.SlideOut.eventHandler(self, event)
 	end
