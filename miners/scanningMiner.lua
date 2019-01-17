@@ -626,9 +626,11 @@ Event.addRoutine(function()
     Util.writeTable(PROGRESS_FILE, mining)
   end
 
-  turtle.setPolicy(turtle.policies.digAttack)
-  turtle.setDigPolicy(turtle.digPolicies.turtleSafe)
-  turtle.setMovementStrategy('goto')
+  turtle.set({
+    attackPolicy = 'attack',
+    digPolicy = 'turtleSafe',
+    movementStrategy = 'goto',
+  })
   status('mining')
 
   Event.onTerminate(function()

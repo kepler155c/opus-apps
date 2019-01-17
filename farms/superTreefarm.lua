@@ -759,7 +759,10 @@ local tasks = {
 local s, m = turtle.run(function()
   turtle.reset()
   turtle.addFeatures('crafting')
-  turtle.setPolicy("digAttack")
+  turtle.set({
+    attackPolicy = 'attack',
+    digPolicy = 'dig',
+  })
 
   while not turtle.isAborted() do
     print('fuel: ' .. turtle.getFuelLevel())

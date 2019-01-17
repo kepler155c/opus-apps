@@ -62,7 +62,7 @@ shell.openForegroundTab('spawner.lua %s')]], table.concat({ ... }, ' ')))
 end
 
 turtle.setMovementStrategy('goto')
-turtle.setPolicy(turtle.policies.attack)
+turtle.set({ attackPolicy = 'attack' })
 
 local function dropOff()
 	local inv = turtle.getSummedInventory()

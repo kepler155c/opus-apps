@@ -87,43 +87,47 @@ local function run(member, point)
       end
 
       local function dropOff()
-        if chestPoint then
-          local topPoint = Point.copy(chestPoint)
-          topPoint.y = topPoint.y + 2
-          turtle.gotoY(topPoint.y)
-          while not turtle._goto(topPoint) do
-            os.sleep(.5)
-          end
-
-          -- drop off
-          local box = Point.makeBox(
-            { x = chestPoint.x - 3, y = chestPoint.y + 3, z = chestPoint.z - 3 },
-            { x = chestPoint.x + 3, y = chestPoint.y, z = chestPoint.z + 3 }
-          )
-          turtle.setMovementStrategy('pathing')
-          turtle.setPathingBox(Point.normalizeBox(box))
-          turtle.setPolicy('none')
-          while not turtle.moveAgainst(chestPoint) do
-            os.sleep(.5)
-          end
-          emptySlots({ }, chestPoint)
-          turtle.pathfind(Point.above(topPoint))
-          turtle.setMovementStrategy('goto')
-          turtle.setPolicy('turtleSafe')
-        else
-          turtle.gotoY(spt.y)
-          turtle._goto(spt)
-          emptySlots({ }, Point.above(spt))
+        -- go to 2 above chest
+        local topPoint = Point.copy(chestPoint)
+        topPoint.y = topPoint.y + 2
+        turtle.gotoY(topPoint.y)
+        while not turtle._goto(topPoint) do
+          os.sleep(.5)
         end
+
+        -- path to chest
+        local box = Point.makeBox(
+          { x = chestPoint.x - 3, y = chestPoint.y + 3, z = chestPoint.z - 3 },
+          { x = chestPoint.x + 3, y = chestPoint.y, z = chestPoint.z + 3 }
+        )
+        turtle.set({
+          movementStrategy = 'pathing',
+          pathingBox = Point.normalizeBox(box),
+          digPolicy = 'digNone',
+        })
+        while not turtle.moveAgainst(chestPoint) do
+          os.sleep(.5)
+        end
+        emptySlots({ }, chestPoint)
+
+        -- path to 3 above chest
+        turtle.pathfind(Point.above(topPoint))
+        turtle.set({
+          movementStrategy = 'goto',
+          digPolicy = 'turtleSafe',
+        })
       end
 
       if turtle then
         turtles[member.id] = turtle
 
         turtle.reset()
-        turtle.setPolicy('turtleSafe')
-        turtle.setMovementStrategy('goto')
-        turtle.setPoint(point)
+        turtle.set({
+          attackPolicy = 'attack',
+          digPolicy = 'turtleSafe',
+          movementStrategy = 'goto',
+          point = point,
+        })
 
         repeat
           local pt = getNextPoint(turtle)
@@ -160,7 +164,7 @@ local function run(member, point)
         while not turtle._goto(Point.above(spt)) do
           os.sleep(.5)
         end
-        turtle.setPolicy('digOnly')
+        turtle.set({ digPolicy = 'dig' })
         turtle._goto(spt)
       else
         turtle.gotoY(spt.y)
@@ -220,7 +224,10 @@ local page = UI.Page {
 function page.info:draw()
   self:clear()
   self:write(2, 1, 'Turtles: ' .. Util.size(turtles))
-  self:write(20, 1, 'Queue: ' .. Util.size(queue))
+  if not chestPoint then
+    self:write(16, 1, 'No chest')
+  end
+  self:write(28, 1, 'Queue: ' .. Util.size(queue))
 end
 
 function page:scan()

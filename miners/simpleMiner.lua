@@ -622,8 +622,10 @@ end
 
 turtle.run(function()
   turtle.reset()
-  turtle.setPolicy(turtle.policies.digAttack)
-  turtle.setDigPolicy(turtle.digPolicies.turtleSafe)
+  turtle.set({
+    attackPolicy = 'attack',
+    digPolicy = 'turtleSafe',
+  })
   unload()
   status('mining')
 

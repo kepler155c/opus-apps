@@ -609,7 +609,10 @@ function TurtleBuilder:gotoSupplyPoint()
     -- pathfind the rest of the way
     local pt = self:getBuildingCorner(turtle.point.y)
     turtle._goto({ x = pt.x, z = pt.z })
-    turtle.setPolicy('none')
+    turtle.set({
+      digPolicy = 'digNone',
+      attackPolicy = 'attackNone',
+    })
     turtle.pathfind(self.supplyPoint)
     os.sleep(.1) -- random 'Computer is not connected' error...
   end
@@ -1106,7 +1109,10 @@ function TurtleBuilder:build()
 
   local pt = self:getBuildingCorner(travelPlane)
   turtle.pathfind({ x = pt.x, z = pt.z, y = travelPlane })
-  turtle.setPolicy('digAttack')
+  turtle.set({
+    digPolicy = 'dig',
+    attackPolicy = 'attack',
+  })
 
   for i = self.index, last, direction do
     self.index = i

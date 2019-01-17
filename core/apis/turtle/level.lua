@@ -133,7 +133,12 @@ function turtle.level(startPt, endPt, firstPt, verbose)
     error('failed to reach starting point')
   end
 
-  turtle.setPolicy("attack", { dig = dig }, "assuredMove")
+  turtle.set({
+    digPolicy = dig,
+    attackPolicy = 'attack',
+    move = 'moveAssured',
+  })
+
 
   oldCallback = turtle.getMoveCallback()
   turtle.setMoveCallback(move)

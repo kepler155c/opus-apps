@@ -75,7 +75,7 @@ end
 
 turtle.run(function()
   turtle.reset()
-  turtle.setPolicy(turtle.policies.digOnly)
+  turtle.set({ digPolicy = 'dig' })
 
   local s, m = pcall(function()
     repeat

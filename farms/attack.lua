@@ -49,7 +49,7 @@ equip('right', 'plethora:sensor', 'plethora:module:3')
 local sensor = device['plethora:sensor']
 
 turtle.setMovementStrategy('goto')
-turtle.setPolicy(turtle.policies.attack)
+turtle.set({ attackPolicy = 'attack' })
 
 local function findChests()
 	if chest then

@@ -517,7 +517,7 @@ local function fellTree(pt)
 
   desperateRefuel(FUEL_BASE + 100)
   turtle.clearMoveCallback()
-  turtle.setPolicy("attack")
+  turtle.set({ attackPolicy = "attack" })
 
   return true
 end
@@ -752,7 +752,7 @@ local tasks = {
 local s, m = turtle.run(function()
 
   turtle.addFeatures('level', 'crafting')
-  turtle.setPolicy("attack")
+  turtle.set({ attackPolicy = "attack" })
 
   while not turtle.isAborted() do
     print('fuel: ' .. turtle.getFuelLevel())
