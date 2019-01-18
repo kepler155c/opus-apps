@@ -1,7 +1,17 @@
 {
-	[ "GENERATE-ME" ] = {
+	[ "462e1d985e9adb99f4bbb4455d99329900450224" ] = {
 		title = "SameGame",
 		category = "Games",
 		run = "sameGame.lua",
+	},
+	[ "f6a5201214fb1981e6d46a39303bb676325eb59b-ME2" ] = {
+		title = "Othello",
+		category = "Games",
+		run = "http://pastebin.com/raw/rMeh1Kag",
+	},
+	[ "785af2a4ad3c4ee912623c6e0b6d4299ea305bf6" ] = {
+		title = "Pipes",
+		category = "Games",
+		run = "https://pastebin.com/raw/skcs9x1s",
 	},
 }

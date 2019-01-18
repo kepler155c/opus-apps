@@ -87,9 +87,6 @@ function newGame()
 	redraw()
 end
 function redraw()
-	redraw_term(term)
-end
-function redraw_term(term)
 	if best_score_view then
 		term.setCursorPos(1,1) term.write("                                           [ BACK ]")
 	else
