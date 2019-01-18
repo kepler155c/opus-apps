@@ -14,4 +14,9 @@
 		category = "Games",
 		run = "https://pastebin.com/raw/skcs9x1s",
 	},
+	[ "soundPlayer" ] = {
+		title = "Sounds",
+		category = "System",
+		run = "SoundPlayer",
+	},
 }

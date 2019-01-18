@@ -46,7 +46,7 @@ function craftTask:cycle()
       if recipe then
 
         if not item.notified then
-          Sound.play('entity.experience_orb.pickup')
+          Sound.play('block.end_portal_frame.fill')
           item.notified = true
         end
 

@@ -195,7 +195,7 @@ Event.on('shop_provide', function(_, item, quantity, uid)
   Milo:queueRequest({ }, function()
     local count = Milo:eject(itemDB:splitKey(item), quantity)
     os.queueEvent('shop_provided', uid, count)
-    Sound.play('entity.villager.yes')
+    Sound.play('entity.player.levelup')
   end)
 end)
 

@@ -217,7 +217,7 @@ end
 
 function Milo:eject(item, count)
 	count = self.context.storage:export(self.context.turtleInventory, nil, count, item)
-	Sound.play('ui.button.click')
+	Sound.play('entity.experience_bottle.throw')
 	turtle.emptyInventory()
 	return count
 end
