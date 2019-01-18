@@ -1,0 +1,7 @@
+{
+	[ "GENERATE-ME" ] = {
+		title = "SameGame",
+		category = "Games",
+		run = "sameGame.lua",
+	},
+}
