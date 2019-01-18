@@ -20,6 +20,7 @@ local fs         = _G.fs
 local os         = _G.os
 local peripheral = _G.peripheral
 local read       = _G.read
+local term       = _G.term
 local turtle     = _G.turtle
 
 UI:configure('scanningMiner', ...)

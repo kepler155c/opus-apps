@@ -3,7 +3,6 @@ local class   = require('class')
 local Config  = require('config')
 local Event   = require('event')
 local itemDB  = require('itemDB')
-local sync    = require('sync').sync
 local Util    = require('util')
 
 local device   = _G.device
@@ -70,7 +69,7 @@ function Storage:init()
 _G._debug('%s: %s', e, tostring(dev))
     self:initStorage()
   end)
-  Event.onInterval(15, function()
+  Event.onInterval(60, function()
     self:showStorage()
   end)
 end
@@ -103,7 +102,6 @@ end
 function Storage:initStorage()
   local online = true
 
-  _G._debug('Initializing storage')
   for k,v in pairs(self.nodes) do
     if v.mtype ~= 'hidden' then
       if v.adapter then
@@ -236,51 +234,50 @@ end
 
 -- provide a consolidated list of items
 function Storage:listItems(throttle)
-  --sync(self, function()
-    if not self.dirty then
-      return self.cache
+  if not self.dirty then
+    return self.cache
+  end
+
+  local timer = Timer()
+  local cache = { }
+  throttle = throttle or Util.throttle()
+
+  local t = { }
+  for _, adapter in self:onlineAdapters() do
+    if adapter.dirty then
+      table.insert(t, function()
+        adapter:listItems(throttle)
+        adapter.dirty = false
+      end)
     end
+  end
 
-    local timer = Timer()
-    local cache = { }
-    throttle = throttle or Util.throttle()
+  if #t > 0 then
+    parallel.waitForAll(table.unpack(t))
+  end
 
-    local t = { }
-    for _, adapter in self:onlineAdapters() do
-      if adapter.dirty then
-        table.insert(t, function()
-          adapter:listItems(throttle)
-          adapter.dirty = false
-        end)
+  for _, adapter in self:onlineAdapters() do
+    local rcache = adapter.cache or { }
+    for key,v in pairs(rcache) do
+      local entry = cache[key]
+      if not entry then
+        entry = Util.shallowCopy(v)
+        entry.count = v.count
+        entry.key = key
+        cache[key] = entry
+      else
+        entry.count = entry.count + v.count
       end
+
+      throttle()
     end
+  end
+  itemDB:flush()
+  _G._debug('STORAGE: refresh '  .. #t .. ' inventories in ' .. timer())
 
-    if #t > 0 then
-      parallel.waitForAll(table.unpack(t))
-    end
+  self.dirty = false
+  self.cache = cache
 
-    for _, adapter in self:onlineAdapters() do
-      local rcache = adapter.cache or { }
-      for key,v in pairs(rcache) do
-        local entry = cache[key]
-        if not entry then
-          entry = Util.shallowCopy(v)
-          entry.count = v.count
-          entry.key = key
-          cache[key] = entry
-        else
-          entry.count = entry.count + v.count
-        end
-
-        throttle()
-      end
-    end
-    itemDB:flush()
-    _G._debug('STORAGE: refresh '  .. #t .. ' inventories in ' .. timer())
-
-    self.dirty = false
-    self.cache = cache
-  --end)
   return self.cache
 end
 
@@ -389,7 +386,7 @@ local function rawExport(source, target, item, qty, slot)
   end)
 
   if not s and m then
-    _debug(m)
+    _G._debug(m)
   end
 
   return total, m
@@ -448,7 +445,7 @@ local function rawInsert(source, target, slot, qty)
     end
   end)
   if not s and m then
-    _debug(m)
+    _G._debug(m)
   end
 
   return count

@@ -136,7 +136,7 @@ function turtle.level(startPt, endPt, firstPt, verbose)
   turtle.set({
     digPolicy = dig,
     attackPolicy = 'attack',
-    move = 'moveAssured',
+    movePolicy = 'moveAssured',
   })
 
 

@@ -28,7 +28,7 @@ local function locate()
 end
 
 local spt = GPS.getPoint() or error('GPS failure')
-local chestPoint      -- location of chest
+local chestPoint       -- location of chest
 local blockTypes = { } -- blocks types requested to mine
 local turtles    = { } -- active turtles
 local pool       = { } -- all turtles
@@ -39,7 +39,7 @@ local function hijackTurtle(remoteId)
 	local socket, msg = Socket.connect(remoteId, 188)
 
   if not socket then
-    printError(remoteId)
+    _G.printError(remoteId)
 		error(msg)
 	end
 
@@ -72,7 +72,7 @@ end
 
 local function run(member, point)
   Event.addRoutine(function()
-    --local _, m = pcall(function()
+    local _, m = pcall(function()
       member.active = true
       local turtle = hijackTurtle(member.id)
 
@@ -159,6 +159,8 @@ local function run(member, point)
         until member.abort
       end
 
+      emptySlots(blockTypes, Point.above(turtle.getPoint()))
+
       if chestPoint then
         dropOff()
         while not turtle._goto(Point.above(spt)) do
@@ -170,9 +172,9 @@ local function run(member, point)
         turtle.gotoY(spt.y)
         turtle._goto(spt)
       end
-      --end)
+    end)
     turtles[member.id] = nil
-    --member.status = m
+    member.status = m
     member.active = false
   end)
 end
@@ -233,7 +235,6 @@ end
 function page:scan()
   local gpt = GPS.getPoint()
   if not gpt then
-    _debug('gps failed')
     return
   end
   local rawBlocks = scanner:scan()
@@ -384,6 +385,7 @@ end)
 Event.onTimeout(.5, function()
   page:scan()
   blocksTab.grid:setValues(page.totals)
+  page:sync()
 end)
 
 UI:setPage(page)

@@ -8,7 +8,12 @@ local InputChest = {
 function InputChest:cycle(context)
 	for node in context.storage:filterActive('input') do
 		for slot, item in pairs(node.adapter.list()) do
-			context.storage:import(node, slot, item.count, item)
+			local s, m = pcall(function()
+				context.storage:import(node, slot, item.count, item)
+			end)
+			if not s and m then
+				_G._debug('INPUT error: ' .. m)
+			end
 		end
 	end
 end

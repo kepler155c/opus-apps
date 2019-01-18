@@ -170,7 +170,7 @@ local function addTrash()
   local slots = turtle.getFilledSlots()
 
   for _,slot in pairs(slots) do
-    trash[slot.iddmg] = true
+    trash[slot.key] = true
   end
 
   trash['minecraft:bucket:0'] = nil
@@ -300,11 +300,11 @@ local function normalChestUnload()
   end
   local slots = turtle.getFilledSlots()
   for _,slot in pairs(slots) do
-    if not trash[slot.iddmg] and
-      slot.iddmg ~= 'minecraft:bucket:0' and
-      slot.id ~= 'minecraft:diamond_pickaxe' and
-      slot.id ~= 'cctweaks:toolHost' then
-      if slot.id ~= options.fortunePick.value then
+    if not trash[slot.key] and
+      slot.key ~= 'minecraft:bucket:0' and
+      slot.name ~= 'minecraft:diamond_pickaxe' and
+      slot.name ~= 'cctweaks:toolHost' then
+      if slot.name ~= options.fortunePick.value then
         turtle.select(slot.index)
         turtle.dropUp(64)
       end
@@ -325,7 +325,7 @@ local function ejectTrash()
   local cobbleSlotCount = 0
 
   turtle.eachFilledSlot(function(slot)
-    if slot.iddmg == 'minecraft:cobblestone:0' then
+    if slot.key == 'minecraft:cobblestone:0' then
       if cobbleSlotCount == 0 and slot.count > 36 then
         turtle.select(slot.index)
         turtle.dropDown(slot.count - 36)
@@ -333,9 +333,9 @@ local function ejectTrash()
       cobbleSlotCount = cobbleSlotCount + 1
     end
 
-    if trash[slot.iddmg] then
+    if trash[slot.key] then
       -- retain 1 slot with cobble in order to indicate active mining
-      if slot.iddmg ~= 'minecraft:cobblestone:0' or cobbleSlotCount > 1 then
+      if slot.key ~= 'minecraft:cobblestone:0' or cobbleSlotCount > 1 then
         turtle.select(slot.index)
         turtle.dropDown(64)
       end
@@ -603,7 +603,7 @@ if options.fortunePick.value then
   if not turtle.getSlot('cctweaks:toolHost:0') then
     error('CCTweaks tool host not found')
   end
-  trash[s.iddmg] = nil
+  trash[s.key] = nil
   trash['minecraft:diamond_pickaxe:0'] = nil
   trash['cctweaks:toolHost:0'] = nil
 end
