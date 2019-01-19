@@ -39,7 +39,6 @@ local function hijackTurtle(remoteId)
 	local socket, msg = Socket.connect(remoteId, 188)
 
   if not socket then
-    _G.printError(remoteId)
 		error(msg)
 	end
 
@@ -58,7 +57,7 @@ local function hijackTurtle(remoteId)
 		end
 	end
 
-	return hijack
+	return hijack, socket
 end
 
 local function getNextPoint(turtle)
@@ -72,16 +71,21 @@ end
 
 local function run(member, point)
   Event.addRoutine(function()
+    local turtle, socket
     local _, m = pcall(function()
       member.active = true
-      local turtle = hijackTurtle(member.id)
+      turtle, socket = hijackTurtle(member.id)
 
       local function emptySlots(retain, pt)
         local slots = turtle.getFilledSlots()
         for _,slot in pairs(slots) do
           if not retain[slot.key] then
             turtle.select(slot.index)
-            turtle.dropAt(pt, 64)
+            if pt then
+              turtle.dropAt(pt, 64)
+            else
+              turtle.dropUp(64)
+            end
           end
         end
       end
@@ -136,7 +140,7 @@ local function run(member, point)
             turtle.digAt(pt, pt.name)
             if turtle.getItemCount(15) > 0 then
               member.status = 'ejecting trash'
-              emptySlots(blockTypes, Point.above(turtle.getPoint()))
+              emptySlots(blockTypes)
               turtle.condense()
               if turtle.getItemCount(15) > 0 then
                 member.status = 'dropping off'
@@ -159,7 +163,7 @@ local function run(member, point)
         until member.abort
       end
 
-      emptySlots(blockTypes, Point.above(turtle.getPoint()))
+      emptySlots(blockTypes)
 
       if chestPoint then
         dropOff()
@@ -173,9 +177,13 @@ local function run(member, point)
         turtle._goto(spt)
       end
     end)
+_debug(m)
     turtles[member.id] = nil
     member.status = m
     member.active = false
+    if socket then
+      socket:close()
+    end
   end)
 end
 
@@ -200,6 +208,7 @@ local turtlesTab = UI.Window {
       { heading = 'ID',   key = 'label', width = 12, },
       { heading = 'Fuel', key = 'fuel', width = 5, justify = 'right' },
       { heading = 'Status', key = 'status' },
+      { heading = 'Dist', key = 'distance', width = 5, justify = 'right' },
     },
     sortColumn = 'label',
   },
@@ -230,6 +239,14 @@ function page.info:draw()
     self:write(16, 1, 'No chest')
   end
   self:write(28, 1, 'Queue: ' .. Util.size(queue))
+end
+
+function turtlesTab.grid:getDisplayValues(row)
+	row = Util.shallowCopy(row)
+  if row.distance then
+    row.distance = Util.round(row.distance, 1)
+  end
+  return row
 end
 
 function page:scan()
@@ -309,7 +326,7 @@ end
 function blocksTab.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
 	row.count = Util.toBytes(row.count)
-	return row
+  return row
 end
 
 function blocksTab.grid:getRowTextColor(row, selected)
