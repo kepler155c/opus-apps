@@ -18,6 +18,15 @@ if not scanner or not scanner.scan then
 	error('Plethora scanner must be equipped')
 end
 
+local canvas = scanner.canvas and scanner.canvas()
+if canvas then
+  canvas.group = canvas.addGroup({ 4, 90 })
+  canvas.bg = canvas.group.addRectangle(0, 0, 60, 24, 0x00000033)
+  canvas.text = canvas.group.addText({ 4, 5 }, '') -- , 0x202020FF)
+  canvas.text.setShadow(true)
+  canvas.text.setScale(.75)
+end
+
 local function locate()
   for _ = 1, 3 do
     local pt = GPS.getPoint()
@@ -207,8 +216,8 @@ local blocksTab = UI.Window {
   grid = UI.ScrollingGrid {
     y = 1,
     columns = {
+      { heading = 'Count', key = 'count', width = 6, justify = 'right' },
       { heading = 'Name',  key = 'displayName' },
-      { heading = 'Count', key = 'count', width = 5, justify = 'right' },
     },
     sortColumn = 'displayName',
   },
@@ -220,9 +229,9 @@ local turtlesTab = UI.Window {
     y = 1,
     values = pool,
     columns = {
-      { heading = 'ID',   key = 'label', width = 12, },
-      { heading = 'Fuel', key = 'fuel', width = 5, justify = 'right' },
-      { heading = 'Dist', key = 'distance', width = 5, justify = 'right' },
+      { heading = 'ID',   key = 'id', width = 4, },
+      { heading = ' Fuel', key = 'fuel', width = 5, justify = 'right' },
+      { heading = ' Dist', key = 'distance', width = 5, justify = 'right' },
       { heading = 'Status', key = 'status' },
     },
     sortColumn = 'label',
@@ -243,7 +252,7 @@ local page = UI.Page {
   },
   info = UI.Window {
     y = -1,
-    backgroundColor = colors.gray,
+    backgroundColor = colors.blue,
   }
 }
 
@@ -339,7 +348,7 @@ end
 
 function blocksTab.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
-	row.count = Util.toBytes(row.count)
+	row.count = Util.toBytes(row.count) .. ' '
   return row
 end
 
@@ -411,11 +420,18 @@ Event.onInterval(1, function()
 
   page.info:draw()
   page.info:sync()
+
+  if canvas then
+    local text = string.format('Turtles: %s\nQueue: %s',
+      Util.size(turtles), Util.size(queue))
+    canvas.text.setText(text)
+  end
 end)
 
-Event.onTimeout(.5, function()
+Event.onTimeout(.1, function()
   page:scan()
   blocksTab.grid:setValues(page.totals)
+  blocksTab.grid:draw()
   page:sync()
 end)
 
@@ -431,3 +447,7 @@ Event.onTerminate(function()
 end)
 
 Event.pullEvents()
+
+if canvas then
+  canvas.group.remove()
+end
