@@ -137,7 +137,22 @@ local function run(member, point)
           local pt = getNextPoint(turtle)
           if pt then
             member.status = 'digging'
-            turtle.digAt(pt, pt.name)
+
+            if blockTypes[pt.key] == true then
+              if turtle.moveAgainst(pt) then
+                local index = turtle.selectOpenSlot()
+                if turtle.digAt(pt, pt.name) then
+                  local slot = turtle.getSlot(index)
+                  if slot.count > 0 then
+                    blockTypes[pt.key] = slot.key
+                    blockTypes[slot.key] = true
+                  end
+                end
+              end
+            else
+              turtle.digAt(pt, pt.name)
+            end
+
             if turtle.getItemCount(15) > 0 then
               member.status = 'ejecting trash'
               emptySlots(blockTypes)
@@ -207,8 +222,8 @@ local turtlesTab = UI.Window {
     columns = {
       { heading = 'ID',   key = 'label', width = 12, },
       { heading = 'Fuel', key = 'fuel', width = 5, justify = 'right' },
-      { heading = 'Status', key = 'status' },
       { heading = 'Dist', key = 'distance', width = 5, justify = 'right' },
+      { heading = 'Status', key = 'status' },
     },
     sortColumn = 'label',
   },
@@ -243,9 +258,8 @@ end
 
 function turtlesTab.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
-  if row.distance then
-    row.distance = Util.round(row.distance, 1)
-  end
+  row.distance = row.distance and Util.round(row.distance, 1)
+  row.fuel = row.fuel and row.fuel > 0 and Util.toBytes(row.fuel) or ''
   return row
 end
 
@@ -377,16 +391,16 @@ Event.onInterval(3, function()
 end)
 
 Event.onInterval(1, function()
-  if not abort then
-    for id,v in pairs(network) do
-      if v.fuel then
-        if pool[id] then
-          pool[id].fuel = v.fuel
-          pool[id].distance = v.distance
-        end
+  for id,v in pairs(network) do
+    if v.fuel then
+      if pool[id] then
+        pool[id].fuel = v.fuel
+        pool[id].distance = v.distance
       end
     end
-  elseif Util.size(turtles) == 0 then
+  end
+
+  if abort and Util.size(turtles) == 0 then
     Event.exitPullEvents()
   end
 
