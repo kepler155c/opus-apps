@@ -141,6 +141,7 @@ local function run(member, point)
           movementStrategy = 'goto',
           point = point,
         })
+        turtle.select(1)
 
         repeat
           local pt = getNextPoint(turtle)
@@ -158,6 +159,7 @@ local function run(member, point)
                   end
                 end
               end
+              turtle.select(1)
             else
               turtle.digAt(pt, pt.name)
             end
@@ -175,6 +177,7 @@ local function run(member, point)
                   dropOff()
                 end
               end
+              turtle.select(1)
             end
           else
             member.status = 'waiting'
@@ -229,9 +232,9 @@ local turtlesTab = UI.Window {
     y = 1,
     values = pool,
     columns = {
-      { heading = 'ID',   key = 'id', width = 4, },
-      { heading = ' Fuel', key = 'fuel', width = 5, justify = 'right' },
-      { heading = ' Dist', key = 'distance', width = 5, justify = 'right' },
+      { heading = 'ID',     key = 'id',       width = 4, },
+      { heading = ' Fuel',  key = 'fuel',     width = 5, justify = 'right' },
+      { heading = ' Dist',  key = 'distance', width = 5, justify = 'right' },
       { heading = 'Status', key = 'status' },
     },
     sortColumn = 'label',
