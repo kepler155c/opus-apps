@@ -66,12 +66,6 @@ Needs work
     run = "usr/apps/builder.lua",
     requires = "turtle",
   },
-  [ "d8c298dd41e4a4ec20e8307901797b64688b3b77" ] = {
-    title = "GPS Deploy",
-    category = "Apps",
-    run = "http://pastebin.com/raw/VXAyXqBv",
-    requires = "turtle",
-  },
 --]]
   df485c871329671f46570634d63216761441bcd6 = {
     title = "Devices",
@@ -94,16 +88,5 @@ Needs work
 \030 \031f\030e\031f\129\031e\128\128\030f\148\0304\031f\149\0307\0318\140\140\030f\0314\149\
 \030 \031f\030f\031e\139\030e\128\030f\159\129\0314\130\131\131\129",
     run = "recorder.lua",
-  },
-  [ "a2accffe95b2c8be30e8a05e0c6ab7e8f5966f43" ] = {
-    title = "Strafe",
-    category = "Games",
-    icon = "\0308\031f  \0300 \0308  \
-\0308\031f \0300  \030f  \
-\0300\031f  \030f   ",
-    iconExt = "\0308\0318\128\0300\159\129\0310\128\0308\159\129\0318\128\
-\0300\0318\135\0310\128\128\030f\135\0300\031f\143\159\030f\0310\144\
-\0300\128\030f\159\129\138\0300\031f\143\149\030f\0310\134",
-    run = "https://pastebin.com/raw/jyDH7mLH",
   },
 }

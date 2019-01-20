@@ -2,21 +2,59 @@
 	[ "462e1d985e9adb99f4bbb4455d99329900450224" ] = {
 		title = "SameGame",
 		category = "Games",
-		run = "sameGame.lua",
+		run = "sameGame",
 	},
 	[ "f6a5201214fb1981e6d46a39303bb676325eb59b-ME2" ] = {
 		title = "Othello",
 		category = "Games",
-		run = "http://pastebin.com/raw/rMeh1Kag",
+		run = "Othello",
 	},
 	[ "785af2a4ad3c4ee912623c6e0b6d4299ea305bf6" ] = {
 		title = "Pipes",
 		category = "Games",
-		run = "https://pastebin.com/raw/skcs9x1s",
+		run = "Pipes",
 	},
 	[ "soundPlayer" ] = {
 		title = "Sounds",
 		category = "System",
 		run = "SoundPlayer",
+	},
+  [ "a2accffe95b2c8be30e8a05e0c6ab7e8f5966f43" ] = {
+    title = "Strafe",
+    category = "Games",
+    icon = "\0308\031f  \0300 \0308  \
+\0308\031f \0300  \030f  \
+\0300\031f  \030f   ",
+    iconExt = "\0308\0318\128\0300\159\129\0310\128\0308\159\129\0318\128\
+\0300\0318\135\0310\128\128\030f\135\0300\031f\143\159\030f\0310\144\
+\0300\128\030f\159\129\138\0300\031f\143\149\030f\0310\134",
+    run = "Strafe",
+  },
+	[ "48d6857f6b2869d031f463b13aa34df47e18c548" ] = {
+		title = "Breakout",
+		category = "Games",
+		icon = "\0301\031f \0309 \030c \030b \030e \030c \0306 \
+\030 \031f       \
+\030 \031f   \0300   \0310 ",
+		iconExt = "\030 \031f\030f\0319\144\030d\031f\159\030b\159\030f\0311\144\031b\144\030c\031f\159\030f\0311\144\
+\030 \031f\030f\0311\130\031b\129\0319\130\031e\130\0310\144\031d\129\0316\129\
+\030 \031f\030f\0310\136\140\140\030     ",
+		run = "Breakout",
+	},
+	[ "53a5d150062b1e03206b9e15854b81060e3c7552" ] = {
+		title = "Minesweeper",
+		category = "Games",
+		icon = "\030f\031f \03131\0308\031f  \030f\031d2\
+\030f\031f \031d2\03131\0308\031f \030f\03131\
+\030f\03131\0308\031f  \030f\03131\031e3",
+		run = "Minesweeper",
+	},
+	[ "76b849f460640bc789c433894382fb5acbac42a2" ] = {
+		title = "Tron",
+		category = "Games",
+	iconExt = "\030 \031f\030b\031f\143\030f\128\128\030b\143\143\143\030f\128\128\
+\030 \031f\0309\031b\140\030b\031f\151\030f\031b\131\0307\148\0317\128\030b\151\030f\031b\131\148\
+\030 \031f\030f\031b\131\031f\128\031b\131\0317\131\031f\128\0317\131\031b\131\031f\128",
+		run = "Tron",
 	},
 }
