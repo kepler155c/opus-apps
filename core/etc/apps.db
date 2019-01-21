@@ -24,6 +24,11 @@ Needs work
 \130\139\141\0311\130\131\0310\142\135\129",
     run = "Events.lua",
   },
+  [ "f1e14c30480042e8c71b5482d92ef161815b915e" ] = {
+    title = "DiskCopy",
+    category = "System",
+    run = "DiskCopy",
+  },
   [ "7ef35cac539f84722b0a988caee03b2df734c56a" ] = {
     title = "AppStore",
     category = "System",

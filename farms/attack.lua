@@ -96,6 +96,7 @@ local function dropOff()
 			end
 		end
 	end
+	turtle.condense()
 	turtle.select(1)
 end
 
