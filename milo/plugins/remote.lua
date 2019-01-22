@@ -75,7 +75,7 @@ local function client(socket)
 		if not data then
 			break
 		end
---_G._debug(data)
+_G._debug(data)
 		socket.co = coroutine.running()
 
 		if data.request == 'scan' then -- full scan of all inventories
@@ -163,6 +163,12 @@ local function client(socket)
 					craft = request.craft,
 				})
 			end
+		else
+			for _,v in pairs(context.plugins.remoteHandler or { }) do
+				if v.messages and v.messages[data.request] then
+					v.callback(user, data, socket)
+				end
+			end
 		end
 	until not socket.connected
 
@@ -191,7 +197,7 @@ Event.on({ 'device_attach', 'device_detach' }, function(_, name)
 		if handler then
 			handler:terminate()
 			handler = nil
-			_debug('REMOTE: wireless modem disconnected')
+			_G._debug('REMOTE: wireless modem disconnected')
 		else
 			listen()
 		end

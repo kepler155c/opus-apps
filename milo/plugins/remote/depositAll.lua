@@ -81,7 +81,7 @@ function page:depositAll()
 
   for slot, item in pairs(inv) do
     if (context.state.depositAll.includeHotbar or slot > 9) and item.name ~= 'plethora:neuralconnector' then
-      context.page:sendRequest({
+      context:sendRequest({
         request = 'deposit',
         slot = slot,
         count = item.count,
@@ -94,12 +94,15 @@ function page:eventHandler(event)
   if event.type == 'checkbox_change' and event.element.formKey == 'includeHotbar' then
     context.state.depositAll.includeHotbar = event.checked
     page:updateInventoryList()
+
   elseif event.type == 'form_complete' then
     Config.update('miloRemote', context.state)
     page:depositAll()
     UI:setPreviousPage()
+
   elseif event.type == 'form_cancel' then
     UI:setPreviousPage()
+
   else
     return UI.Page.eventHandler(self, event)
   end

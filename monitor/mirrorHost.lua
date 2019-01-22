@@ -1,11 +1,8 @@
 local Event  = require('event')
-local Logger = require('logger')
 local Socket = require('socket')
 
 local colors = _G.colors
 local term   = _G.term
-
-Logger.setScreenLogging()
 
 local mon = term.current()
 local args = { ... }

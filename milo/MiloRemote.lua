@@ -9,15 +9,14 @@ local Util   = require('util')
 local colors = _G.colors
 local device = _G.device
 local fs     = _G.fs
-local os     = _G.os
 local shell  = _ENV.shell
 local string = _G.string
 
-local SHIELD_SLOT  = 2
 local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
 
 local context = {
   state = Config.load('miloRemote', { displayMode = 0, deposit = true }),
+  responseHandlers = { },
 }
 
 local depositMode = {
@@ -164,125 +163,6 @@ local function getPlayerName()
   end
 end
 
-function page:setStatus(status)
-  self.menuBar.infoBar:setStatus(status)
-  self:sync()
-end
-
-function page:processMessages(s)
-  Event.addRoutine(function()
-    repeat
-      local response = s:read()
-      if not response then
-        break
-      end
-      if response.type == 'received' then
-        Sound.play('entity.item.pickup')
-        local ritem = self.items[response.key]
-        if ritem then
-          ritem.count = response.count
-          if self.enabled then
-            self.grid:draw()
-            self:sync()
-          end
-        end
-
-      elseif response.type == 'list' then
-        self.items = self:expandList(response.list)
-        self:applyFilter()
-        if self.enabled then
-          self.grid:draw()
-          self.grid:sync()
-        end
-
-      elseif response.type == 'transfer' then
-        if response.count > 0 then
-          Sound.play('entity.item.pickup')
-          local item = self.items[response.key]
-          if item then
-            item.count = response.current
-            if self.enabled then
-              self.grid:draw()
-              self:sync()
-            end
-          end
-        end
-        if response.craft then
-          if response.craft > 0 then
-            self:setStatus(response.craft .. ' crafting ...')
-          elseif response.craft + response.count < response.requested then
-            if response.craft + response.count == 0 then
-              Sound.play('entity.villager.no')
-            end
-            self:setStatus((response.craft + response.count) .. ' available ...')
-          end
-        end
-      end
-      if response.msg then
-        self:setStatus(response.msg)
-      end
-    until not s.connected
-
-    s:close()
-    s = nil
-    self:setStatus('disconnected ...')
-    Sound.play('entity.villager.no')
-  end)
-end
-
-function page:sendRequest(data, statusMsg)
-  if not context.state.server then
-    self:setStatus('Invalid configuration')
-    return
-  end
-
-  local player = getPlayerName()
-  if not player then
-    self:setStatus('Missing neural or introspection')
-    return
-  end
-
-  local success
-  sync(self, function()
-    local msg
-    for _ = 1, 2 do
-      if not context.socket or not context.socket.connected then
-        self:setStatus('connecting ...')
-        context.socket, msg = Socket.connect(context.state.server, 4242)
-        if context.socket then
-          context.socket:write(player)
-          local r = context.socket:read(2)
-          if r and not r.msg then
-            self:setStatus('connected ...')
-            self:processMessages(context.socket)
-          else
-            msg = r and r.msg or 'Timed out'
-            context.socket:close()
-            context.socket = nil
-          end
-        end
-      end
-      if context.socket then
-        if statusMsg then
-          self:setStatus(statusMsg)
-          Event.onTimeout(2, function()
-            self:setStatus('')
-          end)
-        end
-        if context.socket:write(data) then
-          success = true
-          return
-        end
-        context.socket:close()
-        context.socket = nil
-      end
-    end
-    self:setStatus(msg or 'Failed to connect')
-  end)
-
-  return success
-end
-
 function page.grid:getRowTextColor(row, selected)
   if row.is_craftable then
     return colors.yellow
@@ -328,7 +208,7 @@ function page.grid:eventHandler(event)
 end
 
 function page:transfer(item, count, msg)
-  self:sendRequest({ request = 'transfer', item = item, count = count }, msg)
+  context:sendRequest({ request = 'transfer', item = item, count = count }, msg)
 end
 
 function page.setup:eventHandler(event)
@@ -350,7 +230,7 @@ function page:eventHandler(event)
     context.state.deposit = not context.state.deposit
     Util.merge(self.statusBar.depositToggle, depositMode[context.state.deposit])
     self.statusBar:draw()
-    self:setStatus(depositMode[context.state.deposit].help)
+    context:setStatus(depositMode[context.state.deposit].help)
     Config.update('miloRemote', context.state)
 
   elseif event.type == 'form_complete' then
@@ -375,7 +255,7 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
     self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'focus_change' then
-    self.menuBar.infoBar:setStatus(event.focused.help)
+    context:setStatus(event.focused.help)
 
   elseif event.type == 'eject' or event.type == 'grid_select' then
     local item = self.grid:getSelected()
@@ -404,7 +284,7 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
       self:transfer(item, count, 'requesting ' .. count .. ' ...')
     else
       Sound.play('entity.villager.no')
-      self:setStatus('nope ...')
+      context:setStatus('nope ...')
     end
 
   elseif event.type == 'plugin' then
@@ -431,7 +311,7 @@ shell.openForegroundTab('packages/milo/MiloRemote')]])
     Util.merge(event.button, displayModes[context.state.displayMode])
     event.button:draw()
     self:applyFilter()
-    self:setStatus(event.button.help)
+    context:setStatus(event.button.help)
     self.grid:draw()
     Config.update('miloRemote', context.state)
 
@@ -490,7 +370,7 @@ function page:expandList(list)
 end
 
 function page:refresh(requestType)
-  self:sendRequest({ request = requestType }, 'refreshing...')
+  context:sendRequest({ request = requestType }, 'refreshing...')
 end
 
 function page:applyFilter()
@@ -516,43 +396,89 @@ function page:applyFilter()
   self.grid:setValues(t)
 end
 
-Event.addRoutine(function()
-  local lastTransfer
-  while true do
-    local sleepTime = 1.5
-    if lastTransfer and os.clock() - lastTransfer < 3 then
-      sleepTime = .25
-    end
+context.page = page
 
-    os.sleep(context.socket and sleepTime or 5)
-    if context.state.deposit then
-      local neural = device.neuralInterface
-      local inv = context.state.useShield and 'getEquipment' or 'getInventory'
-      if not neural or not neural[inv] then
-        _G._debug('missing Introspection module')
-      elseif context.state.server and (context.state.useShield or context.state.slot) then
-        local s, m = pcall(function()
-          local method = neural[inv]
-          local item = method and method().list()[context.state.useShield and SHIELD_SLOT or context.state.slot]
-          if item then
-            if page:sendRequest({
-              request = 'deposit',
-              slot = context.state.useShield and 'shield' or context.state.slot,
-              count = item.count,
-            }) then
-              lastTransfer = os.clock()
-            end
+function context:setStatus(status)
+  page.menuBar.infoBar:setStatus(status)
+  page:sync()
+end
+
+local function processMessages(s)
+  Event.addRoutine(function()
+    s.co = coroutine.running()
+    repeat
+      local response = s:read()
+      if not response then
+        break
+      end
+      local h = context.responseHandlers[response.type]
+      if h then
+        h(response)
+      end
+      if response.msg then
+        context:setStatus(response.msg)
+      end
+    until not s.connected
+
+    s:close()
+    s = nil
+    context:setStatus('disconnected ...')
+    Sound.play('entity.villager.no')
+  end)
+end
+
+function context:sendRequest(data, statusMsg)
+  if not context.state.server then
+    self:setStatus('Invalid configuration')
+    return
+  end
+
+  local player = getPlayerName()
+  if not player then
+    self:setStatus('Missing neural or introspection')
+    return
+  end
+
+  local success
+  sync(page, function()
+    local msg
+    for _ = 1, 2 do
+      if not context.socket or not context.socket.connected then
+        self:setStatus('connecting ...')
+        context.socket, msg = Socket.connect(context.state.server, 4242)
+        if context.socket then
+          context.socket:write(player)
+          local r = context.socket:read(2)
+          if r and not r.msg then
+            self:setStatus('connected ...')
+            processMessages(context.socket)
+          else
+            msg = r and r.msg or 'Timed out'
+            context.socket:close()
+            context.socket = nil
           end
-        end)
-        if not s and m then
-          _debug(m)
         end
       end
+      if context.socket then
+        if statusMsg then
+          self:setStatus(statusMsg)
+          Event.onTimeout(2, function()
+            self:setStatus('')
+          end)
+        end
+        if context.socket:write(data) then
+          success = true
+          return
+        end
+        context.socket:close()
+        context.socket = nil
+      end
     end
-  end
-end)
+    self:setStatus(msg or 'Failed to connect')
+  end)
 
-context.page = page
+  return success
+end
 
 function context:getState(key)
   return self.state[key]
@@ -561,6 +487,51 @@ end
 function context:setState(key, value)
   self.state[key] = value
   Config.update('miloRemote', self.state)
+end
+
+context.responseHandlers['received'] = function(response)
+  Sound.play('entity.item.pickup')
+  local ritem = page.items[response.key]
+  if ritem then
+    ritem.count = response.count
+    if page.enabled then
+      page.grid:draw()
+      page:sync()
+    end
+  end
+end
+
+context.responseHandlers['list'] = function(response)
+  page.items = page:expandList(response.list)
+  page:applyFilter()
+  if page.enabled then
+    page.grid:draw()
+    page.grid:sync()
+  end
+end
+
+context.responseHandlers['transfer'] = function(response)
+  if response.count > 0 then
+    Sound.play('entity.item.pickup')
+    local item = page.items[response.key]
+    if item then
+      item.count = response.current
+      if page.enabled then
+        page.grid:draw()
+        page:sync()
+      end
+    end
+  end
+  if response.craft then
+    if response.craft > 0 then
+      context:setStatus(response.craft .. ' crafting ...')
+    elseif response.craft + response.count < response.requested then
+      if response.craft + response.count == 0 then
+        Sound.play('entity.villager.no')
+      end
+      context:setStatus((response.craft + response.count) .. ' available ...')
+    end
+  end
 end
 
 local function loadDirectory(dir)

@@ -1,12 +1,9 @@
 local Event    = require('event')
-local Logger   = require('logger')
 local Socket   = require('socket')
 local Util     = require('util')
 
 local multishell = _ENV.multishell
 local os         = _G.os
-
-Logger.setScreenLogging()
 
 local remoteId
 local args = { ... }

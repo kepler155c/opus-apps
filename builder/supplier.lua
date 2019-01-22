@@ -1,5 +1,4 @@
 local Event      = require('event')
-local Logger     = require('logger')
 local MEProvider = require('meProvider')
 local Message    = require('message')
 local Point      = require('point')
@@ -30,9 +29,6 @@ end
 if not device.wireless_modem then
   error('No wireless modem detected')
 end
-
-Logger.filter('modem_send', 'event', 'ui')
-Logger.setWirelessLogging()
 
 local __BUILDER_ID = 6
 local itemInfoDB
@@ -130,7 +126,6 @@ function Builder:refuel()
 end
 
 function Builder:log(...)
-  Logger.log('supplier', ...)
   Util.print(...)
 end
 

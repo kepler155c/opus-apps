@@ -1,5 +1,4 @@
 local Event = require('event')
-local Logger = require('logger')
 
 local Message = { }
 
@@ -45,8 +44,6 @@ Event.on('modem_message',
   function(event, side, sendChannel, replyChannel, msg, distance)
     if msg and msg.type then -- filter out messages from other systems
       local id = replyChannel
-      Logger.log('modem_receive', { id, msg.type })
-      --Logger.log('modem_receive', msg.contents)
       for k,h in pairs(messageHandlers) do
         if h.type == msg.type then
 -- should provide msg.contents instead of message - type is already known
@@ -63,12 +60,10 @@ function Message.send(id, msgType, contents)
   end
 
   if id then
-    Logger.log('modem_send', { tostring(id), msgType })
     device.wireless_modem.transmit(id, os.getComputerID(), {
       type = msgType, contents = contents
     })
   else
-    Logger.log('modem_send', { 'broadcast', msgType })
     device.wireless_modem.transmit(60000, os.getComputerID(), {
       type = msgType, contents = contents
     })
@@ -81,8 +76,6 @@ function Message.broadcast(t, contents)
   end
 
   Message.send(nil, t, contents)
---  Logger.log('rednet_send', { 'broadcast', t })
---  rednet.broadcast({ type = t, contents = contents })
 end
 
 function Message.waitForMessage(msgType, timeout, fromId)
@@ -94,13 +87,9 @@ function Message.waitForMessage(msgType, timeout, fromId)
         if not fromId or id == fromId then
           return e, id, msg, distance
         end
-      end 
+      end
     end
   until e == 'timer' and side == timerId
-end
-
-function Message.enableWirelessLogging()
-  Logger.setWirelessLogging()
 end
 
 return Message

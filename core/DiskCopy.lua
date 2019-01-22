@@ -68,7 +68,7 @@ local function isValid(drive)
 end
 
 local function needsLabel(drive)
-  return drive.isDiskPresent() and not drive.getMountPath()
+  return drive.isDiskPresent() and not drive.getMountPath() and not drive.getAudioTitle()
 end
 
 function page:drawInfo(drive, textArea)
@@ -117,8 +117,7 @@ function page:copy(sdrive, tdrive)
 
   local function countFiles(source, target)
     if fs.isDir(source) then
-      local list = fs.list(source)
-      for _,f in pairs(list) do
+      for _,f in pairs(fs.list(source)) do
         countFiles(fs.combine(source, f), fs.combine(target, f))
       end
     else
@@ -133,8 +132,7 @@ function page:copy(sdrive, tdrive)
       if not fs.exists(target) then
         fs.makeDir(target)
       end
-      local list = fs.list(source)
-      for _,f in pairs(list) do
+      for _,f in pairs(fs.list(source)) do
         rawCopy(fs.combine(source, f), fs.combine(target, f))
       end
 
