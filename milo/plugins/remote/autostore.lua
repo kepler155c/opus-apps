@@ -133,15 +133,17 @@ Event.onInterval(5, function()
 		end
 
 		if empty then
-			for k,v in pairs(inv) do
-				local item = itemDB:get(v, function() ni.getInventory().getItemMeta(k) end)
-				if item then
-					if context.state.autostore[makeKey(item)] then
-						ni.getInventory().pushItems(target, k, v.count, slot)
-						break
+			pcall(function() -- prevent errors from some mod items
+				for k,v in pairs(inv) do
+					local item = itemDB:get(v, function() ni.getInventory().getItemMeta(k) end)
+					if item then
+						if context.state.autostore[makeKey(item)] then
+							ni.getInventory().pushItems(target, k, v.count, slot)
+							break
+						end
 					end
 				end
-			end
+			end)
 		end
 	end
 end)

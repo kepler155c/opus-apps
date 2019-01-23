@@ -1,6 +1,6 @@
-local Sound  = require('sound')
+local Sound   = require('sound')
 
-local args   = { ... }
+local args    = { ... }
 local context = args[1]
 
 local function learn()
@@ -19,7 +19,7 @@ context.responseHandlers['craft'] = function(response)
 end
 
 return {
-	menuItem = 'Learn Recipe',
+	menuItem = 'Learn recipe',
 	callback = function()
 		learn()
 	end,
