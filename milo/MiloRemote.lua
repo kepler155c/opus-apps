@@ -12,8 +12,6 @@ local fs     = _G.fs
 local shell  = _ENV.shell
 local string = _G.string
 
-local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
-
 local context = {
   state = Config.load('miloRemote', { displayMode = 0, deposit = true }),
   responseHandlers = { },
@@ -107,51 +105,6 @@ local page = UI.Page {
 
     q = 'quit',
   },
-  setup = UI.SlideOut {
-    backgroundColor = colors.cyan,
-    titleBar = UI.TitleBar {
-      title = 'Remote Setup',
-    },
-    form = UI.Form {
-      x = 2, ex = -2, y = 2, ey = -1,
-      [1] = UI.TextEntry {
-        formLabel = 'Server', formKey = 'server',
-        help = 'ID for the server',
-        shadowText = 'Milo server ID',
-        limit = 6,
-        validate = 'numeric',
-        required = true,
-      },
-      [2] = UI.TextEntry {
-        formLabel = 'Return Slot', formKey = 'slot',
-        help = 'Use a slot for sending to storage',
-        shadowText = 'Inventory slot #',
-        limit = 5,
-        validate = 'numeric',
-        required = false,
-      },
-      [3] = UI.Checkbox {
-        formLabel = 'Shield Slot', formKey = 'useShield',
-        help = 'Or, use the shield slot for sending'
-      },
-      [4] = UI.Checkbox {
-        formLabel = 'Run on startup', formKey = 'runOnStartup',
-        help = 'Run this program on startup'
-      },
-      info = UI.TextArea {
-        x = 1, ex = -1, y = 6, ey = -4,
-        textColor = colors.yellow,
-        marginLeft = 0,
-        marginRight = 0,
-        value = [[The Milo turtle must connect to a manipulator with a ]] ..
-                [[bound introspection module. The neural interface must ]] ..
-                [[also have an introspection module.]],
-      },
-    },
-    statusBar = UI.StatusBar {
-      backgroundColor = colors.cyan,
-    },
-  },
   items = { },
 }
 
@@ -211,13 +164,6 @@ function page:transfer(item, count, msg)
   context:sendRequest({ request = 'transfer', item = item, count = count }, msg)
 end
 
-function page.setup:eventHandler(event)
-  if event.type == 'focus_change' then
-    self.statusBar:setStatus(event.focused.help)
-  end
-  return UI.SlideOut.eventHandler(self, event)
-end
-
 function page:eventHandler(event)
   if event.type == 'quit' then
     UI:exitPullEvents()
@@ -232,27 +178,6 @@ function page:eventHandler(event)
     self.statusBar:draw()
     context:setStatus(depositMode[context.state.deposit].help)
     Config.update('miloRemote', context.state)
-
-  elseif event.type == 'form_complete' then
-    Config.update('miloRemote', context.state)
-    self.setup:hide()
-    self:refresh('list')
-    self.grid:draw()
-    self:setFocus(self.statusBar.filter)
-
-    if context.state.runOnStartup then
-      if not fs.exists(STARTUP_FILE) then
-        Util.writeFile(STARTUP_FILE,
-          [[os.sleep(1)
-shell.openForegroundTab('packages/milo/MiloRemote')]])
-      end
-    elseif fs.exists(STARTUP_FILE) then
-      fs.delete(STARTUP_FILE)
-    end
-
-  elseif event.type == 'form_cancel' then
-    self.setup:hide()
-    self:setFocus(self.statusBar.filter)
 
   elseif event.type == 'focus_change' then
     context:setStatus(event.focused.help)
@@ -399,8 +324,11 @@ end
 context.page = page
 
 function context:setStatus(status)
-  page.menuBar.infoBar:setStatus(status)
-  page:sync()
+  page.menuBar.infoBar.values = status
+  if page.menuBar.infoBar.enabled then
+    page.menuBar.infoBar:draw()
+    page:sync()
+  end
 end
 
 local function processMessages(s)

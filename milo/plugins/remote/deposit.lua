@@ -17,19 +17,18 @@ Event.addRoutine(function()
     end
 
     os.sleep(context.socket and sleepTime or 5)
-    if context.state.deposit then
+    if context.state.deposit and context.state.server and (context.state.useShield or context.state.slot) then
       local neural = device.neuralInterface
       local inv = context.state.useShield and 'getEquipment' or 'getInventory'
-      if not neural or not neural[inv] then
-        _G._debug('missing Introspection module')
-      elseif context.state.server and (context.state.useShield or context.state.slot) then
+      if neural and neural[inv] then
         local s, m = pcall(function()
           local method = neural[inv]
           local item = method and method().list()[context.state.useShield and SHIELD_SLOT or context.state.slot]
           if item then
             if context:sendRequest({
               request = 'deposit',
-              slot = context.state.useShield and 'shield' or context.state.slot,
+              source = context.state.useShield and 'equipment' or 'inventory',
+              slot = context.state.useShield and SHIELD_SLOT or context.state.slot,
               count = item.count,
             }) then
               lastTransfer = os.clock()

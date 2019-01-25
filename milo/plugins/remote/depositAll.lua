@@ -35,28 +35,26 @@ local page = UI.Page {
       formLabel = 'Include hotbar', formKey = 'includeHotbar',
       help = 'Also send the contents of the hotbar to Milo (excluding the neural connector)'
     }
-  },  
+  },
   notification = UI.Notification(),
 }
 
-local function makeKey(item)
+local function makeKey(item)  -- group items regardless of damage
   local damage = item.maxDamage == 0 and item.damage
   return itemDB:makeKey({ name = item.name, damage = damage })
 end
 
-function page:updateInventoryList() 
+function page:updateInventoryList()
   local inv = ni.getInventory().list()
   local list = { }
 
   for slot, item in pairs(inv) do
     if (context.state.depositAll.includeHotbar or slot > 9) and item.name ~= 'plethora:neuralconnector' then
-      local key = itemDB:makeKey(item)
+      item = itemDB:get(item, function() return ni.getInventory().getItemMeta(slot) end)
+      local key = makeKey(item)
       if not list[key] then
-        local cItem = itemDB:get(item, function() return ni.getInventory().getItemMeta(slot) end)
-        if cItem then
-          cItem.key = makeKey(cItem)
-          list[key] = cItem
-        end
+        item.displayName = item.displayName:match('(.+) %(damage:.+%)') or item.displayName
+        list[key] = item
       else
         list[key].count = list[key].count + item.count
       end
@@ -83,6 +81,7 @@ function page:depositAll()
     if (context.state.depositAll.includeHotbar or slot > 9) and item.name ~= 'plethora:neuralconnector' then
       context:sendRequest({
         request = 'deposit',
+        source = 'inventory',
         slot = slot,
         count = item.count,
       })

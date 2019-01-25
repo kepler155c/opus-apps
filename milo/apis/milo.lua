@@ -216,10 +216,20 @@ function Milo:makeRequest(item, count, callback)
 end
 
 function Milo:eject(item, count)
-	count = self.context.storage:export(self.context.turtleInventory, nil, count, item)
-	Sound.play('entity.experience_bottle.throw')
-	turtle.emptyInventory()
-	return count
+	local total = 0
+	while count > 0 do
+		local amount = math.min(count, 16*(item.maxCount or 64))
+		amount = self.context.storage:export(self.context.turtleInventory, nil, amount, item)
+		if amount == 0 then
+			break
+		end
+		total = total + amount
+		count = count - amount
+
+		Sound.play('ui.button.click')
+		turtle.emptyInventory()
+	end
+	return total
 end
 
 function Milo:learnRecipe()

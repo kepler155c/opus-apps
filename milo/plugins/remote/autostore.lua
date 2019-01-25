@@ -8,6 +8,7 @@ local colors = _G.colors
 local device = _G.device
 local ni     = device.neuralInterface
 
+local SHIELD_SLOT  = 2
 local context = args[1]
 
 if not context.state.autostore then
@@ -21,7 +22,7 @@ local page = UI.Page {
 		previousPage = true,
 	},
 	tabs = UI.Tabs {
-		y = 2,
+		y = 2, ey = -2,
 		inventory = UI.Window {
 			tabTitle = 'Inventory',
 			grid = UI.ScrollingGrid {
@@ -43,6 +44,9 @@ local page = UI.Page {
 			},
 		},
 	},
+	statusBar = UI.StatusBar {
+		values = 'Double-click to toggle auto-deposit'
+	},
 }
 
 local function makeKey(item)
@@ -55,13 +59,12 @@ function page.tabs.inventory:enable()
 	local list = { }
 
 	for k, item in pairs(inv) do
-		local key = itemDB:makeKey(item)
+		item = itemDB:get(item, function() return ni.getInventory().getItemMeta(k) end)
+		local key = makeKey(item)
 		if not list[key] then
-			local cItem = itemDB:get(item, function() return ni.getInventory().getItemMeta(k) end)
-			if cItem then
-				cItem.key = makeKey(cItem)
-				list[key] = cItem
-			end
+			item.key = key
+			item.displayName = item.displayName:match('(.+) %(damage:.+%)') or item.displayName
+			list[key] = item
 		end
 	end
 
@@ -120,31 +123,26 @@ function page.tabs.autostore:eventHandler(event)
 end
 
 Event.onInterval(5, function()
-	if context.state.deposit and (context.state.useShield or context.state.slot) then
-		local inv = ni.getInventory().list()
-		local slot = context.state.slot
-		local target = 'inventory'
-		local empty = not inv[slot]
+	if context.socket and
+		 context.state.deposit and
+		 (context.state.useShield or context.state.slot) and
+		 not Util.empty(context.state.autostore) then
 
-		if context.state.useShield then
-			slot = 2
-			target = 'equipment'
-			empty = not ni.getEquipment().list()[slot]
-		end
-
-		if empty then
-			pcall(function() -- prevent errors from some mod items
-				for k,v in pairs(inv) do
-					local item = itemDB:get(v, function() ni.getInventory().getItemMeta(k) end)
-					if item then
-						if context.state.autostore[makeKey(item)] then
-							ni.getInventory().pushItems(target, k, v.count, slot)
-							break
-						end
+		pcall(function() -- prevent errors from some mod items
+			for slot,v in pairs(ni.getInventory().list()) do
+				local item = itemDB:get(v, function() ni.getInventory().getItemMeta(slot) end)
+				if item then
+					if context.state.autostore[makeKey(item)] then
+						context:sendRequest({
+							request = 'deposit',
+							source = 'inventory',
+							slot = slot,
+							count = item.count,
+						})
 					end
 				end
-			end)
-		end
+			end
+		end)
 	end
 end)
 

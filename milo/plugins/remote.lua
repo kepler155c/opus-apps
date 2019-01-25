@@ -75,7 +75,7 @@ local function client(socket)
 		if not data then
 			break
 		end
-_G._debug(data)
+
 		socket.co = coroutine.running()
 
 		if data.request == 'scan' then -- full scan of all inventories
@@ -94,18 +94,11 @@ _G._debug(data)
 
 		elseif data.request == 'deposit' then
 			local function deposit()
-				local devType = 'inventory'
-				local slotNo = data.slot
-				if data.slot == 'shield' then
-					slotNo = SHIELD_SLOT
-					devType = 'equipment'
-				end
-
-				local node = makeNode(devType)
+				local node = makeNode(data.source or 'inventory')
 				if node then
-					local slot = node.adapter.getItemMeta(slotNo)
+					local slot = node.adapter.getItemMeta(data.slot)
 					if slot then
-						if context.storage:import(node, slotNo, slot.count, slot) > 0 then
+						if context.storage:import(node, data.slot, slot.count, slot) > 0 then
 							local item = Milo:getItem(slot)
 							if item then
 								socket:write({
