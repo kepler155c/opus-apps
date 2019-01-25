@@ -162,9 +162,10 @@ local function nextChunk()
 end
 
 local function addTrash()
-
   if not trash then
-    trash = { }
+    trash = {
+      [ 'minecraft:cobblestone:0' ] = true
+    }
   end
 
   local slots = turtle.getFilledSlots()
@@ -296,7 +297,7 @@ local function normalChestUnload()
 
   safeGoto(0, 0, 0)
   if not turtle.detectUp() then
-    error('no chest')
+    error('Chest above starting point not found')
   end
   local slots = turtle.getFilledSlots()
   for _,slot in pairs(slots) do
@@ -321,7 +322,6 @@ local function normalChestUnload()
 end
 
 local function ejectTrash()
-
   local cobbleSlotCount = 0
 
   turtle.eachFilledSlot(function(slot)
@@ -575,6 +575,11 @@ mining.z = 0
 mining.locations = getBoreLocations(0, 0)
 trash = Util.readTable(TRASH_FILE)
 
+if fs.exists(PROGRESS_FILE) then
+  mining = Util.readTable(PROGRESS_FILE)
+end
+
+--[[
 if options.resume.value then
   mining = Util.readTable(PROGRESS_FILE)
 elseif fs.exists(PROGRESS_FILE) then
@@ -582,9 +587,12 @@ elseif fs.exists(PROGRESS_FILE) then
   print('Teminate or enter to continue')
   read()
 end
+]]
 
 if not trash or options.setTrash.value then
-  print('Add blocks to ignore, press enter when ready')
+  print('Place the blocks to ignore into the turtle')
+  print('Example: stone, dirt, gravel')
+  print('\nPress enter when ready')
   read()
   addTrash()
 end
@@ -620,7 +628,7 @@ local function main()
   until not nextChunk()
 end
 
-turtle.run(function()
+local s, m = turtle.run(function()
   turtle.reset()
   turtle.set({
     attackPolicy = 'attack',
@@ -639,3 +647,7 @@ turtle.run(function()
   unload()
   turtle.reset()
 end)
+
+if not s and m then
+  error(m)
+end
