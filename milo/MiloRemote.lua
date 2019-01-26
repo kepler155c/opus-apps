@@ -1,5 +1,6 @@
 local Config = require('config')
 local Event  = require('event')
+local fuzzy  = require('fuzzyMatch')
 local Sound  = require('sound')
 local Socket = require('socket')
 local sync   = require('sync').sync
@@ -29,7 +30,6 @@ local displayModes = {
 
 local page = UI.Page {
   menuBar = UI.MenuBar {
-    y = 1, height = 1,
     buttons = {
       {
         text = 'Refresh',
@@ -300,21 +300,37 @@ end
 
 function page:applyFilter()
   local function filterItems(t, filter, displayMode)
-    if filter or displayMode > 0 then
+    self.grid.sortColumn = context.state.sortColumn or 'count'
+    self.grid.inverseSort = context.state.inverseSort
+
+    if filter then
       local r = { }
-      if filter then
-        filter = filter:lower()
-      end
+      filter = filter:lower()
+      self.grid.sortColumn = 'score'
+      self.grid.inverseSort = true
+
       for _,v in pairs(t) do
-        if not filter or string.find(v.lname, filter, 1, true) then
-          if filter or --displayMode == 0 or
-            displayMode == 1 and v.count > 0 then
-            table.insert(r, v)
+        v.score = fuzzy(v.lname, filter)
+        if v.score > 0 then
+          if v.count > 0 then
+            v.score = v.score + 1
           end
+          table.insert(r, v)
+        end
+      end
+      return r
+
+    elseif displayMode > 0 then
+      local r = { }
+
+      for _,v in pairs(t) do
+        if v.count > 0 then
+          table.insert(r, v)
         end
       end
       return r
     end
+
     return t
   end
   local t = filterItems(self.items, self.filter, context.state.displayMode)
