@@ -122,6 +122,12 @@ function Storage:initStorage()
         v.adapter = device[k]
         v.adapter.online = true
       end
+
+      if v.adapter then
+        -- force a new getTransferLocations() as the list may have changed
+        v.adapter.transferLocations = nil
+      end
+
       if v.mtype == 'storage' then
         online = online and not not (v.adapter and v.adapter.online)
       end
@@ -334,7 +340,13 @@ function Storage:_sn(name)
 end
 
 local function isValidTransfer(adapter, target)
-  for _,v in pairs(adapter.getTransferLocations()) do
+  -- lazily cache transfer locations
+  local transferLocations = adapter.transferLocations
+  if not transferLocations then
+    transferLocations = adapter.getTransferLocations()
+    adapter.transferLocations = transferLocations
+  end
+  for _,v in pairs(transferLocations) do
     if v == target then
       return true
     end
@@ -500,7 +512,6 @@ function Storage:import(source, slot, count, item)
         total = total + self:trash(source, slot, count)
         return total
       end
-      --return total
     end
     if count <= 0 then
       return total

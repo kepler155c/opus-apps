@@ -118,9 +118,9 @@ table.sort(context.tasks, function(a, b)
   return a.priority < b.priority
 end)
 
-_debug('Tasks\n-----')
+_G._debug('Tasks\n-----')
 for _, task in ipairs(context.tasks) do
-  _debug('%d: %s', task.priority, task.name)
+  _G._debug('%d: %s', task.priority, task.name)
 end
 
 Milo:clearGrid()
@@ -128,11 +128,18 @@ Milo:clearGrid()
 UI:setPage(UI:getPage('listing'))
 Sound.play('ui.toast.challenge_complete')
 
-local processing
+Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
+  if context.storage:isOnline() then
+    if #context.queue > 0 then
+      local queue = context.queue
+      context.queue = { }
+      for _, entry in pairs(queue) do
+        entry.callback(entry.request)
+      end
+    end
+  end
 
-Event.on('milo_cycle', function()
-  if not processing and not Milo:isCraftingPaused() then
-    processing = true
+  if e == 'milo_cycle' and not Milo:isCraftingPaused() then
     Milo:resetCraftingStatus()
 
     for _, task in ipairs(context.tasks) do
@@ -142,37 +149,17 @@ Event.on('milo_cycle', function()
         _G._debug(m)
       end
     end
-    processing = false
-    if not Util.empty(context.queue) then
-      os.queueEvent('milo_queue')
-    end
-  end
-end)
-
-Event.on('milo_queue', function()
-  if not processing and context.storage:isOnline() then
-    processing = true
-
-    for _, key in pairs(Util.keys(context.queue)) do
-      local entry = context.queue[key]
-      entry.callback(entry.request)
-      context.queue[key] = nil
-    end
-
-    processing = false
   end
 end)
 
 Event.on('turtle_inventory', function()
-  if not processing and not Milo:isCraftingPaused() then
+  Milo:queueRequest({ }, function()
     Milo:clearGrid()
-  end
+  end)
 end)
 
 Event.onInterval(5, function()
-  if not Milo:isCraftingPaused() then
-    os.queueEvent('milo_cycle')
-  end
+  Event.trigger('milo_cycle')
 end)
 
 Event.on({ 'storage_offline', 'storage_online' }, function()

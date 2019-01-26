@@ -149,9 +149,7 @@ end
 
 -- queue up an action that relies on the crafting grid
 function Milo:queueRequest(request, callback)
-	if Util.empty(self.context.queue) then
-		os.queueEvent('milo_queue')
-	end
+	os.queueEvent('milo_queue')
 	table.insert(self.context.queue, {
 		request = request,
 		callback = callback

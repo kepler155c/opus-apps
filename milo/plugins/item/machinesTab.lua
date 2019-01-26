@@ -24,16 +24,16 @@ local machinesTab = UI.Window {
 function machinesTab:setItem(item)
   self.item = item
   local machine = Craft.machineLookup[self.item.key]
+  local t = Util.filter(context.storage.nodes, function(node)
+    if node.category == 'machine' or node.category == 'custom' then -- TODO: - need a setting instead (ie. canCraft)
+      return node.adapter and node.adapter.online and node.adapter.pushItems
+    end
+  end)
+  self.grid:setValues(t)
   if machine then
-    local t = Util.filter(context.storage.nodes, function(node)
-      if node.category == 'machine' or node.category == 'custom' then -- TODO: - need a setting instead (ie. canCraft)
-        return node.adapter and node.adapter.online and node.adapter.pushItems
-      end
-    end)
-    self.grid:setValues(t)
     self.grid:setSelected('name', machine)
   end
-  self.parent:setActive(self, machine)
+  self.parent:setActive(self, item.has_recipe)
 end
 
 function machinesTab.grid:getDisplayValues(row)

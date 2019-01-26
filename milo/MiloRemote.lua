@@ -11,7 +11,6 @@ local colors = _G.colors
 local device = _G.device
 local fs     = _G.fs
 local shell  = _ENV.shell
-local string = _G.string
 
 local context = {
   state = Config.load('miloRemote', { displayMode = 0, deposit = true }),
@@ -311,7 +310,7 @@ function page:applyFilter()
 
       for _,v in pairs(t) do
         v.score = fuzzy(v.lname, filter)
-        if v.score > 0 then
+        if v.score then
           if v.count > 0 then
             v.score = v.score + 1
           end

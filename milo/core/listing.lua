@@ -1,5 +1,6 @@
 local Craft  = require('craft2')
 local Event  = require('event')
+local fuzzy  = require('fuzzyMatch')
 local Milo   = require('milo')
 local Sound  = require('sound')
 local UI     = require('ui')
@@ -8,7 +9,6 @@ local Util   = require('util')
 local colors      = _G.colors
 local context     = Milo:getContext()
 local displayMode = Milo:getState('displayMode') or 0
-local string      = _G.string
 
 local displayModes = {
   [0] = { text = 'A', help = 'Showing all items' },
@@ -331,21 +331,37 @@ end
 
 function page:applyFilter()
   local function filterItems(t, filter)
-    if filter or displayMode > 0 then
+    self.grid.sortColumn = Milo:getState('sortColumn') or 'count'
+    self.grid.inverseSort = Milo:getState('inverseSort')
+
+    if filter then
       local r = { }
-      if filter then
-        filter = filter:lower()
-      end
+      filter = filter:lower()
+      self.grid.sortColumn = 'score'
+      self.grid.inverseSort = true
+
       for _,v in pairs(t) do
-        if not filter or string.find(v.lname, filter, 1, true) then
-          if filter or --displayMode == 0 or
-            displayMode == 1 and v.count > 0 then
-            table.insert(r, v)
+        v.score = fuzzy(v.lname, filter)
+        if v.score then
+          if v.count > 0 then
+            v.score = v.score + 1
           end
+          table.insert(r, v)
+        end
+      end
+      return r
+
+    elseif displayMode > 0 then
+      local r = { }
+
+      for _,v in pairs(t) do
+        if v.count > 0 then
+          table.insert(r, v)
         end
       end
       return r
     end
+
     return t
   end
 
