@@ -1,4 +1,4 @@
-local InventoryAdapter = require('inventoryAdapter')
+local InventoryAdapter = require('core.inventoryAdapter')
 local Event            = require('event')
 local UI               = require('ui')
 local Util             = require('util')

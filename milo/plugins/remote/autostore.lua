@@ -1,4 +1,4 @@
-local itemDB = require('itemDB')
+local itemDB = require('core.itemDB')
 local Event  = require('event')
 local UI     = require('ui')
 local Util   = require('util')

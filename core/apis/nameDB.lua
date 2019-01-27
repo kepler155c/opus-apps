@@ -1,5 +1,5 @@
 local JSON    = require('json')
-local TableDB = require('tableDB')
+local TableDB = require('core.tableDB')
 local Util    = require('util')
 
 local fs = _G.fs

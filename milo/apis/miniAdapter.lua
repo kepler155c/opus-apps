@@ -1,5 +1,5 @@
 local class   = require('class')
-local itemDB  = require('itemDB')
+local itemDB  = require('core.itemDB')
 local Util    = require('util')
 
 local device = _G.device

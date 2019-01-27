@@ -1,5 +1,5 @@
-local nameDB  = require('nameDB')
-local TableDB = require('tableDB')
+local nameDB  = require('core.nameDB')
+local TableDB = require('core.tableDB')
 local Util    = require('util')
 
 local itemDB = TableDB({ fileName = 'usr/config/items.db' })

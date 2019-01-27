@@ -1,6 +1,6 @@
 local Blocks    = require('builder.blocks')
 local class     = require('class')
-local Message   = require('message')
+local Message   = require('core.message')
 local Util      = require('util')
 
 local device     = _G.device

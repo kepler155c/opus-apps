@@ -2,13 +2,13 @@ local Adapter = { }
 
 function Adapter.wrap(args)
 	local adapters = {
-		'refinedAdapter',
-		'meAdapter18',
-    'chestAdapter18',
+		'core.refinedAdapter',
+		'core.meAdapter18',
+    'core.chestAdapter18',
 
     -- adapters for version 1.7
-    'meAdapter',
-    'chestAdapter',
+    'core.meAdapter',
+    'core.chestAdapter',
   }
 
   for _,adapterType in ipairs(adapters) do

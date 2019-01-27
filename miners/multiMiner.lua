@@ -1,6 +1,6 @@
 local Event   = require('event')
 local GPS     = require('gps')
-local itemDB  = require('itemDB')
+local itemDB  = require('core.itemDB')
 local Point   = require('point')
 local Socket  = require('socket')
 local Util    = require('util')

@@ -1,6 +1,0 @@
-{
-	title = 'Plethora overlay glasses support',
-	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/glasses',
-	description = [[WIP]],
-	licence = 'MIT',
-}

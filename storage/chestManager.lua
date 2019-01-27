@@ -84,14 +84,14 @@ local Ansi           = require('ansi')
 local Config         = require('config')
 local Craft          = require('turtle.craft')
 local Event          = require('event')
-local itemDB         = require('itemDB')
+local itemDB         = require('core.itemDB')
 local Peripheral     = require('peripheral')
 local Terminal       = require('terminal')
 local UI             = require('ui')
 local Util           = require('util')
 
 local ControllerAdapter = require('controllerAdapter')
-local InventoryAdapter  = require('inventoryAdapter')
+local InventoryAdapter  = require('core.inventoryAdapter')
 
 local colors     = _G.colors
 local device     = _G.device

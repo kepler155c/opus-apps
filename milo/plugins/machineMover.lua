@@ -1,4 +1,4 @@
-local Craft  = require('craft2')
+local Craft  = require('milo.craft2')
 local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')

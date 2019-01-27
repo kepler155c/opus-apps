@@ -2,12 +2,12 @@ if not _G.turtle and not _G.commands then
   error('Must be run on a turtle or a command computer')
 end
 
-local Adapter   = require('inventoryAdapter')
+local Adapter   = require('core.inventoryAdapter')
 local Event     = require('event')
 local GPS       = require('gps')
-local itemDB    = require('itemDB')
+local itemDB    = require('core.itemDB')
 local Schematic = require('builder.schematic')
-local TableDB   = require('tableDB')
+local TableDB   = require('core.tableDB')
 local UI        = require('ui')
 local Util      = require('util')
 

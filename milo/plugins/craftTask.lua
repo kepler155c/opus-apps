@@ -1,4 +1,4 @@
-local Craft  = require('craft2')
+local Craft  = require('milo.craft2')
 local Milo   = require('milo')
 local Sound  = require('sound')
 local Util   = require('util')
@@ -60,7 +60,7 @@ function craftTask:cycle()
           end
         end
 
-      elseif not context.controllerAdapter then
+      else
         item.status = '(no recipe)'
         item.statusCode = Craft.STATUS_ERROR
         item.crafted = 0

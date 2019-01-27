@@ -1,8 +1,8 @@
 local Event      = require('event')
-local MEProvider = require('meProvider')
-local Message    = require('message')
+local MEProvider = require('core.meProvider')
+local Message    = require('core.message')
 local Point      = require('point')
-local TableDB    = require('tableDB')
+local TableDB    = require('core.tableDB')
 local Util       = require('util')
 
 local device = _G.device
@@ -21,9 +21,9 @@ local turtle = _G.turtle
      pointing at the chest/interface
 ]]--
 
-local ChestProvider = require('chestProvider')
+local ChestProvider = require('core.chestProvider')
 if Util.getVersion() == 1.8 then
-  ChestProvider = require('chestProvider18')
+  ChestProvider = require('core.chestProvider18')
 end
 
 if not device.wireless_modem then

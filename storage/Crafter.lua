@@ -24,10 +24,10 @@
    MMMMMM
 ]]--
 
-local InventoryAdapter = require('inventoryAdapter')
+local InventoryAdapter = require('core.inventoryAdapter')
 local Config         = require('config')
 local Event          = require('event')
-local itemDB         = require('itemDB')
+local itemDB         = require('core.itemDB')
 local Peripheral     = require('peripheral')
 local UI             = require('ui')
 local Terminal       = require('terminal')

@@ -1,4 +1,4 @@
-local Base64 = require('base64')
+local Base64 = require('builder.base64')
 
 local http  = _G.http
 local os    = _G.os

@@ -1,6 +1,6 @@
 local Config = require('config')
-local Craft  = require('craft2')
-local itemDB = require('itemDB')
+local Craft  = require('milo.craft2')
+local itemDB = require('core.itemDB')
 local Sound  = require('sound')
 local Util   = require('util')
 
@@ -147,7 +147,7 @@ function Milo:requestCrafting(item)
 	end
 end
 
--- queue up an action that relies on the crafting grid
+-- queue an action that interacts with storage
 function Milo:queueRequest(request, callback)
 	os.queueEvent('milo_queue')
 	table.insert(self.context.queue, {

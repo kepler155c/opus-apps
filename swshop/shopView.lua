@@ -1,6 +1,6 @@
 local Config     = require('config')
 local Event      = require('event')
-local itemDB     = require('itemDB')
+local itemDB     = require('core.itemDB')
 local Milo       = require('milo')
 local Sound      = require('sound')
 local UI         = require('ui')

@@ -1,6 +1,6 @@
 local class   = require('class')
-local itemDB  = require('itemDB')
-local Mini    = require('miniAdapter')
+local itemDB  = require('core.itemDB')
+local Mini    = require('milo.miniAdapter')
 
 local os      = _G.os
 

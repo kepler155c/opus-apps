@@ -602,7 +602,7 @@ Event.addRoutine(function()
 
   local distance = Point.distance(
     { x = turtle.point.x, y = 0, z = turtle.point.z },
-    { x = mining.x, y = 0, z = mining.z }
+    HOME_PT
   )
   local maxDistance = Point.distance(
     HOME_PT,

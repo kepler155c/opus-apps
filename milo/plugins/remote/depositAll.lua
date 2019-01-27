@@ -1,6 +1,6 @@
 local Config = require('config')
 local UI     = require('ui')
-local itemDB = require('itemDB')
+local itemDB = require('core.itemDB')
 
 local args   = { ... }
 local colors = _G.colors

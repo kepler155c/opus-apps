@@ -1,5 +1,5 @@
 local Event   = require('event')
-local itemDB  = require('itemDB')
+local itemDB  = require('core.itemDB')
 local Project = require('neural.project')
 local UI      = require('ui')
 local Util    = require('util')

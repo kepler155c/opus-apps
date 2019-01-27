@@ -1,5 +1,5 @@
-local Craft  = require('craft2')
-local itemDB = require('itemDB')
+local Craft  = require('milo.craft2')
+local itemDB = require('core.itemDB')
 local Milo   = require('milo')
 
 local BLAZE_POWDER = "minecraft:blaze_powder:0"

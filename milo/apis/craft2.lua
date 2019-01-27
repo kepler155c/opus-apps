@@ -1,4 +1,4 @@
-local itemDB = require('itemDB')
+local itemDB = require('core.itemDB')
 local Util   = require('util')
 
 local fs     = _G.fs

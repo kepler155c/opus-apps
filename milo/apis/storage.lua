@@ -1,8 +1,8 @@
-local Adapter = require('miniAdapter')
+local Adapter = require('milo.miniAdapter')
 local class   = require('class')
 local Config  = require('config')
 local Event   = require('event')
-local itemDB  = require('itemDB')
+local itemDB  = require('core.itemDB')
 local Util    = require('util')
 
 local device   = _G.device

@@ -1,5 +1,5 @@
 local class      = require('class')
-local itemDB     = require('itemDB')
+local itemDB     = require('core.itemDB')
 local Peripheral = require('peripheral')
 local Util       = require('util')
 

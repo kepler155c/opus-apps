@@ -1,6 +1,6 @@
 local class   = require('class')
 local Util    = require('util')
-local DEFLATE = require('deflatelua')
+local DEFLATE = require('builder.deflatelua')
 local Point   = require('point')
 
 local bit    = _G.bit

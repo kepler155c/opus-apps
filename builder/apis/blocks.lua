@@ -1,6 +1,6 @@
 local class   = require('class')
 local Util    = require('util')
-local TableDB = require('tableDB')
+local TableDB = require('core.tableDB')
 local JSON    = require('json')
 
 -- see https://github.com/Khroki/MCEdit-Unified/blob/master/pymclevel/minecraft.yaml

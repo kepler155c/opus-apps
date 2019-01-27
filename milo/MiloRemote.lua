@@ -1,6 +1,6 @@
 local Config = require('config')
 local Event  = require('event')
-local fuzzy  = require('fuzzyMatch')
+local fuzzy  = require('milo.fuzzyMatch')
 local Sound  = require('sound')
 local Socket = require('socket')
 local sync   = require('sync').sync

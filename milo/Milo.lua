@@ -1,21 +1,16 @@
 local Event      = require('event')
 local Milo       = require('milo')
 local Sound      = require('sound')
-local Storage    = require('storage')
+local Storage    = require('milo.storage')
 local UI         = require('ui')
 local Util       = require('util')
 
 local colors     = _G.colors
 local device     = _G.device
 local fs         = _G.fs
-local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
 local turtle     = _G.turtle
-
-if multishell then
-  multishell.setTitle(multishell.getCurrent(), 'Milo')
-end
 
 local function Syntax(msg)
   print([[
