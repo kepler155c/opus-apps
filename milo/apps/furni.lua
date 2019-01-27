@@ -3,7 +3,7 @@ Use multiple furnaces at once to smelt items.
 
 SETUP:
   Place an introspection module into the turtles inventory.
-  Connect turtle to milo with a wired modem.
+  Connect turtle to milo network with a wired modem.
   Connect turtle to a second wired modem that is connected to furnaces ONLY.
   Add as many furnaces as needed.
 
@@ -14,8 +14,6 @@ CONFIGURATION:
 
 Use this turtle for machine crafting.
 --]]
-
-_G.requireInjector(_ENV)
 
 local Event      = require('event')
 local Peripheral = require('peripheral')
