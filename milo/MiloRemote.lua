@@ -340,10 +340,10 @@ context.page = page
 
 function context:setStatus(status)
   page.menuBar.infoBar.values = status
-  if page.menuBar.infoBar.enabled then
+  --if page.menuBar.infoBar.enabled then
     page.menuBar.infoBar:draw()
     page:sync()
-  end
+  --end
 end
 
 local function processMessages(s)

@@ -51,6 +51,9 @@ local function getItemDetails(item)
   end
 end
 
+local function logTransaction(transaction, details)
+end
+
 local function handleTransaction(transaction)
   local from = transaction.from
   local to = transaction.to
@@ -68,11 +71,13 @@ local function handleTransaction(transaction)
   local function refundTransaction(amount, reason)
     print("Refunding to ", recipient)
     await(k.makeTransaction, privatekey, recipient, amount, reason)
+    logTransaction(transaction, { refund = amount, reason = reason })
   end
 
   local itemId, price = getItemDetails(metadata.name)
   if not itemId or not price then
     print('invalid item')
+    logTransaction(transaction, { reason = 'invalid item' })
     --return refundTransaction(value, "error=Item specified is not valid")
     return -- there could be multiple stores...
   end
@@ -96,6 +101,7 @@ local function handleTransaction(transaction)
 
     elseif e == 'shop_provided' and p1 == uid then
       local extra = value - (price * p2)
+      logTransaction(transaction, { purchased = p2 })
       if extra > 0 then
         print('extra: ' .. extra)
         refundTransaction(extra, "message=Here's your change!")

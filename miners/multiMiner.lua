@@ -155,7 +155,9 @@ local function run(member, point)
                   local slot = turtle.getSlot(index)
                   if slot.count > 0 then
                     blockTypes[pt.key] = slot.key
-                    blockTypes[slot.key] = true
+                    if slot.key ~= pt.key then
+                      blockTypes[slot.key] = true
+                    end
                   end
                 end
               end
