@@ -55,7 +55,7 @@ local function getItemDetails(item)
 end
 
 local function logTransaction(transaction, details)
-  transaction.details = details
+  Util.merge(transaction, details)
   table.insert(transactions, transaction)
   Util.writeTable('/usr/transaction.log', transactions)
 end
@@ -74,29 +74,36 @@ local function handleTransaction(transaction)
   print('purchase: ' .. tostring(metadata.name))
   print('value: ' .. value)
 
+  local t = {
+    to = transaction.to,
+    from = transaction.from,
+    value = transaction.value,
+    id = metadata.name,
+  }
+
   local function refundTransaction(amount, reason)
     print("Refunding to ", recipient)
     await(k.makeTransaction, privatekey, recipient, amount, reason)
-    logTransaction(transaction, { refund = amount, reason = reason })
+    logTransaction(t, { refund = amount, reason = reason })
   end
 
-  local itemId, price = getItemDetails(metadata.name)
-  if not itemId or not price then
+  t.itemId, t.price = getItemDetails(metadata.name)
+  if not t.itemId or not t.price then
     print('invalid item')
-    logTransaction(transaction, { reason = 'invalid item' })
+    logTransaction(t, { reason = 'invalid item' })
     --return refundTransaction(value, "error=Item specified is not valid")
     return -- there could be multiple stores...
   end
 
-  if value < price then
+  if value < t.price then
     print('value too low')
     return refundTransaction(value, "error=Please pay the price listed on-screen.")
   end
 
-  local count = math.floor(value / price)
+  local count = math.floor(value / t.price)
   local uid = math.random()
-  print(string.format('requesting %d of %s', count, itemId))
-  os.queueEvent('shop_provide', itemId, count, uid)
+  print(string.format('requesting %d of %s', count, t.itemId))
+  os.queueEvent('shop_provide', t.itemId, count, uid)
   local timerId = os.startTimer(5)
   while true do
     local e, p1, p2 = os.pullEvent()
@@ -106,7 +113,7 @@ local function handleTransaction(transaction)
       break
 
     elseif e == 'shop_provided' and p1 == uid then
-      local extra = value - (price * p2)
+      local extra = value - (t.price * p2)
       logTransaction(transaction, { purchased = p2 })
       if extra > 0 then
         print('extra: ' .. extra)
