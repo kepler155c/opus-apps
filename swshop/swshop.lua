@@ -32,7 +32,7 @@ local domain = args[1] or Syntax()
 local password = args[2] or Syntax()
 local privatekey = k.toKristWalletFormat(password)
 local address = k.makev2address(privatekey)
-local transactions = Util.readTable('/usr/transaction.log') or { }
+local transactions = Util.readTable('/usr/swshop.log') or { }
 
 jua.on("terminate", function()
   rs.setOutput('top', false)
@@ -55,9 +55,10 @@ local function getItemDetails(item)
 end
 
 local function logTransaction(transaction, details)
+  transaction = Util.shallowCopy(transaction)
   Util.merge(transaction, details)
   table.insert(transactions, transaction)
-  Util.writeTable('/usr/transaction.log', transactions)
+  Util.writeTable('/usr/swshop.log', transactions)
 end
 
 local function handleTransaction(transaction)
@@ -114,7 +115,7 @@ local function handleTransaction(transaction)
 
     elseif e == 'shop_provided' and p1 == uid then
       local extra = value - (t.price * p2)
-      logTransaction(transaction, { purchased = p2 })
+      logTransaction(t, { purchased = p2 })
       if extra > 0 then
         print('extra: ' .. extra)
         refundTransaction(extra, "message=Here's your change!")
