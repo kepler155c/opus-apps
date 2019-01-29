@@ -206,7 +206,7 @@ local function run(member, point)
         turtle._goto(spt)
       end
     end)
-_debug(m)
+
     turtles[member.id] = nil
     member.status = m
     member.active = false

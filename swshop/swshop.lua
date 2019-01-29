@@ -1,3 +1,5 @@
+local Util = require('util')
+
 local fs        = _G.fs
 local os        = _G.os
 local shell     = _ENV.shell
@@ -30,6 +32,7 @@ local domain = args[1] or Syntax()
 local password = args[2] or Syntax()
 local privatekey = k.toKristWalletFormat(password)
 local address = k.makev2address(privatekey)
+local transactions = Util.readTable('/usr/transaction.log') or { }
 
 jua.on("terminate", function()
   rs.setOutput('top', false)
@@ -52,6 +55,9 @@ local function getItemDetails(item)
 end
 
 local function logTransaction(transaction, details)
+  transaction.details = details
+  table.insert(transactions, transaction)
+  Util.writeTable('/usr/transaction.log', transactions)
 end
 
 local function handleTransaction(transaction)
