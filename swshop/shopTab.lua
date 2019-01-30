@@ -5,7 +5,7 @@ local os     = _G.os
 
 local config = Config.load('shop')
 
-local shopTab = UI.Window {
+local shopTab = UI.Tab {
   tabTitle = 'Store',
   index = 2,
   form = UI.Form {
