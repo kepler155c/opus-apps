@@ -5,7 +5,7 @@ local Util   = require('util')
 
 local context = Milo:getContext()
 
-local manageTab = UI.Window {
+local manageTab = UI.Tab {
   tabTitle = 'Manage',
   index = 1,
   form = UI.Form {

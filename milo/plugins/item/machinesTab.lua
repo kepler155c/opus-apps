@@ -6,7 +6,7 @@ local Util    = require('util')
 local colors  = _G.colors
 local context = Milo:getContext()
 
-local machinesTab = UI.Window {
+local machinesTab = UI.Tab {
   tabTitle = 'Machine',
   index = 3,
   backgroundColor = colors.cyan,

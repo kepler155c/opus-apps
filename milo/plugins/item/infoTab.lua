@@ -3,7 +3,7 @@ local UI     = require('ui')
 
 local colors = _G.colors
 
-local infoTab = UI.Window {
+local infoTab = UI.Tab {
 	tabTitle = 'Info',
 	index = 4,
 	backgroundColor = colors.cyan,
@@ -40,7 +40,7 @@ function infoTab:draw()
 	end
 
 	self.textArea.value = value
-	UI.Window.draw(self)
+	UI.Tab.draw(self)
 end
 
 return { itemTab = infoTab }

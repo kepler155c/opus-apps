@@ -216,7 +216,7 @@ local function run(member, point)
   end)
 end
 
-local blocksTab = UI.Window {
+local blocksTab = UI.Tab {
   tabTitle = 'Blocks',
   grid = UI.ScrollingGrid {
     y = 1,
@@ -228,7 +228,7 @@ local blocksTab = UI.Window {
   },
 }
 
-local turtlesTab = UI.Window {
+local turtlesTab = UI.Tab {
   tabTitle = 'Turtles',
   grid = UI.ScrollingGrid {
     y = 1,

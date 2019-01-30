@@ -5,7 +5,7 @@ local UI     = require('ui')
 
 local colors = _G.colors
 
-local recipeTab = UI.Window {
+local recipeTab = UI.Tab {
   tabTitle = 'Recipe',
   index = 2,
   backgroundColor = colors.cyan,

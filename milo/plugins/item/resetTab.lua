@@ -6,7 +6,7 @@ local Util    = require('util')
 local colors  = _G.colors
 local context = Milo:getContext()
 
-local resetTab = UI.Window {
+local resetTab = UI.Tab {
   tabTitle = 'Reset',
   index = 5,
   backgroundColor = colors.cyan,

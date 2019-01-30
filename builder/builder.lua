@@ -529,6 +529,72 @@ local startPage = UI.Page {
       { prompt = 'Quit',               event = 'quit' }
     }
   },
+  startLevel = UI.Dialog {
+    title = 'Enter Starting Level',
+    height = 7,
+    form = UI.Form {
+      y = 3, x = 2, height = 4,
+      event = 'setStartLevel',
+      cancelEvent = 'slide_hide',
+      text = UI.Text {
+        x = 5, y = 1, width = 20,
+        textColor = colors.gray,
+      },
+      textEntry = UI.TextEntry {
+        formKey = 'level',
+        x = 15, y = 1, width = 7,
+      },
+    },
+    statusBar = UI.StatusBar(),
+  },
+  startBlock = UI.Dialog {
+    title = 'Enter Block Number',
+    height = 7,
+    form = UI.Form {
+      y = 3, x = 2, height = 4,
+      event = 'setStartBlock',
+      cancelEvent = 'slide_hide',
+      text = UI.Text {
+        x = 2, y = 1, width = 20,
+        textColor = colors.gray,
+      },
+      textEntry = UI.TextEntry {
+        x = 16, y = 1,
+        width = 10, limit = 8,
+      },
+    },
+    statusBar = UI.StatusBar(),
+  },
+  startPoint = UI.Dialog {
+    title = 'Set starting point',
+    height = 11,
+    form = UI.Form {
+      y = 2, x = 2, ey = -2,
+      cancelEvent = 'slide_hide',
+      text1 = UI.Text {
+        x = 1, y = 2, value = 'Turtle location' },
+      xLoc = UI.TextEntry {
+        x = 1, y = 3, formKey = 'x', width = 7, limit = 16, shadowText = 'x', required = true },
+      yLoc = UI.TextEntry {
+        x = 9, y = 3, formKey = 'y', width = 7, limit = 16, shadowText = 'y', required = true },
+      zLoc = UI.TextEntry {
+        x = 17, y = 3, formKey = 'z', width = 7, limit = 16, shadowText = 'z', required = true },
+      text2 = UI.Text {
+        x = 1, y = 5, value = 'Starting Point' },
+      xrLoc = UI.TextEntry {
+        x = 1, y = 6, formKey = 'rx', width = 7, limit = 16, shadowText = 'x', required = true },
+      yrLoc = UI.TextEntry {
+        x = 9, y = 6, formKey = 'ry', width = 7, limit = 16, shadowText = 'y', required = true },
+      zrLoc = UI.TextEntry {
+        x = 17, y = 6, formKey = 'rz', width = 7, limit = 16, shadowText = 'z', required = true },
+      revert = UI.Button {
+        x = 1, y = -2, text = 'Revert', event = 'revert' },
+      accelerators = {
+        form_cancel = 'slide_hide',
+      },
+    },
+    statusBar = UI.StatusBar({ values = 'Optional start point'}),
+  },
   throttle = UI.Throttle { },
   accelerators = {
     x = 'test',
@@ -555,80 +621,63 @@ function startPage:enable()
   UI.Page.enable(self)
 end
 
+function startPage.startPoint:eventHandler(event)
+  if event.type == 'form_complete' then
+    for k,v in pairs(event.values) do
+      Builder.loc[k] = tonumber(v)
+    end
+    Builder:saveProgress(Builder.index)
+    self:hide()
+  elseif event.type == 'revert' then
+    Builder.loc = { }
+    Builder:saveProgress(Builder.index)
+    self:hide()
+  elseif event.type == 'form_invalid' then
+    self.statusBar:setStatus(event.message)
+  elseif event.type == 'form_cancel' or event.type == 'cancel' then
+    self:hide()
+  else
+    return UI.Dialog.eventHandler(self, event)
+  end
+  return true
+end
+
 function startPage:eventHandler(event)
   if event.type == 'startLevel' then
-    local dialog = UI.Dialog({
-      title = 'Enter Starting Level',
-      height = 7,
-      form = UI.Form {
-        y = 3, x = 2, height = 4,
-        text = UI.Text({ x = 5, y = 1, textColor = colors.gray,
-          value = '0 - ' .. Builder.schematic.height }),
-        textEntry = UI.TextEntry({ x = 15, y = 1, '0 - 11', width = 7 }),
-      },
-      statusBar = UI.StatusBar(),
-    })
+    self.startLevel.form.text.value = '0 - ' .. Builder.schematic.height
+    self.startLevel:show()
 
-    function dialog:eventHandler(event)
-      if event.type == 'form_complete' then
-        local l = tonumber(self.form.textEntry.value)
-        if l and l < Builder.schematic.height and l >= 0 then
-          for k,v in pairs(Builder.schematic.blocks) do
-            if v.y >= l then
-              Builder.index = k
-              Builder:saveProgress(Builder.index)
-              UI:setPreviousPage()
-              break
-            end
-          end
-        else
-          self.statusBar:timedStatus('Invalid Level', 3)
+  elseif event.type == 'setStartLevel' then
+    local l = tonumber(self.startLevel.form.textEntry.value)
+    if l and l < Builder.schematic.height and l >= 0 then
+      for k,v in pairs(Builder.schematic.blocks) do
+        if v.y >= l then
+          Builder.index = k
+          Builder:saveProgress(Builder.index)
+          break
         end
-      elseif event.type == 'form_cancel' or event.type == 'cancel' then
-        UI:setPreviousPage()
-      else
-        return UI.Dialog.eventHandler(self, event)
       end
-      return true
+      self.startLevel:hide()
+      self:draw()
+    else
+      self.startLevel.statusBar:setStatus('Invalid start level')
     end
-
-    dialog:setFocus(dialog.form.textEntry)
-    UI:setPage(dialog)
 
   elseif event.type == 'startBlock' then
-    local dialog = UI.Dialog {
-      title = 'Enter Block Number',
-      height = 7,
-      form = UI.Form {
-        y = 3, x = 2, height = 4,
-        text = UI.Text { x = 2, y = 1,
-          value = '1 - ' .. #Builder.schematic.blocks, textColor = colors.gray },
-        textEntry = UI.TextEntry { x = 16, y = 1,
-          value = tostring(Builder.index), width = 10, limit = 8 }
-      },
-      statusBar = UI.StatusBar(),
-    }
+    self.startBlock.form.text.value = '1 - ' .. #Builder.schematic.blocks
+    self.startBlock.form.textEntry.value = tostring(Builder.index)
+    self.startBlock:show()
 
-    function dialog:eventHandler(event)
-      if event.type == 'form_complete' then
-        local bn = tonumber(self.form.textEntry.value)
-        if bn and bn < #Builder.schematic.blocks and bn >= 0 then
-          Builder.index = bn
-          Builder:saveProgress(Builder.index)
-          UI:setPreviousPage()
-        else
-          self.statusBar:timedStatus('Invalid Block', 3)
-        end
-      elseif event.type == 'form_cancel' or event.type == 'cancel' then
-        UI:setPreviousPage()
-      else
-        return UI.Dialog.eventHandler(self, event)
-      end
-      return true
+  elseif event.type == 'setStartBlock' then
+    local bn = tonumber(self.startBlock.form.textEntry.value)
+    if bn and bn < #Builder.schematic.blocks and bn >= 0 then
+      Builder.index = bn
+      Builder:saveProgress(Builder.index)
+      self.startBlock:hide()
+      self:draw()
+    else
+      self.startLevel.statusBar:setStatus('Invalid start block')
     end
-
-    dialog:setFocus(dialog.form.textEntry)
-    UI:setPage(dialog)
 
   elseif event.type == 'startPoint' then
     local loc = Util.shallowCopy(Builder.loc)
@@ -645,57 +694,8 @@ function startPage:eventHandler(event)
       end
     end
 
-    local dialog = UI.Dialog {
-      title = 'Set starting point',
-      height = 11,
-      width = 30,
-      form = UI.Form {
-        y = 2, x = 2, ey = -2,
-        values = loc,
-        text1 = UI.Text {
-          x = 1, y = 2, value = 'Turtle location' },
-        xLoc = UI.TextEntry {
-          x = 1, y = 3, formKey = 'x', width = 7, limit = 16, shadowText = 'x', required = true },
-        yLoc = UI.TextEntry {
-          x = 9, y = 3, formKey = 'y', width = 7, limit = 16, shadowText = 'y', required = true },
-        zLoc = UI.TextEntry {
-          x = 17, y = 3, formKey = 'z', width = 7, limit = 16, shadowText = 'z', required = true },
-        text2 = UI.Text {
-          x = 1, y = 5, value = 'Starting Point' },
-        xrLoc = UI.TextEntry {
-          x = 1, y = 6, formKey = 'rx', width = 7, limit = 16, shadowText = 'x', required = true },
-        yrLoc = UI.TextEntry {
-          x = 9, y = 6, formKey = 'ry', width = 7, limit = 16, shadowText = 'y', required = true },
-        zrLoc = UI.TextEntry {
-          x = 17, y = 6, formKey = 'rz', width = 7, limit = 16, shadowText = 'z', required = true },
-        revert = UI.Button {
-          x = 1, y = -2, text = 'Revert', event = 'revert' },
-      },
-      statusBar = UI.StatusBar({ values = 'Optional start point'}),
-    }
-
-    function dialog:eventHandler(event)
-      if event.type == 'form_complete' then
-        for k,v in pairs(loc) do
-          Builder.loc[k] = tonumber(v)
-        end
-        Builder:saveProgress(Builder.index)
-        UI:setPreviousPage()
-      elseif event.type == 'revert' then
-        Builder.loc = { }
-        Builder:saveProgress(Builder.index)
-        UI:setPreviousPage()
-      elseif event.type == 'form_invalid' then
-        self.statusBar:setStatus(event.message)
-      elseif event.type == 'form_cancel' or event.type == 'cancel' then
-        UI:setPreviousPage()
-      else
-        return UI.Dialog.eventHandler(self, event)
-      end
-      return true
-    end
-
-    UI:setPage(dialog)
+    self.startPoint.form:setValues(loc)
+    self.startPoint:show()
 
   elseif event.type == 'assignBlocks' then
     -- this might be an approximation of the blocks needed

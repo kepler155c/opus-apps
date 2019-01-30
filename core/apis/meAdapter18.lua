@@ -1,5 +1,5 @@
 local class      = require('class')
-local RSAdapter  = require('refinedAdapter')
+local RSAdapter  = require('core.refinedAdapter')
 local Peripheral = require('peripheral')
 local Util       = require('util')
 
