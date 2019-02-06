@@ -5,7 +5,7 @@ local Util   = require('util')
 local colors = _G.colors
 local device = _G.device
 
-local importView = UI.Window {
+local importView = UI.WizardPage {
 	title = 'Import item from inventory',
 	index = 4,
 	grid = UI.ScrollingGrid {

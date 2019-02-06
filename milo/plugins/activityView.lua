@@ -14,7 +14,7 @@ local template =
 [[%sDisplays the amount of items entering or leaving storage.%s
 Right-clicking on the activity monitor will reset the totals.]]
 
-local wizardPage = UI.Window {
+local wizardPage = UI.WizardPage {
   title = 'Activity Monitor',
   index = 2,
   backgroundColor = colors.cyan,

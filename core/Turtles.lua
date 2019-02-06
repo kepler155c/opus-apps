@@ -14,7 +14,7 @@ local os         = _G.os
 local shell      = _ENV.shell
 local term       = _G.term
 
-UI.Button.defaults.focusIndicator = ' '
+--UI.Button.defaults.focusIndicator = ' '
 UI:configure('Turtles', ...)
 
 local config = { }
@@ -43,7 +43,7 @@ local page = UI.Page {
     x = 1, y = 5, ey = -2,
     scripts = UI.ScrollingGrid {
       tabTitle = 'Run',
-      backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
+      backgroundColor = colors.cyan,
       columns = {
         { heading = '', key = 'label' },
       },
@@ -53,7 +53,7 @@ local page = UI.Page {
     },
     turtles = UI.ScrollingGrid {
       tabTitle = 'Select',
-      backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
+      backgroundColor = colors.cyan,
       columns = {
         { heading = 'label',  key = 'label'    },
         { heading = 'Dist',   key = 'distance' },
@@ -65,7 +65,7 @@ local page = UI.Page {
       autospace = true,
     },
     inventory = UI.ScrollingGrid {
-      backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
+      backgroundColor = colors.cyan,
       tabTitle = 'Inv',
       columns = {
         { heading = '',          key = 'index', width = 2 },
@@ -90,7 +90,7 @@ local page = UI.Page {
     ]]
     action = UI.Window {
       tabTitle = 'Action',
-      backgroundColor = UI.TabBar.defaults.selectedBackgroundColor,
+      backgroundColor = colors.cyan,
       moveUp = UI.Button {
         x = 5, y = 2,
         text = 'up',

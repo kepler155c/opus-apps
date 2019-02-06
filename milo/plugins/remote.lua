@@ -5,8 +5,6 @@ local Socket = require('socket')
 
 local device = _G.device
 
-local SHIELD_SLOT = 2
-
 local context = Milo:getContext()
 
 local function getNameSafe(v)

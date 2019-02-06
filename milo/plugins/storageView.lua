@@ -4,7 +4,7 @@ local UI     = require('ui')
 local colors = _G.colors
 local device = _G.device
 
-local storageView = UI.Window {
+local storageView = UI.WizardPage {
 	title = 'Storage Options - General',
 	index = 2,
 	backgroundColor = colors.cyan,
@@ -34,11 +34,6 @@ local storageView = UI.Window {
 	},
 }
 
-function storageView:enable()
-	UI.Window.enable(self)
-	self:focusFirst()
-end
-
 function storageView:validate()
 	return self.form:save()
 end
@@ -64,7 +59,7 @@ end
 UI:getPage('nodeWizard').wizard:add({ storageGeneral = storageView })
 
 --[[ Locking Page ]]--
-local lockView = UI.Window {
+local lockView = UI.WizardPage {
 	title = 'Storage Options - Locking',
 	index = 3,
 	backgroundColor = colors.cyan,
@@ -102,11 +97,6 @@ function lockView:showLockTypes()
 	end
 	self.grid:update()
 	self.grid:draw()
-end
-
-function lockView:enable()
-	UI.Window.enable(self)
-	self:focusFirst()
 end
 
 function lockView:validate()

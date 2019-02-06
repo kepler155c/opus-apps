@@ -12,7 +12,7 @@ local device  = _G.device
 local os         = _G.os
 
 --[[ Configuration Screen ]]
-local wizardPage = UI.Window {
+local wizardPage = UI.WizardPage {
   title = 'Crafting Monitor',
   index = 2,
   backgroundColor = colors.cyan,

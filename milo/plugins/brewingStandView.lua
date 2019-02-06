@@ -15,7 +15,7 @@ When finished brewing, the recipe will be available upon refreshing.
 
 Note that you do not need to import items from the brewing stand or export blaze powder, this will be done automatically.]]
 
-local brewingStandView = UI.Window {
+local wizardPage = UI.WizardPage {
 	title = 'Brewing Stand',
 	index = 2,
 	backgroundColor = colors.cyan,
@@ -25,7 +25,7 @@ local brewingStandView = UI.Window {
 	},
 }
 
-function brewingStandView:isValidType(node)
+function wizardPage:isValidType(node)
 	local m = device[node.name]
 	return m and m.type == 'minecraft:brewing_stand'and {
 		name = 'Brewing Stand',
@@ -35,8 +35,8 @@ function brewingStandView:isValidType(node)
 	}
 end
 
-function brewingStandView:isValidFor(node)
+function wizardPage:isValidFor(node)
 	return node.mtype == 'brewingStand'
 end
 
-UI:getPage('nodeWizard').wizard:add({ brewingStand = brewingStandView })
+UI:getPage('nodeWizard').wizard:add({ brewingStand = wizardPage })

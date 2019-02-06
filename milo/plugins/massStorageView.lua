@@ -13,7 +13,7 @@ Must an interface for Refined Storage / Applied Energistics.
 Add all speed upgrades possible.
 ]]
 
-local wizardPage = UI.Window {
+local wizardPage = UI.WizardPage {
   title = 'Mass Storage',
   index = 2,
   backgroundColor = colors.cyan,

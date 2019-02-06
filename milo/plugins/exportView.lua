@@ -5,7 +5,7 @@ local Util   = require('util')
 local colors = _G.colors
 local device = _G.device
 
-local exportView = UI.Window {
+local exportView = UI.WizardPage {
 	title = 'Export item into inventory',
 	index = 3,
 	grid = UI.ScrollingGrid {

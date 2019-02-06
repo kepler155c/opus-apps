@@ -5,7 +5,7 @@ local colors = _G.colors
 local device = _G.device
 
 --[[ Configuration Screen ]]
-local wizardPage = UI.Window {
+local wizardPage = UI.WizardPage {
   title = 'Trashcan',
   index = 2,
   backgroundColor = colors.cyan,
@@ -39,11 +39,6 @@ local wizardPage = UI.Window {
     },
   },
 }
-
-function wizardPage:enable()
-  UI.Window.enable(self)
-  self:focusFirst()
-end
 
 function wizardPage:validate()
   return self.form:save()

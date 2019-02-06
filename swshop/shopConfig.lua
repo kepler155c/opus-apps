@@ -5,7 +5,7 @@ local device     = _G.device
 local os         = _G.os
 
 --[[ Configuration Page ]]--
-local wizardPage = UI.Window {
+local wizardPage = UI.WizardPage {
   title = 'Store Front',
   index = 2,
   backgroundColor = colors.cyan,

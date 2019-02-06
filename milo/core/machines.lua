@@ -192,7 +192,7 @@ nodeWizard = UI.Page {
 	wizard = UI.Wizard {
 		y = 2, ey = -2,
 		pages = {
-			general = UI.Window {
+			general = UI.WizardPage {
 				index = 1,
 				backgroundColor = colors.cyan,
 				form = UI.Form {
@@ -221,7 +221,7 @@ nodeWizard = UI.Page {
 					help = 'Contents of inventory',
 				},
 			},
-			confirmation = UI.Window {
+			confirmation = UI.WizardPage {
 				title = 'Confirm changes',
 				index = 2,
 				notice = UI.TextArea {
@@ -375,7 +375,7 @@ end
 
 --[[ General Page ]] --
 function nodeWizard.wizard.pages.general:enable()
-	UI.Window.enable(self)
+	UI.WizardPage.enable(self)
 	self:focusFirst()
 end
 

@@ -11,7 +11,7 @@ local template =
 Any items placed in this chest will be imported into storage.
 ]]
 
-local inputChestWizardPage = UI.Window {
+local inputChestWizardPage = UI.WizardPage {
   title = 'Input Chest',
   index = 2,
   backgroundColor = colors.cyan,

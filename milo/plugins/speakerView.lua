@@ -11,7 +11,7 @@ if speakerNode then
   Sound.setVolume(speakerNode.volume)
 end
 
-local wizardPage = UI.Window {
+local wizardPage = UI.WizardPage {
   title = 'Speaker',
   index = 2,
   backgroundColor = colors.cyan,

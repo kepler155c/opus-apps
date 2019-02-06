@@ -8,7 +8,7 @@ local learnPage = UI.Page {
   wizard = UI.Wizard {
     y = 2, ey = -2,
     pages = {
-      general = UI.Window {
+      general = UI.WizardPage {
         index = 1,
         grid = UI.ScrollingGrid {
           x = 2, ex = -2, y = 2, ey = -2,

@@ -11,7 +11,7 @@ local context = Milo:getContext()
 local machine
 
 local pages = {
-	machines = UI.Window {
+	machines = UI.WizardPage {
 		index = 2,
 		validFor = 'Machine Processing',
 		grid = UI.ScrollingGrid {
@@ -22,7 +22,7 @@ local pages = {
 			sortColumn = 'displayName',
 		},
 	},
-	confirmation = UI.Window {
+	confirmation = UI.WizardPage {
 		index = 3,
 		validFor = 'Machine Processing',
 		notice = UI.TextArea {
@@ -51,7 +51,7 @@ function pages.machines:enable()
 		end
 	end)
 	self.grid:setValues(t)
-	UI.Window.enable(self)
+	UI.WizardPage.enable(self)
 end
 
 function pages.machines:validate()

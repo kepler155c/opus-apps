@@ -23,7 +23,7 @@ local page = UI.Page {
 	},
 	tabs = UI.Tabs {
 		y = 2, ey = -2,
-		inventory = UI.Window {
+		inventory = UI.Tab {
 			tabTitle = 'Inventory',
 			grid = UI.ScrollingGrid {
 				y = 2, ey = -2,
@@ -33,7 +33,7 @@ local page = UI.Page {
 				sortColumn = 'displayName',
 			},
 		},
-		autostore = UI.Window {
+		autostore = UI.Tab {
 			tabTitle = 'Deposit',
 			grid = UI.ScrollingGrid {
 				y = 2, ey = -2,
@@ -71,7 +71,7 @@ function page.tabs.inventory:enable()
 	self.grid:setValues(list)
 	itemDB:flush()
 
-	return UI.Window.enable(self)
+	return UI.Tab.enable(self)
 end
 
 function page.tabs.inventory.grid:getRowTextColor(row)
@@ -107,7 +107,7 @@ function page.tabs.autostore:enable()
 	end
 	self.grid:setValues(list)
 
-	return UI.Window.enable(self)
+	return UI.Tab.enable(self)
 end
 
 function page.tabs.autostore:eventHandler(event)

@@ -11,7 +11,7 @@ local craftPage = UI.Page {
   wizard = UI.Wizard {
     y = 2, ey = -2,
     pages = {
-      quantity = UI.Window {
+      quantity = UI.WizardPage {
         index = 1,
         text = UI.Text {
           x = 6, y = 3,
@@ -36,7 +36,7 @@ local craftPage = UI.Page {
           },
         },
       },
-      resources = UI.Window {
+      resources = UI.WizardPage {
         index = 2,
         grid = UI.ScrollingGrid {
           y = 2, ey = -2,
@@ -105,7 +105,7 @@ function craftPage.wizard.pages.resources:enable()
   else
     self.grid:setValues({ })
   end
-  return UI.Window.enable(self)
+  return UI.WizardPage.enable(self)
 end
 
 function craftPage:eventHandler(event)

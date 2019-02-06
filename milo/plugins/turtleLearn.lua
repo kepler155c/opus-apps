@@ -6,7 +6,7 @@ local colors = _G.colors
 local turtle = _G.turtle
 
 local pages = {
-	turtleCraft = UI.Window {
+	turtleCraft = UI.WizardPage {
 		index = 2,
 		validFor = 'Turtle Crafting',
 		notice = UI.Text {
