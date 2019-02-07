@@ -4,6 +4,7 @@ if not _G.requireInjector then
 end
 
 local Terminal = require('terminal')
+local trace    = require('trace')
 local Util     = require('util')
 
 local colors     = _G.colors
@@ -55,13 +56,23 @@ local function nextUID()
   return UID
 end
 
+local function xprun(env, path, ...)
+	setmetatable(env, { __index = _G })
+	local fn, m = loadfile(path, env)
+	if fn then
+		return trace(fn, ...)
+	end
+	return fn, m
+end
+
 local function write(win, x, y, text)
   win.setCursorPos(x, y)
   win.write(text)
 end
 
 local function redraw()
-  monitor.clear()
+  --monitor.clear()
+  monitor.canvas:dirty()
   for k,process in ipairs(processes) do
     process.container.canvas:dirty()
     process:focus(k == #processes)
@@ -118,7 +129,7 @@ function Process:new(args)
     if args.fn then
       result, err = Util.runFunction(args.env, args.fn, table.unpack(self.args))
     elseif args.path then
-      result, err = Util.run(args.env, args.path, table.unpack(self.args))
+      result, err = xprun(args.env, args.path, table.unpack(self.args))
     end
 
     if not result and err and err ~= 'Terminated' then
@@ -369,7 +380,7 @@ function multishell.removeProcess(process)
   process.container.canvas:removeLayer()
 
   multishell.saveSession(sessionFile)
-  redraw()
+  --redraw()
 end
 
 function multishell.saveSession(filename)
@@ -461,8 +472,6 @@ function multishell.start()
         process:resume(unpack(event))
       end
     end
-
-    monitor.canvas:dirty()
 
     monitor.canvas:render(parentMon)
     local didRedraw = true
