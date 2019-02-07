@@ -1,8 +1,10 @@
-local injector = _G.requireInjector or load(http.get('https://raw.githubusercontent.com/kepler155c/opus/develop/sys/apis/injector.lua').readAll())()
-injector(_ENV)
+if not _G.requireInjector then
+  _ENV.LUA_PATH='https://raw.githubusercontent.com/kepler155c/opus/develop-1.8/sys/apis'
+  load(_G.http.get(_ENV.LUA_PATH .. '/injector.lua').readAll())()(_ENV)
+end
 
-local Canvas = require('ui.canvas')
-local Util   = require('util')
+local Terminal = require('terminal')
+local Util     = require('util')
 
 local colors     = _G.colors
 local os         = _G.os
@@ -24,25 +26,29 @@ local processes   = { }
 local parentTerm  = term.current()
 local sessionFile = args[1] or 'usr/config/mwm'
 local running
-local monitor
+local parentMon
 
 local defaultEnv = Util.shallowCopy(_ENV)
 defaultEnv.multishell = multishell
 if args[3] then
-  monitor = _G.device[args[3]]
+  parentMon = _G.device[args[3]]
 elseif args[2] then
-  monitor = peripheral.wrap(args[2]) or syntax()
+  parentMon = peripheral.wrap(args[2]) or syntax()
 else
-  monitor = peripheral.find('monitor') or syntax()
+  parentMon = peripheral.find('monitor') or syntax()
 end
 
-monitor.setTextScale(.5)
+parentMon.setTextScale(.5)
+
+local monDim, termDim = { }, { }
+monDim.width, monDim.height = parentMon.getSize()
+termDim.width, termDim.height = parentTerm.getSize()
+
+local monitor = Terminal.window(parentMon, 1, 1, monDim.width, monDim.height, false)
 monitor.setBackgroundColor(colors.gray)
 monitor.clear()
 
-local monDim, termDim = { }, { }
-monDim.width, monDim.height = monitor.getSize()
-termDim.width, termDim.height = parentTerm.getSize()
+monitor.canvas:setVisible(true)
 
 local function nextUID()
   UID = UID + 1
@@ -96,11 +102,14 @@ function Process:new(args)
 
   self:adjustDimensions()
 
-  self.container = window.create(monitor, self.x, self.y, self.width, self.height, false)
+  self.container = Terminal.window(monitor, self.x, self.y, self.width, self.height, false)
   self.window = window.create(self.container, 2, 3, args.width, args.height, true)
 
   self.terminal = self.window
-  Canvas.convertWindow(self.container, monitor, self.x, self.y)
+
+  self.container.canvas.parent = monitor.canvas
+  table.insert(monitor.canvas.layers, self.container.canvas)
+  self.container.canvas:setVisible(true)
 
   self.co = coroutine.create(function()
 
@@ -143,7 +152,6 @@ function Process:focus(focused)
 end
 
 function Process:drawSizers(showSizers)
-
   local sizeChars = {
     '\135', '\139', '\141', '\142'
   }
@@ -185,7 +193,6 @@ function Process:drawSizers(showSizers)
 end
 
 function Process:adjustDimensions()
-
   self.width = math.min(self.width, monDim.width)
   self.height = math.min(self.height, monDim.height)
 
@@ -196,7 +203,6 @@ function Process:adjustDimensions()
 end
 
 function Process:reposition()
-
   self:adjustDimensions()
   self.container.reposition(self.x, self.y, self.width, self.height)
   self.container.setBackgroundColor(colors.black)
@@ -286,8 +292,8 @@ function multishell.setFocus(uid)
 
       Util.removeByValue(processes, process)
       table.insert(processes, process)
-      multishell.restack()
 
+      process.container.canvas:raise()
       process:focus(true)
       process.container.canvas:dirty()
     end
@@ -338,9 +344,8 @@ function multishell.openTab(tabInfo)
   local process = Process:new(tabInfo)
 
   table.insert(processes, 1, process)
-  multishell.restack()
 
-  process.container.setVisible(true)
+  --process.container.canvas:setVisible(true)
 
   local previousTerm = term.current()
   process:resume()
@@ -361,7 +366,8 @@ end
 
 function multishell.removeProcess(process)
   Util.removeByValue(processes, process)
-  multishell.restack()
+  process.container.canvas:removeLayer()
+
   multishell.saveSession(sessionFile)
   redraw()
 end
@@ -456,13 +462,10 @@ function multishell.start()
       end
     end
 
-    local didRedraw
-    for _,process in pairs(processes) do
-      if process.container.canvas:isDirty() then
-        process.container.canvas:redraw(monitor)
-        didRedraw = true
-      end
-    end
+    monitor.canvas:dirty()
+
+    monitor.canvas:render(parentMon)
+    local didRedraw = true
 
     local focused = processes[#processes]
     if didRedraw and focused then
@@ -491,7 +494,7 @@ local function addShell()
   }, { __index = Process })
 
   function process:focus(focused)
-    self.window.setVisible(focused)
+    --self.window.setVisible(focused)
     if focused then
       self.window.restoreCursor()
     else
@@ -508,11 +511,9 @@ local function addShell()
   function process:click()
   end
 
-  process.container = window.create(monitor, process.x, process.y+1, process.width, process.height, true)
+  process.container = Terminal.window(monitor, process.x, process.y+1, process.width, process.height, true)
   process.window    = window.create(parentTerm, 1, 1, termDim.width, termDim.height, true)
   process.terminal  = process.window
-
-  Canvas.convertWindow(process.container, monitor, process.x, process.y)
 
   process.co = coroutine.create(function()
     print('To run a program on the monitor, type "fg <program>"')
