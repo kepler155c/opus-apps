@@ -1,6 +1,7 @@
 if not _G.requireInjector then
-  _ENV.LUA_PATH='https://raw.githubusercontent.com/kepler155c/opus/develop-1.8/sys/apis'
-  load(_G.http.get(_ENV.LUA_PATH .. '/injector.lua').readAll())()(_ENV)
+	local BASE ='https://raw.githubusercontent.com/kepler155c/opus/develop-1.8/sys/apis'
+	_ENV.LUA_PATH=BASE .. '/?.lua'
+	load(_G.http.get(_ENV.LUA_PATH .. '/injector.lua').readAll())()(_ENV)
 end
 
 local Terminal = require('terminal')
@@ -364,15 +365,6 @@ function multishell.openTab(tabInfo)
 
   multishell.saveSession(sessionFile)
   return process.uid
-end
-
-function multishell.restack()       -- reset the stacking order
-  for k,v in ipairs(processes) do
-    v.container.canvas.layers = { }
-    for l = k + 1, #processes do
-      table.insert(v.container.canvas.layers, processes[l].container.canvas)
-    end
-  end
 end
 
 function multishell.removeProcess(process)
