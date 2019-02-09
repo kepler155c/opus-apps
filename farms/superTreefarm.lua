@@ -758,7 +758,8 @@ local tasks = {
 
 local s, m = turtle.run(function()
   turtle.reset()
-  turtle.addFeatures('core.crafting')
+  require('core.turtle.crafting')
+  --turtle.addFeatures('core.crafting')
   turtle.set({
     attackPolicy = 'attack',
     digPolicy = 'dig',
