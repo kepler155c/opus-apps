@@ -152,7 +152,9 @@ end)
 
 Event.on('turtle_inventory', function()
   Milo:queueRequest({ }, function()
-    Milo:clearGrid()
+    if not Milo:isCraftingPaused() then
+      Milo:clearGrid()
+    end
   end)
 end)
 
