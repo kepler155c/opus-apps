@@ -8,9 +8,12 @@ local Util       = require('util')
 local colors     = _G.colors
 local device     = _G.device
 local fs         = _G.fs
+local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
 local turtle     = _G.turtle
+
+multishell.setTitle(multishell.getCurrent(), 'Milo')
 
 local function Syntax(msg)
   print([[
