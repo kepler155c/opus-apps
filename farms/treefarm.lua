@@ -751,7 +751,7 @@ local tasks = {
 
 local s, m = turtle.run(function()
 
-  turtle.addFeatures('level', 'crafting')
+  turtle.addFeatures('level', 'core.crafting')
   turtle.set({ attackPolicy = "attack" })
 
   while not turtle.isAborted() do
