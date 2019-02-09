@@ -132,7 +132,11 @@ Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
       local queue = context.queue
       context.queue = { }
       for _, entry in pairs(queue) do
-        entry.callback(entry.request)
+        local s, m = pcall(entry.callback, entry.request)
+        if not s and m then
+          _G._debug('callback crashed')
+          _G._debug(m)
+        end
       end
     end
   end
