@@ -309,7 +309,7 @@ function Craft.getCraftableAmountTest()
 end
 
 function Craft.craftRecipeTest(name, count)
-	local ChestAdapter = require('chestAdapter18')
+	local ChestAdapter = require('core.chestAdapter18')
 	local chestAdapter = ChestAdapter({ wrapSide = 'top', direction = 'down' })
 	Craft.setRecipes(Util.readTable('usr/etc/recipes.db'))
 	return { Craft.craftRecipe(Craft.recipes[name], count, chestAdapter) }

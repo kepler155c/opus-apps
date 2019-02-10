@@ -18,7 +18,8 @@ local levelScript = [[
   local Util  = require('util')
 
   local s, m = turtle.run(function()
-    turtle.addFeatures('level')
+    --turtle.addFeatures('level')
+    require('core.turtle.level')
     turtle.setStatus('Leveling')
 
     if turtle.enableGPS() then

@@ -1,5 +1,5 @@
 local Event        = require('event')
-local ChestAdapter = require('chestAdapter18')
+local ChestAdapter = require('core.chestAdapter18')
 local Point        = require('point')
 local Socket       = require('socket')
 local Util         = require('util')

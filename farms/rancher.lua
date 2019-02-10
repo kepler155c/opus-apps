@@ -1,4 +1,4 @@
-local Adapter    = require('chestAdapter18')
+local Adapter    = require('core.chestAdapter18')
 local Config     = require('config')
 local Peripheral = require('peripheral')
 local Util       = require('util')
