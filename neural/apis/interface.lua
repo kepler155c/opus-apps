@@ -11,10 +11,10 @@ for k,v in pairs(ni) do
 	Interface[k] = v
 end
 
-local function yap(pt)
-	local x, y, z = pt.x, pt.y + 1, pt.z
-	local pitch = -math.atan2(y, math.atan2(-(x - .5), z - .5))
-	local yaw = math.deg(math.atan2(-(x - .5), z - .5))
+function Interface.yap(spt, dpt)
+	local x, y, z = dpt.x - spt.x, dpt.y - spt.y, dpt.z - spt.z
+	local pitch = -math.atan2(y, math.sqrt(x * x + z * z))
+	local yaw = math.atan2(-x, z)
 
   return math.deg(yaw), math.deg(pitch)
 end
