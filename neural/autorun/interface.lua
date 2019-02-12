@@ -18,8 +18,9 @@ if device.neuralInterface and device.wireless_modem then
           gpt.z = math.min(math.max(gpt.z, -15), 15)
           return device.neuralInterface.walk(gpt.x, gpt.y, gpt.z)
         else
-          local y, p = ni.yap(pt, { x = x, y = y + 2, z = z })
-          return ni.launch(y, p, 1)
+          local y, p = ni.yap(pt, { x = x, y = y + 3, z = z })
+          ni.look(y, 0)
+          return ni.launch(y, p, 1.5)
         end
       end)
     end
