@@ -105,7 +105,7 @@ local function handleTransaction(transaction)
   local uid = math.random()
   print(string.format('requesting %d of %s', count, t.itemId))
   os.queueEvent('shop_provide', t.itemId, count, uid)
-  local timerId = os.startTimer(5)
+  local timerId = os.startTimer(60)
   while true do
     local e, p1, p2 = os.pullEvent()
     if e == 'timer' and p1 == timerId then

@@ -1,33 +1,31 @@
+-- credit: osmarks https://pastebin.com/ZP9Q1HCT
+
+local Sound = require('sound')
+
 local modules = _G.peripheral.wrap('back')
 local os = _G.os
 
-print('Based on code from osmarks')
-print('https://pastebin.com/ZP9Q1HCT')
-
-local function get_meta()
-  return modules.getMetaOwner()
-end
-
 while true do
-  local meta = get_meta()
-  if not meta.isSneaking then
-    local power = 4
-    if meta.isElytraFlying or meta.isFlying then power = 1 end
+  local meta = modules.getMetaOwner()
+  if not meta.isSneaking and meta.isElytraFlying then
 
-    while not meta.isSneaking and meta.isFlying or meta.isElytraFlying do
-      meta = get_meta()
-      if meta.pitch < 0 then
-        modules.launch(meta.yaw, meta.pitch, power)
-      end
-      os.sleep(0.1)
-    end
+  if meta.pitch < 0 then -- looking up
+      modules.launch(meta.yaw, meta.pitch, -meta.pitch / 22.5)
+      --Sound.play('entity.bobber.throw')
 
-    if not meta.isSneaking then
-      if meta.motionY < -0.8 then
-        modules.launch(0, 270, power / 2)
-      end
+    elseif meta.motionY < -0.5 then -- falling fast
+      modules.launch(0, 270, 2)
+      Sound.play('entity.bat.takeoff')
     end
+    os.sleep(0.1)
+
+  elseif not meta.isSneaking and meta.motionY < -0.8 then
+    print('fallling...')
+    modules.launch(0, 270, 2)
+    Sound.play('entity.bat.takeoff')
+    os.sleep(0.1)
+
+  else
+    os.sleep(0.4)
   end
-
-  os.sleep(0.4)
 end

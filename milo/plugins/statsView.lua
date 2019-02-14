@@ -326,7 +326,6 @@ Nodes         : %d
     local oterm = term.redirect(activityTab.term.win)
     activityTab.term.win.scrollBottom()
     Util.print(...)
-_G._p = activityTab.term
     term.redirect(oterm)
     if activityTab.enabled then
       activityTab:sync()
