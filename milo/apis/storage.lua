@@ -387,6 +387,10 @@ local function rawExport(source, target, item, qty, slot)
         local amount = math.min(qty, stack.count)
         if amount > 0 then
           amount = transfer(key, amount, slot)
+          if amount > 0 then
+            source.lastUpdate = os.clock()
+            target.lastUpdate = os.clock()
+          end
         end
         qty = qty - amount
         total = total + amount
@@ -458,6 +462,11 @@ local function rawInsert(source, target, slot, qty)
   end)
   if not s and m then
     _G._debug(m)
+  end
+
+  if count > 0 then
+    source.lastUpdate = os.clock()
+    target.lastUpdate = os.clock()
   end
 
   return count
