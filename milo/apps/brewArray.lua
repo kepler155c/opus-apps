@@ -1,4 +1,6 @@
 --[[
+authors: jakedacatman and kepler155c
+
 pastebin run uzghlbnc
 package install core
 package install milo
@@ -12,8 +14,8 @@ SETUP:
   Add as many brewing stands as needed.
 CONFIGURATION:
   Set turtle as a "Generic Inventory"
-  export coal to slot 2
-  import from slot 3
+  export blaze powder to slot 5
+  import from slots 7-9
 Use this turtle for machine crafting.
 --]]
 
