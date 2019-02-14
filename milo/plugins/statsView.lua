@@ -8,6 +8,7 @@ local colors     = _G.colors
 local context    = Milo:getContext()
 local device     = _G.device
 local os         = _G.os
+local term       = _G.term
 
 --[[ Configuration Page ]]--
 local template =
@@ -136,7 +137,13 @@ local function createPage(node)
           },
           sortColumn = 'name',
         },
-      }
+      },
+      [5] = UI.Tab {
+        tabTitle = 'Activity',
+        term = UI.Embedded {
+          --visible = true,
+        },
+      },
     },
     timestamp = os.clock(),
   }
@@ -145,6 +152,7 @@ local function createPage(node)
   local statsTab = page.tabs[2]
   local usageTab = page.tabs[3]
   local stateTab = page.tabs[4]
+  local activityTab = page.tabs[5]
 
   local function getStorageStats()
     local stats, totals = { }, { usedSlots = 0, totalSlots = 0, totalChests = 0 }
@@ -302,7 +310,7 @@ Nodes         : %d
       self:draw()
       self:sync()
     end)
-    Event.on({ 'milo_resume', 'milo_pause', 'storage_offline', 'storage_online' }, function()
+    self.ehandle = Event.on({ 'milo_resume', 'milo_pause', 'storage_offline', 'storage_online' }, function()
       self:draw()
       self:sync()
     end)
@@ -311,7 +319,19 @@ Nodes         : %d
 
   function overviewTab:disable()
     Event.off(self.handle)
+    Event.off(self.ehandle)
   end
+
+  table.insert(context.loggers, function(...)
+    local oterm = term.redirect(activityTab.term.win)
+    activityTab.term.win.scrollBottom()
+    Util.print(...)
+_G._p = activityTab.term
+    term.redirect(oterm)
+    if activityTab.enabled then
+      activityTab:sync()
+    end
+  end)
 
   UI:setPage(page)
   return page

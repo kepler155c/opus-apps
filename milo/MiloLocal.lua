@@ -67,6 +67,7 @@ local context = {
   tasks = { },
   queue = { },
   plugins = { },
+  loggers = { },
 
   storage = Storage(),
   turtleInventory = {
@@ -187,4 +188,17 @@ os.queueEvent(
   context.storage:isOnline() and 'storage_online' or 'storage_offline',
   context.storage:isOnline())
 
-UI:pullEvents()
+local oldDebug = _G._debug
+_G._debug = function(...)
+  for _,v in pairs(context.loggers) do
+    v(...)
+  end
+  oldDebug(...)
+end
+
+local s, m = pcall(function()
+  UI:pullEvents()
+end)
+
+_G._debug = oldDebug
+if not s then error(m) end
