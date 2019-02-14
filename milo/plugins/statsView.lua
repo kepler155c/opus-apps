@@ -84,18 +84,38 @@ local function createPage(node)
     tabs = UI.Tabs {
       [1] = UI.Tab {
         tabTitle = 'Overview',
-        titleBar = UI.TitleBar {
-          title = 'Overview',
+        backgroundColor = colors.black,
+        storageLabel = UI.Text {
+          x = 2, ex = -1, y = 5,
         },
+        storage = UI.ProgressBar {
+          x = 2, ex = -2, y = 6, height = 3,
+        },
+        onlineLabel = UI.Text {
+          x = 2, ex = -1, y = 10,
+          value = 'Storage Status',
+        },
+        online = UI.ProgressBar {
+          x = 2, ex = -2, y = 11, height = 3,
+          value = 100,
+        },
+        craftingLabel = UI.Text {
+          x = 2, ex = -1, y = 15,
+          value = 'Crafting Status',
+        },
+        crafting = UI.ProgressBar {
+          x = 2, ex = -2, y = 16, height = 3,
+          value = 100,
+        },
+      },
+      [2] = UI.Tab {
+        tabTitle = 'Stats',
         textArea = UI.TextArea {
           y = 3,
         },
       },
-      [2] = UI.Tab {
+      [3] = UI.Tab {
         tabTitle = 'Storage',
-        titleBar = UI.TitleBar {
-          title = 'Storage chest usage',
-        },
         grid = UI.Grid {
           y = 2,
           columns = {
@@ -107,11 +127,8 @@ local function createPage(node)
           sortColumn = 'name',
         },
       },
-      [3] = UI.Tab {
+      [4] = UI.Tab {
         tabTitle = 'Offline',
-        titleBar = UI.TitleBar {
-          title = 'Offline Nodes',
-        },
         grid = UI.ScrollingGrid {
           y = 2,
           columns = {
@@ -125,11 +142,12 @@ local function createPage(node)
   }
 
   local overviewTab = page.tabs[1]
-  local usageTab = page.tabs[2]
-  local stateTab = page.tabs[3]
+  local statsTab = page.tabs[2]
+  local usageTab = page.tabs[3]
+  local stateTab = page.tabs[4]
 
   local function getStorageStats()
-    local stats = { }
+    local stats, totals = { }, { usedSlots = 0, totalSlots = 0, totalChests = 0 }
     for n in context.storage:filterActive('storage') do
       if n.adapter.size and n.adapter.list then
         pcall(function()
@@ -147,10 +165,14 @@ local function createPage(node)
             used = n.adapter.__used,
             perc = math.floor(n.adapter.__used / n.adapter.__size * 100),
           })
+          totals.usedSlots = totals.usedSlots + n.adapter.__used
+          totals.totalSlots = totals.totalSlots + n.adapter.__size
+          totals.totalChests = totals.totalChests + 1
         end)
       end
     end
-    return stats
+
+    return stats, totals
   end
 
   function stateTab:refresh()
@@ -206,19 +228,21 @@ local function createPage(node)
     return UI.Grid:getRowTextColor(row, selected)
   end
 
-  function overviewTab.textArea:draw()
-    local stats = getStorageStats()
-    local usedSlots, totalSlots, totalItems = 0, 0, 0
+  function statsTab.textArea:draw()
+    local _, stats = getStorageStats()
+    local totalItems, nodeCount = 0, 0
     local formatString = [[
 Storage Usage : %d%%
 Slots         : %d of %d used
 Unique Items  : %d
 Total Items   : %d
+Nodes         : %d
 ]]
 
-    for _, v in pairs(stats) do
-      usedSlots = usedSlots + v.used
-      totalSlots = totalSlots + v.size
+    for _,v in pairs(context.storage.nodes) do
+      if v.adapter and v.adapter.online then
+        nodeCount = nodeCount + 1
+      end
     end
 
     for _,v in pairs(context.storage.cache) do
@@ -226,16 +250,60 @@ Total Items   : %d
     end
 
     self.value = string.format(formatString,
-      math.floor(usedSlots / totalSlots * 100),
-      usedSlots, totalSlots,
+      math.floor(stats.usedSlots / stats.totalSlots * 100),
+      stats.usedSlots,
+      stats.totalSlots,
       Util.size(context.storage.cache),
-      totalItems)
+      totalItems,
+      nodeCount)
     UI.TextArea.draw(self)
+  end
+
+  function statsTab:enable()
+    self.handle = Event.onInterval(5, function()
+      self.textArea:draw()
+      self:sync()
+    end)
+    UI.Tab.enable(self)
+  end
+
+  function statsTab:disable()
+    Event.off(self.handle)
+  end
+
+  function overviewTab:draw()
+    local _, stats = getStorageStats()
+    local percent = math.floor(stats.usedSlots / stats.totalSlots * 100)
+
+    self.online.progressColor = context.storage:isOnline() and colors.green or colors.red
+
+    self.onlineLabel.value = string.format('Storage Status: (%s chests)',
+      stats.totalChests)
+
+    self.crafting.progressColor = Milo:isCraftingPaused() and colors.yellow or colors.green
+
+    local color = colors.green
+    if percent > 90 then
+      color = colors.red
+    elseif percent > 75 then
+      color = colors.yellow
+    end
+    self.storage.progressColor = color
+    self.storage.value = percent
+
+    self.storageLabel.value = string.format('Usage: %s%% (%s of %s slots)',
+      percent, stats.usedSlots, stats.totalSlots)
+
+    UI.Tab.draw(self)
   end
 
   function overviewTab:enable()
     self.handle = Event.onInterval(5, function()
-      self.textArea:draw()
+      self:draw()
+      self:sync()
+    end)
+    Event.on({ 'milo_resume', 'milo_pause', 'storage_offline', 'storage_online' }, function()
+      self:draw()
       self:sync()
     end)
     UI.Tab.enable(self)
