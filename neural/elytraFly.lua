@@ -7,9 +7,10 @@ local os = _G.os
 
 while true do
   local meta = modules.getMetaOwner()
+
   if not meta.isSneaking and meta.isElytraFlying then
 
-  if meta.pitch < 0 then -- looking up
+    if meta.pitch < 0 then -- looking up
       modules.launch(meta.yaw, meta.pitch, -meta.pitch / 22.5)
       --Sound.play('entity.bobber.throw')
 
@@ -20,7 +21,7 @@ while true do
     os.sleep(0.1)
 
   elseif not meta.isSneaking and meta.motionY < -0.8 then
-    print('fallling...')
+    print('falling...')
     modules.launch(0, 270, 2)
     Sound.play('entity.bat.takeoff')
     os.sleep(0.1)
