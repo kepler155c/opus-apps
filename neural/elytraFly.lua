@@ -12,7 +12,7 @@ while true do
 
     if meta.pitch < 0 then -- looking up
       modules.launch(meta.yaw, meta.pitch, -meta.pitch / 22.5)
-      --Sound.play('entity.bobber.throw')
+      Sound.play('entity.bobber.throw')
 
     elseif meta.motionY < -0.5 then -- falling fast
       modules.launch(0, 270, 2)
