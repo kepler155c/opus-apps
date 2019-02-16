@@ -87,25 +87,31 @@ local function createPage(node)
         tabTitle = 'Overview',
         backgroundColor = colors.black,
         storageLabel = UI.Text {
-          x = 2, ex = -1, y = 5,
+          x = 2, ex = -1, y = 2,
         },
         storage = UI.ProgressBar {
-          x = 2, ex = -2, y = 6, height = 3,
+          x = 2, ex = -2, y = 3, height = 3,
+        },
+        unlockedLabel = UI.Text {
+          x = 2, ex = -1, y = 7,
+        },
+        unlocked = UI.ProgressBar {
+          x = 2, ex = -2, y = 8, height = 3,
         },
         onlineLabel = UI.Text {
-          x = 2, ex = -1, y = 10,
+          x = 2, ex = -1, y = 12,
           value = 'Storage Status',
         },
         online = UI.ProgressBar {
-          x = 2, ex = -2, y = 11, height = 3,
+          x = 2, ex = -2, y = 13, height = 3,
           value = 100,
         },
         craftingLabel = UI.Text {
-          x = 2, ex = -1, y = 15,
+          x = 2, ex = -1, y = 17,
           value = 'Crafting Status',
         },
         crafting = UI.ProgressBar {
-          x = 2, ex = -2, y = 16, height = 3,
+          x = 2, ex = -2, y = 18, height = 3,
           value = 100,
         },
       },
@@ -155,7 +161,15 @@ local function createPage(node)
   local activityTab = page.tabs[5]
 
   local function getStorageStats()
-    local stats, totals = { }, { usedSlots = 0, totalSlots = 0, totalChests = 0 }
+    local stats = { }
+    local totals = {
+      usedSlots = 0,
+      totalSlots = 0,
+      totalChests = 0,
+      unlockedSlots = 0,
+      usedUnlockedSlots = 0,
+    }
+
     for n in context.storage:filterActive('storage') do
       if n.adapter.size and n.adapter.list then
         pcall(function()
@@ -163,6 +177,7 @@ local function createPage(node)
             n.adapter.__size = n.adapter.size()
             n.adapter.__used = Util.size(n.adapter.list())
           end
+          local updated = n.adapter.__lastUpdate ~= n.adapter.lastUpdate
           if n.adapter.__lastUpdate ~= n.adapter.lastUpdate then
             n.adapter.__used = Util.size(n.adapter.list())
             n.adapter.__lastUpdate = n.adapter.lastUpdate
@@ -172,10 +187,15 @@ local function createPage(node)
             size = n.adapter.__size,
             used = n.adapter.__used,
             perc = math.floor(n.adapter.__used / n.adapter.__size * 100),
+            updated = updated,
           })
           totals.usedSlots = totals.usedSlots + n.adapter.__used
           totals.totalSlots = totals.totalSlots + n.adapter.__size
           totals.totalChests = totals.totalChests + 1
+          if not n.lock then
+            totals.unlockedSlots = totals.unlockedSlots + n.adapter.__size
+            totals.usedUnlockedSlots = totals.usedUnlockedSlots + n.adapter.__used
+          end
         end)
       end
     end
@@ -230,21 +250,21 @@ local function createPage(node)
   end
 
   function usageTab.grid:getRowTextColor(row, selected)
-    if row.lastCount and row.lastCount ~= row.count then
-      return row.count > row.lastCount and colors.yellow or colors.lightGray
-    end
-    return UI.Grid:getRowTextColor(row, selected)
+    return row.updated and colors.yellow or
+      UI.Grid:getRowTextColor(row, selected)
   end
 
   function statsTab.textArea:draw()
     local _, stats = getStorageStats()
     local totalItems, nodeCount = 0, 0
     local formatString = [[
-Storage Usage : %d%%
-Slots         : %d of %d used
-Unique Items  : %d
-Total Items   : %d
-Nodes         : %d
+Storage Usage  : %d%%
+Slots          : %d of %d used
+Unique Items   : %d
+Total Items    : %d
+Nodes          : %d
+
+Unlocked Slots : %d of %d (%d%%)
 ]]
 
     for _,v in pairs(context.storage.nodes) do
@@ -263,7 +283,10 @@ Nodes         : %d
       stats.totalSlots,
       Util.size(context.storage.cache),
       totalItems,
-      nodeCount)
+      nodeCount,
+      stats.usedUnlockedSlots,
+      stats.unlockedSlots,
+      math.floor(stats.usedUnlockedSlots / stats.unlockedSlots * 100))
     UI.TextArea.draw(self)
   end
 
@@ -281,7 +304,6 @@ Nodes         : %d
 
   function overviewTab:draw()
     local _, stats = getStorageStats()
-    local percent = math.floor(stats.usedSlots / stats.totalSlots * 100)
 
     self.online.progressColor = context.storage:isOnline() and colors.green or colors.red
 
@@ -290,6 +312,7 @@ Nodes         : %d
 
     self.crafting.progressColor = Milo:isCraftingPaused() and colors.yellow or colors.green
 
+    local percent = math.floor(stats.usedSlots / stats.totalSlots * 100)
     local color = colors.green
     if percent > 90 then
       color = colors.red
@@ -299,10 +322,23 @@ Nodes         : %d
     self.storage.progressColor = color
     self.storage.value = percent
 
-    self.storageLabel.value = string.format('Usage: %s%% (%s of %s slots)',
+    self.storageLabel.value = string.format('Total Usage: %s%% (%s of %s slots)',
       percent, stats.usedSlots, stats.totalSlots)
 
-    UI.Tab.draw(self)
+    percent = math.floor(stats.usedUnlockedSlots / stats.unlockedSlots * 100)
+    color = colors.green
+    if percent > 90 then
+      color = colors.red
+    elseif percent > 75 then
+      color = colors.yellow
+    end
+    self.unlocked.progressColor = color
+    self.unlocked.value = percent
+
+    self.unlockedLabel.value = string.format('Unlocked Usage: %s%% (%s of %s slots)',
+      percent, stats.usedUnlockedSlots, stats.usedSlots)
+
+      UI.Tab.draw(self)
   end
 
   function overviewTab:enable()

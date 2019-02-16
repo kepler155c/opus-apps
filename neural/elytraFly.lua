@@ -6,6 +6,12 @@ local modules = _G.peripheral.wrap('back')
 local os = _G.os
 local parallel = _G.parallel
 
+if not modules.launch or not modules.getMetaOwner then
+  error([[Required:
+* kinetic augment is required')
+* error('introspection module is required]])
+end
+
 local function run()
   while true do
     local meta = modules.getMetaOwner()
