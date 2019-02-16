@@ -3,6 +3,7 @@ local Event   = require('event')
 local GPS     = require('gps')
 local Point   = require('point')
 local Socket  = require('socket')
+local Sound = require('sound')
 local Util    = require('util')
 
 local device  = _G.device
@@ -150,6 +151,10 @@ local function run(member)
                 local _, b = next(found)
                 print(string.format('%s:%s:%s', b.x, b.y, b.z))
                 print('press r to continue')
+                for _ = 1, 3 do
+                  Sound.play('entity.bobber.throw')
+                  os.sleep(.3)
+                 end
               end
             end
             turtle.gotoY(pt.y)
