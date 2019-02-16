@@ -62,6 +62,7 @@ for _, b in pairs(scanner.scan()) do
           fuel = v.turtle.fuel,
           distance = 0,
           point = pt,
+          index = Util.size(pool),
         }
       end
     end
@@ -93,7 +94,7 @@ local function hijackTurtle(remoteId)
 	return hijack, socket
 end
 
-local function getNextPoint()
+local function getNextPoint(member)
   local z = math.floor(chunkIndex / 3)
   local x = chunkIndex % 3
 
@@ -103,7 +104,10 @@ local function getNextPoint()
     os.sleep(3)
   end
 
-  return { x = gpt.x + (x * 16), y = gpt.y, z = gpt.z + (z * 16) }
+  return {
+    x = gpt.x + (x * 16),
+    y = gpt.y + member.index,
+    z = gpt.z + (z * 16) }
 end
 
 local function run(member)
@@ -127,10 +131,9 @@ local function run(member)
         turtle.select(1)
 
         repeat
-          local pt = getNextPoint(turtle)
+          local pt = getNextPoint(member)
           if pt then
-            member.status = 'digging'
-
+            turtle.gotoY(pt.y)
             repeat until turtle._goto(pt)
 
             for _, v in ipairs(locations) do
@@ -145,11 +148,11 @@ local function run(member)
                 paused = true
                 print('found spawner')
                 local _, b = next(found)
-                print(string.format('%s:%s:%s'), b.x, b.y, b.z)
+                print(string.format('%s:%s:%s', b.x, b.y, b.z))
                 print('press r to continue')
               end
             end
-            turtle.gotoY(gpt.y)
+            turtle.gotoY(pt.y)
           end
 
           if member.fuel < 100 then

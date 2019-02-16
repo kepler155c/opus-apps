@@ -1,5 +1,6 @@
 local Util = require('util')
 
+local device = _G.device
 local turtle = _G.turtle
 
 if turtle then
