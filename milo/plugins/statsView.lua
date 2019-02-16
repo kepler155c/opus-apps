@@ -123,7 +123,7 @@ local function createPage(node)
       },
       [3] = UI.Tab {
         tabTitle = 'Storage',
-        grid = UI.Grid {
+        grid = UI.ScrollingGrid {
           y = 2,
           columns = {
             { heading = 'Name', key = 'name' },
@@ -151,7 +151,6 @@ local function createPage(node)
         },
       },
     },
-    timestamp = os.clock(),
   }
 
   local overviewTab = page.tabs[1]
