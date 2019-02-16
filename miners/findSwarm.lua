@@ -144,7 +144,7 @@ local function run(member)
               if Util.size(found) > 0 then
                 paused = true
                 print('found spawner')
-                local b = next(found)
+                local _, b = next(found)
                 print(string.format('%s:%s:%s'), b.x, b.y, b.z)
                 print('press r to continue')
               end
