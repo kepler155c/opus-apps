@@ -138,9 +138,9 @@ local function run(member)
                 break
               end
               turtle.gotoY(v)
-              turtle.equip('left', 'plethora:module:2')
+              turtle.equip('right', 'plethora:module:2')
               local found = turtle.scan(blocks)
-              turtle.equip('left', 'minecraft:diamond_pickaxe')
+              turtle.equip('right', 'minecraft:diamond_pickaxe')
               if Util.size(found) > 0 then
                 paused = true
                 print('found spawner')
