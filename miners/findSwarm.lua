@@ -23,6 +23,8 @@ local blocks = Util.transpose({
 })
 local locations = { }
 
+gpt.x = gpt.x + 1
+
 local function getLocations()
   local y = gpt.y - 8
   while y > 5 do
@@ -35,9 +37,6 @@ local function getLocations()
 end
 
 getLocations()
-for _, v in pairs(locations) do
-  print(v)
-end
 
 for _, b in pairs(scanner.scan()) do
   if b.name == 'computercraft:turtle_advanced' or
@@ -152,7 +151,7 @@ local function run(member)
                 print(string.format('%s:%s:%s', b.x, b.y, b.z))
                 print('press r to continue')
                 for _ = 1, 3 do
-                  Sound.play('entity.bobber.throw')
+                  Sound.play('block.note.pling')
                   os.sleep(.3)
                  end
               end
@@ -165,6 +164,9 @@ local function run(member)
             break
           end
         until abort
+
+        turtle.gotoY(gpt.y + member.index)
+        turtle._goto({ x = gpt.x, y = gpt.y + member.index, z = gpt.z })
       end
 
       repeat until turtle.gotoY(gpt.y)
@@ -192,6 +194,7 @@ Event.on('char', function(_, k)
     print('Resuming')
     paused = false
   elseif k == 'a' then
+    gpt = GPS.getPoint()
     print('Aborting')
     abort = true
   end
