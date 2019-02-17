@@ -3,7 +3,7 @@ local Event   = require('event')
 local GPS     = require('gps')
 local Point   = require('point')
 local Socket  = require('socket')
-local Sound = require('sound')
+local Sound   = require('sound')
 local Util    = require('util')
 
 local device  = _G.device
@@ -19,7 +19,10 @@ local paused, abort
 local chunkIndex = 0
 local pool = { }
 local blocks = Util.transpose({
-  'minecraft:chest', 'minecraft:mob_spawner', 'minecraft:mossy_cobblestone'
+  'minecraft:chest',
+--  'minecraft:mob_spawner',
+  'quark:crystal',
+  'minecraft:mossy_cobblestone'
 })
 local locations = { }
 
@@ -42,11 +45,6 @@ for _, b in pairs(scanner.scan()) do
   if b.name == 'computercraft:turtle_advanced' or
      b.name == 'computercraft:turtle' then
 
-     local pt = {
-       x = gpt.x + b.x,
-       y = gpt.y + b.y,
-       z = gpt.z + b.z,
-    }
     local v = scanner.getBlockMeta(b.x, b.y, b.z)
     if v and v.computer then
       if not v.computer.isOn then
@@ -54,14 +52,14 @@ for _, b in pairs(scanner.scan()) do
       elseif v.turtle.fuel < 100 then
         print('not enough fuel: ' .. v.computer.id)
       else
-        pt.heading = Point.facings[v.state.facing].heading
-
         pool[v.computer.id] = {
           id = v.computer.id,
-          label = v.computer.label,
-          fuel = v.turtle.fuel,
-          distance = 0,
-          point = pt,
+          point = {
+            x = gpt.x + b.x,
+            y = gpt.y + b.y,
+            z = gpt.z + b.z,
+            heading = Point.facings[v.state.facing].heading,
+          },
           index = Util.size(pool),
         }
       end
