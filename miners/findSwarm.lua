@@ -9,6 +9,8 @@ local Util    = require('util')
 local device  = _G.device
 local os      = _G.os
 
+local COLUMNS = 4
+
 local gpt = GPS.getPoint() or error('GPS not found')
 local scanner = device.neuralInterface
 if not scanner or not scanner.scan then
@@ -93,8 +95,8 @@ local function hijackTurtle(remoteId)
 end
 
 local function getNextPoint(member)
-  local z = math.floor(chunkIndex / 3)
-  local x = chunkIndex % 3
+  local z = math.floor(chunkIndex / COLUMNS)
+  local x = chunkIndex % COLUMNS
 
   chunkIndex = chunkIndex + 1
 
@@ -132,11 +134,12 @@ local function run(member)
           local pt = getNextPoint(member)
           if pt then
             turtle.gotoY(pt.y)
-            repeat
+            while not turtle._goto(pt) do
               if abort then
                 break
               end
-            until turtle._goto(pt)
+              os.sleep(.5)
+            end
 
             for _, v in ipairs(locations) do
               if abort then
@@ -148,7 +151,6 @@ local function run(member)
               turtle.equip('right', 'minecraft:diamond_pickaxe')
               if Util.size(found) > 0 then
                 paused = true
-                print('found spawner')
                 local _, b = next(found)
                 print(string.format('%s:%s:%s %s', b.x, b.y, b.z, b.name))
                 print('press r to continue')

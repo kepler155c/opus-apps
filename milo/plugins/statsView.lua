@@ -130,6 +130,7 @@ local function createPage(node)
             { heading = 'Size', key = 'size', width = 5 },
             { heading = 'Used', key = 'used', width = 5 },
             { heading = 'Perc', key = 'perc', width = 5 },
+            -- TODO: add % to each number
           },
           sortColumn = 'name',
         },
@@ -335,7 +336,7 @@ Unlocked Slots : %d of %d (%d%%)
     self.unlocked.value = percent
 
     self.unlockedLabel.value = string.format('Unlocked Usage: %s%% (%s of %s slots)',
-      percent, stats.usedUnlockedSlots, stats.usedSlots)
+      percent, stats.usedUnlockedSlots, stats.unlockedSlots)
 
       UI.Tab.draw(self)
   end
