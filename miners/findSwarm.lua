@@ -156,11 +156,6 @@ local function run(member)
             end
             turtle.gotoY(pt.y)
           end
-
-          if member.fuel < 100 then
-            member.status = 'out of fuel'
-            break
-          end
         until abort
 
         turtle.gotoY(gpt.y + member.index)
