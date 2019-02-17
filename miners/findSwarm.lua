@@ -132,7 +132,11 @@ local function run(member)
           local pt = getNextPoint(member)
           if pt then
             turtle.gotoY(pt.y)
-            repeat until turtle._goto(pt)
+            repeat
+              if abort then
+                break
+              end
+            until turtle._goto(pt)
 
             for _, v in ipairs(locations) do
               if abort then
@@ -146,7 +150,7 @@ local function run(member)
                 paused = true
                 print('found spawner')
                 local _, b = next(found)
-                print(string.format('%s:%s:%s', b.x, b.y, b.z))
+                print(string.format('%s:%s:%s %s', b.x, b.y, b.z, b.name))
                 print('press r to continue')
                 for _ = 1, 3 do
                   Sound.play('block.note.pling')
@@ -166,6 +170,7 @@ local function run(member)
     end)
 
     if m then
+      Sound.play('entity.villager.no')
       _G.printError(m)
     end
 
