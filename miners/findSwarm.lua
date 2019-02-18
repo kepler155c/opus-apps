@@ -97,6 +97,7 @@ local function run(member)
     point = member.point,
   })
   turtle.select(1)
+  local swapSide = turtle.isEquipped('modem') == 'right' and 'left' or 'right'
 
   repeat
     local pt = getNextPoint(member)
@@ -114,9 +115,9 @@ local function run(member)
           break
         end
         turtle.go({ y = v })
-        turtle.equip('right', 'plethora:module:2')
+        turtle.equip(swapSide, 'plethora:module:2')
         local found = turtle.scan(blocks)
-        turtle.equip('right', 'minecraft:diamond_pickaxe')
+        turtle.equip(swapSide, 'minecraft:diamond_pickaxe')
         if Util.size(found) > 0 then
           paused = true
           local _, b = next(found)
