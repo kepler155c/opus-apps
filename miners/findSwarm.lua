@@ -3,7 +3,7 @@ local Event   = require('event')
 local GPS     = require('gps')
 local Point   = require('point')
 local Sound   = require('sound')
-local Swarm   = require('swarm')
+local Swarm   = require('turtle.swarm')
 local Util    = require('util')
 
 local device  = _G.device
