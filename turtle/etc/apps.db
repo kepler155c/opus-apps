@@ -1,0 +1,8 @@
+{
+	[ "47b3d6dc1170faf4ae496fff3db374817bf32e2f" ] = {
+		title = "Refuel",
+		category = "Apps",
+		run = "lavaRefuel.lua",
+		requires = 'turtle',
+	},
+}

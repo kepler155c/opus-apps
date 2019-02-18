@@ -1,5 +1,3 @@
-_G.requireInjector(_ENV)
-
 local Point = require('point')
 local Util  = require('util')
 
@@ -67,7 +65,7 @@ local function findObsidian()
     end
 
     node = Point.closest(turtle.point, nodes)
-    if not turtle._goto(node) then
+    if not turtle.go(node) then
       break
     end
   until turtle.isAborted()
@@ -91,7 +89,7 @@ turtle.run(function()
       if not turtle.select('minecraft:water_bucket') then
         break
       end
-      turtle._goto({ x = 0, z = 0 })
+      turtle.go({ x = 0, z = 0 })
       turtle.placeDown()
       os.sleep(2)
       turtle.placeDown()
@@ -104,5 +102,5 @@ turtle.run(function()
     error(m)
   end
 
-  turtle._goto({ x = 0, y = 0, z = 0, heading = 0 })
+  turtle.go({ x = 0, y = 0, z = 0, heading = 0 })
 end)

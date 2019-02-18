@@ -308,7 +308,7 @@ local function getCobblestone(count)
 
     until turtle.getItemCount(COBBLESTONE) >= count
 
-    turtle._goto(pt)
+    turtle.go(pt)
     turtle.placeDown(DIRT)
 
     turtle.drop(DIRT)

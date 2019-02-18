@@ -1,0 +1,6 @@
+{
+	title = 'Turtle programs and apis',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/turtle',
+	description = [[Support programs and apis for turtles]],
+	licence = 'MIT',
+}

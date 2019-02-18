@@ -1,9 +1,12 @@
 local Util = require('util')
 
 local device = _G.device
+local fs     = _G.fs
 local turtle = _G.turtle
 
 if turtle then
+  fs.mount('sys/apps/system/turtle.lua', 'linkfs', 'packages/turtle/system/turtle.lua')
+
   function turtle.scan(blocks)
     local pt = turtle.point
     local scanner = device['plethora:scanner'] or error('Scanner not equipped')

@@ -2,8 +2,8 @@
 local Event   = require('event')
 local GPS     = require('gps')
 local Point   = require('point')
-local Socket  = require('socket')
 local Sound   = require('sound')
+local Swarm   = require('swarm')
 local Util    = require('util')
 
 local device  = _G.device
@@ -19,7 +19,7 @@ end
 
 local paused, abort
 local chunkIndex = 0
-local pool = { }
+local swarm = Swarm()
 local blocks = Util.transpose({
   'minecraft:chest',
 --  'minecraft:mob_spawner',
@@ -41,8 +41,6 @@ local function getLocations()
   end
 end
 
-getLocations()
-
 for _, b in pairs(scanner.scan()) do
   if b.name == 'computercraft:turtle_advanced' or
      b.name == 'computercraft:turtle' then
@@ -54,44 +52,18 @@ for _, b in pairs(scanner.scan()) do
       elseif v.turtle.fuel < 100 then
         print('not enough fuel: ' .. v.computer.id)
       else
-        pool[v.computer.id] = {
-          id = v.computer.id,
+        swarm:add(v.computer.id, {
           point = {
             x = gpt.x + b.x,
             y = gpt.y + b.y,
             z = gpt.z + b.z,
             heading = Point.facings[v.state.facing].heading,
           },
-          index = Util.size(pool),
-        }
+          index = Util.size(swarm.pool),
+        })
       end
     end
   end
-end
-
-local function hijackTurtle(remoteId)
-	local socket, msg = Socket.connect(remoteId, 188)
-
-  if not socket then
-		error(msg)
-	end
-
-	socket:write('turtle')
-	local methods = socket:read()
-
-	local hijack = { }
-	for _,method in pairs(methods) do
-		hijack[method] = function(...)
-			socket:write({ fn = method, args = { ... } })
-			local resp = socket:read()
-			if not resp then
-				error('timed out: ' .. method)
-			end
-			return table.unpack(resp)
-		end
-	end
-
-	return hijack, socket
 end
 
 local function getNextPoint(member)
@@ -107,85 +79,75 @@ local function getNextPoint(member)
   return {
     x = gpt.x + (x * 16),
     y = gpt.y + member.index,
-    z = gpt.z + (z * 16) }
+    z = gpt.z + (z * 16)
+  }
 end
 
 local function run(member)
-  Event.addRoutine(function()
-    local turtle, socket
-    local _, m = pcall(function()
-      member.active = true
-      turtle, socket = hijackTurtle(member.id)
+  local turtle = member.turtle
 
-      if turtle then
-        if not turtle.has('plethora:module:2') then
-          error('missing scanner')
+  if not turtle.has('plethora:module:2') then
+    error('missing scanner')
+  end
+  turtle.reset()
+  turtle.set({
+    attackPolicy = 'attack',
+    digPolicy = 'turtleSafe',
+    movementStrategy = 'goto',
+    point = member.point,
+  })
+  turtle.select(1)
+
+  repeat
+    local pt = getNextPoint(member)
+    if pt then
+      turtle.go({ y = pt.y })
+      while not turtle.go(pt) do
+        if abort then
+          break
         end
-        turtle.reset()
-        turtle.set({
-          attackPolicy = 'attack',
-          digPolicy = 'turtleSafe',
-          movementStrategy = 'goto',
-          point = member.point,
-        })
-        turtle.select(1)
-
-        repeat
-          local pt = getNextPoint(member)
-          if pt then
-            turtle.gotoY(pt.y)
-            while not turtle._goto(pt) do
-              if abort then
-                break
-              end
-              os.sleep(.5)
-            end
-
-            for _, v in ipairs(locations) do
-              if abort then
-                break
-              end
-              turtle.gotoY(v)
-              turtle.equip('right', 'plethora:module:2')
-              local found = turtle.scan(blocks)
-              turtle.equip('right', 'minecraft:diamond_pickaxe')
-              if Util.size(found) > 0 then
-                paused = true
-                local _, b = next(found)
-                print(string.format('%s:%s:%s %s', b.x, b.y, b.z, b.name))
-                print('press r to continue')
-                for _ = 1, 3 do
-                  Sound.play('block.note.pling')
-                  os.sleep(.3)
-                 end
-              end
-            end
-            turtle.gotoY(pt.y)
-          end
-        until abort
-
-        turtle.gotoY(gpt.y + member.index)
-        turtle._goto({ x = gpt.x, y = gpt.y + member.index, z = gpt.z })
+        os.sleep(.5)
       end
 
-      repeat until turtle.gotoY(gpt.y)
-    end)
-
-    if m then
-      Sound.play('entity.villager.no')
-      _G.printError(m)
+      for _, v in ipairs(locations) do
+        if abort then
+          break
+        end
+        turtle.go({ y = v })
+        turtle.equip('right', 'plethora:module:2')
+        local found = turtle.scan(blocks)
+        turtle.equip('right', 'minecraft:diamond_pickaxe')
+        if Util.size(found) > 0 then
+          paused = true
+          local _, b = next(found)
+          print(string.format('%s:%s:%s %s', b.x, b.y, b.z, b.name))
+          print('press r to continue')
+          for _ = 1, 3 do
+            Sound.play('block.note.pling')
+            os.sleep(.3)
+            end
+        end
+      end
+      turtle.go({ y = pt.y })
     end
+  until abort
 
-    pool[member.id] = nil
-    print('Turtles: ' .. Util.size(pool))
-    if Util.size(pool) == 0 then
-      Event.exitPullEvents()
-    end
+  turtle.go({ y = gpt.y + member.index })
+  turtle.go({ x = gpt.x, y = gpt.y + member.index, z = gpt.z })
 
-    if socket then
-      socket:close()
-    end
-  end)
+  repeat until turtle.go({ y = gpt.y })
+end
+
+function swarm:onRemove(member, success, message)
+  if not success then
+    Sound.play('entity.villager.no')
+    _G.printError(message)
+  end
+
+  print('Turtles: ' .. Util.size(self.pool))
+  if Util.size(self.pool) == 0 then
+    Event.exitPullEvents()
+  end
 end
 
 print('press a to abort, r to resume')
@@ -200,9 +162,9 @@ Event.on('char', function(_, k)
   end
 end)
 
-Util.print('Found %s turtles', Util.size(pool))
-Util.each(pool, function(member)
-  run(member)
-end)
+getLocations()
+
+Util.print('Found %s turtles', Util.size(swarm.pool))
+swarm:run(run)
 
 Event.pullEvents()

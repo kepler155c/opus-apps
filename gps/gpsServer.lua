@@ -185,7 +185,7 @@ if args[1] == 'build' then
 
 	turtle.setPoint({ x = 0, y = -y, z = 0, heading = 0 })
 	build()
-	turtle._goto({ x = 0, y = 1, z = 0, heading = 0 })
+	turtle.go({ x = 0, y = 1, z = 0, heading = 0 })
 
 	configure()
 

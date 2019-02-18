@@ -56,7 +56,7 @@ local s, m = turtle.run(function()
 end)
 
 turtle.gotoY(0)
-turtle._goto({ x = 0, y = 0, z = 0 })
+turtle.go({ x = 0, y = 0, z = 0 })
 
 turtle.unequip('right')
 print('Fuel: ' .. turtle.getFuelLevel())

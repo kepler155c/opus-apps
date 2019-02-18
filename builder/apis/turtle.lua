@@ -446,7 +446,7 @@ function TurtleBuilder:inAirDropoff()
       self:log('Received supply location')
       os.sleep(0)
 
-      turtle._goto(pt)
+      turtle.go(pt)
       os.sleep(.1)  -- random computer is not connected error
 
       local chestAdapter = Adapter.wrap({ direction = 'down', side = 'top' })
@@ -508,7 +508,7 @@ function TurtleBuilder:inAirResupply()
       self:log('Received supply location')
       os.sleep(0)
 
-      turtle._goto(pt)
+      turtle.go(pt)
       os.sleep(.1)  -- random computer is not connected error
 
       local chestAdapter = Adapter.wrap({ direction = 'down', side = 'top' })
@@ -608,7 +608,7 @@ function TurtleBuilder:gotoSupplyPoint()
     -- go to the corner closest to the supplies point
     -- pathfind the rest of the way
     local pt = self:getBuildingCorner(turtle.point.y)
-    turtle._goto({ x = pt.x, z = pt.z })
+    turtle.go({ x = pt.x, z = pt.z })
     turtle.set({
       digPolicy = 'digNone',
       attackPolicy = 'attackNone',
@@ -818,8 +818,8 @@ function TurtleBuilder:placePiston(b)
   return success
 end
 
-function TurtleBuilder:_goto(x, z, y, heading)
-  if not turtle._goto({ x = x, z = z, y = y, heading = heading }) then
+function TurtleBuilder:go(x, z, y, heading)
+  if not turtle.go({ x = x, z = z, y = y, heading = heading }) then
     print('stuck')
     print('Press enter to continue')
     os.sleep(1)
@@ -844,7 +844,7 @@ function TurtleBuilder:gotoEx(x, z, y, h, travelPlane)
   elseif distance > 1 then
     self:gotoTravelPlane(travelPlane)
   end
-  self:_goto(x, z, y, h)
+  self:go(x, z, y, h)
 end
 
 function TurtleBuilder:placeDirectionalBlock(b, slot, travelPlane)
@@ -1128,7 +1128,7 @@ function TurtleBuilder:build()
         if b.y ~= turtle.getPoint().y then
           turtle.gotoY(b.y)
         end
-        self:_goto(b.x, b.z, b.y)
+        self:go(b.x, b.z, b.y)
         turtle.digDown()
 
         -- if no supplier, then should fill all slots
@@ -1171,7 +1171,7 @@ function TurtleBuilder:build()
           end
         else
           self:gotoTravelPlane(travelPlane)
-          self:_goto(b.x, b.z, b.y)
+          self:go(b.x, b.z, b.y)
           b.placed = self:placeDown(slot)
         end
 

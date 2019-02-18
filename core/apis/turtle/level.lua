@@ -163,7 +163,7 @@ function turtle.level(startPt, endPt, firstPt, verbose)
 
     local node = closestPoint(turtle.point, nodes)
     node = getAdjacentPoint(node)
-    if not turtle._goto(node) then
+    if not turtle.go(node) then
       break
     end
   until turtle.isAborted()

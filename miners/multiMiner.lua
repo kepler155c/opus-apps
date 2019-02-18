@@ -104,7 +104,7 @@ local function run(member, point)
         local topPoint = Point.copy(chestPoint)
         topPoint.y = topPoint.y + 2
         turtle.gotoY(topPoint.y)
-        while not turtle._goto(topPoint) do
+        while not turtle.go(topPoint) do
           os.sleep(.5)
         end
 
@@ -196,14 +196,14 @@ local function run(member, point)
 
       if chestPoint then
         dropOff()
-        while not turtle._goto(Point.above(spt)) do
+        while not turtle.go(Point.above(spt)) do
           os.sleep(.5)
         end
         turtle.set({ digPolicy = 'dig' })
-        turtle._goto(spt)
+        turtle.go(spt)
       else
         turtle.gotoY(spt.y)
-        turtle._goto(spt)
+        turtle.go(spt)
       end
     end)
 

@@ -139,7 +139,7 @@ local function harvest(blocks)
       turtle.digForwardAt(b)
 
     elseif b.action == 'drop' and not dropped then
-      if turtle._goto(Point.above(b)) then
+      if turtle.go(Point.above(b)) then
         turtle.eachFilledSlot(function(slot)
           if not retain[slot.name] and not retain[slot.key] then
             turtle.select(slot.index)
@@ -212,7 +212,7 @@ local function harvest(blocks)
       local hi = Point.headings[(h + 2) % 4] -- opposite heading
 
       -- without pathfinding, will be unable to circle log
-      if turtle._goto({ x = b.x + hi.xd, z = b.z + hi.zd, heading = h }) then
+      if turtle.go({ x = b.x + hi.xd, z = b.z + hi.zd, heading = h }) then
         if turtle.dig() then
           turtle.place(crops[b.name].seed)
         end

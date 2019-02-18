@@ -1,4 +1,4 @@
-local Pathing = require('turtle.pathfind')
+local Pathing = require('pathfind')
 local Point   = require('point')
 local Util    = require('util')
 

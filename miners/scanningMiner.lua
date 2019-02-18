@@ -233,7 +233,7 @@ end
 local function safeGoto(x, z, y, h)
   local oldStatus = turtle.getStatus()
 
-  while not turtle._goto({ x = x, z = z, y = y or turtle.point.y, heading = h }) do
+  while not turtle.go({ x = x, z = z, y = y or turtle.point.y, heading = h }) do
     status('stuck')
     if turtle.isAborted() then
       return false
@@ -647,7 +647,7 @@ Event.addRoutine(function()
 
   status(success and 'finished' or turtle.isAborted() and 'aborting' or 'error')
   turtle.gotoY(0)
-  if turtle._goto(HOME_PT) then
+  if turtle.go(HOME_PT) then
     unload()
   end
   turtle.reset()
