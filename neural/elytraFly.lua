@@ -33,7 +33,7 @@ local function run()
       else
         os.sleep(0.1)
       end
- 
+
     elseif meta.isSneaking and not meta.isElytraFlying and meta.pitch == -90 then
       if launchCounter < 2 then
         launchCounter = launchCounter + 1
@@ -63,6 +63,7 @@ parallel.waitForAny(
   function()
     print('\nFlight control initialized')
     print('\nSneak and look straight up for launch')
+    print('Sneak to deactivate during flight')
     print('\nPress any key to exit')
     os.pullEvent('char')
   end,

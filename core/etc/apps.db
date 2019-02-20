@@ -72,6 +72,11 @@ Needs work
     requires = "turtle",
   },
 --]]
+  [ "turtleFollow" ] = {
+    title = "Follow",
+    category = "Turtle",
+    run = "Follow.lua",
+  },
   df485c871329671f46570634d63216761441bcd6 = {
     title = "Devices",
     category = "System",

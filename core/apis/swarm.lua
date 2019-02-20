@@ -42,19 +42,21 @@ end
 
 function Swarm:run(fn)
   for id, member in pairs(self.pool) do
-    Event.addRoutine(function()
-      local s, m = pcall(function()
-        member.turtle, member.socket = hijackTurtle(id)
+    if not member.socket then
+      Event.addRoutine(function()
+        local s, m = pcall(function()
+          member.turtle, member.socket = hijackTurtle(id)
 
-        fn(member)
+          fn(member)
+        end)
+        if member.socket then
+          member.socket:close()
+          member.socket = nil
+        end
+        self.pool[id] = nil
+        self:onRemove(member, s, m)
       end)
-      if member.socket then
-        member.socket:close()
-        member.socket = nil
-      end
-      self.pool[id] = nil
-      self:onRemove(member, s, m)
-    end)
+    end
   end
 end
 
