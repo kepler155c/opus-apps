@@ -1,8 +1,13 @@
 local Terminal = require('terminal')
 local Util     = require('util')
 
-local shell = _ENV.shell
-local term  = _G.term
+local device   = _G.device
+local os       = _G.os
+local parallel = _G.parallel
+local shell    = _ENV.shell
+local term     = _G.term
+
+-- Example usage: mirror -r -e "vnc 1"
 
 local options = {
 	scale       = { arg = 's', type = 'flag', value = false,
@@ -22,29 +27,52 @@ if not Util.getOptions(options, args) then
 	return
 end
 
-local mon = _G.device[options.monitor.value]
+local mon
+for k,v in pairs(device) do
+	if k == options.monitor.value or v.side == options.monitor.value then
+		mon = v
+		break
+	end
+end
+
 if not mon then
 	error('mirror: Invalid device')
 end
 
 mon.clear()
 
-if options.scale.value then
-	mon.setTextScale(.5)
-end
+mon.setTextScale(options.scale.value and .5 or 1)
 mon.setCursorPos(1, 1)
 
-local oterm = Terminal.copy(term.current())
-Terminal.mirror(term.current(), mon)
+local oterm = term.current()
 
 if options.resize.value then
-	term.current().getSize = mon.getSize
+	oterm.reposition(1, 1, mon.getSize())
 end
 
+local mirror = Terminal.mirror(term.current(), mon)
+
+term.redirect(mirror)
+
 if options.execute.value then
-	-- TODO: allow args to be passed
-	shell.run(options.execute.value) -- unpack(args))
-	Terminal.copy(oterm, term.current())
+	parallel.waitForAny(
+		function()
+			shell.run(options.execute.value)
+		end,
+
+		function()
+			while true do
+				local event, side, x, y = os.pullEventRaw('monitor_touch')
+
+				if event == 'monitor_touch' and side == mon.side then
+					os.queueEvent('mouse_click', 1, x, y + 1)
+					os.queueEvent('mouse_up',    1, x, y + 1)
+				end
+			end
+		end
+	)
+
+	term.redirect(oterm)
 
 	mon.setCursorBlink(false)
 end

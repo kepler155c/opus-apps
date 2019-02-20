@@ -9,10 +9,10 @@
     category = "Neural",
     run = "neuralFight.lua",
   },
-  [ "neuralFly" ] = {
-    title = "Fly",
+  [ "elytraFly" ] = {
+    title = "ElytraFly",
     category = "Neural",
-    run = "neuralFly.lua",
+    run = "elytraFly.lua",
   },
   [ "neuralRemote" ] = {
     title = "Remote",

@@ -1,4 +1,3 @@
-
 local Event   = require('event')
 local GPS     = require('gps')
 local Point   = require('point')

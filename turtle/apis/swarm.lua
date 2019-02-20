@@ -1,3 +1,4 @@
+local class   = require('class')
 local Event   = require('event')
 local Socket  = require('socket')
 local Util    = require('util')
@@ -26,17 +27,19 @@ local function hijackTurtle(remoteId)
 
 	return hijack, socket
 end
-local class = require('class')
+
 local Swarm = class()
 function Swarm:init(args)
   self.pool = { }
   Util.merge(self, args)
 end
+
 function Swarm:add(id, args)
   local member = Util.shallowCopy(args)
   member.id = id
   self.pool[id] = member
 end
+
 function Swarm:run(fn)
   for id, member in pairs(self.pool) do
     Event.addRoutine(function()
@@ -54,6 +57,7 @@ function Swarm:run(fn)
     end)
   end
 end
+
 function Swarm:shutdown()
   for _, member in pairs(self.pool) do
     if member.socket then
@@ -62,6 +66,8 @@ function Swarm:shutdown()
     end
   end
 end
+
+-- Override
 function Swarm:onRemove(member, success, msg)
   print('removed from pool: ' .. member.id)
   if not success then
