@@ -302,7 +302,7 @@ function page:scan()
         table.insert(candidates, b)
       end
 
-      if b.name == 'minecraft:chest' then
+      if b.name == 'minecraft:chest' or b.name:find('shulker') then
         chestPoint = b
       end
 

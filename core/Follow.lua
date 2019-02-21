@@ -11,12 +11,12 @@ local network = _G.network
 local os      = _G.os
 
 local swarm = Swarm()
-local gpt   = GPS.getPoint()
+local gpt   = GPS.getPoint() or error('GPS not found')
 local pts, blocks
 
 local page = UI.Page {
   mode = UI.Chooser {
-    x = 18,
+    x = 13, y = -1,
     choices = {
       { name = 'No breaking', value = 'digNone'    },
       { name = 'Destructive', value = 'turtleSafe' },
@@ -24,7 +24,7 @@ local page = UI.Page {
     value = 'digNone',
   },
   grid = UI.ScrollingGrid {
-    y = 2,
+    y = 2, ey = -2,
     columns = {
       { heading = 'Label',  key = 'label'    },
       { heading = 'Dist',   key = 'distance' },
@@ -58,7 +58,7 @@ function page:enable()
   local function update()
     local t = { }
     for _,v in pairs(network) do
-      if v.fuel and v.active then
+      if v.fuel and v.active and v.fuel > 0 and v.distance then
         table.insert(t, v)
       end
     end
@@ -82,6 +82,7 @@ local function follow(member)
   turtle.reset()
   turtle.set({
     digPolicy = page.mode.value,
+    status = 'Following',
   })
 
   if not turtle.enableGPS(nil, true) then
@@ -107,10 +108,20 @@ local function follow(member)
   end
 end
 
+function swarm:onRemove(member)
+  if member.socket then
+    member.turtle.set({ status = 'idle' })
+  end
+end
+
 function page:eventHandler(event)
   if event.type == 'grid_select' then
-    swarm:add(event.selected.id, { })
-    swarm:run(follow)
+    if not swarm.pool[event.selected.id] then
+      swarm:add(event.selected.id)
+      swarm:run(follow)
+    else
+      swarm:remove(event.selected.id)
+    end
     self.grid:draw()
 
   elseif event.type == 'choice_change' then
@@ -128,7 +139,7 @@ end
 Event.addRoutine(function()
   while true do
     local pt = GPS.getPoint()
-    if pt then
+    if pt and not Point.same(pt, gpt) then
       gpt = pt
       pts = {
         { x = pt.x + 2, z = pt.z,     y = pt.y },
@@ -148,7 +159,7 @@ Event.addRoutine(function()
 
       -- don't run into player
       addBlocks(pt)
-      addBlocks({ x = pt.x, z = pt.z, y = pt.y + 1 })
+      addBlocks(Point.above(pt))
 
       for _, member in pairs(swarm.pool) do
         if member.snmp then
@@ -167,4 +178,5 @@ UI:pullEvents()
 
 for _, member in pairs(swarm.pool) do
   member.snmp:write({ type = 'scriptEx', args = 'turtle.abort(true)' })
+  member.snmp:close()
 end

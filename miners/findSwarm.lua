@@ -101,13 +101,19 @@ local function run(member)
   repeat
     local pt = getNextPoint(member)
     if pt then
+      turtle.set({ status = 'Relocating' })
       turtle.go({ y = pt.y })
+      local c = os.clock()
       while not turtle.go(pt) do
         if abort then
           break
         end
         os.sleep(.5)
+        if os.clock() - c > 3 then
+          turtle.set({ status = 'Stuck' })
+        end
       end
+      turtle.set({ status = 'Boring' })
 
       for _, v in ipairs(locations) do
         if abort then
@@ -132,15 +138,18 @@ local function run(member)
     end
   until abort
 
+  turtle.set({ status = 'Aborting' })
   turtle.go({ y = gpt.y + member.index })
   turtle.go({ x = gpt.x, y = gpt.y + member.index, z = gpt.z })
 
   repeat until turtle.go({ y = gpt.y })
+  turtle.set({ status = 'idle' })
 end
 
 function swarm:onRemove(member, success, message)
   if not success then
     Sound.play('entity.villager.no')
+    print('Removed from swarm: ' .. member.id)
     _G.printError(message)
   end
 
