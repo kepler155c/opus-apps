@@ -78,7 +78,6 @@ end
 
 local function follow(member)
   local turtle = member.turtle
-  turtle.setStatus('follow ' .. member.id)
   turtle.reset()
   turtle.set({
     digPolicy = page.mode.value,
@@ -108,9 +107,17 @@ local function follow(member)
   end
 end
 
-function swarm:onRemove(member)
+function swarm:onRemove(member, status, message)
   if member.socket then
     member.turtle.set({ status = 'idle' })
+    member.turtle.abort(true)
+  end
+  if member.snmp then
+    member.snmp:close()
+    member.snmp = nil
+  end
+  if not status then
+    _G._debug(message)
   end
 end
 
@@ -139,7 +146,7 @@ end
 Event.addRoutine(function()
   while true do
     local pt = GPS.getPoint()
-    if pt and not Point.same(pt, gpt) then
+    if not pts or (pt and not Point.same(pt, gpt)) then
       gpt = pt
       pts = {
         { x = pt.x + 2, z = pt.z,     y = pt.y },
@@ -171,12 +178,7 @@ Event.addRoutine(function()
   end
 end)
 
---swarm:run(follow)
-
 UI:setPage(page)
 UI:pullEvents()
 
-for _, member in pairs(swarm.pool) do
-  member.snmp:write({ type = 'scriptEx', args = 'turtle.abort(true)' })
-  member.snmp:close()
-end
+swarm:stop()

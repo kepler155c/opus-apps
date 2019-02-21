@@ -50,7 +50,7 @@ function Swarm:remove(id, s, m)
       member.socket = nil
     end
     if member.handler then
-      Event.terminate(member.handler)
+      member.handler:terminate()
       member.handler = nil
     end
   end
