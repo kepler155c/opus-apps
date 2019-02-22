@@ -12,6 +12,9 @@ local fs         = _G.fs
 local peripheral = _G.peripheral
 local turtle     = _G.turtle
 
+-- update
+if fs.exists('packages/turtle/autorun/gps.lua') then fs.delete('packages/turtle/autorun/gps.lua') end
+
 -- add a System setup tab
 fs.mount('sys/apps/system/turtle.lua', 'linkfs', 'packages/turtle/system/turtle.lua')
 
