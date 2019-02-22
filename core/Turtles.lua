@@ -37,10 +37,10 @@ local socket
 local page = UI.Page {
   coords = UI.Window {
     backgroundColor = colors.black,
-    height = 4,
+    height = 3,
   },
   tabs = UI.Tabs {
-    x = 1, y = 5, ey = -2,
+    x = 1, y = 4, ey = -2,
     scripts = UI.ScrollingGrid {
       tabTitle = 'Run',
       backgroundColor = colors.cyan,
@@ -122,12 +122,19 @@ local page = UI.Page {
         fn = 'turtle.turnRight',
       },
       info = UI.TextArea {
-        x = 2, y = 9,
+        x = 15, y = 2,
         inactive = true,
       }
     },
   },
-  statusBar = UI.StatusBar(),
+  statusBar = UI.StatusBar {
+    values = { },
+    columns = {
+      { key = 'status'              },
+      { key = 'distance', width = 6 },
+      { key = 'fuel',     width = 6 },
+    },
+  },
   notification = UI.Notification(),
   accelerators = {
     q = 'quit',
@@ -184,8 +191,8 @@ function page.coords:draw()
     if not t.point.gps then
       ind = 'REL'
     end
-    self:print(string.format('%s : %d,%d,%d\n Fuel: %s\n',
-      ind, t.point.x, t.point.y, t.point.z, Util.toBytes(t.fuel)))
+    self:print(string.format('%s : %d,%d,%d',
+      ind, t.point.x, t.point.y, t.point.z))
   end
 end
 
@@ -289,14 +296,14 @@ end
 function page.statusBar:draw()
   local t = self.parent.turtle
   if t then
-    local status = string.format('%s [ %s ]', t.status, Util.round(t.distance, 2))
-    self:setStatus(status, true)
+    self.values.status = t.status
+    self.values.distance = Util.round(t.distance, 2)
+    self.values.fuel = Util.toBytes(t.fuel)
   end
   UI.StatusBar.draw(self)
 end
 
 function page:showBlocks()
-
   local script = [[
     local function inspect(direction)
       local s,b = turtle['inspect' .. (direction or '')]()

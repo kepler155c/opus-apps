@@ -17,12 +17,4 @@
 		run = "scanningMiner.lua",
 		requires = 'turtle',
 	},
-	[ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
-		title = "Multi",
-		category = "Turtle",
-		icon = "    \0315\\\030 \031  \
- \0304\031f _ \030 \031c/\0315\\\
- \0304   ",
-		run = "multiMiner.lua",
-	},
 }

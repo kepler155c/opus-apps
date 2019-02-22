@@ -1,3 +1,7 @@
 _G.requireInjector(_ENV)
-local Home = require('turtle.home')
-turtle.run(Home.go)
+local config = require('config').load('gps')
+if config.home then
+  if turtle.enableGPS() then
+    return turtle.pathfind(config.home)
+  end
+end

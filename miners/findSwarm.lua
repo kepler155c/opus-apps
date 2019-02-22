@@ -72,6 +72,9 @@ local function getNextPoint(member)
   chunkIndex = chunkIndex + 1
 
   while paused do
+    if abort then
+      return
+    end
     os.sleep(3)
   end
 
