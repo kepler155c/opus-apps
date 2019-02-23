@@ -2,6 +2,9 @@ if not _G.turtle then
   return
 end
 
+-- update
+if fs.exists('packages/turtle/autorun/gps.lua') then fs.delete('packages/turtle/autorun/gps.lua') end
+
 local Config = require('config')
 local GPS    = require('gps')
 local Point  = require('point')
@@ -11,9 +14,6 @@ local device     = _G.device
 local fs         = _G.fs
 local peripheral = _G.peripheral
 local turtle     = _G.turtle
-
--- update
-if fs.exists('packages/turtle/autorun/gps.lua') then fs.delete('packages/turtle/autorun/gps.lua') end
 
 -- add a System setup tab
 fs.mount('sys/apps/system/turtle.lua', 'linkfs', 'packages/turtle/system/turtle.lua')
