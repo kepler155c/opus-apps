@@ -31,7 +31,7 @@ local page = UI.Page {
       { heading = 'Status', key = 'status'   },
       { heading = 'Fuel',   key = 'fuel'     },
     },
-    sortColumn = 'label',
+    sortColumn = 'distance',
     autospace = true,
   },
 }

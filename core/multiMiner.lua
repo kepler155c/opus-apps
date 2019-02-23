@@ -57,7 +57,7 @@ local function hijackTurtle(remoteId)
 	local hijack = { }
 	for _,method in pairs(methods) do
 		hijack[method] = function(...)
-			socket:write({ fn = method, args = { ... } })
+			socket:write({ method, ... })
 			local resp = socket:read()
 			if not resp then
 				error('timed out: ' .. method)
