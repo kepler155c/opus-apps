@@ -113,6 +113,8 @@ local function run(member)
         end
         os.sleep(.5)
         if os.clock() - c > 3 then
+          Sound.play('entity.villager.no')
+          print('stuck: ' .. member.id)
           turtle.set({ status = 'Stuck' })
         end
       end

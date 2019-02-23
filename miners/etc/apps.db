@@ -8,7 +8,7 @@
 		run = "simpleMiner.lua",
 		requires = 'turtle',
 	},
-	[ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
+	[ "scanningMiner" ] = {
 		title = "Scanning",
 		category = "Mining",
 		icon = "    \0315\\\030 \031  \

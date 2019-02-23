@@ -99,7 +99,7 @@ Needs work
 \030 \031f\030f\031e\139\030e\128\030f\159\129\0314\130\131\131\129",
     run = "recorder.lua",
   },
-	[ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
+	[ "swarm" ] = {
 		title = "Swarm",
 		category = "Turtle",
 		icon = "    \0315\\\030 \031  \

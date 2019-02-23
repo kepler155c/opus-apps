@@ -33,6 +33,10 @@ function Adapter:listItems(throttle)
     end
   end
 
+  -- TODO: cache number of slots, free slots, used slots
+  -- useful for when inserting into chests
+  -- ie. insert only if chest does not have item and has free slots
+
   self.cache = cache
 end
 
