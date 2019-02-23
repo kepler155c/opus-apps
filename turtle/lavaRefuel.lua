@@ -14,7 +14,7 @@ if not turtle.has('minecraft:bucket') then
 end
 
 local scanner = device['plethora:scanner'] or
-	turtle.equip('right', 'plethora:module:2') and device['plethora:scanner'] or
+	turtle.equip('left', 'plethora:module:2') and device['plethora:scanner'] or
 	error('Plethora scanner required')
 
 if not turtle.select('minecraft:bucket') then
@@ -58,7 +58,7 @@ end)
 turtle.gotoY(0)
 turtle.go({ x = 0, y = 0, z = 0 })
 
-turtle.unequip('right')
+turtle.unequip('left')
 print('Fuel: ' .. turtle.getFuelLevel())
 
 if not s and m then
