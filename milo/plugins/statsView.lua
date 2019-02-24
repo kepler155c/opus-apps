@@ -63,7 +63,7 @@ function wizardPage:isValidType(node)
 end
 
 function wizardPage:isValidFor(node)
-  return node.mtype == 'activity'
+  return node.mtype == 'status'
 end
 
 UI:getPage('nodeWizard').wizard:add({ statusMonitor = wizardPage })
