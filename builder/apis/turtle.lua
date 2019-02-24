@@ -119,7 +119,7 @@ function supplyPage:enable(builder)
   self.statusBar:setValue('fuel',
     string.format('Fuel: %dk', math.floor(turtle.getFuelLevel() / 1024)))
 
-  Event.addNamedTimer('supplyRefresh', 6, true, function()
+  self.timer = Event.onInterval(6, function()
     if self.enabled then
       self.builder:autocraft(self.builder:getSupplies())
       self:refresh()
@@ -131,7 +131,7 @@ function supplyPage:enable(builder)
 end
 
 function supplyPage:disable()
-  Event.cancelNamedTimer('supplyRefresh')
+  Event.off(self.timer)
 end
 
 function supplyPage:setSupplies(supplies)

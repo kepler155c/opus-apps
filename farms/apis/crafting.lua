@@ -1,5 +1,5 @@
 local Adapter = require('core.inventoryAdapter')
-local Craft   = require('core.turtle.craft')
+local Craft   = require('farms.craft')
 
 local turtle     = _G.turtle
 

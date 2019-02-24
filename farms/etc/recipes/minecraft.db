@@ -1,0 +1,52 @@
+{
+	name = "Minecraft",
+	version = "",
+	recipes = {
+		[ "minecraft:furnace:0" ] = {
+			count = 1,
+			ingredients = {
+				"minecraft:cobblestone:0",
+				"minecraft:cobblestone:0",
+				"minecraft:cobblestone:0",
+				[ 9 ] = "minecraft:cobblestone:0",
+				[ 10 ] = "minecraft:cobblestone:0",
+				[ 11 ] = "minecraft:cobblestone:0",
+				[ 5 ] = "minecraft:cobblestone:0",
+				[ 7 ] = "minecraft:cobblestone:0",
+			},
+		},
+		[ "minecraft:torch:0" ] = {
+			ingredients = {
+				"minecraft:coal:1",
+				[ 5 ] = "minecraft:stick:0",
+			},
+			count = 4,
+		},
+		[ "minecraft:stick:0" ] = {
+			ingredients = {
+				"minecraft:planks:0",
+				[ 5 ] = "minecraft:planks:0",
+			},
+			count = 4,
+		},
+		[ "minecraft:planks:0" ] = {
+			count = 4,
+			ingredients = {
+				[ 6 ] = "minecraft:log:0",
+			},
+		},
+		[ "minecraft:chest:0" ] = {
+			ingredients = {
+				"minecraft:planks:0",
+				"minecraft:planks:0",
+				"minecraft:planks:0",
+				[ 9 ] = "minecraft:planks:0",
+				[ 10 ] = "minecraft:planks:0",
+				[ 11 ] = "minecraft:planks:0",
+				[ 5 ] = "minecraft:planks:0",
+				[ 7 ] = "minecraft:planks:0",
+			},
+			count = 1,
+		},
+	},
+}

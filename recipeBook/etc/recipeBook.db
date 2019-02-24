@@ -1,20 +1,8 @@
 {
   {
-    url = "https://pastebin.com/raw/dMCDeCie",
-    version = "MC 1.8+",
-    localName = "appliedenergistics2",
-    name = "Applied Energistics",
-  },
-  {
-    url = "https://pastebin.com/raw/Y6bQMUeE",
-    version = "MC 1.8+",
-    localName = "botania",
-    name = "Botania",
-  },
-  {
-    url = "https://pastebin.com/raw/YPWgiFFW",
-    version = "MC 1.8+",
-    localName = "computercraft",
-    name = "Computercraft",
+    url = "https://raw.githubusercontent.com/kepler155c/opus-recipes/master/switchcraft",
+    version = "MC 1.12",
+    localName = "switchcraft",
+    name = "Switchcraft Server",
   },
 }

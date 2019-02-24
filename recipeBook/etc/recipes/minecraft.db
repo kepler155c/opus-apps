@@ -2,6 +2,20 @@
 	name = "Minecraft",
 	version = "",
 	recipes = {
+		[ "minecraft:jukebox:0" ] = {
+			count = 1,
+			ingredients = {
+				"minecraft:planks:0",
+				"minecraft:planks:0",
+				"minecraft:planks:0",
+				[ 7 ] = "minecraft:planks:0",
+				[ 9 ] = "minecraft:planks:0",
+				[ 10 ] = "minecraft:planks:0",
+				[ 11 ] = "minecraft:planks:0",
+				[ 5 ] = "minecraft:planks:0",
+				[ 6 ] = "minecraft:diamond:0",
+			},
+		},
 		[ "minecraft:flint_and_steel:0" ] = {
 			count = 1,
 			ingredients = {

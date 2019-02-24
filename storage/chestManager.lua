@@ -82,7 +82,7 @@
 
 local Ansi           = require('ansi')
 local Config         = require('config')
-local Craft          = require('turtle.craft')
+local Craft          = require('storage.craft')
 local Event          = require('event')
 local itemDB         = require('core.itemDB')
 local Peripheral     = require('peripheral')

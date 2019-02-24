@@ -751,8 +751,8 @@ local tasks = {
 
 local s, m = turtle.run(function()
 
-  require('core.turtle.crafting')
-  require('core.turtle.level')
+  require('farms.crafting')
+  require('farms.level')
   --turtle.addFeatures('level', 'core.crafting')
   turtle.set({ attackPolicy = "attack" })
 

@@ -202,7 +202,7 @@ function page:play(onOff)
     self:updateStationName()
     radio.playAudio()
 
-    Event.addNamedTimer('songTimer', 180, false, function()
+    Event.onInterval(180, function()
       if self.playing then
         self:seek()
         self:play(true)

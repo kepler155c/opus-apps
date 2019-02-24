@@ -1,6 +1,7 @@
 {
 	required = {
 		'core',
+		'recipeBook',
 	},
 	title = 'Milo: Advanced inventory management',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/milo',
