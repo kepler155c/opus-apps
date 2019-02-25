@@ -1,3 +1,4 @@
+local Map     = require('map')
 local nameDB  = require('core.nameDB')
 local TableDB = require('core.tableDB')
 local Util    = require('util')
@@ -158,16 +159,21 @@ function itemDB:add(baseItem)
       nItem.displayName = nItem.displayName .. v.fullName
     end
 
-  -- disks
+  -- turtles / computers / etc
+  elseif baseItem.computer then
+    -- a turtle's NBT is updated constantly
+    -- update the cache with the new NBT
+    if baseItem.computer.id then
+      Map.removeMatches(self.data, { name = nItem.name, displayName = nItem.displayName })
+    end
+    nItem.displayName = baseItem.computer.label or baseItem.displayName
+
+    -- disks
   elseif baseItem.media then
     -- don't ignore nbt... as disks can be labeled
     if baseItem.media.recordTitle then
       nItem.displayName = nItem.displayName .. ': ' .. baseItem.media.recordTitle
     end
-
-  -- turtles / computers / etc
-  elseif baseItem.computer then
-    nItem.displayName = baseItem.computer.label or baseItem.displayName
 
   -- potions
   elseif nItem.name == 'minecraft:potion' or nItem.name == 'minecraft:lingering_potion' then

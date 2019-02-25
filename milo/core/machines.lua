@@ -1,5 +1,6 @@
 local Event  = require('event')
 local itemDB = require('core.itemDB')
+local Map    = require('map')
 local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
@@ -201,7 +202,7 @@ nodeWizard = UI.Page {
 					[1] = UI.TextEntry {
 						formLabel = 'Name', formKey = 'displayName',
 						help = 'Set a friendly name',
-						limit = 64, pruneEmpty = true,
+						limit = 64,
 					},
 					[2] = UI.Chooser {
 						width = 25,
@@ -474,7 +475,7 @@ function nodeWizard:eventHandler(event)
 		local adapter = self.node.adapter
 		self.node.adapter = nil
 
-		Util.prune(self.node, function(v)
+		Map.prune(self.node, function(v)
 			if type(v) == 'boolean' then
 				return v
 			elseif type(v) == 'string' then

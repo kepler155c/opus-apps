@@ -1,4 +1,5 @@
 local itemDB = require('core.itemDB')
+local Map    = require('map')
 local Milo   = require('milo')
 local UI     = require('ui')
 local Util   = require('util')
@@ -64,7 +65,7 @@ function manageTab:eventHandler(event)
       end
 
       self.res.displayName = nil
-      Util.prune(self.res, function(v)
+      Map.prune(self.res, function(v)
         if type(v) == 'boolean' then
           return v
         elseif type(v) == 'string' then
