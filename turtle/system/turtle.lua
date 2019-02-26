@@ -1,6 +1,7 @@
 local Config = require('config')
 local UI     = require('ui')
 
+local colors = _G.colors
 local fs     = _G.fs
 local turtle = _G.turtle
 
@@ -11,7 +12,8 @@ if turtle then
 		tabTitle = 'Home',
 		description = 'Turtle home location',
 		labelText = UI.Text {
-			x = 3, y = 2,
+			x = 3, ex = -3, y = 2,
+			textColor = colors.yellow,
 			value = 'On restart, return to this location'
 		},
 		grid = UI.Grid {

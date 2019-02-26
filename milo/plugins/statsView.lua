@@ -229,6 +229,7 @@ local function createPage(node)
 
   function stateTab:disable()
     Event.off(self.handle)
+    UI.Tab.disable(self)
   end
 
   function usageTab:refresh()
@@ -247,6 +248,7 @@ local function createPage(node)
 
   function usageTab:disable()
     Event.off(self.handle)
+    UI.Tab.disable(self)
   end
 
   function usageTab.grid:getRowTextColor(row, selected)
@@ -300,6 +302,7 @@ Unlocked Slots : %d of %d (%d%%)
 
   function statsTab:disable()
     Event.off(self.handle)
+    UI.Tab.disable(self)
   end
 
   function overviewTab:draw()
@@ -319,7 +322,7 @@ Unlocked Slots : %d of %d (%d%%)
       self.crafting.progressColor = colors.yellow
       self.crafting.value = 100
     else
-      self.crafting.progressColor = colors.green
+      self.crafting.progressColor = colors.orange
       self.crafting.value = total > 0 and math.ceil(crafted / total * 100) or 0
     end
 
@@ -367,6 +370,7 @@ Unlocked Slots : %d of %d (%d%%)
   function overviewTab:disable()
     Event.off(self.handle)
     Event.off(self.ehandle)
+    UI.Tab.disable(self)
   end
 
   table.insert(context.loggers, function(...)

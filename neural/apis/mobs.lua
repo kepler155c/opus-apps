@@ -5,6 +5,7 @@ local hostiles = {
   BabyZombie = true,
   Bat = true,
   Blaze = true,
+  CaveSpider = true,
   Creeper = true,
   Ghast = true,
   Husk = true,

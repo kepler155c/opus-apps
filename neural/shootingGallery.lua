@@ -1,9 +1,6 @@
-_G.requireInjector(_ENV)
-
 local Mobs  = require('neural.mobs')
 local ni    = require('neural.interface')
 local Point = require('point')
-local Util  = require('util')
 
 local os = _G.os
 
@@ -40,7 +37,6 @@ while true do
   local targets = findTargets()
   if targets then
     for _, entity in ipairs(targets) do
-Util.print(entity)
       ni.shootAt(entity, 1)
     end
   end
