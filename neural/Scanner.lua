@@ -81,6 +81,7 @@ function page:scan()
 				acc[b.key] = entry
 			end
 			throttle()
+			return acc
 		end,
 		{ }))
 

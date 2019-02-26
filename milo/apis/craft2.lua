@@ -96,28 +96,32 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 		end
 	end
 
-	local xferred = { }
-	for k,v in pairs(recipe.ingredients) do
-		local provided = storage:export(machine, k, count, splitKey(v))
-		xferred[k] = {
-			key = v,
-			count = provided,
-		}
-		if provided ~= count then
-			-- take back out whatever we put in
-			for k2,v2 in pairs(xferred) do
-				if v2.count > 0 then
-					storage:import(machine, k2, v2.count, splitKey(v2.key))
+	local pending = item.pending[recipe.result] or 0
+
+	if count > 0 then
+		local xferred = { }
+		for k,v in pairs(recipe.ingredients) do
+			local provided = storage:export(machine, k, count, splitKey(v))
+			xferred[k] = {
+				key = v,
+				count = provided,
+			}
+			if provided ~= count then
+				-- take back out whatever we put in
+				for k2,v2 in pairs(xferred) do
+					if v2.count > 0 then
+						storage:import(machine, k2, v2.count, splitKey(v2.key))
+					end
 				end
+				request.status = 'Invalid recipe'
+				request.statusCode = Craft.STATUS_ERROR
+				return
 			end
-			request.status = 'Invalid recipe'
-			request.statusCode = Craft.STATUS_ERROR
-			return
 		end
 	end
 	request.status = 'processing'
 	request.statusCode = Craft.STATUS_INFO
-	item.pending[recipe.result] = count * recipe.count
+	item.pending[recipe.result] = pending + (count * recipe.count)
 end
 
 local function turtleCraft(recipe, storage, request, count)
@@ -202,12 +206,14 @@ end
 function Craft.craftRecipeInternal(recipe, count, storage, origItem)
 	local request = origItem.ingredients[recipe.result]
 
+	--[[
 	if origItem.pending[recipe.result] then
 		request.status = 'processing'
 		request.statusCode = Craft.STATUS_INFO
 		return 0
 	end
-
+	--]]
+	count = count - (origItem.pending[recipe.result] or 0)
 	local canCraft = Craft.getCraftableAmount(recipe, count, origItem.ingredients)
 	if not origItem.forceCrafting and canCraft == 0 then
 		return 0

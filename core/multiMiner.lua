@@ -320,6 +320,7 @@ function page:scan()
       else
         queue[b.pkey] = nil
       end
+      return acc
 		end,
     { })
 

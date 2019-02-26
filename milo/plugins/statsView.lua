@@ -310,7 +310,18 @@ Unlocked Slots : %d of %d (%d%%)
     self.onlineLabel.value = string.format('Storage Status: (%s chests)',
       stats.totalChests)
 
-    self.crafting.progressColor = Milo:isCraftingPaused() and colors.yellow or colors.green
+    local total, crafted = 0, 0
+    for _,v in pairs(context.craftingQueue) do
+      total = total + v.requested
+      crafted = crafted + v.crafted
+    end
+    if Milo:isCraftingPaused() then
+      self.crafting.progressColor = colors.yellow
+      self.crafting.value = 100
+    else
+      self.crafting.progressColor = colors.green
+      self.crafting.value = total > 0 and math.ceil(crafted / total * 100) or 0
+    end
 
     local percent = math.floor(stats.usedSlots / stats.totalSlots * 100)
     local color = colors.green
@@ -338,7 +349,7 @@ Unlocked Slots : %d of %d (%d%%)
     self.unlockedLabel.value = string.format('Unlocked Usage: %s%% (%s of %s slots)',
       percent, stats.usedUnlockedSlots, stats.unlockedSlots)
 
-      UI.Tab.draw(self)
+    UI.Tab.draw(self)
   end
 
   function overviewTab:enable()

@@ -89,6 +89,7 @@ local function follow(member)
   end
 
   member.snmp = Socket.connect(member.id, 161)
+  member.snmp.co = coroutine.running()
 
   local pt
 
@@ -109,8 +110,10 @@ end
 
 function swarm:onRemove(member, status, message)
   if member.socket then
-    member.turtle.set({ status = 'idle' })
-    member.turtle.abort(true)
+    pcall(function()
+      member.turtle.set({ status = 'idle' })
+      member.turtle.abort(true)
+    end)
   end
   if member.snmp then
     member.snmp:close()

@@ -481,6 +481,7 @@ local function findDroppedSaplings()
       b.sapling = true
       acc[makeKey(b)] = b
     end
+    return acc
   end, { })
 
   return sensed
@@ -502,6 +503,7 @@ local function scan(pt, filter, blocks)
         acc[makeKey(b)] = b
       end
     end
+    return acc
   end, blocks or { })
 end
 

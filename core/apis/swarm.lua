@@ -1,7 +1,7 @@
 local class   = require('class')
 local Event   = require('event')
+local Map     = require('map')
 local Socket  = require('socket')
-local Util    = require('util')
 
 local function hijackTurtle(remoteId)
 	local socket, msg = Socket.connect(remoteId, 188)
@@ -10,8 +10,10 @@ local function hijackTurtle(remoteId)
 		error(msg)
 	end
 
+  socket.co = coroutine.running()
+
 	socket:write('turtle')
-	local methods = socket:read()
+	local methods = socket:read() or error('Timed out')
 
 	local hijack = { }
 	for _,method in pairs(methods) do
@@ -31,11 +33,11 @@ end
 local Swarm = class()
 function Swarm:init(args)
   self.pool = { }
-  Util.merge(self, args)
+  Map.merge(self, args)
 end
 
 function Swarm:add(id, args)
-  local member = Util.shallowCopy(args or { })
+  local member = Map.shallowCopy(args or { })
   member.id = id
   self.pool[id] = member
 end
