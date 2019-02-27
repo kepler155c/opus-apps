@@ -94,6 +94,9 @@ local function createPage(node)
         { heading = 'crafted',   key = 'crafted',  width = 5    },
   --      { heading = 'Progress', key = 'progress',    width = 8 },
       },
+      headerBackgroundColor = colors.black,
+      headerTextColor = colors.cyan,
+      headerHeight = 2,
     },
 --[[
     buttons = UI.Window {

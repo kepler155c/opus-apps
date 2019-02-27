@@ -90,6 +90,9 @@ local function createPage(node)
         { heading = 'Name',   key = 'displayName' },
       },
       sortColumn = 'displayName',
+      headerBackgroundColor = colors.black,
+      headerTextColor = colors.cyan,
+      headerHeight = 2,
     },
     buttons = UI.Window {
       y = -1,
