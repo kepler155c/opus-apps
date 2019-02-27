@@ -45,6 +45,13 @@ local page = UI.Page {
     x = 2, ex = -2, y = -4,
     backgroundColor = colors.black,
   },
+  cloneText = UI.Text {
+    x = 2, y = -2,
+    value = 'Clone'
+  },
+  clone = UI.Checkbox {
+    x = 8, y = -2,
+  },
   copyButton = UI.Button {
     x = -7, y = -2,
     text = 'Copy',
@@ -52,7 +59,8 @@ local page = UI.Page {
     inactive = true,
   },
   warning = UI.Text {
-    x = 2, ex = -9, y = -2,
+    x = 2, ex = -2, y = -5,
+    align = 'center',
     textColor = colors.orange,
   },
   notification = UI.Notification { },
@@ -112,23 +120,34 @@ function page:scan()
 end
 
 function page:copy(sdrive, tdrive)
-  local totalFiles = 0
   local throttle = Util.throttle()
+  local sourceFiles, targetFiles = { }, { }
 
-  local function countFiles(source, target)
-    if fs.isDir(source) then
-      for _,f in pairs(fs.list(source)) do
-        countFiles(fs.combine(source, f), fs.combine(target, f))
+  local function getListing(mountPath, path, files)
+    for _,f in pairs(fs.list(path)) do
+      local file = fs.combine(path, f)
+      if not fs.isReadOnly(file) then
+        files[string.sub(file, #mountPath + 1)] = true
+        if fs.isDir(file) then
+          getListing(mountPath, file, files)
+        end
       end
-    else
-      totalFiles = totalFiles + 1
     end
     throttle()
   end
 
+  self.progress:centeredWrite(1, 'Computing..')
+  self.progress:sync()
+
+  getListing(sdrive.getMountPath(), sdrive.getMountPath(), sourceFiles)
+  getListing(tdrive.getMountPath(), tdrive.getMountPath(), targetFiles)
+
   local copied = 0
+  local totalFiles = Util.size(sourceFiles)
+
   local function rawCopy(source, target)
     if fs.isDir(source) then
+      copied = copied + 1
       if not fs.exists(target) then
         fs.makeDir(target)
       end
@@ -150,12 +169,17 @@ function page:copy(sdrive, tdrive)
     throttle()
   end
 
-  self.progress:centeredWrite(1, 'Computing..')
-  self.progress:sync()
-  countFiles(sdrive.getMountPath(), tdrive.getMountPath())
+  local function cleanup()
+    for k in pairs(targetFiles) do
+      if not sourceFiles[k] then
+        fs.delete(fs.combine(tdrive.getMountPath(), k))
+      end
+    end
+  end
 
   self.progress:clear()
   rawCopy(sdrive.getMountPath(), tdrive.getMountPath())
+  cleanup()
   self.progress:centeredWrite(1, 'Copy Complete', colors.lime, colors.black)
   self.progress:sync()
 

@@ -1,4 +1,5 @@
 local Config = require('config')
+local Map    = require('map')
 local UI     = require('ui')
 
 local os     = _G.os
@@ -58,6 +59,7 @@ function shopTab:eventHandler(event)
 
   elseif event.type == 'update' then
     if self.form:save() then
+      Map.removeMatches(config, { name = self.form.values.name })
       config[self.item.key] = self.form.values
       Config.update('shop', config)
       os.queueEvent('shop_refresh')
