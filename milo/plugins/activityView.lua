@@ -81,13 +81,14 @@ local function createPage(node)
 
   local page = UI.Page {
     parent = monitor,
+    backgroundColor = colors.black,
     grid = UI.Grid {
-      ey = -2,
+      ey = -3,
       columns = {
-        { heading = 'Qty',    key = 'count',       width = 5 },
-        { heading = 'Change', key = 'change',      width = 5 },
-        { heading = 'Rate',   key = 'rate',        width = 6 },
-        { heading = 'Name',   key = 'displayName' },
+        { heading = 'Qty',  key = 'count',      width = 6, align = 'right' },
+        { heading = '+/-',  key = 'change',     width = 6, align = 'right' },
+        { heading = 'Name', key = 'displayName' },
+        { heading = 'Rate', key = 'rate',       width = 6, align = 'right' },
       },
       sortColumn = 'displayName',
       headerBackgroundColor = colors.black,
@@ -100,19 +101,22 @@ local function createPage(node)
       prevButton = UI.Button {
         x = 1, width = 5,
         event = 'previous',
-        backgroundColor = colors.lightGray,
+        textColor = colors.cyan,
+        backgroundColor = colors.black,
         text = ' < '
       },
       resetButton = UI.Button {
         x = 7, ex = -7,
         event = 'reset',
-        backgroundColor = colors.lightGray,
+        textColor = colors.cyan,
+        backgroundColor = colors.black,
         text = 'Reset'
       },
       nextButton = UI.Button {
         x = -5, width = 5,
         event = 'next',
-        backgroundColor = colors.lightGray,
+        textColor = colors.cyan,
+        backgroundColor = colors.black,
         text = ' > '
       },
     },

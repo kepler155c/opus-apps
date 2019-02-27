@@ -40,7 +40,7 @@ local page = UI.Page {
   grid = UI.Grid {
     y = 2, ey = -2,
     columns = {
-      { heading = ' Qty', key = 'count'        , width = 4, justify = 'right' },
+      { heading = ' Qty', key = 'count'        , width = 4, align = 'right' },
       { heading = 'Name', key = 'displayName' },
       { heading = 'Min',  key = 'low'          , width = 4 },
       { heading = 'Max',  key = 'limit'        , width = 4 },

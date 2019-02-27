@@ -100,7 +100,7 @@ local page = UI.Page {
     y = 2, ey = -2,
     sortColumn = 'name',
     columns = {
-      { heading = 'Count',    key = 'count', width = 5, justify = 'right' },
+      { heading = 'Count',    key = 'count', width = 5, align = 'right' },
       { heading = 'Resource', key = 'displayName' },
     },
   },

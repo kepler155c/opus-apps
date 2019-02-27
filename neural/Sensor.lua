@@ -45,9 +45,9 @@ local page = UI.Page {
 		y = 2,
 		columns = {
 			{ heading = 'Name', key = 'displayName' },
-			{ heading = '  X',    key = 'x', width = 3, justify = 'right' },
-			{ heading = '  Y',    key = 'y', width = 3, justify = 'right' },
-			{ heading = '  Z',    key = 'z', width = 3, justify = 'right' },
+			{ heading = '  X',    key = 'x', width = 3, align = 'right' },
+			{ heading = '  Y',    key = 'y', width = 3, align = 'right' },
+			{ heading = '  Z',    key = 'z', width = 3, align = 'right' },
 		},
 		values = sensor.sense(),
 		sortColumn = 'displayName',

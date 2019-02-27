@@ -27,7 +27,7 @@ local page = UI.Page {
 		y = 2,
 		columns = {
 			{ heading = 'Name',  key = 'displayName' },
-			{ heading = 'Count', key = 'count', width = 5, justify = 'right' },
+			{ heading = 'Count', key = 'count', width = 5, align = 'right' },
 		},
 		sortColumn = 'displayName',
 	},
@@ -46,9 +46,9 @@ local page = UI.Page {
 			columns = {
 				{ heading = 'Name', key = 'name' },
 				{ heading = 'Dmg',  key = 'metadata', width = 3 },
-				{ heading = '  X',  key = 'x', width = 3, justify = 'right' },
-				{ heading = '  Y',  key = 'y', width = 3, justify = 'right' },
-				{ heading = '  Z',  key = 'z', width = 3, justify = 'right' },
+				{ heading = '  X',  key = 'x', width = 3, align = 'right' },
+				{ heading = '  Y',  key = 'y', width = 3, align = 'right' },
+				{ heading = '  Z',  key = 'z', width = 3, align = 'right' },
 			},
 			sortColumn = 'name',
 		},

@@ -221,7 +221,7 @@ local blocksTab = UI.Tab {
   grid = UI.ScrollingGrid {
     y = 1,
     columns = {
-      { heading = 'Count', key = 'count', width = 6, justify = 'right' },
+      { heading = 'Count', key = 'count', width = 6, align = 'right' },
       { heading = 'Name',  key = 'displayName' },
     },
     sortColumn = 'displayName',
@@ -235,8 +235,8 @@ local turtlesTab = UI.Tab {
     values = pool,
     columns = {
       { heading = 'ID',     key = 'id',       width = 4, },
-      { heading = ' Fuel',  key = 'fuel',     width = 5, justify = 'right' },
-      { heading = ' Dist',  key = 'distance', width = 5, justify = 'right' },
+      { heading = ' Fuel',  key = 'fuel',     width = 5, align = 'right' },
+      { heading = ' Dist',  key = 'distance', width = 5, align = 'right' },
       { heading = 'Status', key = 'status' },
     },
     sortColumn = 'label',

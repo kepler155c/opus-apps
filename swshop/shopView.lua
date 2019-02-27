@@ -59,9 +59,9 @@ local function createPage(node)
       backgroundSelectedColor = colors.black,
       unfocusedBackgroundSelectedColor = colors.gray,
       columns = {
-        { heading = 'Stock',   key = 'count',     width = 6, justify = 'right' },
+        { heading = 'Stock',   key = 'count',     width = 6, align = 'right' },
         { heading = 'Name',    key = 'displayName' },
-        { heading = '   Price', key = 'price',     width = 9, justify = 'right' },
+        { heading = '   Price', key = 'price',    width = 9, align = 'right' },
         { heading = 'Address', key = 'address',   width = 12 },
       },
       sortColumn = 'displayName',

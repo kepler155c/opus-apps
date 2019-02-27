@@ -29,7 +29,7 @@ local networkPage = UI.Page {
 		y = 2, ey = -3,
 		values = context.storage.nodes,
 		columns = {
-			{                   key = 'suffix', 		width = 4, justify = 'right' },
+			{                   key = 'suffix', 		width = 4, align = 'right' },
 			{ heading = 'Name', key = 'displayName' },
 			{ heading = 'Type', key = 'mtype',      width = 4 },
 			{ heading = 'Pri',  key = 'priority',   width = 3 },
