@@ -179,14 +179,13 @@ local function createPage(node)
     for n in context.storage:filterActive('storage') do
       if n.adapter.size and n.adapter.list then
         pcall(function()
-          if not n.adapter.__size then
-            n.adapter.__size = n.adapter.size()
-            n.adapter.__used = Util.size(n.adapter.list())
-          end
           local updated = n.adapter.__lastUpdate ~= n.adapter.lastUpdate
           if n.adapter.__lastUpdate ~= n.adapter.lastUpdate then
             n.adapter.__used = Util.size(n.adapter.list())
             n.adapter.__lastUpdate = n.adapter.lastUpdate
+          end
+          if not n.adapter.__used then
+            n.adapter.__used = Util.size(n.adapter.list())
           end
           table.insert(stats, {
             name = n.displayName or n.name,
@@ -381,6 +380,7 @@ Unlocked Slots : %d of %d (%d%%)
   function overviewTab:disable()
     Event.off(self.handle)
     Event.off(self.handle2)
+    Event.off(self.handle3)
     UI.Tab.disable(self)
   end
 

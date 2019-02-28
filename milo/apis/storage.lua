@@ -253,6 +253,9 @@ function Storage:listItems(throttle)
     if adapter.dirty then
       table.insert(t, function()
         adapter:listItems(throttle)
+        if not adapter.__size then
+          adapter.__size = adapter.size()
+        end
         adapter.dirty = false
       end)
     end
