@@ -86,32 +86,38 @@ local function createPage(node)
       [1] = UI.Tab {
         tabTitle = 'Overview',
         backgroundColor = colors.black,
-        storageLabel = UI.Text {
-          x = 2, ex = -1, y = 2,
-        },
-        storage = UI.ProgressBar {
-          x = 2, ex = -2, y = 3, height = 3,
-        },
-        unlockedLabel = UI.Text {
-          x = 2, ex = -1, y = 7,
-        },
-        unlocked = UI.ProgressBar {
-          x = 2, ex = -2, y = 8, height = 3,
-        },
         onlineLabel = UI.Text {
-          x = 2, ex = -1, y = 12,
+          x = 2, y = 2,
           value = 'Storage Status',
         },
-        online = UI.ProgressBar {
+        onlineText = UI.Text {
+          x = 18, ex = -2, y = 2,
+        },
+        tpsLabel = UI.Text {
+          x = 2, y = 3,
+          value = 'Tasks/sec',
+        },
+        tpsText = UI.Text {
+          x = 18, ex = -2, y = 3,
+        },
+        storageLabel = UI.Text {
+          x = 2, ex = -1, y = 6,
+        },
+        storage = UI.ProgressBar {
+          x = 2, ex = -2, y = 7, height = 3,
+        },
+        unlockedLabel = UI.Text {
+          x = 2, ex = -1, y = 12,
+        },
+        unlocked = UI.ProgressBar {
           x = 2, ex = -2, y = 13, height = 3,
-          value = 100,
         },
         craftingLabel = UI.Text {
-          x = 2, ex = -1, y = 17,
+          x = 2, ex = -1, y = 18,
           value = 'Crafting Status',
         },
         crafting = UI.ProgressBar {
-          x = 2, ex = -2, y = 18, height = 3,
+          x = 2, ex = -2, y = 19, height = 3,
           value = 100,
         },
       },
@@ -308,10 +314,10 @@ Unlocked Slots : %d of %d (%d%%)
   function overviewTab:draw()
     local _, stats = getStorageStats()
 
-    self.online.progressColor = context.storage:isOnline() and colors.green or colors.red
+    self.onlineText.textColor = context.storage:isOnline() and colors.green or colors.red
+    self.onlineText.value = context.storage:isOnline() and 'Online' or 'Offline'
 
-    self.onlineLabel.value = string.format('Storage Status: (%s chests)',
-      stats.totalChests)
+    self.tpsText.value = tostring(Util.round(self.tasks / (os.clock() - self.timer), 2))
 
     local total, crafted = 0, 0
     for _,v in pairs(context.craftingQueue) do
@@ -356,20 +362,25 @@ Unlocked Slots : %d of %d (%d%%)
   end
 
   function overviewTab:enable()
+    self.timer = os.clock()
+    self.tasks = 0
     self.handle = Event.onInterval(5, function()
       self:draw()
       self:sync()
     end)
-    self.ehandle = Event.on({ 'milo_resume', 'milo_pause', 'storage_offline', 'storage_online' }, function()
+    self.handle2 = Event.on({ 'milo_resume', 'milo_pause', 'storage_offline', 'storage_online' }, function()
       self:draw()
       self:sync()
+    end)
+    self.handle3 = Event.on('plethora_task', function()
+      self.tasks = self.tasks + 1
     end)
     UI.Tab.enable(self)
   end
 
   function overviewTab:disable()
     Event.off(self.handle)
-    Event.off(self.ehandle)
+    Event.off(self.handle2)
     UI.Tab.disable(self)
   end
 

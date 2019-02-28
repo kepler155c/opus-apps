@@ -97,7 +97,7 @@ local function createPage(node)
     },
     buttons = UI.Window {
       y = -1,
-      backgroundColor = colors.gray,
+      backgroundColor = colors.black,
       prevButton = UI.Button {
         x = 1, width = 5,
         event = 'previous',

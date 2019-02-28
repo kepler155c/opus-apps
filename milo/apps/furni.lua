@@ -107,7 +107,7 @@ local function process(list)
     end
 
     if item and item.count > 0 then
-      if not cooking or cooking.name == item.name then
+      if not cooking then -- or cooking.name == item.name then
         local count = cooking and cooking.count or 0
         if count < 64 then
           print('cooking : ' .. furnace.name)
