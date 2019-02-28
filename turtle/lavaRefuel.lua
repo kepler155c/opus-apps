@@ -22,7 +22,7 @@ if not turtle.select('minecraft:bucket') then
 end
 
 local s, m = turtle.run(function()
-	turtle.set({ 'status', 'refueling' })
+	turtle.set({ status = 'refueling' })
 	turtle.setMovementStrategy('goto')
 
 	local facing = scanner.getBlockMeta(0, 0, 0).state.facing
@@ -59,7 +59,7 @@ end)
 turtle.gotoY(0)
 turtle.go({ x = 0, y = 0, z = 0 })
 
-turtle.set({ 'status', 'idle' })
+turtle.set({ status = 'idle' })
 turtle.unequip('left')
 print('Fuel: ' .. turtle.getFuelLevel())
 

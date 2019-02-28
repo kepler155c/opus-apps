@@ -180,7 +180,7 @@ local function createPage(node)
       if n.adapter.size and n.adapter.list then
         pcall(function()
           local updated = n.adapter.__lastUpdate ~= n.adapter.lastUpdate
-          if n.adapter.__lastUpdate ~= n.adapter.lastUpdate then
+          if updated then
             n.adapter.__used = Util.size(n.adapter.list())
             n.adapter.__lastUpdate = n.adapter.lastUpdate
           end
