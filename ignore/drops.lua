@@ -24,9 +24,7 @@ while true do
     return acc
   end, { })
 
-  Point.eachClosest(turtle.point, sensed, function(s)
-    turtle.suckDownAt(s)
-  end)
+  Point.eachClosest(turtle.point, sensed, turtle.suckDownAt)
 
   os.sleep(5)
 end

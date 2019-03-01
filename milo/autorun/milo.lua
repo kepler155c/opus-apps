@@ -7,6 +7,8 @@ if fs.exists('packages/milo/Milo.lua') then
 	fs.delete('packages/milo/plugins/listing.lua')
 end
 
+fs.delete('packages/milo/apis/milo.lua')
+
 if device.workbench then
 	shell.openForegroundTab('MiloLocal')
 end

@@ -231,20 +231,13 @@ _G._debug('STORAGE: Forcing full refresh')
   return self:listItems(throttle)
 end
 
-local function Timer()
-  local ct = os.clock()
-  return function()
-    return os.clock() - ct
-  end
-end
-
 -- provide a consolidated list of items
 function Storage:listItems(throttle)
   if not self.dirty then
     return self.cache
   end
 
-  local timer = Timer()
+  local timer = Util.Timer()
   local cache = { }
   throttle = throttle or Util.throttle()
 

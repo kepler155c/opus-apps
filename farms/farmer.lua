@@ -1,5 +1,3 @@
-_G.requireInjector(_ENV)
-
 local Point       = require('point')
 local Util        = require('util')
 

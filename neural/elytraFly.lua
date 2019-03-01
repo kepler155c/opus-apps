@@ -1,6 +1,7 @@
 -- credit: osmarks https://pastebin.com/ZP9Q1HCT
 
 local Sound = require('sound')
+local Util  = require('util')
 
 local modules = _G.peripheral.wrap('back')
 local os = _G.os
@@ -10,6 +11,30 @@ if not modules.launch or not modules.getMetaOwner then
   error([[Required:
 * Kinetic augment
 * Introspection module]])
+end
+
+local canvas = modules.canvas and modules.canvas()
+
+local function display(meta)
+  if canvas then
+    if not canvas.group then
+      canvas.group = canvas.addGroup({ 4, 90 })
+      canvas.bg = canvas.group.addRectangle(0, 0, 60, 24, 0x00000033)
+      canvas.pitch = canvas.group.addText({ 4, 5 }, '') -- , 0x202020FF)
+      canvas.pitch.setShadow(true)
+      canvas.pitch.setScale(.75)
+    end
+    canvas.pitch.setText(string.format('Pitch: %s\nMotion Y: %s',
+      math.floor(-meta.pitch),
+      Util.round(meta.motionY, 2)))
+  end
+end
+
+local function clearDisplay()
+  if canvas and canvas.group then
+    canvas.group.remove()
+    canvas.group = nil
+  end
 end
 
 local function run()
@@ -23,14 +48,17 @@ local function run()
       if meta.pitch < 0 then -- looking up
         modules.launch(meta.yaw, meta.pitch, -meta.pitch / 22.5)
         Sound.play('entity.bobber.throw', .6)
+        display(meta)
         os.sleep(0.1)
 
       elseif meta.motionY < -0.5 then -- falling fast
         modules.launch(0, 270, -meta.motionY + 1)
         Sound.play('entity.bat.takeoff')
+        display(meta)
         os.sleep(0)
 
       else
+        display(meta)
         os.sleep(0.1)
       end
 
@@ -53,6 +81,7 @@ local function run()
       os.sleep(0)
 
     else
+      clearDisplay()
       launchCounter = 0
       os.sleep(0.4)
     end
