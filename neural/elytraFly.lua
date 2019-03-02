@@ -19,14 +19,34 @@ local function display(meta)
   if canvas then
     if not canvas.group then
       canvas.group = canvas.addGroup({ 4, 90 })
-      canvas.bg = canvas.group.addRectangle(0, 0, 60, 24, 0x00000033)
+      canvas.group.addRectangle(0, 0, 60, 30, 0x00000033)
       canvas.pitch = canvas.group.addText({ 4, 5 }, '') -- , 0x202020FF)
       canvas.pitch.setShadow(true)
       canvas.pitch.setScale(.75)
+      canvas.group2 = canvas.addGroup({ 80, 10 })
+      canvas.group2.addLines(
+        { 0,   0 },
+        { 0, 180 },
+        { 5, 180 },
+        { 5,   0 },
+        0x202020FF,
+        2)
+      canvas.meter = canvas.group2.addRectangle(0, 0, 5, 1)
     end
-    canvas.pitch.setText(string.format('Pitch: %s\nMotion Y: %s',
+    local size = math.abs(meta.pitch) -- math.ceil(math.abs(meta.pitch) / 9)
+    local y = 0
+    local color = 0x202020FF
+    if meta.pitch < 0 then
+      y = size
+      color = 0x808080FF
+    end
+    canvas.meter.setPosition(0, 90 - y)
+    canvas.meter.setSize(5, size)
+    canvas.meter.setColor(color)
+    canvas.pitch.setText(string.format('Pitch: %s\nMotion Y: %s\nSpeed: %s',
       math.floor(-meta.pitch),
-      Util.round(meta.motionY, 2)))
+      Util.round(meta.motionY, 2),
+      Util.round(math.abs(meta.motionX) + math.abs(meta.motionY) + math.abs(meta.motionZ), 2)))
   end
 end
 
@@ -34,6 +54,7 @@ local function clearDisplay()
   if canvas and canvas.group then
     canvas.group.remove()
     canvas.group = nil
+    canvas.group2.remove()
   end
 end
 
@@ -82,6 +103,7 @@ local function run()
 
     else
       clearDisplay()
+      --display(meta)
       launchCounter = 0
       os.sleep(0.4)
     end
