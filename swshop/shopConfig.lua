@@ -33,7 +33,12 @@ local wizardPage = UI.WizardPage {
       shadowText = "xxxx's shop",
       required = false,
 		},
-    [4] = UI.Chooser {
+		[4] = UI.Checkbox {
+			formLabel = 'Is private key', formKey = 'isPrivateKey',
+			help = 'Password is in private key format',
+			limit = 64,
+		},
+    [5] = UI.Chooser {
       width = 9,
       formLabel = 'Font Size', formKey = 'textScale',
       nochoice = 'Small',

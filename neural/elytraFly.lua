@@ -3,8 +3,8 @@
 local Sound = require('sound')
 local Util  = require('util')
 
-local modules = _G.peripheral.wrap('back')
-local os = _G.os
+local modules  = _G.peripheral.wrap('back')
+local os       = _G.os
 local parallel = _G.parallel
 
 if not modules.launch or not modules.getMetaOwner then

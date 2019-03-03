@@ -24,13 +24,13 @@ w.init(jua)
 k.init(jua, json, w, r)
 
 local function Syntax()
-  error('Syntax: swshop [domain] [password]')
+  error('Syntax: swshop [domain] [password | privateKey] [isPrivateKey]')
 end
 
 local args = { ... }
 local domain = args[1] or Syntax()
 local password = args[2] or Syntax()
-local privatekey = k.toKristWalletFormat(password)
+local privatekey = args[3] and args[2] or k.toKristWalletFormat(password)
 local address = k.makev2address(privatekey)
 local transactions = Util.readTable('/usr/swshop.log') or { }
 
