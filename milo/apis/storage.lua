@@ -237,7 +237,7 @@ function Storage:listItems(throttle)
     return self.cache
   end
 
-  local timer = Util.Timer()
+  local timer = Util.timer()
   local cache = { }
   throttle = throttle or Util.throttle()
 

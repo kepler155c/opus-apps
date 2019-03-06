@@ -69,6 +69,9 @@ local context = {
   plugins = { },
   loggers = { },
 
+  taskTimer = 0,
+  taskCounter = 0,
+
   storage = Storage(),
   turtleInventory = {
     name = localName,
@@ -119,6 +122,7 @@ end)
 
 _G._debug('Tasks\n-----')
 for _, task in ipairs(context.tasks) do
+  task.execTime = 0
   _G._debug('%d: %s', task.priority, task.name)
 end
 
@@ -143,15 +147,20 @@ Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
   end
 
   if e == 'milo_cycle' and not Milo:isCraftingPaused() then
+    local taskTimer = Util.timer()
     Milo:resetCraftingStatus()
 
     for _, task in ipairs(context.tasks) do
+      local timer = Util.timer()
       local s, m = pcall(function() task:cycle(context) end)
       if not s and m then
         _G._debug(task.name .. ' crashed')
         _G._debug(m)
       end
+      task.execTime = task.execTime + timer()
     end
+    context.taskTimer = context.taskTimer + taskTimer()
+    context.taskCounter = context.taskCounter + 1
   end
 end)
 

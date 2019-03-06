@@ -100,6 +100,14 @@ local function createPage(node)
         tpsText = UI.Text {
           x = 18, ex = -2, y = 3,
         },
+        tasksLabel = UI.Text {
+          x = -18, y = 3,
+          value = 'Proc time',
+        },
+        tasksText = UI.Text {
+          x = -6, ex = -2, y = 3,
+          align = 'right',
+        },
         storageLabel = UI.Text {
           x = 2, ex = -1, y = 6,
         },
@@ -157,6 +165,20 @@ local function createPage(node)
           --visible = true,
         },
       },
+      [6] = UI.Tab {
+        tabTitle = 'Tasks',
+        grid = UI.ScrollingGrid {
+          y = 2,
+          values = context.tasks,
+          columns = {
+            { heading = 'Priority', key = 'priority', width = 5 },
+            { heading = 'Name', key = 'name' },
+            { heading = 'Avg', key = 'avg', width = 7, align = 'right' },
+            { heading = '%', key = 'perc', width = 7, align = 'right' },
+          },
+          sortColumn = 'priority',
+        },
+      },
     },
   }
 
@@ -165,6 +187,7 @@ local function createPage(node)
   local usageTab = page.tabs[3]
   local stateTab = page.tabs[4]
   local activityTab = page.tabs[5]
+  local taskTab = page.tabs[6]
 
   local function getStorageStats()
     local stats = { }
@@ -310,6 +333,34 @@ Unlocked Slots : %d of %d (%d%%)
     UI.Tab.disable(self)
   end
 
+  function taskTab.grid:getDisplayValues(row)
+    return {
+      name = row.name,
+      priority = row.priority,
+      avg  = Util.round(row.execTime / context.taskCounter * 1000) .. ' ms',
+      perc = Util.round(row.execTime / context.taskTimer * 100) .. '%',
+    }
+  end
+
+  function taskTab:refresh()
+    self.grid:update()
+  end
+
+  function taskTab:enable()
+    self:refresh()
+    self.handle = Event.onInterval(5, function()
+      self:refresh()
+      self.grid:draw()
+      self:sync()
+    end)
+    UI.Tab.enable(self)
+  end
+
+  function taskTab:disable()
+    Event.off(self.handle)
+    UI.Tab.disable(self)
+  end
+
   function overviewTab:draw()
     local _, stats = getStorageStats()
 
@@ -317,6 +368,7 @@ Unlocked Slots : %d of %d (%d%%)
     self.onlineText.value = context.storage:isOnline() and 'Online' or 'Offline'
 
     self.tpsText.value = tostring(Util.round(self.tasks / (os.clock() - self.timer), 2))
+    self.tasksText.value = tostring(Util.round(context.taskTimer / context.taskCounter, 2))
 
     local total, crafted = 0, 0
     for _,v in pairs(context.craftingQueue) do
