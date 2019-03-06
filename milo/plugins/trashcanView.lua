@@ -1,3 +1,4 @@
+local Event  = require('event')
 local Milo   = require('milo')
 local UI     = require('ui')
 
@@ -76,10 +77,14 @@ end
 
 function task:cycle(context)
   for node in context.storage:filterActive('trashcan', filter) do
-    for k in pairs(node.adapter.list()) do
-      local direction = node.dropDirection or 'down'
-      node.adapter.drop(k, 64, direction)
-    end
+    Event.onTimeout(0, function() -- run on a background thread
+      pcall(function()
+        for k in pairs(node.adapter.list()) do
+          local direction = node.dropDirection or 'down'
+          node.adapter.drop(k, 64, direction)
+        end
+      end)
+    end)
   end
 end
 

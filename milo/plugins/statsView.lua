@@ -446,7 +446,9 @@ Unlocked Slots : %d of %d (%d%%)
     end
   end)
 
-  UI:setPage(page)
+  Event.onTimeout(0, function()
+    UI:setPage(page)
+  end)
   return page
 end
 
