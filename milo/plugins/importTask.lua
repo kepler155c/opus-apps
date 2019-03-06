@@ -74,7 +74,6 @@ function ImportTask:cycle(context)
 			if not s and m then
 				_G._debug('IMPORTER error: ' .. m)
 			end
-
 		end)
 	end
 
