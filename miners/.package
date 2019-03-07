@@ -1,4 +1,7 @@
 {
+	required = {
+		'turtle',
+	},
 	title = 'Turtle mining programs',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/miners',
 	description = [[Provides two types of automated mining:

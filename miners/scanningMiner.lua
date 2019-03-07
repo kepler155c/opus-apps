@@ -9,11 +9,12 @@
     Plethora scanner
     Bucket
 --]]
-local Event   = require('event')
-local GPS     = require('gps')
-local Point   = require('point')
-local UI      = require('ui')
-local Util    = require('util')
+local Event    = require('event')
+local Equipper = require('turtle.equipper')
+local GPS      = require('gps')
+local Point    = require('point')
+local UI       = require('ui')
+local Util     = require('util')
 
 local colors     = _G.colors
 local fs         = _G.fs
@@ -316,26 +317,10 @@ local function collectDrops(suckAction)
   end
 end
 
-local function equip(side, item)
-  if not turtle.equip(side, item) then
-    if not turtle.selectSlotWithQuantity(0) then
-      ejectTrash()
-    end
-    if not turtle.selectSlotWithQuantity(0) then
-      turtle.select(16)
-      turtle.drop()
-    end
-    turtle.equip(side)
-    if not turtle.equip(side, item) then
-      error('Unable to equip ' .. item)
-    end
-  end
-end
-
 local function scan()
-  equip('left', 'plethora:module:2')
+  Equipper.equipLeft('plethora:module:2', 'plethora:scanner')
   local blocks = peripheral.call('left', 'scan')
-  equip('left', 'minecraft:diamond_pickaxe')
+  Equipper.equipLeft('minecraft:diamond_pickaxe')
   local throttle = Util.throttle()
 
   local bedrock = -256
@@ -507,11 +492,8 @@ end
 
 -- in plethora code, we can override initialize with a scanner version
 turtle.initialize = function()
-  if turtle.isEquipped('modem') ~= 'right' then
-    equip('right', 'computercraft:advanced_modem')
-  end
-
-  equip('left', 'minecraft:diamond_pickaxe')
+  Equipper.equipRight('computercraft:advanced_modem', 'modem')
+  Equipper.equipLeft('minecraft:diamond_pickaxe')
 
   local function verify(item)
     if not turtle.has(item) then
@@ -526,11 +508,11 @@ turtle.initialize = function()
 
   --os.sleep(5)
   local pt = GPS.getPoint(2) or error('GPS not found')
-  equip('left', 'plethora:module')
+  Equipper.equipLeft('plethora:module:2', 'plethora:scanner')
   local facing = peripheral.call('left', 'getBlockMeta', 0, 0, 0).state.facing
   pt.heading = Point.facings[facing].heading
   turtle.setPoint(pt, true)
-  equip('left', 'minecraft:diamond_pickaxe')
+  Equipper.equipLeft('minecraft:diamond_pickaxe')
 end
 
 local function main()

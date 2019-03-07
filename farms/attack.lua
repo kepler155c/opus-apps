@@ -1,4 +1,4 @@
-local Peripheral = require('peripheral')
+local Equipper   = require('turtle.equipper')
 local Point      = require('point')
 local Util       = require('util')
 
@@ -18,34 +18,14 @@ local Runners = {
 	Blaze   = false,
 }
 
-local function equip(side, item, rawName)
-	local equipped = Peripheral.lookup('side/' .. side)
+Equipper.equipLeft('minecraft:diamond_sword')
+Equipper.equipRight('plethora:module:2', 'plethora:scanner')
 
-	if equipped and equipped.type == item then
-		return true
-	end
-
-	if not turtle.equip(side, rawName or item) then
-		if not turtle.selectSlotWithQuantity(0) then
-			error('No slots available')
-		end
-		turtle.equip(side)
-		if not turtle.equip(side, item) then
-			error('Unable to equip ' .. item)
-		end
-	end
-
-	turtle.select(1)
-end
-
-equip('left', 'minecraft:diamond_sword')
-
-equip('right', 'plethora:scanner', 'plethora:module:2')
 local scanner = device['plethora:scanner']
 local facing = scanner.getBlockMeta(0, 0, 0).state.facing
 turtle.point.heading = Point.facings[facing].heading
 
-equip('right', 'plethora:sensor', 'plethora:module:3')
+Equipper.equipRight('plethora:module:3', 'plethora:sensor')
 local sensor = device['plethora:sensor']
 
 turtle.setMovementStrategy('goto')
@@ -55,9 +35,9 @@ local function findChests()
 	if chest then
 		return { chest }
 	end
-	equip('right', 'plethora:scanner', 'plethora:module:2')
+	Equipper.equipRight('plethora:module:2', 'plethora:scanner')
 	local chests = scanner.scan()
-	equip('right', 'plethora:sensor', 'plethora:module:3')
+	Equipper.equipRight('plethora:module:3', 'plethora:sensor')
 
 	Util.filterInplace(chests, function(b)
 		if b.name == 'minecraft:chest' or

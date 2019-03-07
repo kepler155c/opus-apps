@@ -1,6 +1,6 @@
 local Adapter    = require('core.chestAdapter18')
 local Config     = require('config')
-local Peripheral = require('peripheral')
+local Equipper   = require('turtle.equipper')
 local Util       = require('util')
 
 local device     = _G.device
@@ -30,28 +30,8 @@ local ANIMALS = {
 
 local animal = ANIMALS[config.animal]
 
-local function equip(side, item, rawName)
-  local equipped = Peripheral.lookup('side/' .. side)
-
-  if equipped and equipped.type == item then
-    return true
-  end
-
-  if not turtle.equip(side, rawName or item) then
-    if not turtle.selectSlotWithQuantity(0) then
-      error('No slots available')
-    end
-    turtle.equip(side)
-    if not turtle.equip(side, item) then
-      error('Unable to equip ' .. item)
-    end
-  end
-
-  turtle.select(1)
-end
-
-equip('left', 'minecraft:diamond_sword')
-equip('right', 'plethora:sensor', 'plethora:module:3')
+Equipper.equipLeft('minecraft:diamond_sword')
+Equipper.equipRight('plethora:module:3', 'plethora:sensor')
 
 local sensor = device['plethora:sensor']
 
@@ -84,7 +64,7 @@ local function getAnimalCount()
 end
 
 local function butcher()
-  turtle.equip('right', 'minecraft:diamond_sword')
+  Equipper.equipRight('minecraft:diamond_sword')
   turtle.select(1)
 
   turtle.attack()
@@ -92,7 +72,7 @@ local function butcher()
     turtle.turnRight()
     turtle.attack()
   end
-  turtle.equip('right', 'plethora:module:3')
+  Equipper.equipRight('plethora:module:3', 'plethora:sensor')
 
   turtle.eachFilledSlot(function(slot)
     if not retain[slot.name] then

@@ -1,7 +1,9 @@
-local Point = require('point')
+local Equipper = require('turtle.equipper')
+local Point    = require('point')
 
-local device = _G.device
-local turtle = _G.turtle
+local device     = _G.device
+local peripheral = _G.device
+local turtle     = _G.turtle
 
 local MAX_FUEL = turtle.getFuelLimit()
 
@@ -13,9 +15,10 @@ if not turtle.has('minecraft:bucket') then
 	error('bucket required')
 end
 
-local scanner = device['plethora:scanner'] or
-	turtle.equip('left', 'plethora:module:2') and device['plethora:scanner'] or
-	error('Plethora scanner required')
+local swapSide = peripheral.getType('right') == 'modem' and 'left' or 'right'
+Equipper.equip(swapSide, 'plethora:module:2', 'plethora:scanner')
+
+local scanner = device['plethora:scanner']
 
 if not turtle.select('minecraft:bucket') then
 	error('bucket required')
@@ -60,7 +63,7 @@ turtle.gotoY(0)
 turtle.go({ x = 0, y = 0, z = 0 })
 
 turtle.set({ status = 'idle' })
-turtle.unequip('left')
+turtle.unequip(swapSide)
 print('Fuel: ' .. turtle.getFuelLevel())
 
 if not s and m then

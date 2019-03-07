@@ -1,3 +1,4 @@
+local Equipper    = require('turtle.equipper')
 local Point       = require('point')
 local Util        = require('util')
 
@@ -17,9 +18,8 @@ local FUEL = Util.transpose {
   'minecraft:blaze_rod:0',
 }
 
-local scanner = device['plethora:scanner'] or
-  turtle.equip('right', 'plethora:module:2') and device['plethora:scanner'] or
-  error('Plethora scanner required')
+Equipper.equipRight('plethora:module:2', 'plethora:scanner')
+local scanner = device['plethora:scanner']
 
 local crops = Util.readTable(CONFIG_FILE) or {
   ['minecraft:wheat'] =
@@ -126,7 +126,7 @@ local function scan()
 end
 
 local function harvest(blocks)
-  turtle.equip('right', 'minecraft:diamond_pickaxe')
+  Equipper.equipRight('minecraft:diamond_pickaxe')
 
   local dropped
 
@@ -185,11 +185,11 @@ local function harvest(blocks)
 
     elseif b.action == 'bump' then
       if turtle.faceAgainst(b) then
-        turtle.equip('right', 'plethora:module:3')
+        Equipper.equipRight('plethora:module:3', 'plethora:sensor')
         os.sleep(.5)
         -- search the ground for the dropped cactus
         local sensed = peripheral.call('right', 'sense')
-        turtle.equip('right', 'minecraft:diamond_pickaxe')
+        Equipper.equipRight('minecraft:diamond_pickaxe')
         Util.filterInplace(sensed, function(s)
           if s.displayName == 'item.tile.cactus' then
             s.x = Util.round(s.x) + turtle.point.x
@@ -217,7 +217,7 @@ local function harvest(blocks)
       end
     end
   end)
-  turtle.equip('right', 'plethora:module:2')
+  Equipper.equipRight('plethora:module:2', 'plethora:scanner')
 end
 
 local s, m = turtle.run(function()

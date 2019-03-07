@@ -136,7 +136,7 @@ local function run(member)
           for _ = 1, 3 do
             Sound.play('block.note.pling')
             os.sleep(.3)
-            end
+          end
         end
       end
       turtle.go({ y = pt.y })

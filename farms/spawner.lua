@@ -1,4 +1,4 @@
-local Peripheral = require('peripheral')
+local Equipper   = require('turtle.equipper')
 local Point      = require('point')
 local Util       = require('util')
 
@@ -11,29 +11,8 @@ local STARTUP_FILE = 'usr/autorun/spawner.lua'
 
 local mobTypes = { }
 
-local function equip(side, item, rawName)
-	local equipped = Peripheral.lookup('side/' .. side)
-
-	if equipped and equipped.type == item then
-		return true
-	end
-
-	if not turtle.equip(side, rawName or item) then
-		if not turtle.selectSlotWithQuantity(0) then
-			error('No slots available')
-		end
-		turtle.equip(side)
-		if not turtle.equip(side, item) then
-			error('Unable to equip ' .. item)
-		end
-	end
-
-	turtle.select(1)
-end
-
-equip('left', 'minecraft:diamond_sword')
-
-equip('right', 'plethora:scanner', 'plethora:module:2')
+Equipper.equipLeft('minecraft:diamond_sword')
+Equipper.equipRight('plethora:module:2', 'plethora:scanner')
 local scanner = device['plethora:scanner']
 
 turtle.reset()
@@ -51,7 +30,7 @@ Util.filterInplace(data, function(b)
 end)
 local chest = Point.closest(spawner, data) or error('missing drop off chest')
 
-equip('right', 'plethora:sensor', 'plethora:module:3')
+Equipper.equipRight('plethora:module:3', 'plethora:sensor')
 local sensor = device['plethora:sensor']
 
 if not fs.exists(STARTUP_FILE) then

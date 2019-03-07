@@ -1,3 +1,4 @@
+local Equipper   = require('turtle.equipper')
 local GPS        = require('gps')
 local Point      = require('point')
 local Util       = require('util')
@@ -469,7 +470,7 @@ local function makeKey(b)
 end
 
 local function findDroppedSaplings()
-  equip('left', 'plethora:sensor', SENSOR)
+  Equipper.equipLeft(SENSOR, 'plethora:sensor')
   local raw = peripheral.call('left', 'sense')
 
   local sensed = Util.reduce(raw, function(acc, b)
@@ -490,7 +491,7 @@ end
 local function scan(pt, filter, blocks)
   turtle.pathfind(pt)
 
-  equip('left', 'plethora:scanner', SCANNER)
+  Equipper.equipLeft(SCANNER, 'plethora:scanner')
   local raw = peripheral.call('left', 'scan')
 
   return Util.reduce(raw, function(acc, b)
@@ -595,7 +596,7 @@ local function fell()
   local pt = Util.shallowCopy(HOME_PT)
   while Util.any(blocks, function(b) return b.y > pt.y + 6 end) do
     -- tree might be above low scan range, do a scan higher up
-    equip('left', PICKAXE)
+    Equipper.equipLeft(PICKAXE)
     pt.y = pt.y + 8
     blocks = scan(pt, filter, blocks)
   end
@@ -605,7 +606,7 @@ local function fell()
   -- add any locations that need saplings
   getPlantLocations(blocks)
 
-  equip('left', PICKAXE)
+  Equipper.equipLeft(PICKAXE)
   if not Util.empty(blocks) then
     print('Chopping')
 
@@ -657,12 +658,12 @@ end
 local function findHome()
   local pt = GPS.getPoint(2) or error('GPS not found')
 
-  equip('left', SCANNER)
+  Equipper.equipLeft(SCANNER, 'plethora:scanner')
 
   local facing = peripheral.call('left', 'getBlockMeta', 0, 0, 0).state.facing
   pt.heading = Point.facings[facing].heading
 
-  equip('left', PICKAXE)
+  Equipper.equipLeft(PICKAXE)
 
   if not state.home then
     setState('home', pt)
@@ -716,8 +717,8 @@ local function updateClock()
 end
 
 local function startupCheck()
-  equip('right', 'modem', MODEM)
-  equip('left', PICKAXE)
+  Equipper.equipRight(MODEM, 'modem')
+  Equipper.equipLeft(PICKAXE)
 
   local slots = turtle.getSummedInventory()
 

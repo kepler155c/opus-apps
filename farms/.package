@@ -1,6 +1,7 @@
 {
 	required = {
 		'core',
+		'turtle',
 	},
 	title = 'Programs for farming resources',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/farms',
