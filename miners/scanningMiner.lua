@@ -19,7 +19,6 @@ local Util     = require('util')
 local colors     = _G.colors
 local fs         = _G.fs
 local os         = _G.os
-local peripheral = _G.peripheral
 local read       = _G.read
 local term       = _G.term
 local turtle     = _G.turtle
@@ -318,8 +317,8 @@ local function collectDrops(suckAction)
 end
 
 local function scan()
-  Equipper.equipLeft('plethora:module:2', 'plethora:scanner')
-  local blocks = peripheral.call('left', 'scan')
+  local scanner = Equipper.equipLeft('plethora:module:2', 'plethora:scanner')
+  local blocks = scanner.scan()
   Equipper.equipLeft('minecraft:diamond_pickaxe')
   local throttle = Util.throttle()
 
@@ -508,8 +507,8 @@ turtle.initialize = function()
 
   --os.sleep(5)
   local pt = GPS.getPoint(2) or error('GPS not found')
-  Equipper.equipLeft('plethora:module:2', 'plethora:scanner')
-  local facing = peripheral.call('left', 'getBlockMeta', 0, 0, 0).state.facing
+  local scanner = Equipper.equipLeft('plethora:module:2', 'plethora:scanner')
+  local facing = scanner.getBlockMeta(0, 0, 0).state.facing
   pt.heading = Point.facings[facing].heading
   turtle.setPoint(pt, true)
   Equipper.equipLeft('minecraft:diamond_pickaxe')

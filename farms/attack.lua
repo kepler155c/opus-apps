@@ -2,7 +2,6 @@ local Equipper   = require('turtle.equipper')
 local Point      = require('point')
 local Util       = require('util')
 
-local device     = _G.device
 local os         = _G.os
 local turtle     = _G.turtle
 
@@ -19,14 +18,12 @@ local Runners = {
 }
 
 Equipper.equipLeft('minecraft:diamond_sword')
-Equipper.equipRight('plethora:module:2', 'plethora:scanner')
+local scanner = Equipper.equipRight('plethora:module:2', 'plethora:scanner')
 
-local scanner = device['plethora:scanner']
 local facing = scanner.getBlockMeta(0, 0, 0).state.facing
 turtle.point.heading = Point.facings[facing].heading
 
-Equipper.equipRight('plethora:module:3', 'plethora:sensor')
-local sensor = device['plethora:sensor']
+local sensor = Equipper.equipRight('plethora:module:3', 'plethora:sensor')
 
 turtle.setMovementStrategy('goto')
 turtle.set({ attackPolicy = 'attack' })

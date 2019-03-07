@@ -1,5 +1,3 @@
-_G.requireInjector(_ENV)
-
 --[[
   Requirements:
     Place turtle against an oak tree or oak sapling

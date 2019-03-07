@@ -2,7 +2,6 @@ local Equipper    = require('turtle.equipper')
 local Point       = require('point')
 local Util        = require('util')
 
-local device      = _G.device
 local fs          = _G.fs
 local os          = _G.os
 local peripheral  = _G.peripheral
@@ -18,8 +17,7 @@ local FUEL = Util.transpose {
   'minecraft:blaze_rod:0',
 }
 
-Equipper.equipRight('plethora:module:2', 'plethora:scanner')
-local scanner = device['plethora:scanner']
+local scanner = Equipper.equipRight('plethora:module:2', 'plethora:scanner')
 
 local crops = Util.readTable(CONFIG_FILE) or {
   ['minecraft:wheat'] =

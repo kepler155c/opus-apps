@@ -41,18 +41,18 @@ local function getEquipped()
     elseif not Equipper.equipped.left then
       local slot = Equipper.unequip('left')
       if slot then
+        turtle.equip('left', slot.name .. ':'  .. slot.damage)
         Equipper.equipped.left = slot.name .. ':'  .. slot.damage
       end
 
     elseif not Equipper.equipped.right then
       local slot = Equipper.unequip('right')
       if slot then
+        turtle.equip('right', slot.name .. ':'  .. slot.damage)
         Equipper.equipped.right = slot.name .. ':'  .. slot.damage
       end
     end
   end
-  _debug("Detected Equipped")
-  _debug(Equipper.equipped)
 end
 
 function Equipper.unequip(side)
@@ -81,7 +81,7 @@ function Equipper.equip(side, invName, equippedName)
 
   -- is it already equipped ?
   if Equipper.equipped[side] == (equippedName or invName) then
-    return
+    return peripheral.getType(side) and peripheral.wrap(side)
   end
   -- is it equipped on other side ?
   if Equipper.equipped[reversed[side]] == (equippedName or invName) then
@@ -95,16 +95,15 @@ function Equipper.equip(side, invName, equippedName)
 
   Equipper.equipped[side] = peripheral.getType(side) or invName
 
-  _debug("Equipped: " .. invName)
-  _debug(Equipper.equipped)
+  return peripheral.getType(side) and peripheral.wrap(side)
 end
 
 function Equipper.equipLeft(invName, equippedName)
-  Equipper.equip('left', invName, equippedName)
+  return Equipper.equip('left', invName, equippedName)
 end
 
 function Equipper.equipRight(invName, equippedName)
-  Equipper.equip('right', invName, equippedName)
+  return Equipper.equip('right', invName, equippedName)
 end
 
 return Equipper

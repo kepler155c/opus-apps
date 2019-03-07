@@ -2,7 +2,6 @@ local Equipper   = require('turtle.equipper')
 local Point      = require('point')
 local Util       = require('util')
 
-local device     = _G.device
 local fs         = _G.fs
 local os         = _G.os
 local turtle     = _G.turtle
@@ -12,8 +11,7 @@ local STARTUP_FILE = 'usr/autorun/spawner.lua'
 local mobTypes = { }
 
 Equipper.equipLeft('minecraft:diamond_sword')
-Equipper.equipRight('plethora:module:2', 'plethora:scanner')
-local scanner = device['plethora:scanner']
+local scanner = Equipper.equipRight('plethora:module:2', 'plethora:scanner')
 
 turtle.reset()
 local facing = scanner.getBlockMeta(0, 0, 0).state.facing
@@ -30,8 +28,7 @@ Util.filterInplace(data, function(b)
 end)
 local chest = Point.closest(spawner, data) or error('missing drop off chest')
 
-Equipper.equipRight('plethora:module:3', 'plethora:sensor')
-local sensor = device['plethora:sensor']
+local sensor = Equipper.equipRight('plethora:module:3', 'plethora:sensor')
 
 if not fs.exists(STARTUP_FILE) then
   Util.writeFile(STARTUP_FILE,

@@ -1,7 +1,6 @@
 local Equipper = require('turtle.equipper')
 local Point    = require('point')
 
-local device     = _G.device
 local peripheral = _G.device
 local turtle     = _G.turtle
 
@@ -16,9 +15,7 @@ if not turtle.has('minecraft:bucket') then
 end
 
 local swapSide = peripheral.getType('right') == 'modem' and 'left' or 'right'
-Equipper.equip(swapSide, 'plethora:module:2', 'plethora:scanner')
-
-local scanner = device['plethora:scanner']
+local scanner = Equipper.equip(swapSide, 'plethora:module:2', 'plethora:scanner')
 
 if not turtle.select('minecraft:bucket') then
 	error('bucket required')

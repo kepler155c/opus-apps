@@ -3,7 +3,6 @@ local Config     = require('config')
 local Equipper   = require('turtle.equipper')
 local Util       = require('util')
 
-local device     = _G.device
 local fs         = _G.fs
 local os         = _G.os
 local turtle     = _G.turtle
@@ -31,9 +30,7 @@ local ANIMALS = {
 local animal = ANIMALS[config.animal]
 
 Equipper.equipLeft('minecraft:diamond_sword')
-Equipper.equipRight('plethora:module:3', 'plethora:sensor')
-
-local sensor = device['plethora:sensor']
+local sensor = Equipper.equipRight('plethora:module:3', 'plethora:sensor')
 
 local chest = Adapter({ side = 'bottom', direction = 'up' }) or error('missing chest')
 
