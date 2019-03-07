@@ -55,6 +55,13 @@ local function getEquipped()
   end
 end
 
+local function matches(left, right)
+  -- return a match for 'minecraft:diamond_sword:0' with 'minecraft:diamond_sword'
+  if left and right then
+    return left:match(right)
+  end
+end
+
 function Equipper.unequip(side)
   local slot = turtle.selectOpenSlot()
   if not slot then
@@ -80,11 +87,12 @@ function Equipper.equip(side, invName, equippedName)
   end
 
   -- is it already equipped ?
-  if Equipper.equipped[side] == (equippedName or invName) then
+  if matches(Equipper.equipped[side], equippedName or invName) then
     return peripheral.getType(side) and peripheral.wrap(side)
   end
+
   -- is it equipped on other side ?
-  if Equipper.equipped[reversed[side]] == (equippedName or invName) then
+  if matches(Equipper.equipped[reversed[side]], equippedName or invName) then
     Equipper.unequip(reversed[side])
   end
 
