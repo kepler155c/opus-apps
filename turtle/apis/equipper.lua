@@ -26,6 +26,7 @@ local function getEquipped()
     elseif turtle.has(SCANNER_INV) then
       local swapSide = peripheral.getType('right') == 'modem' and 'left' or 'right'
       turtle.equip(swapSide, SCANNER_INV)
+      Equipper.equipped[swapSide] = 'plethora:scanner'
       meta = peripheral.call(swapSide, 'getBlockMeta', 0, 0, 0)
     end
 
@@ -38,13 +39,13 @@ local function getEquipped()
       end
 
     elseif not Equipper.equipped.left then
-      local slot = Equipper.uneqip('left')
+      local slot = Equipper.unequip('left')
       if slot then
         Equipper.equipped.left = slot.name .. ':'  .. slot.damage
       end
 
     elseif not Equipper.equipped.right then
-      local slot = Equipper.uneqip('right')
+      local slot = Equipper.unequip('right')
       if slot then
         Equipper.equipped.right = slot.name .. ':'  .. slot.damage
       end
