@@ -1,15 +1,13 @@
-_G.requireInjector(_ENV)
-
 local GPS        = require('gps')
 local Util       = require('util')
-local Peripheral = require('peripheral')
 local Point      = require('point')
+local Proxy      = require('proxy')
 
 local os = _G.os
 
 local args = { ... }
 local remoteId = args[1] or error('mobFollow <remote id>')
-local ni = Peripheral.lookup(remoteId .. '://name/neuralInterface')
+local ni = Proxy.create(remoteId, 'device/neuralInterface')
 
 if not ni then
   error('failed to connect')

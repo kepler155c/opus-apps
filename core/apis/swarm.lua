@@ -1,34 +1,7 @@
 local class   = require('class')
 local Event   = require('event')
 local Map     = require('map')
-local Socket  = require('socket')
-
-local function hijackTurtle(remoteId)
-	local socket, msg = Socket.connect(remoteId, 188)
-
-  if not socket then
-		error(msg)
-	end
-
-  socket.co = coroutine.running()
-
-	socket:write('turtle')
-	local methods = socket:read() or error('Timed out')
-
-	local hijack = { }
-	for _,method in pairs(methods) do
-		hijack[method] = function(...)
-			socket:write({ method, ... })
-			local resp = socket:read()
-			if not resp then
-				error('timed out: ' .. method)
-			end
-			return table.unpack(resp)
-		end
-	end
-
-	return hijack, socket
-end
+local Proxy   = require('proxy')
 
 local Swarm = class()
 function Swarm:init(args)
@@ -63,7 +36,7 @@ function Swarm:run(fn)
     if not member.socket then
       member.handler = Event.addRoutine(function()
         local s, m = pcall(function()
-          member.turtle, member.socket = hijackTurtle(id)
+          member.turtle, member.socket = Proxy.create(id, 'turtle')
 
           fn(member)
         end)
