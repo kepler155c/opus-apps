@@ -25,6 +25,10 @@ local peripheral = _G.peripheral
 local turtle     = _G.turtle
 
 local STARTUP_FILE = 'usr/autorun/miloFurni.lua'
+local SMELT_AMOUNT = 8
+local INPUT_SLOT   = 1
+local FUEL_SLOT    = 2
+local OUTPUT_SLOT  = 3
 
 local function equip(side, item, rawName)
   local equipped = peripheral.getType(side)
@@ -99,8 +103,8 @@ local function process(list)
     local f = furnace.list()
 
     -- items to cook
-    local item = list[1]
-    local cooking = f[1]
+    local item = list[INPUT_SLOT]
+    local cooking = f[INPUT_SLOT]
 
     if cooking or item then
       active = true
@@ -111,7 +115,7 @@ local function process(list)
         local count = cooking and cooking.count or 0
         if count < 64 then
           print('cooking : ' .. furnace.name)
-          count = furnace.pullItems(localName, 1, 8, 1)
+          count = furnace.pullItems(localName, INPUT_SLOT, SMELT_AMOUNT, INPUT_SLOT)
           item.count = item.count - count
           Util.removeByValue(furni, furnace)
           table.insert(furni, furnace)
@@ -120,18 +124,18 @@ local function process(list)
     end
 
     -- fuel
-    local fuel = f[2] or { count = 0 }
+    local fuel = f[FUEL_SLOT] or { count = 0 }
     if fuel.count < 8 then
       print('fueling ' ..furnace.name)
-      furnace.pullItems(localName, 2, 8 - fuel.count, 2)
+      furnace.pullItems(localName, FUEL_SLOT, 8 - fuel.count, FUEL_SLOT)
     end
 
-    local result = f[3]
+    local result = f[OUTPUT_SLOT]
     if result then
-      if not list[3] or result.name == list[3].name then
+      if not list[OUTPUT_SLOT] or result.name == list[OUTPUT_SLOT].name then
         print('pulling from : ' .. furnace.name)
-        furnace.pushItems(localName, 3, result.count, 3)
-        list[3] = result
+        furnace.pushItems(localName, OUTPUT_SLOT, result.count, OUTPUT_SLOT)
+        list[OUTPUT_SLOT] = result
       end
     end
   end
