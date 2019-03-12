@@ -1,12 +1,12 @@
 local Interface = { }
 
 local Angle = require('neural.angle')
-local Util = require('util')
+local Util  = require('util')
 
-local device = _G.device
-local os     = _G.os
+local os         = _G.os
+local peripheral = _G.peripheral
 
-local ni = device.neuralInterface or { }
+local ni = peripheral.find('neuralInterface') or { }
 for k,v in pairs(ni) do
 	Interface[k] = v
 end

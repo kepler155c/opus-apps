@@ -4,11 +4,14 @@ local Project = require('neural.project')
 local UI      = require('ui')
 local Util    = require('util')
 
-local device     = _G.device
 local peripheral = _G.peripheral
 
-local scanner = device.neuralInterface or device['plethora:scanner'] or peripheral.find('manipulator')
-if not scanner or not scanner.scan then
+local scanner =
+	peripheral.find('neuralInterface') or
+	peripheral.find('plethora:scanner') or
+	peripheral.find('manipulator')
+
+	if not scanner or not scanner.scan then
 	error('Plethora scanner must be equipped')
 end
 

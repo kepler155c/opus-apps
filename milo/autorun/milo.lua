@@ -1,6 +1,6 @@
-local device = _G.device
-local fs     = _G.fs
-local shell  = _ENV.shell
+local fs         = _G.fs
+local peripheral = _G.peripheral
+local shell      = _ENV.shell
 
 if fs.exists('packages/milo/Milo.lua') then
 	fs.delete('packages/milo/Milo.lua')
@@ -9,6 +9,6 @@ end
 
 fs.delete('packages/milo/apis/milo.lua')
 
-if device.workbench then
+if peripheral.find('workbench') then
 	shell.openForegroundTab('MiloLocal')
 end

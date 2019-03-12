@@ -151,6 +151,7 @@ function Storage:saveConfiguration()
     v.adapter = nil
   end
 
+  Util.backup('usr/config/storage')
   Config.update('storage', self.nodes)
 
   for k,v  in pairs(t) do

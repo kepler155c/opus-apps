@@ -4,7 +4,6 @@ local Project    = require('neural.project')
 local UI         = require('ui')
 local Util       = require('util')
 
-local device     = _G.device
 local peripheral = _G.peripheral
 local turtle     = _G.turtle
 
@@ -13,9 +12,9 @@ local function equip(side, rawName)
 end
 
 local target = nil
-local ni = device.neuralInterface
+local ni = peripheral.find('neuralInterface')
 local sensor = ni or
-	device['plethora:sensor'] or
+	peripheral.find('plethora:sensor') or
 	peripheral.find('manipulator') or
 	equip('left', 'plethora:module:3')
 

@@ -5,13 +5,13 @@ local Sound   = require('sound')
 local Swarm   = require('core.swarm')
 local Util    = require('util')
 
-local device  = _G.device
-local os      = _G.os
+local os         = _G.os
+local peripheral = _G.peripheral
 
 local COLUMNS = 4
 
 local gpt = GPS.getPoint() or error('GPS not found')
-local scanner = device.neuralInterface
+local scanner = peripheral.find('neuralInterface')
 if not scanner or not scanner.scan then
 	error('Plethora scanner must be equipped')
 end

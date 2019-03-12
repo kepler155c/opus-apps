@@ -1,14 +1,15 @@
-_G.requireInjector(_ENV)
-
 local GPS  = require('gps')
 local Point = require('point')
 local Util = require('util')
 
-local os       = _G.os
-local parallel = _G.parallel
+local os         = _G.os
+local parallel   = _G.parallel
+local peripheral = _G.peripheral
 
 local t = { }
-local ni = _G.device.neuralInterface or error('Neural Interface not found')
+local ni =
+  peripheral.find('neuralInterface') or
+  error('Neural Interface not found')
 
 if not ni.getID then
   error('Missing Introspection Module')

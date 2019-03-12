@@ -1,16 +1,15 @@
-_G.requireInjector(_ENV)
-
 local GPS  = require('gps')
 local Util = require('util')
 
-local os    = _G.os
-local shell = _ENV.shell
+local os         = _G.os
+local peripheral = _G.peripheral
+local shell      = _ENV.shell
 
 local args = { ... }
 local fileName = args[1] or 'neural.tbl'
 
 local t = Util.readTable(shell.resolve(fileName)) or error('Unable to read ' .. fileName)
-local ni = _G.device.neuralInterface
+local ni = peripheral.find('neuralInterface')
 
 local function walkTo(x, y, z)
   local pt = GPS.locate(2)

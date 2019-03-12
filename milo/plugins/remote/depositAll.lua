@@ -2,12 +2,12 @@ local Config = require('config')
 local UI     = require('ui')
 local itemDB = require('core.itemDB')
 
-local args   = { ... }
-local colors = _G.colors
-local device = _G.device
-local ni     = device.neuralInterface
+local args       = { ... }
+local colors     = _G.colors
+local peripheral = _G.peripheral
 
 local context = args[1]
+local ni      = peripheral.find('neuralInterface')
 
 if not context.state.depositAll then
   context.state.depositAll = { }

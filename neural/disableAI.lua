@@ -1,9 +1,10 @@
-local device = _G.device
+local peripheral = _G.peripheral
 
-if not device.neuralInterface then
+local ni = peripheral.find('neuralInterface')
+if not ni then
   error('Missing neural interface')
-elseif not device.neuralInterface.disableAI then
-  _G.printError('Unable to disable AI')
+elseif not ni.disableAI then
+  error('Missing kinetic augment')
 else
-  device.neuralInterface.disableAI()
+  ni.disableAI()
 end

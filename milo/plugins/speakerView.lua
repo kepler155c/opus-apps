@@ -2,9 +2,9 @@ local Milo    = require('milo')
 local Sound   = require('sound')
 local UI      = require('ui')
 
-local colors  = _G.colors
-local context = Milo:getContext()
-local device  = _G.device
+local colors     = _G.colors
+local context    = Milo:getContext()
+local peripheral = _G.peripheral
 
 local speakerNode = context.storage:getSingleNode('speaker')
 if speakerNode then
@@ -50,8 +50,7 @@ function wizardPage:validate()
 end
 
 function wizardPage:isValidType(node)
-  local m = device[node.name]
-  return m and m.type == 'speaker' and {
+  return peripheral.getType(node.name) == 'speaker' and {
     name = 'Speaker',
     value = 'speaker',
     category = 'custom',

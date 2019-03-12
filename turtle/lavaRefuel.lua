@@ -1,7 +1,7 @@
 local Equipper = require('turtle.equipper')
 local Point    = require('point')
 
-local peripheral = _G.device
+local peripheral = _G.peripheral
 local turtle     = _G.turtle
 
 local MAX_FUEL = turtle.getFuelLimit()

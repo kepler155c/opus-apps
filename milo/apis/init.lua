@@ -225,6 +225,7 @@ function Milo:eject(item, count)
 		count = count - amount
 
 		Sound.play('ui.button.click')
+		--Sound.play('entity.illusion_illager.death')
 		turtle.emptyInventory()
 	end
 	return total
@@ -324,6 +325,7 @@ function Milo:updateRecipe(result, recipe)
 		recipe.result = nil
 	end
 	self.context.userRecipes[result] = recipe
+	Util.backup(Craft.USER_RECIPES)
 	Util.writeTable(Craft.USER_RECIPES, self.context.userRecipes)
 	Craft.loadRecipes()
 end
@@ -333,10 +335,12 @@ function Milo:saveMachineRecipe(recipe, result, machine)
 
 	-- save the recipe
 	self.context.userRecipes[key] = recipe
+	Util.backup(Craft.USER_RECIPES)
 	Util.writeTable(Craft.USER_RECIPES, self.context.userRecipes)
 
 	-- save the machine association
 	Craft.machineLookup[key] = machine
+	Util.backup(Craft.MACHINE_LOOKUP)
 	Util.writeTable(Craft.MACHINE_LOOKUP, Craft.machineLookup)
 
 	Craft.loadRecipes()
@@ -391,6 +395,7 @@ function Milo:mergeResources(t)
 end
 
 function Milo:saveResources()
+	Util.backup(self.RESOURCE_FILE)
 	Util.writeTable(self.RESOURCE_FILE, self.context.resources)
 end
 

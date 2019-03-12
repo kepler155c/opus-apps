@@ -1,8 +1,8 @@
 local UI         = require('ui')
 
 local colors     = _G.colors
-local device     = _G.device
 local os         = _G.os
+local peripheral = _G.peripheral
 
 --[[ Configuration Page ]]--
 local wizardPage = UI.WizardPage {
@@ -64,8 +64,8 @@ function wizardPage:saveNode(node)
 end
 
 function wizardPage:isValidType(node)
-  local m = device[node.name]
-  return m and m.type == 'monitor' and {
+  local m = peripheral.getType(node.name)
+  return m == 'monitor' and {
     name = 'Store Front',
     value = 'shop',
     category = 'display',

@@ -1,13 +1,13 @@
-_G.requireInjector(_ENV)
-
 local Util = require('util')
 
-local device = _G.device
-local os     = _G.os
-local term   = _G.term
+local os         = _G.os
+local peripheral = _G.peripheral
+local term       = _G.term
 
 local args = { ... }
-local mon = device[args[1] or 'monitor'] or error('Syntax: debug <monitor>')
+local mon = args[1] and peripheral.wrap(args[1]) or
+	peripheral.find('monitor') or
+	error('Syntax: debug <monitor>')
 
 mon.clear()
 mon.setTextScale(.5)

@@ -7,10 +7,10 @@ local sync   = require('sync').sync
 local UI     = require('ui')
 local Util   = require('util')
 
-local colors = _G.colors
-local device = _G.device
-local fs     = _G.fs
-local shell  = _ENV.shell
+local colors     = _G.colors
+local fs         = _G.fs
+local peripheral = _G.peripheral
+local shell      = _ENV.shell
 
 local context = {
   state = Config.load('miloRemote', { displayMode = 0, deposit = true }),
@@ -108,7 +108,7 @@ local page = UI.Page {
 }
 
 local function getPlayerName()
-  local neural = device.neuralInterface
+  local neural = peripheral.find('neuralInterface')
 
   if neural and neural.getName then
     return neural.getName()

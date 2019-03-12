@@ -32,9 +32,7 @@ local parentMon
 
 local defaultEnv = Util.shallowCopy(_ENV)
 defaultEnv.multishell = multishell
-if args[3] then
-  parentMon = _G.device[args[3]]
-elseif args[2] then
+if args[2] then
   parentMon = peripheral.wrap(args[2]) or syntax()
 else
   parentMon = peripheral.find('monitor') or syntax()

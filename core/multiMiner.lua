@@ -6,14 +6,14 @@ local Socket  = require('socket')
 local Util    = require('util')
 local UI      = require('ui')
 
-local colors  = _G.colors
-local device  = _G.device
-local network = _G.network
-local os      = _G.os
+local colors     = _G.colors
+local network    = _G.network
+local os         = _G.os
+local peripheral = _G.peripheral
 
 UI:configure('multiMiner', ...)
 
-local scanner = device.neuralInterface
+local scanner = peripheral.find('neuralInterface')
 if not scanner or not scanner.scan then
 	error('Plethora scanner must be equipped')
 end

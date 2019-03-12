@@ -3,12 +3,11 @@ local Event  = require('event')
 local UI     = require('ui')
 local Util   = require('util')
 
-local args   = { ... }
-local colors = _G.colors
-local device = _G.device
-local ni     = device.neuralInterface
+local args       = { ... }
+local colors     = _G.colors
+local peripheral = _G.peripheral
 
-local SHIELD_SLOT  = 2
+local ni = peripheral.find('neuralInterface')
 local context = args[1]
 
 if not context.state.autostore then
