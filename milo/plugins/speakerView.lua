@@ -50,7 +50,7 @@ function wizardPage:validate()
 end
 
 function wizardPage:isValidType(node)
-  return peripheral.getType(node.name) == 'speaker' and {
+  return node.adapter and node.adapter.type == 'speaker' and {
     name = 'Speaker',
     value = 'speaker',
     category = 'custom',
