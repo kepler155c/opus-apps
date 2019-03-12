@@ -4,6 +4,7 @@ local Milo       = require('milo')
 local UI         = require('ui')
 
 local colors     = _G.colors
+local device     = _G.device
 local fs         = _G.fs
 local os         = _G.os
 
@@ -30,7 +31,8 @@ local wizardPage = UI.WizardPage {
 }
 
 function wizardPage:isValidType(node)
-  return node.adapter and node.adapter.type == 'drive' and {
+  local m = device[node.name]
+  return m and m.type == 'drive' and {
     name = 'Backup Drive',
     value = 'backup',
     category = 'custom',
