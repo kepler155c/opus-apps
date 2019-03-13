@@ -162,6 +162,10 @@ Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
     context.taskTimer = context.taskTimer + taskTimer()
     context.taskCounter = context.taskCounter + 1
   end
+
+  if context.storage:isOnline() and #context.queue > 0 then
+    os.queueEvent('milo_cycle')
+  end
 end)
 
 Event.on('turtle_inventory', function()

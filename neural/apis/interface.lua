@@ -76,7 +76,7 @@ function Interface.getUniqueNames()
 end
 
 function Interface.lookAt(pt)
-	local yaw, pitch = Angle.towards(pt.x - .5, pt.y + 1, pt.z - .5)
+	local yaw, pitch = Angle.towards(pt.x - .5, pt.y, pt.z - .5)
   return Interface.look(yaw, pitch)
 end
 
