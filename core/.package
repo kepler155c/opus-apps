@@ -1,6 +1,6 @@
 {
-	title = 'Core apps and apis',
+	title = 'APIs used by various programs',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/core',
-	description = [[Provides common files used by Opus applications. Also includes various useful applications.]],
+	description = [[Provides APIs used by Opus applications.]],
 	licence = 'MIT',
 }

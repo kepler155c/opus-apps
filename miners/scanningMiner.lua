@@ -587,12 +587,12 @@ Event.addRoutine(function()
   )
   local maxDistance = Point.distance(
     HOME_PT,
-    { x = mining.x + 16, y = 0, z = mining.z + 16 }
+    { x = mining.x, y = 0, z = mining.z }
   )
 
   _G._debug({ distance = distance, maxDistance = maxDistance })
 
-  if distance > maxDistance then
+  if distance > maxDistance + 16 then
     term.clear()
     term.setCursorPos(1, 1)
     _G.printError('WARNING\n\nTurtle is outside the mining area\n')
