@@ -1183,10 +1183,10 @@ function input:translate(event, code, p1, p2)
     self.pressed[keys.leftCtrl] = nil
     self.pressed[keys.rightCtrl] = nil
     self.fired = true
-    if clipboard then
-      return 'paste'
+    if self.pressed[keys.leftShift] or self.pressed[keys.rightShift] then
+      return 'control-shift-paste'
     end
-    return input:toCode('paste', 255)
+    return 'paste'
 
   elseif event == 'mouse_click' then
     local buttons = { 'mouse_click', 'mouse_rightclick' }
