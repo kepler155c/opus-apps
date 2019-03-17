@@ -55,7 +55,10 @@ function ImportTask:cycle(context)
 							return node.adapter.getItemMeta(slotNo)
 						end)
 						if item and matchesFilter(item) then
-							context.storage:import(node, slotNo, item.count, item)
+							if context.storage:import(node, slotNo, item.count, item) ~= item.count then
+								_G._debug('IMPORTER warning: Failed to import %s(%d) %s[%d]',
+									node.displayName or node.name, slotNo, item.name, item.count)
+							end
 						end
 					end
 

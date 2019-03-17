@@ -415,8 +415,8 @@ function Storage:export(target, slot, count, item)
       self:updateCache(adapter, item, -amount)
 
       _G._debug('EXT: %s(%d): %s -> %s%s',
-      item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
-      slot and string.format('[%d]', slot) or '[*]')
+        item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
+        slot and string.format('[%d]', slot) or '[*]')
     end
     count = count - amount
     total = total + amount
@@ -514,7 +514,7 @@ function Storage:import(source, slot, count, item)
     if node.lock and node.lock[key] then
       insert(node.adapter, item)
       if count > 0 and node.void then
-        total = total + self:trash(source, slot, count)
+        total = total + self:trash(source, slot, count, item)
         return total
       end
     end
@@ -549,13 +549,16 @@ function Storage:import(source, slot, count, item)
 end
 
 -- When importing items into a locked chest, trash any remaining items if full
-function Storage:trash(source, slot, count)
+function Storage:trash(source, slot, count, item)
   local target = Util.find(self.nodes, 'mtype', 'trashcan')
   local amount = 0
   if target and target.adapter and target.adapter.online then
     local s, m = pcall(function()
-      _G._debug('TRA: %s[%d] (%d)', self:_sn(source.name), slot, count or 64)
-      --return trashcan.adapter.pullItems(source.name, slot, count)
+      _G._debug('TRA: %s(%d): %s%s -> %s',
+        item.displayName or item.name, count, self:_sn(source.name),
+        slot and string.format('[%d]', slot) or '[*]', self:_sn(target.name))
+
+      --_G._debug('TRA: %s[%d] (%d)', self:_sn(source.name), slot, count or 64)
       if isValidTransfer(source.adapter, target.name) then
         amount = source.adapter.pushItems(target.name, slot, count)
       else
