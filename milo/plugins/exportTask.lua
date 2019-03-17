@@ -54,10 +54,7 @@ function ExportTask:cycle(context)
 						local _, item = next(items)
 						if item then
 							local count = math.min(item.count, itemDB:getMaxCount(item))
-							if context.storage:export(node, entry.slot, count, item) ~= count then
-								_G._debug('EXPORTER warning: Failed to export %s(%d) %s[%d]',
-								node.displayName or node.name, entry.slot, item.name, count)
-							end
+							context.storage:export(node, entry.slot, count, item)
 							break
 						end
 					end
@@ -70,8 +67,6 @@ function ExportTask:cycle(context)
 							if context.storage:export(node, nil, item.count, item) == 0 then
 								-- TODO: really shouldn't break here as there may be room in other slots
 								-- leaving for now for performance reasons
-									_G._debug('EXPORTER warning: Failed to export %s %s[%d]',
-									node.displayName or node.name, item.name, item.count)
 								break
 							end
 						end

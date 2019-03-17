@@ -432,7 +432,7 @@ function Storage:export(target, slot, count, item)
     end
   end
 
-  _G._debug('MISS: %s(%d): %s%s %s',
+  _G._debug('STORAGE warning: %s(%d): %s%s %s failed to export',
     item.displayName or item.name, count, self:_sn(target.name),
     slot and string.format('[%d]', slot) or '[*]', key)
 
@@ -499,8 +499,8 @@ function Storage:import(source, slot, count, item)
       self:updateCache(adapter, item, amount)
 
       _G._debug('INS: %s(%d): %s[%d] -> %s',
-      item.displayName or item.name, amount,
-      self:_sn(source.name), slot, self:_sn(adapter.name))
+        item.displayName or item.name, amount,
+        self:_sn(source.name), slot, self:_sn(adapter.name))
 
       -- record that we have imported this item into storage during this cycle
       self.activity[key] = (self.activity[key] or 0) + amount
@@ -514,8 +514,7 @@ function Storage:import(source, slot, count, item)
     if node.lock and node.lock[key] then
       insert(node.adapter, item)
       if count > 0 and node.void then
-        total = total + self:trash(source, slot, count, item)
-        return total
+        return total + self:trash(source, slot, count, item)
       end
     end
     if count <= 0 then
@@ -545,10 +544,17 @@ function Storage:import(source, slot, count, item)
     end
   end
 
+  if count ~= 0 then
+    _G._debug('STORAGE warning: %s(%d): %s -> INSERT failed',
+      item.displayName or item.name, count,
+      self:_sn(source.name))
+  end
+
   return total
 end
 
 -- When importing items into a locked chest, trash any remaining items if full
+-- TODO: use all available trashcans
 function Storage:trash(source, slot, count, item)
   local target = Util.find(self.nodes, 'mtype', 'trashcan')
   local amount = 0
@@ -569,6 +575,13 @@ function Storage:trash(source, slot, count, item)
       _G._debug(m)
     end
   end
+
+  if amount ~= count then
+    _G._debug('STORAGE warning: %s(%d): %s -> TRASH failed',
+      item.displayName or item.name, count - amount,
+      self:_sn(source.name))
+  end
+
   return amount
 end
 

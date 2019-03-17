@@ -20,13 +20,32 @@ local function findTargets()
   return l[1]
 end
 
+local last
+local count = 0
+
 while true do
   local target = findTargets()
-  if target then
-print('looking at ' .. target.name)
-    ni.lookAt(target)
-    os.sleep(0)
+  if target and (not last or Point.distance(last, target) > .2) then
+--      last = target
+if last then print(Point.distance(last, target)) end
+last = target
+--print(target.x, target.y, target.z, count)
+      ni.lookAt(target)
+      count = 0
+      os.sleep(0)
+--    elseif count < 10 then
+--      count = count + 1
+--      os.sleep(.1)
+--    end
   else
-    os.sleep(3)
+    count = count + 1
+    if count > 50 or not target then
+    ni.lookAt({ x = math.random(-10, 10),
+                y = math.random(-10, 10),
+                z = math.random(-10, 10) })
+                os.sleep(3)
+    else
+      os.sleep(.1)
+    end
   end
 end

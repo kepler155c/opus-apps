@@ -1,10 +1,10 @@
-local peripheral = _G.peripheral
+local device = _G.device
 
-local ni = peripheral.find('neuralInterface')
-if not ni then
-  error('Missing neural interface')
-elseif not ni.getEquipment then
-  error('Missing introspection module')
+local intro = device['plethora:introspection'] or
+  error('Missing Introspection module')
+
+if intro.getBaubles then
+  intro.getBaubles().drop(5)
 else
-  ni.getEquipment().drop(6)
+  intro.getEquipment().drop(6)
 end
