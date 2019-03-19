@@ -79,14 +79,16 @@ local function run()
 
     if math.abs(pos.x - offset.x) +
        math.abs(pos.y - offset.y) +
-       math.abs(pos.z - offset.z) > 16 then
+       math.abs(pos.z - offset.z) > 64 then
       for _, b in pairs(projecting) do
         projecting[b.id].box.remove()
         projecting[b.id] = nil
       end
       offset = pos
-     canvas.recenter()
+      canvas.recenter()
     end
+
+    os.sleep(.5)
   end
 end
 
