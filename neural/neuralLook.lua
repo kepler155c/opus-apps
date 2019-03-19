@@ -1,5 +1,5 @@
 local Array   = require('array')
-local kinetic = require('plethora.kinetic')
+local kinetic = require('neural.kinetic')
 local Point   = require('point')
 
 local device = _G.device
@@ -9,11 +9,11 @@ local pos = { x = 0, y = 0, z = 0 }
 local sensor = device['plethora:sensor'] or error('Missing sensor')
 local intro  = device['plethora:introspection'] or error('Missing introspection module')
 
-local ID = intro.getMetaOwner()
+local ownerId = intro.getMetaOwner().id
 
 local function findTargets()
 	local l = Array.filter(sensor.sense(), function(a)
-    return math.abs(a.motionY) > 0 and ID ~= a.id
+    return math.abs(a.motionY) > 0 and ownerId ~= a.id
   end)
   table.sort(l, function(e1, e2)
 		return Point.distance(e1, pos) < Point.distance(e2, pos)

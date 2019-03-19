@@ -1,21 +1,31 @@
-local Event   = require('event')
-local itemDB  = require('core.itemDB')
-local Project = require('neural.project')
-local UI      = require('ui')
-local Util    = require('util')
+local Event    = require('event')
+local itemDB   = require('core.itemDB')
+local UI       = require('ui')
+local Util     = require('util')
 
-local peripheral = _G.peripheral
+local device   = _G.device
+local gps      = _G.gps
+local parallel = _G.parallel
 
-local scanner =
-	peripheral.find('neuralInterface') or
-	peripheral.find('plethora:scanner') or
-	peripheral.find('manipulator')
-
-	if not scanner or not scanner.scan then
+local glasses = device['plethora:glasses']
+local scanner = device['plethora:scanner'] or
 	error('Plethora scanner must be equipped')
+
+local target
+local projecting = { }
+
+local function getPoint()
+	local pt = { gps.locate() }
+	return {
+		x = pt[1],
+		y = pt[2],
+		z = pt[3],
+	}
 end
 
-local projecting
+local offset = getPoint()
+local canvas = glasses and glasses.canvas3d().create()
+--{ -(offset.x % 1), -(offset.y % 1), -(offset.z % 1) }
 
 UI:configure('Scanner', ...)
 
@@ -106,7 +116,7 @@ end
 
 function page.detail:eventHandler(event)
 	if event.type == 'grid_select' then
-		projecting = event.selected
+		target = event.selected
 	else
 		return UI.SlideOut.eventHandler(self, event)
 	end
@@ -124,9 +134,10 @@ function page:eventHandler(event)
 		self.detail:show(self.blocks, self.grid:getSelected())
 
 	elseif event.type == 'cancel' then
-		if Project.canvas then
-			Project.canvas.clear()
-			projecting = nil
+		if canvas then
+			canvas.clear()
+			target = nil
+			projecting = { }
 		end
 		self.detail:hide()
 	end
@@ -134,17 +145,54 @@ function page:eventHandler(event)
 	UI.Page.eventHandler(self, event)
 end
 
-if scanner.canvas then
-	Project:init(scanner.canvas())
-
+if canvas then
 	Event.onInterval(.5, function()
-		if projecting then
-			local blocks = scanner.scan()
-			local pts = Util.filter(blocks, function(b)
-					return b.name == projecting.name and b.metadata == projecting.metadata
-				end)
-			Project.canvas.clear()
-			Project:drawPoints(scanner.getMetaOwner(), pts, true, 0xFFDF50AA)
+		if target then
+			local pos, scanned
+
+			parallel.waitForAll(
+				function()
+					pos = getPoint()
+				end,
+				function()
+					scanned = scanner.scan()
+				end
+			)
+			local blocks = Util.reduce(scanned, function(acc, b)
+				if b.name == target.name and b.metadata == target.metadata then
+					b.wx = math.floor(pos.x + b.x)
+					b.wy = math.floor(pos.y + b.y)
+					b.wz = math.floor(pos.z + b.z)
+					b.id = table.concat({ math.floor(b.wx), math.floor(b.wy), math.floor(b.wz) }, ':')
+					acc[b.id] = b
+				end
+				return acc
+			end, { })
+
+			for _, b in pairs(blocks) do
+				if not projecting[b.id] then
+					projecting[b.id] = b
+					b.box = canvas.addBox(
+						pos.x - offset.x + b.x + -(pos.x % 1) + .25,
+						pos.y - offset.y + b.y + -(pos.y % 1) + .25,
+						pos.z - offset.z + b.z + -(pos.z % 1) + .25,
+						.5, .5, .5)
+					b.box.setDepthTested(false)
+				end
+			end
+
+			for _, b in pairs(projecting) do
+				if not blocks[b.id] then
+					projecting[b.id].box.remove()
+					projecting[b.id] = nil
+				end
+			end
+
+--			canvas.recenter({
+--					offset.x - pos.x,
+--					offset.y - pos.y,
+--					offset.z - pos.z,
+--				})
 		end
 	end)
 end
@@ -152,6 +200,6 @@ end
 UI:setPage(page)
 UI:pullEvents()
 
-if projecting then
-	Project.canvas:clear()
+if canvas then
+	canvas:clear()
 end
