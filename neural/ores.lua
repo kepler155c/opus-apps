@@ -1,3 +1,10 @@
+-- Original concept by
+--   HydroNitrogen (a.k.a. GoogleTech, Wendelstein7)
+--   Bram S. (a.k.a ThatBram0101, bram0101)
+-- see: https://energetic.pw/computercraft/ore3d/assets/ore3d.lua
+
+-- Updated to use canvas3d (which was not available when original was made)
+
 local gps        = _G.gps
 local keys       = _G.keys
 local os         = _G.os
