@@ -1,17 +1,19 @@
-local ni    = require('neural.interface')
-local Point = require('point')
-local Util  = require('util')
+local Array   = require('array')
+local kinetic = require('plethora.kinetic')
+local Point   = require('point')
 
-local os = _G.os
+local device = _G.device
+local os     = _G.os
 
 local pos = { x = 0, y = 0, z = 0 }
-local meta = ni.getMetaOwner()
+local sensor = device['plethora:sensor'] or error('Missing sensor')
+local intro  = device['plethora:introspection'] or error('Missing introspection module')
+
+local ID = intro.getMetaOwner()
 
 local function findTargets()
-	local l = ni.sense()
-
-  Util.filterInplace(l, function(a)
-    return math.abs(a.motionY) > 0 and meta.id ~= a.id
+	local l = Array.filter(sensor.sense(), function(a)
+    return math.abs(a.motionY) > 0 and ID ~= a.id
   end)
   table.sort(l, function(e1, e2)
 		return Point.distance(e1, pos) < Point.distance(e2, pos)
@@ -26,24 +28,19 @@ local count = 0
 while true do
   local target = findTargets()
   if target and (not last or Point.distance(last, target) > .2) then
---      last = target
-if last then print(Point.distance(last, target)) end
-last = target
---print(target.x, target.y, target.z, count)
-      ni.lookAt(target)
-      count = 0
-      os.sleep(0)
---    elseif count < 10 then
---      count = count + 1
---      os.sleep(.1)
---    end
+    last = target
+    kinetic.lookAt(target)
+    count = 0
+    os.sleep(0)
   else
     count = count + 1
     if count > 50 or not target then
-    ni.lookAt({ x = math.random(-10, 10),
-                y = math.random(-10, 10),
-                z = math.random(-10, 10) })
-                os.sleep(3)
+      kinetic.lookAt({
+        x = math.random(-10, 10),
+        y = math.random(-10, 10),
+        z = math.random(-10, 10)
+      })
+      os.sleep(3)
     else
       os.sleep(.1)
     end

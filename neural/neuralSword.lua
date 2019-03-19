@@ -1,12 +1,10 @@
-_G.requireInjector(_ENV)
-
 local ni   = require('neural.interface')
 local Util = require('util')
 
 local os = _G.os
 
 while true do
-  local target = Util.find(ni.sense(), 'name', 'joebodo')
+  local target = Util.find(ni.sense(), 'name', '///////')
   if target then
     if math.abs(target.x) < 2 and
        math.abs(target.z) < 2 then

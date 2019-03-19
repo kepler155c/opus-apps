@@ -4,27 +4,18 @@ local Project    = require('neural.project')
 local UI         = require('ui')
 local Util       = require('util')
 
-local peripheral = _G.peripheral
-local turtle     = _G.turtle
+local device     = _G.device
 
-local function equip(side, rawName)
-	return turtle and turtle.equip(side, rawName) and peripheral.wrap(side)
-end
-
-local target = nil
-local ni = peripheral.find('neuralInterface')
-local sensor = ni or
-	peripheral.find('plethora:sensor') or
-	peripheral.find('manipulator') or
-	equip('left', 'plethora:module:3')
-
-if not sensor or not sensor.sense then
+local glasses = device['plethora:glasses']
+local intro   = device['plethora:introspection']
+local sensor  = device['plethora:sensor'] or
 	error('Plethora sensor must be equipped')
-end
 
-UI:configure('Entities', ...)
+UI:configure('Sensor', ...)
 
-local config = Config.load('Entities', {
+local target
+
+local config = Config.load('Sensor', {
 	ignore = { }
 })
 if not config.ignore then
@@ -127,7 +118,7 @@ function page:eventHandler(event)
 
 	elseif event.type == 'totals' then
 		config.totals = not config.totals
-		Config.update('Entities', config)
+		Config.update('Sensor', config)
 
 	elseif event.type == 'detail' or event.type == 'grid_select' then
 		local selected = self.grid:getSelected()
@@ -144,20 +135,22 @@ function page:eventHandler(event)
 		if selected then
 			config.ignore[selected.name] = true
 		end
-		Config.update('Entities', config)
+		Config.update('Sensor', config)
 
 	elseif event.type == 'project' or event.type == 'project-target' then
 		if event.type == 'project' then
 			target = nil
 		end
 
-		config.projecting = not config.projecting
-		if config.projecting then
-			Project:init(ni.canvas())
-		else
-			Project.canvas:clear()
+		if glasses then
+			config.projecting = not config.projecting
+			if config.projecting then
+				Project:init(glasses.canvas())
+			else
+				Project.canvas:clear()
+			end
 		end
-		Config.update('Entities', config)
+		Config.update('Sensor', config)
 	end
 
 	UI.Page.eventHandler(self, event)
@@ -167,8 +160,8 @@ Event.onInterval(.5, function()
 	local entities = sensor.sense()
 	Util.filterInplace(entities, function(e) return not config.ignore[e.name] end)
 
-	if config.projecting then
-		local meta = ni.getMetaOwner()
+	if config.projecting and glasses and intro then
+		local meta = intro.getMetaOwner()
 		Project.canvas:clear()
 		local t = entities
 		if target then
@@ -194,13 +187,13 @@ Event.onInterval(.5, function()
 	page:sync()
 end)
 
-if config.projecting then
-	Project:init(ni.canvas())
+if config.projecting and glasses then
+	Project:init(glasses.canvas())
 end
 
 UI:setPage(page)
 UI:pullEvents()
 
-if config.projecting then
+if config.projecting and glasses then
 	Project.canvas:clear()
 end
