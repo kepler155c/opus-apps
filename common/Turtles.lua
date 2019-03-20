@@ -29,7 +29,7 @@ local options = {
                  desc = 'Displays the options' },
 }
 
-local SCRIPTS_PATH = 'packages/core/etc/scripts'
+local SCRIPTS_PATH = 'packages/common/etc/scripts'
 
 local nullTerm = Terminal.getNullTerm(term.current())
 local socket

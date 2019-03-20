@@ -10,6 +10,7 @@ local parallel = _G.parallel
 if not modules.launch or not modules.getMetaOwner then
   error([[Required:
 * Kinetic augment
+* Entity sensor
 * Introspection module]])
 end
 
