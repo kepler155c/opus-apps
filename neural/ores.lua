@@ -3,7 +3,7 @@
 --   Bram S. (a.k.a ThatBram0101, bram0101)
 -- see: https://energetic.pw/computercraft/ore3d/assets/ore3d.lua
 
--- Updated to use canvas3d (which was not available when original was made)
+-- Updated to use new(ish) canvas3d
 
 local gps        = _G.gps
 local keys       = _G.keys
@@ -11,13 +11,32 @@ local os         = _G.os
 local parallel   = _G.parallel
 local peripheral = _G.peripheral
 
+local function showRequirements(missing)
+  print([[A neural interface is required containing:
+ * Overlay glasses
+ * Scanner
+]])
+  error('Missing: ' .. missing)
+end
+
 local modules = peripheral.find('neuralInterface')
 if not modules then
-  error('Plethora scanner must be equipped')
+  showRequirements('Neural interface')
 elseif not modules.canvas then
-  error('Overlay glasses module is required')
+  showRequirements('Overlay glasses')
 elseif not modules.scan then
-  error('Scanner module is required')
+  showRequirements('Scanner module')
+end
+
+local function getPoint()
+  local pt = { gps.locate() }
+  if pt[1] then
+    return {
+      x = pt[1],
+      y = pt[2],
+      z = pt[3],
+    }
+  end
 end
 
 local targets = {
@@ -34,22 +53,10 @@ local targets = {
   ["minecraft:glowstone"] = 0xFFDFA166
 }
 local projecting = { }
-
-local function getPoint()
-  local pt = { gps.locate() }
-  if pt[1] then
-    return {
-      x = pt[1],
-      y = pt[2],
-      z = pt[3],
-    }
-  end
-end
-
 local offset = getPoint() or error('GPS not found')
 local canvas = modules.canvas3d().create()
 
-local function run()
+local function update()
   while true do
     -- order matters
     local scanned = modules.scan()
@@ -114,7 +121,7 @@ parallel.waitForAny(
       end
     end
   end,
-  run
+  update
 )
 
 canvas.clear()

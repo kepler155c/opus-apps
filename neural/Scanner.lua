@@ -5,7 +5,6 @@ local Util     = require('util')
 
 local device   = _G.device
 local gps      = _G.gps
-local parallel = _G.parallel
 
 local glasses = device['plethora:glasses']
 local scanner = device['plethora:scanner'] or
@@ -25,7 +24,6 @@ end
 
 local offset = getPoint()
 local canvas = glasses and glasses.canvas3d().create()
---{ -(offset.x % 1), -(offset.y % 1), -(offset.z % 1) }
 
 UI:configure('Scanner', ...)
 
@@ -33,7 +31,6 @@ local page = UI.Page {
 	menuBar = UI.MenuBar {
 		buttons = {
 			{ text = 'Scan',   event = 'scan' },
-			{ text = 'Totals', event = 'totals' },
 		},
 	},
 	grid = UI.ScrollingGrid {
@@ -50,12 +47,11 @@ local page = UI.Page {
 	detail = UI.SlideOut {
 		menuBar = UI.MenuBar {
 			buttons = {
-				{ text = 'Projector', event = 'project' },
 				{ text = 'Cancel',    event = 'cancel'  },
 			},
 		},
 		grid = UI.ScrollingGrid {
-			y = 2, ey = -2,
+			y = 2,
 			columns = {
 				{ heading = 'Name', key = 'name' },
 				{ heading = 'Dmg',  key = 'metadata', width = 3 },
@@ -114,15 +110,6 @@ function page.detail:show(blocks, entry)
 	return UI.SlideOut.show(self)
 end
 
-function page.detail:eventHandler(event)
-	if event.type == 'grid_select' then
-		target = event.selected
-	else
-		return UI.SlideOut.eventHandler(self, event)
-	end
-	return true
-end
-
 function page:eventHandler(event)
 	if event.type == 'quit' then
 		Event.exitPullEvents()
@@ -131,6 +118,7 @@ function page:eventHandler(event)
 		self:scan()
 
 	elseif event.type == 'grid_select' then
+		target = self.grid:getSelected()
 		self.detail:show(self.blocks, self.grid:getSelected())
 
 	elseif event.type == 'cancel' then
@@ -148,22 +136,16 @@ end
 if canvas then
 	Event.onInterval(.5, function()
 		if target then
-			local pos, scanned
+			local scanned = scanner.scan()
+			local pos = getPoint()
 
-			parallel.waitForAll(
-				function()
-					pos = getPoint()
-				end,
-				function()
-					scanned = scanner.scan()
-				end
-			)
 			local blocks = Util.reduce(scanned, function(acc, b)
-				if b.name == target.name and b.metadata == target.metadata then
-					b.wx = math.floor(pos.x + b.x)
-					b.wy = math.floor(pos.y + b.y)
-					b.wz = math.floor(pos.z + b.z)
-					b.id = table.concat({ math.floor(b.wx), math.floor(b.wy), math.floor(b.wz) }, ':')
+				if b.name == target.name and b.metadata == target.damage then
+					-- track block's world position
+					b.id = table.concat({
+						math.floor(pos.x + b.x),
+						math.floor(pos.y + b.y),
+						math.floor(pos.z + b.z) }, ':')
 					acc[b.id] = b
 				end
 				return acc
@@ -183,21 +165,21 @@ if canvas then
 
 			for _, b in pairs(projecting) do
 				if not blocks[b.id] then
-					projecting[b.id].box.remove()
+					b.box.remove()
 					projecting[b.id] = nil
 				end
 			end
-
---			canvas.recenter({
---					offset.x - pos.x,
---					offset.y - pos.y,
---					offset.z - pos.z,
---				})
 		end
 	end)
 end
 
 UI:setPage(page)
+
+Event.onTimeout(0, function()
+	page:scan()
+	page:sync()
+end)
+
 UI:pullEvents()
 
 if canvas then
