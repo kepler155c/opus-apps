@@ -92,7 +92,7 @@ local function loadAPI(url, env)
 	return apiEnv
 end
 
-bbpack  = loadAPI('http://pastebin.com/raw/PdrJjb5S', getfenv(1))
+bbpack  = loadAPI('http://pastebin.com/raw/cUYTGbpb', getfenv(1))
 GIF     = loadAPI('http://pastebin.com/raw/5uk9uRjC', getfenv(1))
 
 local s, m = Util.runUrl(getfenv(1), 'http://pastebin.com/raw/cUYTGbpb', 'get', 'CnLzL5fg')

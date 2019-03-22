@@ -436,6 +436,15 @@ Unlocked Slots : %d of %d (%d%%)
     UI.Tab.disable(self)
   end
 
+  function page:eventHandler(event)
+    if event.type == 'tab_activate' then
+      local state = Milo:getState('statusState') or { }
+      state[node.name] = event.activated.tabTitle
+      Milo:setState('statusState', state)
+    end
+    return UI.Page.eventHandler(self, event)
+  end
+
   table.insert(context.loggers, function(...)
     local oterm = term.redirect(activityTab.term.win)
     activityTab.term.win.scrollBottom()
@@ -449,6 +458,13 @@ Unlocked Slots : %d of %d (%d%%)
   Event.onTimeout(0, function()
     UI:setPage(page)
   end)
+
+  -- restore active tab
+  local tabState = Milo:getState('statusState') or { }
+  if tabState[node.name] then
+    page.tabs:selectTab(Util.find(page.tabs, 'tabTitle', tabState[node.name]))
+  end
+
   return page
 end
 

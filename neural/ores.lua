@@ -15,6 +15,7 @@ local function showRequirements(missing)
   print([[A neural interface is required containing:
  * Overlay glasses
  * Scanner
+ * Modem
 ]])
   error('Missing: ' .. missing)
 end
@@ -53,7 +54,7 @@ local targets = {
   ["minecraft:glowstone"] = 0xFFDFA166
 }
 local projecting = { }
-local offset = getPoint() or error('GPS not found')
+local offset = getPoint() or showRequirements('GPS')
 local canvas = modules.canvas3d().create()
 
 local function update()
