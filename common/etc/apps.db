@@ -108,6 +108,7 @@ Needs work
 	[ "swarm" ] = {
 		title = "Swarm",
 		category = "Turtle",
+    requires = "neuralInterface",
 		icon = "    \0315\\\030 \031  \
  \0304\031f _ \030 \031c/\0315\\\
  \0304   ",

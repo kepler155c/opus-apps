@@ -3,6 +3,7 @@
     title = "ElytraFly",
     category = "Neural",
     run = "elytraFly.lua",
+    requires = "neuralInterface",
   },
   [ "9101fc1744ab274aaa0b54ee22b14ca53ee6e236" ] = {
     title = "Sensor",
@@ -24,5 +25,6 @@
     title = "Ores",
     category = "Neural",
     run = "ores.lua",
+    requires = "neuralInterface",
   },
 }

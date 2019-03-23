@@ -1,17 +1,26 @@
--- credit: osmarks https://pastebin.com/ZP9Q1HCT
+-- original concept: osmarks https://pastebin.com/ZP9Q1HCT
 
 local Sound = require('sound')
 local Util  = require('util')
 
+local fs       = _G.fs
 local modules  = _G.peripheral.wrap('back')
 local os       = _G.os
 local parallel = _G.parallel
+
+local STARTUP_FILE = 'usr/autorun/fly.lua'
 
 if not modules.launch or not modules.getMetaOwner then
   error([[Required:
 * Kinetic augment
 * Entity sensor
 * Introspection module]])
+end
+
+if not fs.exists(STARTUP_FILE) then
+  Util.writeFile(STARTUP_FILE, [[os.sleep(1)
+shell.openHiddenTab('elytraFly.lua')]])
+  print('Autorun program created: ' .. STARTUP_FILE)
 end
 
 local canvas = modules.canvas and modules.canvas()
