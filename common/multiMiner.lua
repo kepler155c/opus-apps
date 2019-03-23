@@ -298,8 +298,9 @@ function page:scan()
       end
 
       if b.name == 'computercraft:turtle_advanced' or
-         b.name == 'computercraft:turtle' then
-        table.insert(candidates, b)
+        b.name == 'computercraft:turtle_expanded' or
+        b.name == 'computercraft:turtle' then
+          table.insert(candidates, b)
       end
 
       if b.name == 'minecraft:chest' or b.name:find('shulker') then
