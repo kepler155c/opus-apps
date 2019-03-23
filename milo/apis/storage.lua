@@ -405,6 +405,7 @@ local function rawExport(source, target, item, qty, slot)
 end
 
 function Storage:export(target, slot, count, item)
+  local timer = Util.timer()
   local total = 0
   local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
 
@@ -414,9 +415,9 @@ function Storage:export(target, slot, count, item)
     if amount > 0 then
       self:updateCache(adapter, item, -amount)
 
-      _G._debug('EXT: %s(%d): %s -> %s%s',
+      _G._debug('EXT: %s(%d): %s -> %s%s in %s',
         item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
-        slot and string.format('[%d]', slot) or '[*]')
+        slot and string.format('[%d]', slot) or '[*]', Util.round(timer(), 2))
     end
     count = count - amount
     total = total + amount
@@ -472,6 +473,7 @@ function Storage:import(source, slot, count, item)
   if not source then error('Storage:import: source is required') end
   if not slot   then error('Storage:import: slot is required')   end
 
+  local timer = Util.timer()
   local total = 0
   local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
 
@@ -498,9 +500,9 @@ function Storage:import(source, slot, count, item)
     if amount > 0 then
       self:updateCache(adapter, item, amount)
 
-      _G._debug('INS: %s(%d): %s[%d] -> %s',
+      _G._debug('INS: %s(%d): %s[%d] -> %s in %s',
         item.displayName or item.name, amount,
-        self:_sn(source.name), slot, self:_sn(adapter.name))
+        self:_sn(source.name), slot, self:_sn(adapter.name), Util.round(timer(), 2))
 
       -- record that we have imported this item into storage during this cycle
       self.activity[key] = (self.activity[key] or 0) + amount
@@ -556,13 +558,14 @@ end
 -- When importing items into a locked chest, trash any remaining items if full
 -- TODO: use all available trashcans
 function Storage:trash(source, slot, count, item)
+  local timer = Util.timer()
   local target = Util.find(self.nodes, 'mtype', 'trashcan')
   local amount = 0
   if target and target.adapter and target.adapter.online then
     local s, m = pcall(function()
-      _G._debug('TRA: %s(%d): %s%s -> %s',
+      _G._debug('TRA: %s(%d): %s%s -> %s in %s',
         item.displayName or item.name, count, self:_sn(source.name),
-        slot and string.format('[%d]', slot) or '[*]', self:_sn(target.name))
+        slot and string.format('[%d]', slot) or '[*]', self:_sn(target.name), Util.round(timer(), 2))
 
       --_G._debug('TRA: %s[%d] (%d)', self:_sn(source.name), slot, count or 64)
       if isValidTransfer(source.adapter, target.name) then

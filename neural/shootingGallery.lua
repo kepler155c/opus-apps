@@ -1,18 +1,35 @@
+local Angle = require('neural.angle')
 local Mobs  = require('neural.mobs')
-local ni    = require('neural.interface')
 local Point = require('point')
 
-local os = _G.os
+local device = _G.device
+local os     = _G.os
 
-if not ni.look then
-  error('neuralInterface required')
+local sensor = device['plethora:sensor'] or error('Sensor is required')
+local weapon = device['plethora:laser']
+local uid = ''
+
+local function shootAt(pt)
+	local yaw, pitch = Angle.towards(pt.x, pt.y, pt.z)
+  weapon.fire(yaw, pitch, 4)
 end
 
-local uid = ni.getID and ni.getID() or error('Introspection module is required')
+if not weapon then
+  weapon = device['plethora:introspection']
+  if not weapon or not weapon.shoot then
+    error('Either a laser or a skeleton with introspection module is required')
+  end
+  uid = weapon.getID()
+  shootAt = function(pt)
+    local yaw, pitch = Angle.towards(pt.x, pt.y, pt.z)
+    weapon.look(yaw, pitch)
+    weapon.shoot(1)
+  end
+end
 
 local function findTargets()
   local pos = { x = 0, y = 0, z = 0 }
-  local l = ni.sense()
+  local l = sensor.sense()
   table.sort(l, function(e1, e2)
     return Point.distance(e1, pos) < Point.distance(e2, pos)
   end)
@@ -20,7 +37,7 @@ local function findTargets()
   local targets = { }
   for _,v in ipairs(l) do
     if v.id ~= uid and Mobs.getNames()[v.name] then
-      if math.abs(v.y) < 2 then -- pitch is broken
+      if v.y >= 0 and v.y < 1 then
         table.insert(targets, v)
       end
     end
@@ -28,16 +45,11 @@ local function findTargets()
   return #targets > 0 and targets
 end
 
-print('Targets:')
-for _,v in pairs(ni.sense()) do
-  print(v.name)
-end
-
 while true do
   local targets = findTargets()
   if targets then
     for _, entity in ipairs(targets) do
-      ni.shootAt(entity, 1)
+      shootAt(entity, 1)
     end
   end
   os.sleep(.5)

@@ -10,7 +10,6 @@ local glasses = device['plethora:glasses']
 local scanner = device['plethora:scanner'] or
 	error('Plethora scanner must be equipped')
 
-local target
 local projecting = { }
 
 local function getPoint()
@@ -47,7 +46,7 @@ local page = UI.Page {
 	detail = UI.SlideOut {
 		menuBar = UI.MenuBar {
 			buttons = {
-				{ text = 'Cancel',    event = 'cancel'  },
+				{ text = 'Back', event = 'cancel'  },
 			},
 		},
 		grid = UI.ScrollingGrid {
@@ -60,6 +59,9 @@ local page = UI.Page {
 				{ heading = '  Z',  key = 'z', width = 3, align = 'right' },
 			},
 			sortColumn = 'name',
+			accelerators = {
+				grid_select = 'noop',
+			},
 		},
 	},
 }
@@ -107,7 +109,57 @@ end
 
 function page.detail:show(blocks, entry)
 	self.grid:setValues(Util.filter(blocks, function(b) return b.key == entry.key end))
+	self.target = entry
+	if canvas then
+		self.handler = Event.onInterval(.5, function()
+			if not self.target then
+				Event.off(self.handler)
+				projecting = { }
+				canvas.clear()
+			else
+				local t = self.target
+				local scanned = scanner.scan()
+				local pos = getPoint()
+
+				blocks = Util.reduce(scanned, function(acc, b)
+					if b.name == t.name and b.metadata == t.damage then
+						-- track block's world position
+						b.id = table.concat({
+							math.floor(pos.x + b.x),
+							math.floor(pos.y + b.y),
+							math.floor(pos.z + b.z) }, ':')
+						acc[b.id] = b
+					end
+					return acc
+				end, { })
+
+				for _, b in pairs(blocks) do
+					if not projecting[b.id] then
+						projecting[b.id] = b
+						b.box = canvas.addBox(
+							pos.x - offset.x + b.x + -(pos.x % 1) + .25,
+							pos.y - offset.y + b.y + -(pos.y % 1) + .25,
+							pos.z - offset.z + b.z + -(pos.z % 1) + .25,
+							.5, .5, .5)
+						b.box.setDepthTested(false)
+					end
+				end
+
+				for _, b in pairs(projecting) do
+					if not blocks[b.id] then
+						b.box.remove()
+						projecting[b.id] = nil
+					end
+				end
+			end
+		end)
+	end
 	return UI.SlideOut.show(self)
+end
+
+function page.detail:hide()
+	self.target = nil
+	return UI.SlideOut.hide(self)
 end
 
 function page:eventHandler(event)
@@ -117,60 +169,14 @@ function page:eventHandler(event)
 	elseif event.type == 'scan' then
 		self:scan()
 
-	elseif event.type == 'grid_select' then
-		target = self.grid:getSelected()
+	elseif event.type == 'grid_select' and event.element == page.grid then
 		self.detail:show(self.blocks, self.grid:getSelected())
 
 	elseif event.type == 'cancel' then
-		if canvas then
-			canvas.clear()
-			target = nil
-			projecting = { }
-		end
 		self.detail:hide()
 	end
 
 	UI.Page.eventHandler(self, event)
-end
-
-if canvas then
-	Event.onInterval(.5, function()
-		if target then
-			local scanned = scanner.scan()
-			local pos = getPoint()
-
-			local blocks = Util.reduce(scanned, function(acc, b)
-				if b.name == target.name and b.metadata == target.damage then
-					-- track block's world position
-					b.id = table.concat({
-						math.floor(pos.x + b.x),
-						math.floor(pos.y + b.y),
-						math.floor(pos.z + b.z) }, ':')
-					acc[b.id] = b
-				end
-				return acc
-			end, { })
-
-			for _, b in pairs(blocks) do
-				if not projecting[b.id] then
-					projecting[b.id] = b
-					b.box = canvas.addBox(
-						pos.x - offset.x + b.x + -(pos.x % 1) + .25,
-						pos.y - offset.y + b.y + -(pos.y % 1) + .25,
-						pos.z - offset.z + b.z + -(pos.z % 1) + .25,
-						.5, .5, .5)
-					b.box.setDepthTested(false)
-				end
-			end
-
-			for _, b in pairs(projecting) do
-				if not blocks[b.id] then
-					b.box.remove()
-					projecting[b.id] = nil
-				end
-			end
-		end
-	end)
 end
 
 UI:setPage(page)

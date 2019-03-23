@@ -12,8 +12,8 @@ Event.addRoutine(function()
   local lastTransfer
   while true do
     local sleepTime = 1.5
-    if lastTransfer and os.clock() - lastTransfer < 3 then
-      sleepTime = .25
+    if lastTransfer and os.clock() - lastTransfer < 2 then
+      sleepTime = .1
     end
 
     os.sleep(context.socket and sleepTime or 5)
