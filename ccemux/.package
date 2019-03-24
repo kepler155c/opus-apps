@@ -1,0 +1,6 @@
+{
+	title = 'CCEmuX peripheral management',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/ccemux',
+	description = [[Peripheral management for CCEmuX]],
+	licence = 'MIT',
+}
