@@ -102,6 +102,11 @@ end
 function Storage:initStorage()
   local online = true
 
+  -- unknown why this is not working below
+  for _,v in pairs(device) do
+    v.transferLocations = nil
+  end
+
   for k,v in pairs(self.nodes) do
     if v.mtype ~= 'hidden' then
       if v.adapter then
@@ -337,12 +342,10 @@ end
 
 local function isValidTransfer(adapter, target)
   -- lazily cache transfer locations
-  local transferLocations = adapter.transferLocations
-  if not transferLocations then
-    transferLocations = adapter.getTransferLocations()
-    adapter.transferLocations = transferLocations
+  if not adapter.transferLocations then
+    adapter.transferLocations = adapter.getTransferLocations()
   end
-  for _,v in pairs(transferLocations) do
+  for _,v in pairs(adapter.transferLocations) do
     if v == target then
       return true
     end
@@ -563,16 +566,15 @@ function Storage:trash(source, slot, count, item)
   local amount = 0
   if target and target.adapter and target.adapter.online then
     local s, m = pcall(function()
-      _G._debug('TRA: %s(%d): %s%s -> %s in %s',
-        item.displayName or item.name, count, self:_sn(source.name),
-        slot and string.format('[%d]', slot) or '[*]', self:_sn(target.name), Util.round(timer(), 2))
-
-      --_G._debug('TRA: %s[%d] (%d)', self:_sn(source.name), slot, count or 64)
       if isValidTransfer(source.adapter, target.name) then
         amount = source.adapter.pushItems(target.name, slot, count)
       else
         amount = target.adapter.pullItems(source.name, slot, count)
       end
+
+      _G._debug('TRA: %s(%d): %s%s -> %s in %s',
+        item.displayName or item.name, amount, self:_sn(source.name),
+        slot and string.format('[%d]', slot) or '[*]', self:_sn(target.name), Util.round(timer(), 2))
     end)
     if not s and m then
       _G._debug(m)

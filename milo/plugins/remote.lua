@@ -99,6 +99,9 @@ local function client(socket)
 						if context.storage:import(node, data.slot, slot.count, slot) > 0 then
 							local item = Milo:getItem(slot)
 							if item then
+-- TODO: This generates multile messages for the same item
+-- use a callback system using a UID for the message
+
 								socket:write({
 									type = 'received',
 									key = item.key,
