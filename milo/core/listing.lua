@@ -88,7 +88,9 @@ local page = UI.Page {
       help = displayModes[displayMode].help,
     },
   },
-  notification = UI.Notification(),
+  notification = UI.Notification {
+    anchor = 'top',
+  },
   throttle = UI.Throttle {
     textColor = colors.yellow,
     borderColor = colors.gray,
@@ -180,6 +182,18 @@ function page:eject(amount)
         self.grid.values[self.grid.sorted[self.grid.index]] = item
         local request = Milo:craftAndEject(item, amount)
         item.count = request.current - request.count
+
+        if request.craft then
+          if request.craft > 0 then
+            self:notifyInfo(request.craft .. ' crafting ...')
+          elseif request.craft + request.count < request.requested then
+            if request.craft + request.count == 0 then
+              Sound.play('entity.villager.no')
+            end
+            self:notifyInfo((request.craft + request.count) .. ' available ...')
+          end
+        end
+
         if request.count + request.craft > 0 then
           self.grid:draw()
           return true
@@ -269,6 +283,18 @@ function page:eventHandler(event)
     UI.Page.eventHandler(self, event)
   end
   return true
+end
+
+function page:notifySuccess(status)
+  self.notification:success(status)
+end
+
+function page:notifyInfo(status)
+  self.notification:info(status)
+end
+
+function page:notifyError(status)
+  self.notification:error(status)
 end
 
 function page:enable(args)

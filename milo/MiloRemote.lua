@@ -95,6 +95,9 @@ local page = UI.Page {
       help = displayModes[context.state.displayMode].help,
     },
   },
+  notification = UI.Notification {
+    anchor = 'top',
+  },
   accelerators = {
     r = 'refresh',
     [ 'control-r' ] = 'refresh',
@@ -176,6 +179,7 @@ function page:eventHandler(event)
     Util.merge(self.statusBar.depositToggle, depositMode[context.state.deposit])
     self.statusBar:draw()
     context:setStatus(depositMode[context.state.deposit].help)
+    context:notifyInfo(depositMode[context.state.deposit].help)
     Config.update('miloRemote', context.state)
 
   elseif event.type == 'focus_change' then
@@ -208,7 +212,7 @@ function page:eventHandler(event)
       self:transfer(item, count, 'requesting ' .. count .. ' ...')
     else
       Sound.play('entity.villager.no')
-      context:setStatus('nope ...')
+      context:notify('nope ...')
     end
 
   elseif event.type == 'plugin' then
@@ -236,6 +240,7 @@ function page:eventHandler(event)
     event.button:draw()
     self:applyFilter()
     context:setStatus(event.button.help)
+    context:notifyInfo(event.button.help)
     self.grid:draw()
     Config.update('miloRemote', context.state)
 
@@ -340,10 +345,23 @@ context.page = page
 
 function context:setStatus(status)
   page.menuBar.infoBar.values = status
-  --if page.menuBar.infoBar.enabled then
-    page.menuBar.infoBar:draw()
-    page:sync()
-  --end
+  page.menuBar.infoBar:draw()
+  page:sync()
+end
+
+function context:notifySuccess(status)
+  page.notification:success(status)
+  page:sync()
+end
+
+function context:notifyInfo(status)
+  page.notification:info(status)
+  page:sync()
+end
+
+function context:notifyError(status)
+  page.notification:error(status)
+  page:sync()
 end
 
 local function processMessages(s)
@@ -359,26 +377,26 @@ local function processMessages(s)
         h(response)
       end
       if response.msg then
-        context:setStatus(response.msg)
+        context:notifyInfo(response.msg)
       end
     until not s.connected
 
     s:close()
     s = nil
-    context:setStatus('disconnected ...')
+    context:notifyError('disconnected ...')
     Sound.play('entity.villager.no')
   end)
 end
 
 function context:sendRequest(data, statusMsg)
   if not context.state.server then
-    self:setStatus('Invalid configuration')
+    self:notifyError('Invalid configuration')
     return
   end
 
   local player = getPlayerName()
   if not player then
-    self:setStatus('Missing neural or introspection')
+    self:notifyError('Missing neural or introspection')
     return
   end
 
@@ -387,13 +405,13 @@ function context:sendRequest(data, statusMsg)
     local msg
     for _ = 1, 2 do
       if not context.socket or not context.socket.connected then
-        self:setStatus('connecting ...')
+        self:notifyInfo('connecting ...')
         context.socket, msg = Socket.connect(context.state.server, 4242)
         if context.socket then
           context.socket:write(player)
           local r = context.socket:read(2)
           if r and not r.msg then
-            self:setStatus('connected ...')
+            self:notifySuccess('connected ...')
             processMessages(context.socket)
           else
             msg = r and r.msg or 'Timed out'
@@ -404,10 +422,7 @@ function context:sendRequest(data, statusMsg)
       end
       if context.socket then
         if statusMsg then
-          self:setStatus(statusMsg)
-          Event.onTimeout(2, function()
-            self:setStatus('')
-          end)
+          self:notifyInfo(statusMsg)
         end
         if context.socket:write(data) then
           success = true
@@ -417,7 +432,7 @@ function context:sendRequest(data, statusMsg)
         context.socket = nil
       end
     end
-    self:setStatus(msg or 'Failed to connect')
+    self:notifyError(msg or 'Failed to connect')
   end)
 
   return success
@@ -467,12 +482,12 @@ context.responseHandlers['transfer'] = function(response)
   end
   if response.craft then
     if response.craft > 0 then
-      context:setStatus(response.craft .. ' crafting ...')
+      context:notifyInfo(response.craft .. ' crafting ...')
     elseif response.craft + response.count < response.requested then
       if response.craft + response.count == 0 then
         Sound.play('entity.villager.no')
       end
-      context:setStatus((response.craft + response.count) .. ' available ...')
+      context:notifyInfo((response.craft + response.count) .. ' available ...')
     end
   end
 end
