@@ -76,7 +76,11 @@ local function run()
 
     if not meta.isSneaking and meta.isElytraFlying then
 
-      if meta.pitch < 0 then -- looking up
+      if meta.isInWater then
+        display(meta)
+        os.sleep(0.5)
+
+      elseif meta.pitch < 0 then -- looking up
         modules.launch(meta.yaw, meta.pitch, -meta.pitch / 22.5)
         Sound.play('entity.bobber.throw', .6)
         display(meta)

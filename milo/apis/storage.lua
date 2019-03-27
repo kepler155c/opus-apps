@@ -280,7 +280,7 @@ function Storage:listItems(throttle)
     end
   end
   itemDB:flush()
-  _G._debug('STORAGE: refresh '  .. #t .. ' inventories in ' .. timer())
+  _G._debug('STORAGE: refresh '  .. #t .. ' inventories in ' .. Util.round(timer(), 2))
 
   self.dirty = false
   self.cache = cache

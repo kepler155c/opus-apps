@@ -75,12 +75,14 @@ function page:eventHandler(event)
   elseif event.type == 'quit' then
     UI:exitPullEvents()
 
+  --[[
   elseif event.type == 'focus_change' then
     if event.focused == self.grid then
       if not self.paused then
         self:emit({ type = 'toggle' })
       end
     end
+  --]]
 
   else
     return UI.Page.eventHandler(self, event)

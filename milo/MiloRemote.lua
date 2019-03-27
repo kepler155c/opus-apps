@@ -212,7 +212,7 @@ function page:eventHandler(event)
       self:transfer(item, count, 'requesting ' .. count .. ' ...')
     else
       Sound.play('entity.villager.no')
-      context:notify('nope ...')
+      context:notifyError('nope ...')
     end
 
   elseif event.type == 'plugin' then
