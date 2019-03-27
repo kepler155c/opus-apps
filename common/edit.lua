@@ -631,6 +631,7 @@ local __actions = {
   end,
 
   run = function()
+    input:reset()
     local sTempPath = "/.temp"
     local ok = save(sTempPath)
     if ok then

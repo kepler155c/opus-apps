@@ -74,7 +74,10 @@ local function run()
   while true do
     local meta = modules.getMetaOwner()
 
-    if not meta.isSneaking and meta.isElytraFlying then
+    if meta.isOnLadder then
+      os.sleep(0.5)
+
+    elseif not meta.isSneaking and meta.isElytraFlying then
 
       if meta.isInWater then
         display(meta)
