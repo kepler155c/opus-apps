@@ -252,8 +252,7 @@ function substitutionPage:enable()
   end
   self.grid:update()
 
-  self.menuBar.filter.value = ''
-  self.menuBar.filter.pos = 1
+  self.menuBar.filter:reset()
   self:setFocus(self.menuBar.filter)
   UI.Page.enable(self)
 end

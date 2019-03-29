@@ -129,6 +129,7 @@ local keyMapping = {
   [ 'control-shift-left'  ] = 'mark_backword',
   [ 'shift-end'           ] = 'mark_end',
   [ 'shift-home'          ] = 'mark_home',
+  [ 'mouse_down'          ] = 'mark_anchor',
 
   -- editing
   delete                    = 'delete',
@@ -722,6 +723,13 @@ local __actions = {
     end
   end,
 
+  mark_anchor = function(nx, ny)
+    actions.go_to(nx, ny)
+    actions.unmark()
+    actions.mark_begin()
+    actions.mark_finish()
+  end,
+
   mark_to = function(nx, ny)
     actions.mark_begin()
     actions.go_to(nx, ny)
@@ -1194,6 +1202,7 @@ function input:translate(event, code, p1, p2)
     local buttons = { 'mouse_click', 'mouse_rightclick' }
     self.mch = buttons[code]
     self.mfired = nil
+		return input:toCode('mouse_down', 255)
 
   elseif event == 'mouse_drag' then
     self.mfired = true
@@ -1244,7 +1253,10 @@ while bRunning do
     action = 'exit'
   elseif sEvent == 'multishell_focus' then -- opus only event
     input:reset()
-  elseif sEvent == "mouse_click" or sEvent == 'mouse_drag' or sEvent == 'mouse_up' then
+  elseif sEvent == "mouse_click" or
+         sEvent == 'mouse_drag' or
+         sEvent == 'mouse_up' or
+         sEvent == 'mouse_down' then
     local ch = input:translate(sEvent, param, param2, param3)
     if param3 < h or sEvent == 'mouse_drag' then
       if ch then
