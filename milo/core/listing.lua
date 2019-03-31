@@ -60,6 +60,7 @@ local page = UI.Page {
         [ 'enter' ] = 'eject',
         [ 'up' ] = 'grid_up',
         [ 'down' ] = 'grid_down',
+        [ 'control-a' ] = 'eject_all',
       },
     },
     storageStatus = UI.Text {
@@ -77,6 +78,7 @@ local page = UI.Page {
       backgroundFocusColor = colors.black,
       accelerators = {
         [ 'enter' ] = 'eject_specified',
+        [ 'control-a' ] = 'eject_all',
       },
       help = 'Specify an amount to send',
     },

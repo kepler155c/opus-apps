@@ -65,7 +65,7 @@ local localName
 
 print('detecting wired modem connected to furnaces...')
 for _, dev in pairs(device) do
-  if dev.type == 'wired_modem' then
+  if dev.type == 'wired_modem' and dev.getNameLocal then
     local list = dev.getNamesRemote()
     furni = { }
     localName = dev.getNameLocal()
