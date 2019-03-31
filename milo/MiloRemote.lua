@@ -495,7 +495,7 @@ end
 local function loadDirectory(dir)
   local dropdown = {
     { text = 'Setup', event = 'setup' },
-    UI.MenuBar.spacer,
+    { spacer = true },
     {
       text = 'Rescan storage',
       event = 'rescan',

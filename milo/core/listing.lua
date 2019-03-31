@@ -27,7 +27,7 @@ local page = UI.Page {
         x = -3,
         dropdown = {
           { text = 'Setup', event = 'network' },
-          UI.MenuBar.spacer,
+          { spacer = true },
           {
             text = 'Rescan storage',
             event = 'rescan',
