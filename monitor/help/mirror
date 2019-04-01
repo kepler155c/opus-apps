@@ -1,0 +1,11 @@
+Mirror the terminal or a program on a monitor. Monitor touch events are translated to mouse click events.
+
+Optional arguments:
+  -s  : set monitor to .5 scaling
+  -r  : resize the terminal to the size of the monitor
+  -e  : run a program on the monitor
+
+If the -e argument is not used, the current terminal will be mirrored.
+
+Example:
+mirror -s -r -e edit /startup
