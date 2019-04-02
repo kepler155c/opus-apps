@@ -1,10 +1,11 @@
-local Config     = require('config')
-local Event      = require('event')
-local Project    = require('neural.project')
-local UI         = require('ui')
-local Util       = require('util')
+local Config  = require('config')
+local Event   = require('event')
+local UI      = require('ui')
+local Util    = require('util')
 
-local device     = _G.device
+local colors  = _G.colors
+local device  = _G.device
+local gps     = _G.gps
 
 local glasses = device['plethora:glasses']
 local intro   = device['plethora:introspection']
@@ -13,71 +14,138 @@ local sensor  = device['plethora:sensor'] or
 
 UI:configure('Sensor', ...)
 
-local target
+local projecting = { }
+local offset
+local canvas = glasses and intro and glasses.canvas3d().create()
 
 local config = Config.load('Sensor', {
 	ignore = { }
 })
-if not config.ignore then
-	config.ignore = { }
-end
 
 local page = UI.Page {
+	tabs = UI.Tabs {
+		listing = UI.Tab {
+			tabTitle = 'Listing',
+			menuBar = UI.MenuBar {
+				buttons = {
+					{ text = 'Ignore',    event = 'ignore'  },
+					{ text = 'Details',   event = 'detail'  },
+				},
+			},
+			grid = UI.ScrollingGrid {
+				y = 2,
+				columns = {
+					{ heading = 'Name', key = 'displayName' },
+					{ heading = 'X',    key = 'x', width = 3, align = 'right' },
+					{ heading = 'Y',    key = 'y', width = 3, align = 'right' },
+					{ heading = 'Z',    key = 'z', width = 3, align = 'right' },
+				},
+				sortColumn = 'displayName',
+			},
+		},
+		summary = UI.Tab {
+			tabTitle = 'Summary',
+			menuBar = UI.MenuBar {
+				buttons = {
+					{ text = 'Projector', event = 'project' },
+					{ text = 'Ignore',    event = 'ignore'  },
+				},
+			},
+			grid = UI.ScrollingGrid {
+				y = 2,
+				columns = {
+					{ heading = 'Name',  key = 'displayName' },
+					{ heading = 'Count', key = 'count', width = 5, align = 'right' },
+				},
+				sortColumn = 'displayName',
+			},
+		},
+		accelerators = {
+			q = 'quit',
+		},
+	},
+}
+
+local listing = page.tabs.listing
+local summary = page.tabs.summary
+
+local detail = UI.Page {
 	menuBar = UI.MenuBar {
 		buttons = {
-			{ text = 'Projector', event = 'project' },
-			{ text = 'Totals',    event = 'totals'  },
-			{ text = 'Ignore',    event = 'ignore'  },
-			{ text = 'Details',   event = 'detail'  },
+			{ text = 'Back',      event = 'back', x = -6 },
 		},
 	},
 	grid = UI.ScrollingGrid {
 		y = 2,
 		columns = {
-			{ heading = 'Name', key = 'displayName' },
-			{ heading = '  X',    key = 'x', width = 3, align = 'right' },
-			{ heading = '  Y',    key = 'y', width = 3, align = 'right' },
-			{ heading = '  Z',    key = 'z', width = 3, align = 'right' },
+			{ heading = 'Name',  key = 'name' },
+			{ heading = 'Value', key = 'value' },
 		},
-		values = sensor.sense(),
-		sortColumn = 'displayName',
-	},
-	accelerators = {
-		q = 'quit',
-	},
-	detail = UI.SlideOut {
-		menuBar = UI.MenuBar {
-			buttons = {
-				{ text = 'Projector', event = 'project-target' },
-				{ text = 'Back',      event = 'hide', x = -6 },
-			},
-		},
-		grid = UI.ScrollingGrid {
-			y = 2,
-			columns = {
-				{ heading = 'Name',  key = 'name' },
-				{ heading = 'Value', key = 'value' },
-			},
-			sortColumn = 'name',
-			autospace = true,
-		},
+		sortColumn = 'name',
+		autospace = true,
 	},
 }
 
-function page.grid:getDisplayValues(row)
-	row = Util.shallowCopy(row)
-	row.x = row.x and math.floor(row.x) or ''
-	row.y = row.y and math.floor(row.y) or ''
-	row.z = row.z and math.floor(row.z) or ''
-	return row
+local function getPoint()
+	local pt = { gps.locate() }
+	return {
+		x = pt[1],
+		y = pt[2],
+		z = pt[3],
+	}
 end
 
-function page.detail:show(entity)
-	self.entity = entity  -- to allow for debugging in Lua
+local function project(entities)
+	if canvas then
+		local pos = getPoint()
+		local pts = { }
 
+		if not offset then
+			offset = pos
+		end
+
+		for _, b in pairs(entities) do
+			if b.x then
+				pts[table.concat({
+					math.floor(pos.x + b.x),
+					math.floor(pos.y + b.y),
+					math.floor(pos.z + b.z) }, ':')] = b
+			end
+		end
+
+		for key, b in pairs(pts) do
+			if not projecting[key] then
+				local box = canvas.addBox(
+					pos.x - offset.x + b.x,
+					pos.y - offset.y + b.y - .25,
+					pos.z - offset.z + b.z,
+					.25, .25, .25)
+				box.setDepthTested(false)
+				projecting[key] = box
+			end
+		end
+
+		for key, box in pairs(projecting) do
+			if not pts[key] then
+				box.remove()
+				projecting[key] = nil
+			end
+		end
+	end
+end
+
+local function ignoreEntity(entity)
+	if entity then
+		config.ignore[entity.name] = true
+		Config.update('Sensor', config)
+	end
+end
+
+function detail:enable(entity)
 	local function update()
 		local t = { }
-		for k,v in pairs(self.entity) do
+		local meta = sensor.getMetaByID(entity.id) or { }
+		for k,v in pairs(meta) do
 			if type(v) ~= 'table' then
 				table.insert(t, {
 					name = k,
@@ -85,115 +153,151 @@ function page.detail:show(entity)
 				})
 			end
 		end
+		project({ meta })
 		return t
 	end
 
-	if entity.id then
-		self.handler = Event.onInterval(.5, function()
-			local e = sensor.getMetaByID(self.entity.id)
-			if e then
-				self.entity = e
-				self.grid:setValues(update())
-				self.grid:draw()
-				self.grid:sync()
-			end
-		end)
-	end
+	self.handler = Event.onInterval(.5, function()
+		self.grid:setValues(update())
+		self.grid:draw()
+		self.grid:sync()
+	end)
 
 	self.grid:setValues(update())
-	return UI.SlideOut.show(self)
+	return UI.Page.enable(self)
 end
 
-function page.detail:hide()
+function detail:disable()
 	if self.handler then
 		Event.off(self.handler)
 		self.handler = nil
 	end
-	return UI.SlideOut.hide(self)
+	project({ })
+	return UI.Page.disable(self)
+end
+
+function detail:eventHandler(event)
+	if event.type == 'back' then
+		return UI:setPreviousPage()
+	end
+	return UI.Page.eventHandler(self, event)
+end
+
+function listing.grid:getDisplayValues(row)
+	row = Util.shallowCopy(row)
+	row.x = row.x and math.floor(row.x) or ''
+	row.y = row.y and math.floor(row.y) or ''
+	row.z = row.z and math.floor(row.z) or ''
+	return row
+end
+
+function listing:enable()
+	self.handler = Event.onInterval(.5, function()
+		local entities = sensor.sense()
+		Util.filterInplace(entities, function(e) return not config.ignore[e.name] end)
+
+		self.grid:setValues(entities)
+		self.grid:draw()
+		self:sync()
+	end)
+	return UI.Tab.enable(self)
+end
+
+function listing:disable()
+	Event.off(self.handler)
+	UI.Tab.disable(self)
+end
+
+function listing:eventHandler(event)
+	if event.type == 'detail' or event.type == 'grid_select' then
+		local selected = self.grid:getSelected()
+		if selected then
+			UI:setPage(detail, selected)
+		end
+
+	elseif event.type == 'ignore' then
+		ignoreEntity(self.grid:getSelected())
+	end
+
+	return UI.Tab.eventHandler(self, event)
+end
+
+function summary:enable()
+	self.handler = Event.onInterval(.5, function()
+		local entities = sensor.sense()
+		Util.filterInplace(entities, function(e) return not config.ignore[e.name] end)
+
+		local t = { }
+		local highlight = { }
+		for _,v in pairs(entities) do
+			if t[v.name] then
+				t[v.name].count = t[v.name].count + 1
+			else
+				t[v.name] = { displayName = v.displayName, count = 1, name = v.name }
+			end
+			if self.target == v.name then
+				table.insert(highlight, v)
+			end
+		end
+
+		project(highlight)
+
+		self.grid:setValues(t)
+		self.grid:draw()
+		self:sync()
+	end)
+
+	self.target = nil
+	return UI.Tab.enable(self)
+end
+
+function summary:disable()
+	project({ })
+	Event.off(self.handler)
+	UI.Tab.disable(self)
+end
+
+function summary.grid:getRowTextColor(row, selected)
+	if row.name == self.parent.target then
+    return colors.yellow
+  end
+  return UI.Grid:getRowTextColor(row, selected)
+end
+
+function summary:eventHandler(event)
+	if event.type == 'ignore' then
+		ignoreEntity(self.grid:getSelected())
+
+	elseif event.type == 'project' or event.type == 'grid_select' then
+		local selected = self.grid:getSelected()
+		if selected then
+			self.target = selected.name
+			self.grid:draw()
+		end
+	end
+
+	return UI.Tab.eventHandler(self, event)
 end
 
 function page:eventHandler(event)
 	if event.type == 'quit' then
 		Event.exitPullEvents()
 
-	elseif event.type == 'totals' then
-		config.totals = not config.totals
-		Config.update('Sensor', config)
-
-	elseif event.type == 'detail' or event.type == 'grid_select' then
-		local selected = self.grid:getSelected()
-		if selected then
-			target = selected.name
-			self.detail:show(selected)
-		end
-
-	elseif event.type == 'hide' then
-		self.detail:hide()
-
-	elseif event.type == 'ignore' then
-		local selected = self.grid:getSelected()
-		if selected then
-			config.ignore[selected.name] = true
-		end
-		Config.update('Sensor', config)
-
-	elseif event.type == 'project' or event.type == 'project-target' then
-		if event.type == 'project' then
-			target = nil
-		end
-
-		if glasses then
-			config.projecting = not config.projecting
-			if config.projecting then
-				Project:init(glasses.canvas())
-			else
-				Project.canvas:clear()
-			end
-		end
+	elseif event.type == 'tab_activate' then
+		config.activeTab = event.activated.tabTitle
 		Config.update('Sensor', config)
 	end
 
 	UI.Page.eventHandler(self, event)
 end
 
-Event.onInterval(.5, function()
-	local entities = sensor.sense()
-	Util.filterInplace(entities, function(e) return not config.ignore[e.name] end)
-
-	if config.projecting and glasses and intro then
-		local meta = intro.getMetaOwner()
-		Project.canvas:clear()
-		local t = entities
-		if target then
-			t = Util.filter(entities, function(e) return e.name == target end)
-		end
-		Project:drawPoints(meta, t, 'X', 0xFFDF50AA)
-	end
-
-	if config.totals then
-		local t = { }
-		for _,v in pairs(entities) do
-			if t[v.name] then
-				t[v.name].z = t[v.name].z + 1
-			else
-				t[v.name] = { displayName = v.displayName, z = 1, name = v.name }
-			end
-		end
-		entities = t
-	end
-
-	page.grid:setValues(entities)
-	page.grid:draw()
-	page:sync()
-end)
-
-if config.projecting and glasses then
-	Project:init(glasses.canvas())
+if config.activeTab then
+	page.tabs:selectTab(Util.find(page.tabs.children, 'tabTitle', config.activeTab))
 end
 
 UI:setPage(page)
 UI:pullEvents()
 
-if config.projecting and glasses then
-	Project.canvas:clear()
+if canvas then
+	canvas:clear()
 end
