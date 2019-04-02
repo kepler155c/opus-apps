@@ -131,15 +131,23 @@ local function turtleCraft(recipe, storage, request, count)
 		return
 	end
 
+	local failed
+	local fns = { }
 	for k,v in pairs(recipe.ingredients) do
 		local item = splitKey(v)
-		if storage:export(storage.turtleInventory, k, count, item) ~= count then
-			request.status = 'rescan needed ?'
-			request.statusCode = Craft.STATUS_ERROR
+		table.insert(fns, function()
+			if storage:export(storage.turtleInventory, k, count, item) ~= count then
+				request.status = 'rescan needed ?'
+				request.statusCode = Craft.STATUS_ERROR
+				failed = true
+	_debug('failed to export: ' .. item.name)
+			end
+		end)
+	end
 
-_debug('failed to export: ' .. item.name)
-			return
-		end
+	parallel.waitForAll(table.unpack(fns))
+	if failed then
+		return
 	end
 
 	turtle.select(1)
