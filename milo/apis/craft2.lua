@@ -1,8 +1,9 @@
 local itemDB = require('core.itemDB')
 local Util   = require('util')
 
-local fs     = _G.fs
-local turtle = _G.turtle
+local fs       = _G.fs
+local parallel = _G.parallel
+local turtle   = _G.turtle
 
 local Craft = {
 	STATUS_INFO    = 'info',
@@ -147,6 +148,7 @@ local function turtleCraft(recipe, storage, request, count)
 
 	parallel.waitForAll(table.unpack(fns))
 	if failed then
+		Craft.clearGrid(storage)
 		return
 	end
 

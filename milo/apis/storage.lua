@@ -412,12 +412,18 @@ function Storage:export(target, slot, count, item)
   local total = 0
   local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
 
-  local function provide(adapter)
-    local amount = rawExport(adapter, target.adapter, item, count, slot)
+  local function provide(adapter, pcount)
+    -- update cache before export to allow for simultaneous calls
+    self:updateCache(adapter, item, -pcount)
+
+    local amount = rawExport(adapter, target.adapter, item, pcount, slot)
+
+    if amount ~= pcount then
+      -- this *should* only happen if cache is out of sync
+      self:updateCache(adapter, item, pcount - amount)
+    end
 
     if amount > 0 then
-      self:updateCache(adapter, item, -amount)
-
       _G._debug('EXT: %s(%d): %s -> %s%s in %s',
         item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
         slot and string.format('[%d]', slot) or '[*]', Util.round(timer(), 2))
@@ -428,8 +434,9 @@ function Storage:export(target, slot, count, item)
 
   -- request from adapters with this item
   for _, adapter in self:onlineAdapters() do
-    if adapter.cache and adapter.cache[key] then
-      provide(adapter)
+    local cache = adapter.cache and adapter.cache[key]
+    if cache then
+      provide(adapter, math.min(count, cache.count))
       if count <= 0 then
         return total
       end
