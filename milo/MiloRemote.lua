@@ -69,6 +69,7 @@ local page = UI.Page {
         [ 'enter' ] = 'eject',
         [ 'up' ] = 'grid_up',
         [ 'down' ] = 'grid_down',
+        [ 'control-a' ] = 'eject_all',
       },
     },
     amount = UI.TextEntry {
@@ -80,6 +81,7 @@ local page = UI.Page {
       backgroundFocusColor = colors.black,
       accelerators = {
         [ 'enter' ] = 'eject_specified',
+        [ 'control-a' ] = 'eject_all',
       },
       help = 'Request amount',
     },

@@ -6,25 +6,39 @@ local Socket  = require('socket')
 local Util    = require('util')
 local UI      = require('ui')
 
-local colors     = _G.colors
-local network    = _G.network
-local os         = _G.os
-local peripheral = _G.peripheral
+local colors  = _G.colors
+local device  = _G.device
+local gps     = _G.gps
+local network = _G.network
+local os      = _G.os
 
 UI:configure('multiMiner', ...)
 
-local scanner = peripheral.find('neuralInterface')
-if not scanner or not scanner.scan then
+local glasses = device['plethora:glasses']
+local scanner = device['plethora:scanner'] or
 	error('Plethora scanner must be equipped')
-end
 
-local canvas = scanner.canvas and scanner.canvas()
+-- hud
+local canvas = glasses and glasses.canvas()
 if canvas then
   canvas.group = canvas.addGroup({ 4, 90 })
   canvas.bg = canvas.group.addRectangle(0, 0, 60, 24, 0x00000033)
   canvas.text = canvas.group.addText({ 4, 5 }, '') -- , 0x202020FF)
   canvas.text.setShadow(true)
   canvas.text.setScale(.75)
+end
+
+-- container
+local canvas3d = glasses and glasses.canvas3d().create()
+local box, offset
+
+local paused = false
+
+local function inBox(pt)
+  if not box or not box.ex then
+    return true
+  end
+  return Point.inBox(pt, box)
 end
 
 local function locate()
@@ -70,11 +84,13 @@ local function hijackTurtle(remoteId)
 end
 
 local function getNextPoint(turtle)
-  local pt = Point.closest(turtle.getPoint(), queue)
-  if pt then
-    turtle.pt = pt
-    queue[pt.pkey] = nil
-    return pt
+  if not paused then
+    local pt = Point.closest(turtle.getPoint(), queue)
+    if pt then
+      turtle.pt = pt
+      queue[pt.pkey] = nil
+      return pt
+    end
   end
 end
 
@@ -216,6 +232,54 @@ local function run(member, point)
   end)
 end
 
+local function drawContainer(pos)
+  canvas3d.clear()
+
+  local function addBox(b)
+    canvas3d.addBox(
+      b.x - offset.x + .25,
+      b.y - offset.y + .25 ,
+      b.z - offset.z + .25 ,
+      .5, .5, .5).setDepthTested(false)
+  end
+  if box and box.ex then
+    addBox({ x = box.x,  y = box.y,  z = box.z  })
+    addBox({ x = box.x,  y = box.y,  z = box.ez })
+    addBox({ x = box.ex, y = box.y,  z = box.z  })
+    addBox({ x = box.ex, y = box.y,  z = box.ez })
+    addBox({ x = box.x,  y = box.ey, z = box.z  })
+    addBox({ x = box.x,  y = box.ey, z = box.ez })
+    addBox({ x = box.ex, y = box.ey, z = box.z  })
+    addBox({ x = box.ex, y = box.ey, z = box.ez })
+  elseif box then
+    canvas3d.recenter({ -(pos.x % 1), -(pos.y % 1), -(pos.z % 1) })
+    addBox(box)
+  end
+end
+
+local pauseResume = {
+  { text = 'Pause', event = 'pause' },
+  { text = 'Resume', event = 'resume' },
+}
+local containerText = {
+  [[Set a corner to contain mining area]],
+  [[Set ending corner]],
+  [[Set again to clear]],
+}
+
+local containTab = UI.Tab {
+  tabTitle = 'Contain',
+  button = UI.Button {
+    x = 2, y = 2,
+    text = 'Set corner',
+    event = 'contain'
+  },
+  textArea = UI.TextArea {
+    x = 2, y = 4,
+    value = containerText[1],
+  },
+}
+
 local blocksTab = UI.Tab {
   tabTitle = 'Blocks',
   grid = UI.ScrollingGrid {
@@ -248,12 +312,14 @@ local page = UI.Page {
 		buttons = {
 			{ text = 'Scan',  event = 'scan' },
 			{ text = 'Abort', event = 'abort' },
+			pauseResume[1],
 		},
   },
   tabs = UI.Tabs {
     y = 2, ey = -2,
     [1] = blocksTab,
     [2] = turtlesTab,
+    [3] = containTab,
   },
   info = UI.Window {
     y = -1,
@@ -312,10 +378,10 @@ function page:scan()
       b.y = gpt.y + b.y
       b.z = gpt.z + b.z
       b.pkey = table.concat({ b.x, b.y, b.z }, ':')
-      if blockTypes[b.key] then
+      if blockTypes[b.key] and inBox(b) then
         if not Util.any(turtles, function(t)
-              return t.pt and t.pt.pkey == b.pkey
-            end) then
+            return t.pt and t.pt.pkey == b.pkey
+          end) then
           queue[b.pkey] = b
         end
       else
@@ -388,6 +454,50 @@ function page:eventHandler(event)
     blocksTab.grid:draw()
     self.tabs:selectTab(blocksTab)
 
+  elseif event.type == 'pause' then
+    paused = true
+    Util.merge(event.button, pauseResume[2])
+    event.button:draw()
+
+  elseif event.type == 'resume' then
+    paused = false
+    Util.merge(event.button, pauseResume[1])
+    event.button:draw()
+
+  elseif event.type == 'contain' then
+    local pt = { gps.locate() }
+    local pos = {
+      x = pt[1],
+      y = pt[2],
+      z = pt[3],
+    }
+
+    if not box then
+      offset = {
+        x = math.floor(pos.x),
+        y = math.floor(pos.y),
+        z = math.floor(pos.z),
+      }
+      box = {
+        x = math.floor(pos.x),
+        y = math.floor(pos.y) - 1,
+        z = math.floor(pos.z),
+      }
+      containTab.textArea.value = containerText[2]
+    elseif not box.ex then
+      box.ex = math.floor(pos.x)
+      box.ey = math.floor(pos.y) - 1
+      box.ez = math.floor(pos.z)
+      box = Point.normalizeBox(box)
+      containTab.textArea.value = containerText[3]
+    else
+      box = nil
+      containTab.textArea.value = containerText[1]
+    end
+
+    containTab.textArea:draw()
+    drawContainer(pos)
+
   elseif event.type == 'abort' then
     for _, v in pairs(pool) do
       v.abort = true
@@ -401,7 +511,7 @@ function page:eventHandler(event)
 end
 
 Event.onInterval(3, function()
-  if not abort then
+  if not abort and not paused then
     page:scan()
   end
 end)
@@ -456,5 +566,6 @@ end)
 Event.pullEvents()
 
 if canvas then
+  canvas3d.clear()
   canvas.group.remove()
 end
