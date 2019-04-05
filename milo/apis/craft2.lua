@@ -1,8 +1,8 @@
 local itemDB = require('core.itemDB')
+local Tasks  = require('milo.taskRunner')
 local Util   = require('util')
 
 local fs       = _G.fs
-local parallel = _G.parallel
 local turtle   = _G.turtle
 
 local Craft = {
@@ -37,12 +37,18 @@ end
 
 function Craft.clearGrid(storage)
 	local success = true
+	local tasks = Tasks()
 
 	for index, slot in pairs(storage.turtleInventory.adapter.list()) do
-		if storage:import(storage.turtleInventory, index, slot.count, slot) ~= slot.count then
-			success = false
-		end
+		tasks:add(function()
+			if storage:import(storage.turtleInventory, index, slot.count, slot) ~= slot.count then
+				success = false
+			end
+		end)
 	end
+
+	tasks:run()
+
 	return success
 end
 
@@ -133,10 +139,11 @@ local function turtleCraft(recipe, storage, request, count)
 	end
 
 	local failed
-	local fns = { }
+	local tasks = Tasks()
+
 	for k,v in pairs(recipe.ingredients) do
 		local item = splitKey(v)
-		table.insert(fns, function()
+		tasks:add(function()
 			if storage:export(storage.turtleInventory, k, count, item) ~= count then
 				request.status = 'rescan needed ?'
 				request.statusCode = Craft.STATUS_ERROR
@@ -146,7 +153,8 @@ local function turtleCraft(recipe, storage, request, count)
 		end)
 	end
 
-	parallel.waitForAll(table.unpack(fns))
+	tasks:run()
+
 	if failed then
 		Craft.clearGrid(storage)
 		return

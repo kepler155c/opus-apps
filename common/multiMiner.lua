@@ -233,27 +233,29 @@ local function run(member, point)
 end
 
 local function drawContainer(pos)
-  canvas3d.clear()
+  if canvas3d then
+    canvas3d.clear()
 
-  local function addBox(b)
-    canvas3d.addBox(
-      b.x - offset.x + .25,
-      b.y - offset.y + .25 ,
-      b.z - offset.z + .25 ,
-      .5, .5, .5).setDepthTested(false)
-  end
-  if box and box.ex then
-    addBox({ x = box.x,  y = box.y,  z = box.z  })
-    addBox({ x = box.x,  y = box.y,  z = box.ez })
-    addBox({ x = box.ex, y = box.y,  z = box.z  })
-    addBox({ x = box.ex, y = box.y,  z = box.ez })
-    addBox({ x = box.x,  y = box.ey, z = box.z  })
-    addBox({ x = box.x,  y = box.ey, z = box.ez })
-    addBox({ x = box.ex, y = box.ey, z = box.z  })
-    addBox({ x = box.ex, y = box.ey, z = box.ez })
-  elseif box then
-    canvas3d.recenter({ -(pos.x % 1), -(pos.y % 1), -(pos.z % 1) })
-    addBox(box)
+    local function addBox(b)
+      canvas3d.addBox(
+        b.x - offset.x + .25,
+        b.y - offset.y + .25 ,
+        b.z - offset.z + .25 ,
+        .5, .5, .5).setDepthTested(false)
+    end
+    if box and box.ex then
+      addBox({ x = box.x,  y = box.y,  z = box.z  })
+      addBox({ x = box.x,  y = box.y,  z = box.ez })
+      addBox({ x = box.ex, y = box.y,  z = box.z  })
+      addBox({ x = box.ex, y = box.y,  z = box.ez })
+      addBox({ x = box.x,  y = box.ey, z = box.z  })
+      addBox({ x = box.x,  y = box.ey, z = box.ez })
+      addBox({ x = box.ex, y = box.ey, z = box.z  })
+      addBox({ x = box.ex, y = box.ey, z = box.ez })
+    elseif box then
+      canvas3d.recenter({ -(pos.x % 1), -(pos.y % 1), -(pos.z % 1) })
+      addBox(box)
+    end
   end
 end
 

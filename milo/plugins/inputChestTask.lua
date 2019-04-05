@@ -1,6 +1,5 @@
-local Milo = require('milo')
-
-local parallel = _G.parallel
+local Milo  = require('milo')
+local Tasks = require('milo.taskRunner')
 
 local InputChest = {
 	name = 'input',
@@ -8,29 +7,24 @@ local InputChest = {
 }
 
 function InputChest:cycle(context)
-	local tasks = { }
-	for node in context.storage:filterActive('input') do
-		table.insert(tasks, function()
-			local s, m = pcall(function()
-				for slot, item in pairs(node.adapter.list()) do
-					local s, m = pcall(function()
-						context.storage:import(node, slot, item.count, item)
-					end)
-					if not s and m then
-						_G._debug('INPUT error: ' .. m)
-					end
-				end
-			end)
+	local tasks = Tasks({
+		errorMsg = 'INPUT error: '
+	})
 
-			if not s and m then
-				_G._debug('INPUT error: ' .. m)
+	for node in context.storage:filterActive('input') do
+		local s, m = pcall(function()
+			for slot, item in pairs(node.adapter.list()) do
+				tasks:add(function()
+					context.storage:import(node, slot, item.count, item)
+				end)
 			end
 		end)
+		if not s and m then
+			_G._debug('INPUT error: ' .. m)
+		end
 	end
 
-	if #tasks > 0 then
-		parallel.waitForAll(table.unpack(tasks))
-	end
+	tasks:run()
 end
 
 Milo:registerTask(InputChest)

@@ -1,9 +1,9 @@
-local Event  = require('event')
-local Milo   = require('milo')
-local UI     = require('ui')
+local Milo  = require('milo')
+local Tasks = require('milo.taskRunner')
+local UI    = require('ui')
 
-local colors = _G.colors
-local device = _G.device
+local colors   = _G.colors
+local device   = _G.device
 
 --[[ Configuration Screen ]]
 local wizardPage = UI.WizardPage {
@@ -76,16 +76,20 @@ local function filter(a)
 end
 
 function task:cycle(context)
+  local tasks = Tasks()
+
   for node in context.storage:filterActive('trashcan', filter) do
-    Event.onTimeout(0, function() -- run on a background thread
-      pcall(function()
-        for k in pairs(node.adapter.list()) do
-          local direction = node.dropDirection or 'down'
+    pcall(function()
+      for k in pairs(node.adapter.list()) do
+        local direction = node.dropDirection or 'down'
+        tasks:add(function()
           node.adapter.drop(k, 64, direction)
-        end
-      end)
+        end)
+      end
     end)
   end
+
+  tasks:run()
 end
 
 Milo:registerTask(task)
