@@ -1,5 +1,5 @@
-local fs = require("filesystem")
-local shell = require("shell")
+local fs = require("openos.filesystem")
+local shell = require("openos.shell")
 
 local function usage()
   print("Usage: rm [options] <filename1> [<filename2> [...]]"..[[
@@ -60,7 +60,7 @@ local function createMeta(origin, rel)
 end
 
 local function unlink(path)
-  os.remove(path)
+  fs.remove(path)
   return true
 end
 
@@ -87,6 +87,7 @@ local function remove_all(parent)
     for file in fs.list(_path(parent)) do
       local child = createMeta(parent.origin, parent.rel .. file)
       all_ok = remove(child) and all_ok
+              -- uh ?
     end
   end
 

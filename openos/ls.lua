@@ -235,6 +235,7 @@ local first_display = true
 local function display(names)
   local mt={}
   local lines = setmetatable({}, mt)
+  local columns
   if ops.l then
     lines.n = #names
     local max_size_width = 1
@@ -291,9 +292,10 @@ local function display(names)
       end
     end
     lines.n = items_per_column
+    columns = num_columns
     mt.__index=function(_, line_index)
       return setmetatable({},{
-        __len=function()return num_columns end,
+        __len=function()return num_columns end, -- no can do in 5.1
         __index=function(_, column_index)
           local ri = real(column_index, line_index)
           if not ri then return end
@@ -307,7 +309,7 @@ local function display(names)
 
   for line_index=1,lines.n do
     local line = lines[line_index]
-    for element_index=1,#line do
+    for element_index=1,columns or #line do
       local e = line[element_index]
       if not e then break end
       first_display = false

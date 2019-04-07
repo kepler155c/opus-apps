@@ -1,6 +1,6 @@
 --[[Lua implementation of the UN*X touch command--]]
-local shell = require("shell")
-local fs =  require("filesystem")
+local shell = require("openos.shell")
+local fs =  require("openos.filesystem")
 
 local args, options = shell.parse(...)
 

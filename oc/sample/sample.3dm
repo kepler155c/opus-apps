@@ -1,0 +1,20 @@
+{
+  label = "Basic Ceiling Lamp Prototype",
+  tooltip = "§7Herb's Basic Ceiling Lamp Prototype.",
+  lightlevel=8,
+  shapes={
+
+      {7,10,7,9,15,9,texture="log_spruce"},
+      {6,15,6,10,16,10,texture="iron_block"},
+      {2,9,2,14,10,14,texture="wool_colored_red"}, 
+      
+     {2,7,13,14,10,14,texture="wool_colored_red"}, 
+     {2,7,2,14,10,3,texture="wool_colored_red"}, 
+     
+     {2,7,3,3,10,14,texture="wool_colored_red"}, 
+     {13,7,3,14,10,14,texture="wool_colored_red"}, 
+     
+      {3,8,3,13,9,13,texture="glowstone"}, 
+}
+  
+}

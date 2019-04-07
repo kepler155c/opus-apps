@@ -1,5 +1,5 @@
-local shell = require("shell")
-local transfer = require("tools/transfer")
+local shell = require("openos.shell")
+local transfer = require("openos.transfer")
 
 local args, options = shell.parse(...)
 options.h = options.h or options.help
@@ -17,7 +17,7 @@ if #args < 2 or options.h then
 end
 
 -- clean options for move (as opposed to copy)
-options = 
+options =
 {
   cmd = "mv",
   f = options.f,

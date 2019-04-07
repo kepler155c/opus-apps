@@ -1,4 +1,4 @@
-local shell = require("shell")
+local shell = require("openos.shell")
 
 local args = shell.parse(...)
 if #args == 0 then
@@ -7,8 +7,8 @@ if #args == 0 then
 end
 
 for i = 1, #args do
-  local result, reason = shell.resolve(args[i], "lua")
-  
+  local result, reason = shell.resolveProgram(args[i])
+
   if not result then
     result = shell.getAlias(args[i])
     if result then

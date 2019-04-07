@@ -1,8 +1,8 @@
-local computer = require("computer")
-local shell = require("shell")
-local fs = require("filesystem")
-local tx = require("transforms")
-local text = require("text")
+local computer = require("openos.computer")
+local shell = require("openos.shell")
+local fs = require("openos.filesystem")
+local tx = require("openos.transforms")
+local text = require("openos.text")
 
 local args, opts = shell.parse(...)
 

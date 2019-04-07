@@ -1,6 +1,5 @@
-local component = require("component")
-local fs = require("filesystem")
-local shell = require("shell")
+local fs = require("openos.filesystem")
+local shell = require("openos.shell")
 
 local args = shell.parse(...)
 if #args == 0 then
@@ -28,7 +27,7 @@ if fs.isDirectory(linkpath) then
   linkpath = fs.concat(linkpath, fs.name(target))
 end
 
-local result, reason = fs.link(target_name, linkpath)
+local result, reason = fs.link(target, linkpath)
 if not result then
   io.stderr:write(reason..'\n')
   return 1

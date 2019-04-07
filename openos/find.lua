@@ -1,8 +1,8 @@
-local shell = require("shell")
-local fs = require("filesystem")
-local text = require("text")
+local shell = require("openos.shell")
+local fs = require("openos.filesystem")
+local text = require("openos.text")
 
-local USAGE = 
+local USAGE =
 [===[Usage: find [path] [--type=[dfs]] [--[i]name=EXPR]
   --path  if not specified, path is assumed to be current working directory
   --type  returns results of a given type, d:directory, f:file, and s:symlinks
@@ -74,7 +74,7 @@ if options.iname or options.name then
   -- prefix any * with . for gnu find glob matching
   fileNamePattern = text.escapeMagic(fileNamePattern)
   fileNamePattern = fileNamePattern:gsub("%%%*", ".*")
-end  
+end
 
 local function isValidType(spath)
   if not fs.exists(spath) then
