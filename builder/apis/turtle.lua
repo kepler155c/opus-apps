@@ -121,10 +121,15 @@ function supplyPage:enable(builder)
 
   self.timer = Event.onInterval(6, function()
     if self.enabled then
-      self.builder:autocraft(self.builder:getSupplies())
-      self:refresh()
-      self.statusBar:timedStatus('Refreshed ', 2)
-      self:sync()
+      local s, m = pcall(function()
+        self.builder:autocraft(self.builder:getSupplies())
+        self:refresh()
+        self.statusBar:timedStatus('Refreshed ', 2)
+        self:sync()
+      end)
+      if not s then -- not sure why it's erroring :(
+        _G._debug(m)
+      end
     end
   end)
   UI.Page.enable(self)

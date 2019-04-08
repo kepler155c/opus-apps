@@ -1,6 +1,8 @@
 {
 	title = 'CCEmuX peripheral management',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/ccemux',
-	description = [[Peripheral management for CCEmuX]],
+	description = [[Peripheral management for CCEmuX
+
+Adds a tab in the System application for configuring peripherals.]],
 	licence = 'MIT',
 }
