@@ -3,7 +3,7 @@ local n = peripheral.find "neuralInterface"
 if not n then error "run on neural interface" end
 
 if not n.hasModule "plethora:glasses" then error "needs overlay glasses" end
-if not n.hasModule "plethora:sensor" or not n.hasModule "plethora:introspection" or not m.getMetaOwner then error "needs entity sensor + bound introspection module" end 
+if not n.hasModule "plethora:sensor" or not n.hasModule "plethora:introspection" or not n.getMetaOwner then error "needs entity sensor + bound introspection module" end 
   
 _G.requireInjector()
 
