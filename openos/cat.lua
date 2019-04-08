@@ -22,6 +22,7 @@ for i = 1, #args do
       file:close()
       if chunk then
         io.write(chunk)
+        io.write('\n')
       end
     end
   end

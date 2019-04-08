@@ -125,10 +125,10 @@ local function server()
 	local config = Config.load('gpsServer')
 
 	local modems = { }
-	modems['modem_' .. config.east]  = { x = config.x + 2, y = config.y + 2, z = config.z     }
-	modems['modem_' .. config.west]  = { x = config.x - 2, y = config.y + 2, z = config.z     }
-	modems['modem_' .. config.south] = { x = config.x,     y = config.y,     z = config.z + 2 }
-	modems['modem_' .. config.north] = { x = config.x,     y = config.y,     z = config.z - 2 }
+	modems['modem_' .. config.east]  = { x = config.x + 2, y = config.y + 1, z = config.z     }
+	modems['modem_' .. config.west]  = { x = config.x - 2, y = config.y + 1, z = config.z     }
+	modems['modem_' .. config.south] = { x = config.x,     y = config.y - 1, z = config.z + 2 }
+	modems['modem_' .. config.north] = { x = config.x,     y = config.y - 1, z = config.z - 2 }
 
 	for k, modem in pairs(modems) do
 		Util.merge(modem, peripheral.wrap(k) or { })

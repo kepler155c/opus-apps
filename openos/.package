@@ -1,6 +1,7 @@
 {
 	title = 'Shell utilities',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/openos',
-	description = [[ Experimental! Utilties for shell: grep, cat, touch, etc ]],
+	description = [[Experimental!
+	Utilties for shell: grep, cat, touch, etc ]],
 	licence = 'MIT',
 }
