@@ -5,11 +5,9 @@ local function get(path)
     path = fs.getDir(path)
   end
 
-  local label = fs.getDrive(path)
-
-  if label then
+  if fs.exists(path) then
     local proxy = {
-      getLabel = function() return label end,
+      getLabel = function() return fs.getDrive(path) end,
       isReadOnly = function() return fs.isReadOnly(path) end,
       spaceTotal = function() return fs.getSize(path, true) + fs.getFreeSpace(path) end,
       spaceUsed = function() return fs.getSize(path, true) end,

@@ -85,10 +85,12 @@ local function visitor(rpath)
 
   if fs.isDirectory(spath) then
     local list_result = fs.list(spath)
-    for list_item in list_result do
-      local vtotal, vdirs = visitor(addTrailingSlash(rpath) .. list_item)
-      subtotal = subtotal + vtotal
-      dirs = dirs + vdirs
+    if list_result then
+      for list_item in list_result do
+        local vtotal, vdirs = visitor(addTrailingSlash(rpath) .. list_item)
+        subtotal = subtotal + vtotal
+        dirs = dirs + vdirs
+      end
     end
 
     if dirs == 0 then -- no child dirs

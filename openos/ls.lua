@@ -42,6 +42,7 @@ local function stat(names, index)
   end
   local info = {}
   info.key = name
+info._path = name
   info.path = name:sub(1, 1) == "/" and "" or names.path
   info.full_path = fs.concat(info.path, name)
   info.isDir = fs.isDirectory(info.full_path)
@@ -247,6 +248,7 @@ local function display(names)
       local info = stat(names, index)
       local file_type = info.isLink and 'l' or info.isDir and 'd' or 'f'
       local link_target = info.isLink and string.format(" -> %s", info.link:gsub("/+$", "") .. (info.isDir and "/" or "")) or ""
+_G._p = info
       local write_mode = info.fs.isReadOnly() and '-' or 'w'
       local size = formatSize(info.size)
       local format = "%s-r%s %+"..tostring(max_size_width)..'s '
