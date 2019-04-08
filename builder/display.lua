@@ -3,13 +3,11 @@ local n = peripheral.find "neuralInterface"
 if not n then error "run on neural interface" end
 
 if not n.hasModule "plethora:glasses" then error "needs overlay glasses" end
-if not n.hasModule "plethora:sensor" or not n.hasModule "plethora:introspection" or not n.getMetaOwner then error "needs entity sensor + bound introspection module" end 
-  
-_G.requireInjector()
+if not n.hasModule "plethora:sensor" or not n.hasModule "plethora:introspection" or not n.getMetaOwner then error "needs entity sensor + bound introspection module" end
 
-local itemDB    = require('itemDB')
+local itemDB    = require('core.itemDB')
 local Schematic = require('builder.schematic')
-local TableDB   = require('tableDB')
+local TableDB   = require('core.tableDB')
 local Util      = require('util')
 
 local colors     = _G.colors
@@ -17,16 +15,9 @@ local fs         = _G.fs
 
 local BUILDER_DIR = 'usr/builder'
 
-local substitutionPage
 local Builder
 
-if _G.commands then
-  Builder = require('builder.commands')
-else
-  Builder = require('builder.turtle')
-end
-
-Builder = Builder()
+Builder = { }
 Builder.schematic = Schematic()
 
 local function convertSingleBack(item)
@@ -147,8 +138,9 @@ if #args < 1 then
   error('supply file name')
 end
 
+print('load subdb')
 subDB:load()
-	
+
 print('Loading schematic')
 Builder.schematic:load(args[1])
 print('Substituting blocks')
@@ -158,7 +150,7 @@ Builder:substituteBlocks(Util.throttle())
 
 local cn = n.canvas3d().create()
 
-for i = 1, #Builder.schematic.blocks do 
+for i = 1, #Builder.schematic.blocks do
   b = Builder.schematic:getComputedBlock(i)
   if b.id ~= "minecraft:air" then
     cn.addBlock(b.x, b.y, b.z, 0xffffffff)
