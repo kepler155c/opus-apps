@@ -161,6 +161,6 @@ local cn = n.canvas3d().create()
 for i = 1, #Builder.schematic.blocks do 
   b = Builder.schematic:getComputedBlock(i)
   if b.id ~= "minecraft:air" then
-    cn.addBlock(b.x, b.y, b.z, 0xffffffff
+    cn.addBlock(b.x, b.y, b.z, 0xffffffff)
   end
 end
