@@ -13,9 +13,12 @@ local k   = require("k")
 local jua = require("jua")
 
 local await     = jua.await
+local device    = _G.device
 local json      = _G.json
 local rs        = _G.rs
 local textutils = _G.textutils
+
+local chat = device['plethora:chat']
 
 rs.setOutput('top', false)
 
@@ -116,6 +119,11 @@ local function handleTransaction(transaction)
     elseif e == 'shop_provided' and p1 == uid then
       local extra = value - (t.price * p2)
       logTransaction(t, { purchased = p2 })
+      if chat and chat.tell then
+        local msg = string.format('PURCHASE: %s bought %d %s for %s',
+          recipient, p2, t.itemId, t.price * p2)
+        chat.tell(msg)
+      end
       if extra > 0 then
         print('extra: ' .. extra)
         refundTransaction(extra, "message=Here's your change!")
@@ -150,5 +158,5 @@ end)
 
 rs.setOutput('top', false)
 if not s then
-  error(m)
+  error(m, 2)
 end

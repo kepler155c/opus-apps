@@ -12,6 +12,9 @@ local ni      = peripheral.find('neuralInterface')
 if not context.state.depositAll then
   context.state.depositAll = { }
 end
+if not context.state.depositAll.retain then
+  context.state.depositAll.retain = { }
+end
 
 local page = UI.Page {
   titleBar = UI.TitleBar {
@@ -58,6 +61,7 @@ function page:updateInventoryList()
       else
         list[key].count = list[key].count + item.count
       end
+      list[key].key = key
     end
   end
 
@@ -72,19 +76,30 @@ function page:enable()
   UI.Page.enable(self)
 end
 
+function page.items:getRowTextColor(row)
+	if context.state.depositAll.retain[row.key] then
+		return colors.lightGray
+	end
+	return UI.ScrollingGrid.getRowTextColor(self, row)
+end
+
 function page:depositAll()
   self.notification:info('Depositing all items...')
 
   local inv = ni.getInventory().list()
 
   for slot, item in pairs(inv) do
-    if (context.state.depositAll.includeHotbar or slot > 9) and item.name ~= 'plethora:neuralconnector' then
-      context:sendRequest({
-        request = 'deposit',
-        source = 'inventory',
-        slot = slot,
-        count = item.count,
-      })
+    item = itemDB:get(item, function() return ni.getInventory().getItemMeta(slot) end)
+    local key = makeKey(item)
+    if not context.state.depositAll.retain[key] then
+      if (context.state.depositAll.includeHotbar or slot > 9) and item.name ~= 'plethora:neuralconnector' then
+        context:sendRequest({
+          request = 'deposit',
+          source = 'inventory',
+          slot = slot,
+          count = item.count,
+        })
+      end
     end
   end
 end
@@ -93,6 +108,16 @@ function page:eventHandler(event)
   if event.type == 'checkbox_change' and event.element.formKey == 'includeHotbar' then
     context.state.depositAll.includeHotbar = event.checked
     page:updateInventoryList()
+
+  elseif event.type == 'grid_select' then
+    local key = event.selected.key
+    if context.state.depositAll.retain[key] then
+      context.state.depositAll.retain[key] = nil
+    else
+      context.state.depositAll.retain[key] = true
+    end
+    context:setState('depositAll', context.state.depositAll)
+    self.items:draw()
 
   elseif event.type == 'form_complete' then
     Config.update('miloRemote', context.state)

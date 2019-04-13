@@ -33,6 +33,7 @@ local function display(meta)
       canvas.pitch = canvas.group.addText({ 4, 5 }, '') -- , 0x202020FF)
       canvas.pitch.setShadow(true)
       canvas.pitch.setScale(.75)
+      canvas.group.addItem({ 5, 30 }, 'minecraft:elytra')
       canvas.group2 = canvas.addGroup({ 80, 10 })
       canvas.group2.addLines(
         { 0,   0 },
@@ -143,5 +144,9 @@ parallel.waitForAny(
       end
       print('Waiting for 5 seconds before restarting')
       os.sleep(5)
+      modules  = _G.peripheral.wrap('back')
+      canvas = modules and modules.canvas and modules.canvas()
     end
   end)
+
+clearDisplay()
