@@ -1,4 +1,4 @@
--- original concept: osmarks https://pastebin.com/ZP9Q1HCT
+-- original concept: osmarks https://pastebin.com/xEDKdM85
 
 local Sound = require('sound')
 local Util  = require('util')
@@ -25,11 +25,18 @@ end
 
 local canvas = modules.canvas and modules.canvas()
 
+local function dist(x, y, z)
+  return math.sqrt(
+    math.pow(x, 2) +
+    math.pow(y, 2) +
+    math.pow(z, 2))
+end
+
 local function display(meta)
   if canvas then
     if not canvas.group then
       canvas.group = canvas.addGroup({ 4, 90 })
-      canvas.group.addRectangle(0, 0, 60, 30, 0x00000033)
+      canvas.group.addRectangle(0, 0, 70, 30, 0x00000033)
       canvas.pitch = canvas.group.addText({ 4, 5 }, '') -- , 0x202020FF)
       canvas.pitch.setShadow(true)
       canvas.pitch.setScale(.75)
@@ -54,10 +61,10 @@ local function display(meta)
     canvas.meter.setPosition(0, 90 - y)
     canvas.meter.setSize(5, size)
     canvas.meter.setColor(color)
-    canvas.pitch.setText(string.format('Pitch: %s\nMotion Y: %s\nSpeed: %s',
+    canvas.pitch.setText(string.format('Pitch: %s\nMotion Y: %s\nSpeed: %s m/s',
       math.floor(-meta.pitch),
       Util.round(meta.motionY, 2),
-      Util.round(math.abs(meta.motionX) + math.abs(meta.motionY) + math.abs(meta.motionZ), 2)))
+      Util.round(dist(meta.motionX, meta.motionY, meta.motionZ) * 20, 2)))
   end
 end
 
