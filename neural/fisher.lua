@@ -33,7 +33,7 @@ local function fish()
       local held = owner.heldItem and owner.heldItem.getMetadata()
       if held and held.rawName == 'item.fishingRod' then
         if icon then
-          icon.setItem('minecraft:fish', 1)
+          icon.setItem('minecraft:fish', math.random(0, 3))
         end
         kinetic.use(.2)
         print('casting')
@@ -43,11 +43,10 @@ local function fish()
       else
         if icon then
           icon.setItem('minecraft:fishing_rod')
+          icon.setScale(1)
         end
         print('waiting for fishing rod to be selected')
       end
-      scale = 1
-      icon.setScale(1)
       os.sleep(1)
     else
       if meta.y < depth then

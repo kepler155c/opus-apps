@@ -30,20 +30,41 @@ local hex = {
   ['e'] = 0xCC4C4C4F,
 --  ['f'] = 0x191919FF, -- transparent
 }
-local canvas  = device['plethora:glasses'] and device['plethora:glasses'].canvas()
-if canvas then
-  canvas.clear() -- assuming we are the first to use the canvas
-  local w, h = canvas.getSize()
-  canvas.group = canvas.addGroup({ w - 30, h - 30 })
-  local function drawLine(k, line)
-    for i = 1, #line do
-      local pix = hex[line:sub(i, i)]
-      if pix then
-        canvas.group.addRectangle(i*1.5, k*2.25, 1.5, 2.25, pix)
+
+local function update()
+  local canvas  = device['plethora:glasses'] and device['plethora:glasses'].canvas()
+  if canvas then
+    local Tween  = require('ui.tween')
+
+    canvas.clear()
+    local w, h = canvas.getSize()
+    local pos = { x = w / 2, y = h / 2 - 30 }
+    local group = canvas.addGroup(pos)
+    local function drawLine(k, line)
+      for i = 1, #line do
+        local pix = hex[line:sub(i, i)]
+        if pix then
+          group.addRectangle(i*1.5, k*2.25, 1.5, 2.25, pix)
+        end
       end
     end
-  end
-  for k,line in ipairs(opus) do
-    drawLine(k, line)
+
+    for k,line in ipairs(opus) do
+      drawLine(k, line)
+    end
+    os.sleep(.5)
+    local tween = Tween.new(40, pos, { x = w - 60, y = h - 30 }, 'outBounce')
+    repeat
+      local finished = tween:update(1)
+      os.sleep(0)
+      group.setPosition(pos.x, pos.y)
+    until finished
   end
 end
+
+kernel.run({
+  title = 'opus',
+  env = _ENV,
+  hidden = true,
+  fn = update,
+})
