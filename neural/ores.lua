@@ -90,6 +90,7 @@ local function update()
       for _, b in pairs(blocks) do
         if not projecting[b.id] then
           projecting[b.id] = b
+          --[[
           b.box = canvas.addFrame({
             pos.x - offset.x + b.x + -(pos.x % 1) + .5,
             pos.y - offset.y + b.y + -(pos.y % 1) + .5,
@@ -97,6 +98,14 @@ local function update()
           })
           b.box.setDepthTested(false)
           b.box.addItem({ 0, 0 }, b.name, b.damage, 2)
+          --]]
+
+          b.box = canvas.addItem({
+            pos.x - offset.x + b.x + -(pos.x % 1) + .5,
+            pos.y - offset.y + b.y + -(pos.y % 1) + .5,
+            pos.z - offset.z + b.z + -(pos.z % 1) + .5,
+          }, b.name, b.damage, .5)
+          b.box.setDepthTested(false)
         end
       end
 

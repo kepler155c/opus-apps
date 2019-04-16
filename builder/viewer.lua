@@ -1,3 +1,11 @@
+local Builder   = require('builder.builder')
+local Schematic = require('builder.schematic')
+local TableDB   = require('core.tableDB')
+local Util      = require('util')
+
+local fs         = _G.fs
+local peripheral = _G.peripheral
+
 local n = peripheral.find "neuralInterface"
 
 if not n then error "run on neural interface" end
@@ -5,37 +13,7 @@ if not n then error "run on neural interface" end
 if not n.hasModule "plethora:glasses" then error "needs overlay glasses" end
 if not n.hasModule "plethora:sensor" or not n.hasModule "plethora:introspection" or not n.getMetaOwner then error "needs entity sensor + bound introspection module" end
 
-local itemDB    = require('core.itemDB')
-local Schematic = require('builder.schematic')
-local TableDB   = require('core.tableDB')
-local Util      = require('util')
-
-local colors     = _G.colors
-local fs         = _G.fs
-
 local BUILDER_DIR = 'usr/builder'
-
-local Builder = require('builder.builder')
-
-Builder.schematic = Schematic()
-
-local function convertSingleBack(item)
-  if item then
-    item.id = item.name
-    item.dmg = item.damage
-    item.qty = item.count
-    item.max_size = item.maxCount
-    item.display_name = item.displayName
-  end
-  return item
-end
-
-local function convertBack(t)
-  for _,v in pairs(t) do
-    convertSingleBack(v)
-  end
-  return t
-end
 
 --[[-- SubDB --]]--
 local subDB = TableDB({
@@ -140,6 +118,7 @@ end
 subDB:load()
 
 print('Loading schematic')
+Builder.schematic = Schematic()
 Builder.schematic:load(args[1])
 print('Substituting blocks')
 
@@ -149,11 +128,17 @@ Builder:substituteBlocks(Util.throttle())
 local cn = n.canvas3d().create()
 
 local pos = n.getMetaOwner().withinBlock
-cn.recenter({-pos.x, -pos.y, -pos.z})
+cn.recenter({-(pos.x + .5), -(pos.y + 2) + .5, -(pos.z + .5) })
+
 for i = 1, #Builder.schematic.blocks do
-  b = Builder.schematic:getComputedBlock(i)
-  if b.id ~= "minecraft:air" then
-    cn.addBox(b.x, b.y-10, b.z, 0xffffff40).setDepthTested(false)
+  local b = Builder.schematic:getComputedBlock(i)
+  if b.id ~= "minecraft:air" and b.id ~= 'minecraft:water' then
+    local s, m = pcall(function()
+      cn.addItem({ b.x, b.y, b.z }, b.id, b.dmg)
+    end)
+    if not s and m then
+      printError(m)
+    end
   end
 end
 

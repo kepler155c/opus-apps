@@ -136,11 +136,20 @@ function page.detail:show(blocks, entry)
 				for _, b in pairs(blocks) do
 					if not projecting[b.id] then
 						projecting[b.id] = b
-						b.box = canvas.addBox(
-							pos.x - offset.x + b.x + -(pos.x % 1) + .25,
-							pos.y - offset.y + b.y + -(pos.y % 1) + .25,
-							pos.z - offset.z + b.z + -(pos.z % 1) + .25,
-							.5, .5, .5)
+						pcall(function()
+							b.box = canvas.addItem({
+								pos.x - offset.x + b.x + -(pos.x % 1) + .5,
+								pos.y - offset.y + b.y + -(pos.y % 1) + .5,
+								pos.z - offset.z + b.z + -(pos.z % 1) + .5 },
+								b.name, b.damage, .5)
+						end)
+						if not b.box then
+							b.box = canvas.addBox(
+								pos.x - offset.x + b.x + -(pos.x % 1) + .25,
+								pos.y - offset.y + b.y + -(pos.y % 1) + .25,
+								pos.z - offset.z + b.z + -(pos.z % 1) + .25,
+								.5, .5, .5)
+						end
 						b.box.setDepthTested(false)
 					end
 				end
