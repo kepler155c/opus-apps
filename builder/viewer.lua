@@ -3,15 +3,19 @@ local Schematic = require('builder.schematic')
 local TableDB   = require('core.tableDB')
 local Util      = require('util')
 
-local fs         = _G.fs
-local peripheral = _G.peripheral
+local device    = _G.device
+local fs        = _G.fs
 
-local n = peripheral.find "neuralInterface"
-
-if not n then error "run on neural interface" end
-
-if not n.hasModule "plethora:glasses" then error "needs overlay glasses" end
-if not n.hasModule "plethora:sensor" or not n.hasModule "plethora:introspection" or not n.getMetaOwner then error "needs entity sensor + bound introspection module" end
+local Syntax = [[Required:
+ * Neural Interface
+ * Overlay glasses
+ * Entity sensor
+ * Introspection module
+]]
+local neural = device['neuralInterface'] or error(Syntax)
+assert(neural.hasModule('plethora:glasses'), Syntax)
+assert(neural.hasModule("plethora:sensor"), Syntax)
+assert(neural.hasModule('plethora:introspection'), Syntax)
 
 local BUILDER_DIR = 'usr/builder'
 
@@ -125,9 +129,9 @@ print('Substituting blocks')
 Builder.subDB = subDB
 Builder:substituteBlocks(Util.throttle())
 
-local cn = n.canvas3d().create()
+local cn = neural.canvas3d().create()
+local pos = neural.getMetaOwner().withinBlock
 
-local pos = n.getMetaOwner().withinBlock
 cn.recenter({-(pos.x + .5), -(pos.y + 2) + .5, -(pos.z + .5) })
 
 for i = 1, #Builder.schematic.blocks do
@@ -137,10 +141,10 @@ for i = 1, #Builder.schematic.blocks do
       cn.addItem({ b.x, b.y, b.z }, b.id, b.dmg)
     end)
     if not s and m then
-      printError(m)
+      _G.printError(m)
     end
   end
 end
 
-pcall(read)
+pcall(_G.read)
 cn.clear()

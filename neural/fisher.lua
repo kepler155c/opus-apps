@@ -1,4 +1,4 @@
-local machine = require('neural.state')
+local machine = require('neural.statemachine')
 
 local device = _G.device
 local os     = _G.os
@@ -45,13 +45,11 @@ local fsm = machine.create({
       os.sleep(.5)
       local meta = sensor.getMetaByName('unknown')
       depth = meta and meta.y - .5 or depth
-      return true
     end,
 
     onreel =  function()
       kinetic.use(.3)
       os.sleep(.5)
-      return true
     end,
 
     -- state changes
@@ -91,7 +89,7 @@ local function fish()
       fsm:rod()
       if not meta then
         fsm:cast()
-      elseif meta and meta.y < depth then
+      elseif meta.y < depth then
         fsm:reel()
       end
       os.sleep(.1)
