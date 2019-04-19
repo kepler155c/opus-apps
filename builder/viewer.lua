@@ -6,16 +6,26 @@ local Util      = require('util')
 local device    = _G.device
 local fs        = _G.fs
 
-local Syntax = [[Required:
+local function Syntax(msg)
+ print([[Required:
  * Neural Interface
  * Overlay glasses
  * Entity sensor
  * Introspection module
-]]
-local neural = device['neuralInterface'] or error(Syntax)
-assert(neural.hasModule('plethora:glasses'), Syntax)
-assert(neural.hasModule("plethora:sensor"), Syntax)
-assert(neural.hasModule('plethora:introspection'), Syntax)
+]])
+  error(msg)
+end
+
+local neural = device['neuralInterface'] or Syntax('Must be run on a neural interface')
+
+local function assertModule(module, name)
+  if not neural.hasModule(module) then
+    Syntax('Missing: ' .. name)
+  end
+end
+assertModule('plethora:glasses', 'Overlay glasses')
+assertModule('plethora:sensor', 'Entity sensor')
+assertModule('plethora:introspection', 'Introspection module')
 
 local BUILDER_DIR = 'usr/builder'
 

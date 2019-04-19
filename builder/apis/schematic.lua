@@ -292,7 +292,6 @@ function MemoryFile:write(b)
 end
 
 function Schematic:decompress(ifname, spinner)
-
   local ifh = fs.open(ifname, "rb")
   if not ifh then
     error('Unable to open ' .. ifname)
@@ -314,7 +313,6 @@ function Schematic:decompress(ifname, spinner)
 end
 
 function Schematic:loadpass(fh, spinner)
-
   fh:open()
 
   while true do
@@ -370,7 +368,30 @@ function Schematic:load(filename)
   })
   local f
 
-  if self:isCompressed(filename) then
+  if filename:match("^(https?:)") then
+    local c, msg = Util.httpGet(filename, nil, true)
+    if not c then
+      error(msg)
+    end
+    f = MemoryFile()
+
+    local i = 0
+    local sz = #c
+    DEFLATE.gunzip({
+      input=function()
+        spinner:spin()
+        if i < sz then
+          i = i + 1
+          return c:byte(i)
+        end
+      end,
+      output=function(b) f:write(b) end,
+      disable_crc=true
+    })
+
+    spinner:stop()
+
+  elseif self:isCompressed(filename) then
     local originalFile = filename
     filename = originalFile .. '.uncompressed'
 
