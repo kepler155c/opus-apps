@@ -126,7 +126,11 @@ local function run()
       Sound.play('entity.bat.takeoff')
       os.sleep(0)
 
-    elseif not meta.isElytraFlying then
+    elseif meta.isElytraFlying and meta.isSneaking then
+      display(meta)
+      os.sleep(0.1)
+
+    else
       clearDisplay()
       --display(meta)
       launchCounter = 0
