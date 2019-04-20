@@ -126,7 +126,7 @@ local function run()
       Sound.play('entity.bat.takeoff')
       os.sleep(0)
 
-    else
+    elseif not meta.isElytraFlying then
       clearDisplay()
       --display(meta)
       launchCounter = 0
