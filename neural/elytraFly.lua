@@ -98,7 +98,7 @@ local function run()
         os.sleep(0.1)
 
       elseif meta.motionY < -0.5 then -- falling fast
-        modules.launch(0, 270, -meta.motionY + 1)
+        modules.launch(0, 270, math.min(-meta.motionY + 1, 4))
         Sound.play('entity.bat.takeoff')
         display(meta)
         os.sleep(0)
