@@ -1,4 +1,5 @@
 local Ansi       = require('ansi')
+local Config     = require('config')
 local Event      = require('event')
 local UI         = require('ui')
 local Util       = require('util')
@@ -28,7 +29,12 @@ local directions = {
   [ COPY_LEFT  ] = { text = '-->>' },
   [ COPY_RIGHT ] = { text = '<<--' },
 }
-local copyDir = COPY_LEFT
+
+local config = Config.load('DiskCopy', {
+  eject = true,
+  automatic = false,
+  copyDir = COPY_LEFT
+})
 
 local page = UI.Page {
   linfo = UI.Window {
@@ -45,12 +51,19 @@ local page = UI.Page {
     x = 2, ex = -2, y = -4,
     backgroundColor = colors.black,
   },
-  cloneText = UI.Text {
+  ejectText = UI.Text {
     x = 2, y = -2,
-    value = 'Clone'
+    value = 'Eject'
   },
-  clone = UI.Checkbox {
+  eject = UI.Checkbox {
     x = 8, y = -2,
+  },
+  automaticText = UI.Text {
+    x = 12, y = -2,
+    value = 'Copy automatically'
+  },
+  automatic = UI.Checkbox {
+    x = 31, y = -2,
   },
   copyButton = UI.Button {
     x = -7, y = -2,
@@ -67,7 +80,13 @@ local page = UI.Page {
 }
 
 function page:enable()
-  Util.merge(self.dir, directions[copyDir])
+  Util.merge(self.dir, directions[config.copyDir])
+
+  self.eject.value = config.eject
+  self.automatic.value = config.automatic
+
+  self.dir.x = math.floor((self.width / 2) - 3) + 1
+
   UI.Page.enable(self)
 end
 
@@ -119,7 +138,10 @@ function page:scan()
   self.progress:clear()
 end
 
-function page:copy(sdrive, tdrive)
+function page:copy()
+  local sdrive = config.copyDir == COPY_LEFT and drives.left or drives.right
+  local tdrive = config.copyDir == COPY_LEFT and drives.right or drives.left
+
   local throttle = Util.throttle()
   local sourceFiles, targetFiles = { }, { }
 
@@ -187,20 +209,31 @@ function page:copy(sdrive, tdrive)
   self.progress:clear()
 
   self:scan()
+
+  if config.eject then
+    tdrive.ejectDisk()
+  end
 end
 
 function page:eventHandler(event)
   if event.type == 'change_dir' then
-    copyDir = (copyDir) % 2 + 1
-    Util.merge(self.dir, directions[copyDir])
+    config.copyDir = (config.copyDir) % 2 + 1
+    Util.merge(self.dir, directions[config.copyDir])
+    Config.update('DiskCopy', config)
     self.dir:draw()
 
   elseif event.type == 'copy' then
-    if copyDir == COPY_LEFT then
-      self:copy(drives.left, drives.right)
-    else
-      self:copy(drives.right, drives.left)
+    self:copy()
+
+  elseif event.type == 'checkbox_change' then
+    if event.element == self.eject then
+      config.eject = not not event.checked
+    elseif event.element == self.automatic then
+      config.automatic = not not event.checked
     end
+
+    Config.update('DiskCopy', config)
+    event.element:draw()
 
 	else
 		return UI.Page.eventHandler(self, event)
@@ -208,7 +241,16 @@ function page:eventHandler(event)
 	return true
 end
 
-Event.on({ 'disk', 'disk_eject' }, function()
+Event.on("disk", function()
+  page:scan()
+  page:sync()
+
+  if config.automatic and not page.copyButton.inactive then
+    page:copy()
+  end
+end)
+
+Event.on("disk_eject", function()
   page:scan()
   page:sync()
 end)
