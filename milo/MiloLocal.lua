@@ -161,6 +161,7 @@ Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
     end
     context.taskTimer = context.taskTimer + taskTimer()
     context.taskCounter = context.taskCounter + 1
+
   end
 
   if context.storage:isOnline() and #context.queue > 0 then
@@ -176,8 +177,14 @@ Event.on('turtle_inventory', function()
   end)
 end)
 
-Event.onInterval(5, function()
+local cycleHandle
+cycleHandle = Event.onInterval(5, function()
   Event.trigger('milo_cycle')
+  if context.taskCounter > 0 then
+    --local average = context.taskTimer / context.taskCounter
+    --_debug('Interval: ' .. math.max(5, 2 + average * 3))
+    --cycleHandle.updateInterval(math.max(5, 2 + average * 3))
+  end
 end)
 
 Event.on({ 'storage_offline', 'storage_online' }, function()

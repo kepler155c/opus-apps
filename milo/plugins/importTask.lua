@@ -55,7 +55,9 @@ function ImportTask:cycle(context)
 						return node.adapter.getItemMeta(slotNo)
 					end)
 					if item and matchesFilter(item) then
-						context.storage:import(node, slotNo, item.count, item)
+						if context.storage:import(node, slotNo, item.count, item) ~= item.count then
+							error('Failed to import %s', item.name)
+						end
 					end
 				end
 
@@ -72,6 +74,9 @@ function ImportTask:cycle(context)
 		end)
 	end
 
+	function tasks:onError(msg)
+		_G._debug('IMPORT error: ' .. msg)
+	end
 	tasks:run()
 end
 

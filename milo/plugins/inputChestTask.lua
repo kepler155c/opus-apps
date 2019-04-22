@@ -12,16 +12,13 @@ function InputChest:cycle(context)
 	})
 
 	for node in context.storage:filterActive('input') do
-		local s, m = pcall(function()
+		tasks:add(function()
 			for slot, item in pairs(node.adapter.list()) do
-				tasks:add(function()
-					context.storage:import(node, slot, item.count, item)
-				end)
+				if context.storage:import(node, slot, item.count, item) ~= item.count then
+					break
+				end
 			end
 		end)
-		if not s and m then
-			_G._debug('INPUT error: ' .. m)
-		end
 	end
 
 	tasks:run()
