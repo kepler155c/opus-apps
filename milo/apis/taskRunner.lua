@@ -44,7 +44,7 @@ function TaskRunner:run()
   if #self.tasks > 0 then
     local event = { }
 
-    while #self.tasks > 0 do
+    while true do
       for n = #self.tasks, 1, -1 do
         local task = self.tasks[n]
         if task.filter == nil or task.filter == event[1] or event[1] == "terminate" then
@@ -58,6 +58,9 @@ function TaskRunner:run()
             table.remove(self.tasks, n)
           end
         end
+      end
+      if #self.tasks == 0 then
+        break
       end
       event = { os.pullEventRaw() }
     end
