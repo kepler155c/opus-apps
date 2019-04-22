@@ -1172,9 +1172,8 @@ function input:translate(event, code, p1, p2)
     end
 
   elseif event == 'char' then
-    if not self.pressed[keys.leftAlt] and
-       not self.pressed[keys.rightAlt] then
-      self.fired = true
+    if not self.fired then
+			self.fired = true
       return code -- input:toCode(code)
     end
 

@@ -11,10 +11,11 @@ local parallel = _G.parallel
 local STARTUP_FILE = 'usr/autorun/fly.lua'
 
 if not modules.launch or not modules.getMetaOwner then
-  error([[Required:
+  print([[Required:
 * Kinetic augment
 * Entity sensor
 * Introspection module]])
+  error('missing required item')
 end
 
 if not fs.exists(STARTUP_FILE) then

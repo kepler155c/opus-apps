@@ -3,6 +3,7 @@ local GPS     = require('gps')
 local itemDB  = require('core.itemDB')
 local Point   = require('point')
 local Socket  = require('socket')
+local Sound   = require('sound')
 local Util    = require('util')
 local UI      = require('ui')
 
@@ -21,11 +22,37 @@ local scanner = device['plethora:scanner'] or
 -- hud
 local canvas = glasses and glasses.canvas()
 if canvas then
+  local lh
+
+  local function addText(x, y, text, color)
+    local th = canvas.group.addText({ x, y }, text, color or 0xa0a0a0FF)
+    lh = lh or th.getLineHeight()
+    th.setShadow(true)
+    th.setScale(.75)
+    return th
+  end
+
   canvas.group = canvas.addGroup({ 4, 90 })
-  canvas.bg = canvas.group.addRectangle(0, 0, 60, 24, 0x00000033)
-  canvas.text = canvas.group.addText({ 4, 5 }, '') -- , 0x202020FF)
-  canvas.text.setShadow(true)
-  canvas.text.setScale(.75)
+  canvas.group.bg = canvas.group.addRectangle(0, 0, 80, 10, 0x40404080)
+  canvas.group.addLines(
+        { 0,   0 },
+        { 80, 0 },
+        { 80, 10 },
+        { 0,   10 },
+        { 0,   0 },
+        0x202020FF,
+        2)
+  addText(20, 2, 'Swarm Miner', 0xc0c0c0FF)
+
+  local y = 15
+  addText(3, y, 'Turtles')
+  canvas.turtles = addText(60, y, '')
+  canvas.group.addLine({ 0, y + lh - 2 }, { 80, y + lh - 2 }, 0x404040FF, 4)
+
+  y = y + lh + 5
+  addText(3, y, 'Queue')
+  canvas.queue = addText(60, y, '')
+  canvas.group.addLine({ 0, y + lh - 2 }, { 80, y + lh - 2 }, 0x404040FF, 4)
 end
 
 -- container
@@ -512,9 +539,14 @@ function page:eventHandler(event)
 	UI.Page.eventHandler(self, event)
 end
 
-Event.onInterval(3, function()
+Event.onInterval(1, function()
   if not abort and not paused then
-    page:scan()
+
+    local meta = scanner.getMetaOwner()
+    if meta.isSneaking then
+      page:scan()
+      Sound.play('entity.bobber.throw', .6)
+    end
   end
 end)
 
@@ -541,9 +573,8 @@ Event.onInterval(1, function()
   page.info:sync()
 
   if canvas then
-    local text = string.format('Turtles: %s\nQueue: %s',
-      Util.size(turtles), Util.size(queue))
-    canvas.text.setText(text)
+    canvas.turtles.setText(tostring(Util.size(turtles)))
+    canvas.queue.setText(tostring(Util.size(queue)))
   end
 end)
 

@@ -41,17 +41,17 @@ local function getPoint()
 end
 
 local targets = {
-  ["minecraft:emerald_ore"] = 0x46FF26AA,
-  ["minecraft:diamond_ore"] = 0x50F8FFAA,
-  ["minecraft:gold_ore"] = 0xFFDF50AA,
-  ["minecraft:redstone_ore"] = 0xCC121566,
-  ["minecraft:lit_redstone_ore"] = 0xCC121566,
-  ["minecraft:iron_ore"] = 0xFFAC8766,
-  ["minecraft:lapis_ore"] = 0x0A107F66,
-  ["minecraft:coal_ore"] = 0x20202066,
-  ["quark:biotite_ore"] = 0x02051C66,
-  ["minecraft:quartz_ore"] = 0xCCCCCC66,
-  ["minecraft:glowstone"] = 0xFFDFA166
+  ["minecraft:emerald_ore"] = { "minecraft:emerald", 0 },
+  ["minecraft:diamond_ore"] = { "minecraft:diamond", 0 },
+  ["minecraft:gold_ore"] = { "minecraft:gold_ingot", 0 },
+  ["minecraft:redstone_ore"] = { "minecraft:redstone", 0 },
+  ["minecraft:lit_redstone_ore"] = { "minecraft:redstone", 0 },
+  ["minecraft:iron_ore"] = { "minecraft:iron_ingot", 0 },
+  ["minecraft:lapis_ore"] = { "minecraft:dye", 4 },
+  ["minecraft:coal_ore"] = { "minecraft:coal", 0 },
+  --["quark:biotite_ore"] = 0x02051C66,
+  ["minecraft:quartz_ore"] = { "minecraft:quartz", 0 },
+  ["minecraft:glowstone"] = { "minecraft:glowstone_dust", 0 },
 }
 local projecting = { }
 local offset = getPoint() or showRequirements('GPS')
@@ -90,21 +90,21 @@ local function update()
       for _, b in pairs(blocks) do
         if not projecting[b.id] then
           projecting[b.id] = b
-          --[[
           b.box = canvas.addFrame({
-            pos.x - offset.x + b.x + -(pos.x % 1) + .5,
-            pos.y - offset.y + b.y + -(pos.y % 1) + .5,
-            pos.z - offset.z + b.z + -(pos.z % 1) + .5,
+            pos.x - offset.x + b.x + -(pos.x % 1),
+            pos.y - offset.y + b.y + -(pos.y % 1),
+            pos.z - offset.z + b.z + -(pos.z % 1),
           })
           b.box.setDepthTested(false)
-          b.box.addItem({ 0, 0 }, b.name, b.damage, 2)
-          --]]
-
+          local target = targets[b.name]
+          b.box.addItem({ .25, .25 }, target[1], target[2], 2)
+          --[[
           b.box = canvas.addItem({
             pos.x - offset.x + b.x + -(pos.x % 1) + .5,
             pos.y - offset.y + b.y + -(pos.y % 1) + .5,
             pos.z - offset.z + b.z + -(pos.z % 1) + .5,
           }, b.name, b.damage, .5)
+          --]]
           b.box.setDepthTested(false)
         end
       end

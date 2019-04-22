@@ -5,7 +5,7 @@ LUA MODULE
   compress.deflatelua - deflate (and gunzip/zlib) implemented in Lua.
 
 SYNOPSIS
-  
+
   local DEFLATE = require 'compress.deflatelua'
   -- uncompress gzip file
   local fh = assert(io.open'foo.txt.gz', 'rb')
@@ -13,12 +13,12 @@ SYNOPSIS
   DEFLATE.gunzip {input=fh, output=ofh}
   fh:close(); ofh:close()
   -- can also uncompress from string including zlib and raw DEFLATE formats.
-  
+
 DESCRIPTION
-  
+
   This is a pure Lua implementation of decompressing the DEFLATE format,
   including the related zlib and gzip formats.
-  
+
   Note: This library only supports decompression.
   Compression is not currently implemented.
 
@@ -34,9 +34,9 @@ API
     Decompresses input stream `fh` in the DEFLATE format
     while writing to output stream `ofh`.
     DEFLATE is detailed in http://tools.ietf.org/html/rfc1951 .
-  
+
   DEFLATE.gunzip {input=fh, output=ofh, disable_crc=disable_crc}
-  
+
     Decompresses input stream `fh` with the gzip format
     while writing to output stream `ofh`.
     `disable_crc` (defaults to `false`) will disable CRC-32 checking
@@ -44,15 +44,15 @@ API
     gzip is detailed in http://tools.ietf.org/html/rfc1952 .
 
   DEFLATE.inflate_zlib {input=fh, output=ofh, disable_crc=disable_crc}
-  
+
     Decompresses input stream `fh` with the zlib format
     while writing to output stream `ofh`.
     `disable_crc` (defaults to `false`) will disable CRC-32 checking
     to increase speed.
-    zlib is detailed in http://tools.ietf.org/html/rfc1950 .  
+    zlib is detailed in http://tools.ietf.org/html/rfc1950 .
 
   DEFLATE.adler32(byte, crc) --> rcrc
-  
+
     Returns adler32 checksum of byte `byte` (number 0..255) appended
     to string with adler32 checksum `crc`.  This is internally used by
     `inflate_zlib`.
@@ -63,9 +63,9 @@ COMMAND LINE UTILITY
   A `gunziplua` command line utility (in folder `bin`) is also provided.
   This mimicks the *nix `gunzip` utility but is a pure Lua implementation
   that invokes this library.  For help do
-  
+
     gunziplua -h
-    
+
 DEPENDENCIES
 
   Requires 'digest.crc32lua' (used for optional CRC-32 checksum checks).
@@ -75,13 +75,13 @@ DEPENDENCIES
   is not that critical for this library but is required by digest.crc32lua.
 
   'pythonic.optparse' is only required by the optional `gunziplua`
-  command-line utilty for command line parsing.  
+  command-line utilty for command line parsing.
     https://github.com/davidm/lua-pythonic-optparse
 
 INSTALLATION
 
   Copy the `compress` directory into your LUA_PATH.
-    
+
 REFERENCES
 
   [1] DEFLATE Compressed Data Format Specification version 1.3
@@ -811,7 +811,7 @@ function M.gunzip(t)
   if not disable_crc and data_crc32 then
     if data_crc32 ~= expected_crc32 then
       runtime_error('invalid compressed data--crc error')
-    end    
+    end
   end
   if bs:read() then
     warn 'trailing garbage ignored'
@@ -833,11 +833,11 @@ function M.inflate_zlib(t)
   local outbs = get_obytestream(t.output)
   local disable_crc = t.disable_crc
   if disable_crc == nil then disable_crc = false end
-  
+
   local window_size_ = parse_zlib_header(bs)
-  
+
   local data_adler32 = 1
-  
+
   inflate{input=bs, output=
     disable_crc and outbs or
       function(byte)
@@ -847,7 +847,7 @@ function M.inflate_zlib(t)
   }
 
   bs:read(bs:nbits_left_in_byte())
-  
+
   local b3 = bs:read(8)
   local b2 = bs:read(8)
   local b1 = bs:read(8)
@@ -859,7 +859,7 @@ function M.inflate_zlib(t)
   if not disable_crc then
     if data_adler32 ~= expected_adler32 then
       runtime_error('invalid compressed data--crc error')
-    end    
+    end
   end
   if bs:read() then
     warn 'trailing garbage ignored'
