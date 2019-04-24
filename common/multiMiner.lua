@@ -539,14 +539,14 @@ function page:eventHandler(event)
 	UI.Page.eventHandler(self, event)
 end
 
-Event.onInterval(1, function()
+Event.onInterval(5, function()
   if not abort and not paused then
 
-    local meta = scanner.getMetaOwner()
-    if meta.isSneaking then
+    --local meta = scanner.getMetaOwner()
+    --if meta.isSneaking then
       page:scan()
-      Sound.play('entity.bobber.throw', .6)
-    end
+    --  Sound.play('entity.bobber.throw', .6)
+    --end
   end
 end)
 
