@@ -100,44 +100,46 @@ local function process(list)
   active = false
 
   for _, furnace in ipairs(Util.shallowCopy(furni)) do
-    local f = furnace.list()
+    pcall(function()
+      local f = furnace.list()
 
-    -- items to cook
-    local item = list[INPUT_SLOT]
-    local cooking = f[INPUT_SLOT]
+      -- items to cook
+      local item = list[INPUT_SLOT]
+      local cooking = f[INPUT_SLOT]
 
-    if cooking or item then
-      active = true
-    end
+      if cooking or item then
+        active = true
+      end
 
-    if item and item.count > 0 then
-      if not cooking then -- or cooking.name == item.name then
-        local count = cooking and cooking.count or 0
-        if count < 64 then
-          print('cooking : ' .. furnace.name)
-          count = furnace.pullItems(localName, INPUT_SLOT, SMELT_AMOUNT, INPUT_SLOT)
-          item.count = item.count - count
-          Util.removeByValue(furni, furnace)
-          table.insert(furni, furnace)
+      if item and item.count > 0 then
+        if not cooking or cooking.name == item.name then
+          local count = cooking and cooking.count or 0
+          if count < 64 then
+            print('cooking : ' .. furnace.name)
+            count = furnace.pullItems(localName, INPUT_SLOT, SMELT_AMOUNT, INPUT_SLOT)
+            item.count = item.count - count
+            Util.removeByValue(furni, furnace)
+            table.insert(furni, furnace)
+          end
         end
       end
-    end
 
-    -- fuel
-    local fuel = f[FUEL_SLOT] or { count = 0 }
-    if fuel.count < 8 then
-      print('fueling ' ..furnace.name)
-      furnace.pullItems(localName, FUEL_SLOT, 8 - fuel.count, FUEL_SLOT)
-    end
-
-    local result = f[OUTPUT_SLOT]
-    if result then
-      if not list[OUTPUT_SLOT] or result.name == list[OUTPUT_SLOT].name then
-        print('pulling from : ' .. furnace.name)
-        furnace.pushItems(localName, OUTPUT_SLOT, result.count, OUTPUT_SLOT)
-        list[OUTPUT_SLOT] = result
+      -- fuel
+      local fuel = f[FUEL_SLOT] or { count = 0 }
+      if fuel.count < 8 then
+        print('fueling ' ..furnace.name)
+        furnace.pullItems(localName, FUEL_SLOT, 8 - fuel.count, FUEL_SLOT)
       end
-    end
+
+      local result = f[OUTPUT_SLOT]
+      if result then
+        if not list[OUTPUT_SLOT] or result.name == list[OUTPUT_SLOT].name then
+          print('pulling from : ' .. furnace.name)
+          furnace.pushItems(localName, OUTPUT_SLOT, result.count, OUTPUT_SLOT)
+          list[OUTPUT_SLOT] = result
+        end
+      end
+    end)
   end
 
   return active
