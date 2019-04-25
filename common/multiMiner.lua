@@ -170,7 +170,12 @@ local function run(member, point)
         turtle.pathfind(Point.above(topPoint))
         turtle.set({
           movementStrategy = 'goto',
-          digPolicy = 'turtleSafe',
+          digPolicy = 'blacklist',
+          blacklist = {
+            'turtle',
+            'chest',
+            'shulker',
+          },
         })
       end
 
@@ -180,7 +185,12 @@ local function run(member, point)
         turtle.reset()
         turtle.set({
           attackPolicy = 'attack',
-          digPolicy = 'turtleSafe',
+          digPolicy = 'blacklist',
+          blacklist = {
+            'turtle',
+            'chest',
+            'shulker',
+          },
           movementStrategy = 'goto',
           point = point,
         })
