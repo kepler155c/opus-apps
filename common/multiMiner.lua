@@ -247,9 +247,9 @@ local function run(member, point)
         while not turtle.go(Point.above(spt)) do
           os.sleep(.5)
         end
-        if turtle.selectSlotWithQuantity(0) then
-          turtle.set({ digPolicy = 'dig' })
-        end
+        --if turtle.selectSlotWithQuantity(0) then
+          --turtle.set({ digPolicy = 'dig' })
+        --end
         while not turtle.go(spt) do
           os.sleep(.5)
         end
