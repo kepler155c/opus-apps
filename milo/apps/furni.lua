@@ -60,111 +60,125 @@ if not fs.exists(STARTUP_FILE) then
 shell.openForegroundTab('packages/milo/apps/furni')]])
 end
 
-local furni
+local furnaces
 local localName
 
 print('detecting wired modem connected to furnaces...')
 for _, dev in pairs(device) do
   if dev.type == 'wired_modem' and dev.getNameLocal then
     local list = dev.getNamesRemote()
-    furni = { }
+    furnaces = { }
     localName = dev.getNameLocal()
     for _, name in pairs(list) do
       if device[name].type ~= 'minecraft:furnace' then
-        furni = nil
+        furnaces = nil
         break
       end
-      table.insert(furni, device[name])
+      table.insert(furnaces, {
+        dev = device[name],
+        list = device[name].list(),
+      })
     end
   end
-  if furni then
+  if furnaces then
     print('Using wired modem: '  .. dev.name)
-    print('Furnaces: ' .. #furni)
+    print('Furnaces: ' .. #furnaces)
     break
   end
 end
 
-if not furni then
+if not furnaces then
   error('Turtle must be connected to a second wired_modem connected to furnaces only')
 end
 
 _G.printError([[Program must be restarted if new furnaces are added.]])
 
--- slot 1: item to cook
--- slot 2: fuel
--- slot 3: return
-
-local active = false
+local function getSlot(furnace, slotNo)
+  if not furnace.list[slotNo] then
+    furnace.list[slotNo] = {
+      count = 0
+    }
+  end
+  return furnace.list[slotNo]
+end
 
 local function process(list)
-  active = false
+  local inItem = list[INPUT_SLOT]
+  local inFuel = list[FUEL_SLOT]
+  local inReturn = list[OUTPUT_SLOT] or { count = 0 }
 
-  for _, furnace in ipairs(Util.shallowCopy(furni)) do
-    pcall(function()
-      local f = furnace.list()
-
-      -- items to cook
-      local item = list[INPUT_SLOT]
-      local cooking = f[INPUT_SLOT]
-
-      if cooking or item then
-        active = true
+  for _, furnace in ipairs(Util.shallowCopy(furnaces)) do
+    local s, m = pcall(function()
+      if furnace.list[INPUT_SLOT] and furnace.list[INPUT_SLOT].count > 0 then
+        furnace.list = furnace.dev.list()
+        print('listing ' .. furnace.dev.name)
       end
 
-      if item and item.count > 0 then
-        if not cooking or cooking.name == item.name then
-          local count = cooking and cooking.count or 0
-          if count < 64 then
-            print('cooking : ' .. furnace.name)
-            count = furnace.pullItems(localName, INPUT_SLOT, SMELT_AMOUNT, INPUT_SLOT)
-            item.count = item.count - count
-            Util.removeByValue(furni, furnace)
-            table.insert(furni, furnace)
+      -- items to cook
+      local cooking = getSlot(furnace, INPUT_SLOT)
+      if cooking.count < 64 and inItem and inItem.count > 0 then
+        if cooking.count == 0 or cooking.name == inItem.name then
+          print('cooking : ' .. furnace.dev.name)
+          local count = furnace.dev.pullItems(localName, INPUT_SLOT, SMELT_AMOUNT, INPUT_SLOT)
+
+          if count > 0 then
+            inItem.count = inItem.count - count
+
+            cooking.name = inItem.name
+            cooking.count = cooking.count + count
+
+            -- push to end of queue
+            Util.removeByValue(furnaces, furnace)
+            table.insert(furnaces, furnace)
           end
         end
       end
 
       -- fuel
-      local fuel = f[FUEL_SLOT] or { count = 0 }
-      if fuel.count < 8 and list[2] and list[2].count > 0 then
-        if fuel.count == 0 or fuel.name == list[2].name then
-          print('fueling ' ..furnace.name)
-          list[2].count = list[2].count - furnace.pullItems(localName, FUEL_SLOT, 8 - fuel.count, FUEL_SLOT)
+      local fuel = getSlot(furnace, FUEL_SLOT)
+      if fuel.count < 8 and inFuel and inFuel.count > 0 then
+        if fuel.count == 0 or fuel.name == inFuel.name then
+          print('fueling ' .. furnace.dev.name)
+          local count = furnace.dev.pullItems(localName, FUEL_SLOT, 8 - fuel.count, FUEL_SLOT)
+          if count > 0 then
+            inFuel.count = inFuel.count - count
+
+            fuel.name = inFuel.name
+            fuel.count = fuel.count - count
+          end
         end
       end
 
-      local result = f[OUTPUT_SLOT]
-      if result then
-        if not list[OUTPUT_SLOT] or result.name == list[OUTPUT_SLOT].name then
-          print('pulling from : ' .. furnace.name)
-          furnace.pushItems(localName, OUTPUT_SLOT, result.count, OUTPUT_SLOT)
-          list[OUTPUT_SLOT] = result
+      local result = getSlot(furnace, OUTPUT_SLOT)
+      if result.count > 0 then
+        if inReturn.count == 0 or result.name == inReturn.name then
+          print('pulling from : ' .. furnace.dev.name)
+          local count = furnace.dev.pushItems(localName, OUTPUT_SLOT, result.count, OUTPUT_SLOT)
+
+          if count > 0 then
+            result.count = result.count - count
+            if result.count == 0 then
+              furnace.list[OUTPUT_SLOT] = nil
+            end
+
+            inReturn.name = result.name
+            inReturn.count = inReturn.count + count
+          end
         end
       end
     end)
-  end
-
-  return active
-end
-
-Event.on('turtle_inventory', function()
-  print('processing')
-  while true do
-    -- furnace block updates can cause errors
-    local s, m = pcall(process, inv.list())
-    if s and not active then
-      break
-    end
     if not s and m then
       _G.printError(m)
     end
-    os.sleep(3)
   end
+end
+
+Event.on('turtle_inventory', function()
+  process(inv.list())
   print('idle')
 end)
 
-Event.onInterval(5, function()
-  -- for some reason, it keeps stalling ...
+Event.onInterval(3, function()
   os.queueEvent('turtle_inventory')
 end)
 
