@@ -114,4 +114,13 @@ Needs work
  \0304   ",
 		run = "multiMiner.lua",
 	},
+  [ "hexedit" ] = {
+		title = "hexEdit",
+		category = "Apps",
+    requires = "advancedComputer",
+		icon = "   dffddff55f\
+d5df5\
+   fd5",
+		run = "packages/common/hexedit.lua",
+	},
 }
