@@ -144,7 +144,7 @@ local function process(list)
             inFuel.count = inFuel.count - count
 
             fuel.name = inFuel.name
-            fuel.count = fuel.count - count
+            fuel.count = fuel.count + count
           end
         end
       end
