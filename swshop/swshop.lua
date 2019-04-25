@@ -122,7 +122,7 @@ local function handleTransaction(transaction)
       if chat and chat.tell then
         local msg = string.format('PURCHASE: %s bought %d %s for %s',
           recipient, p2, t.itemId, t.price * p2)
-        chat.tell(msg)
+        pcall(chat.tell, msg)
       end
       if extra > 0 then
         print('extra: ' .. extra)
