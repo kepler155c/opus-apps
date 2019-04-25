@@ -1134,7 +1134,6 @@ while bRunning do
         action = keyMapping.char
         param = ie.ch
       else
-_debug(ie.code)
         action = keyMapping[ie.code]
       end
     end

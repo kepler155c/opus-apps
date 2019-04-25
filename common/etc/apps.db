@@ -115,7 +115,7 @@ Needs work
 		run = "multiMiner.lua",
 	},
   [ "hexedit" ] = {
-		title = "hexEdit",
+		title = "HexEdit",
 		category = "Apps",
     requires = "advancedComputer",
 		icon = "   dffddff55f\

@@ -14,14 +14,16 @@ function LimitTask:cycle(context)
 			if res.limit then
 				local items, count = Milo:getMatches(itemDB:splitKey(key), res)
 				if count > res.limit then
-					local amount = count - res.limit
+					local total = count - res.limit
 					for _, item in pairs(items) do
-						amount = amount - context.storage:export(
+						local amount = context.storage:export(
 							trashcan,
 							nil,
-							math.min(amount, item.count),
+							math.min(total, item.count),
 							item)
-						if amount <= 0 then
+						total = total - amount
+						-- amount == 0 means that trashcan is full
+						if amount <= 0 or total <= 0 then
 							break
 						end
 					end

@@ -19,20 +19,32 @@ local turtle     = _G.turtle
 fs.mount('sys/apps/system/turtle.lua', 'linkfs', 'packages/turtle/system/turtle.lua')
 
 -- provide a turtle function for scanning
-function turtle.scan(blocks)
+function turtle.scan(whitelist, blacklist)
   local pt = turtle.point
+
   local scanner = device['plethora:scanner'] or error('Scanner not equipped')
 
-  if not blocks then
-    return Util.each(scanner:scan(), function(b)
+  if not whitelist and not blacklist then
+    return Util.each(scanner.scan(), function(b)
       b.x = pt.x + b.x
       b.y = pt.y + b.y
       b.z = pt.z + b.z
     end)
   end
 
-  return Util.filter(scanner:scan(), function(b)
-    if blocks[b.name] then
+  if whitelist then
+    return Util.filter(scanner.scan(), function(b)
+      if whitelist[b.name] then
+        b.x = pt.x + b.x
+        b.y = pt.y + b.y
+        b.z = pt.z + b.z
+        return true
+      end
+    end)
+  end
+
+  return Util.filter(scanner.scan(), function(b)
+    if not blacklist[b.name] then
       b.x = pt.x + b.x
       b.y = pt.y + b.y
       b.z = pt.z + b.z

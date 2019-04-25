@@ -171,11 +171,6 @@ local function run(member, point)
         turtle.set({
           movementStrategy = 'goto',
           digPolicy = 'blacklist',
-          blacklist = {
-            'turtle',
-            'chest',
-            'shulker',
-          },
         })
       end
 
@@ -252,11 +247,17 @@ local function run(member, point)
         while not turtle.go(Point.above(spt)) do
           os.sleep(.5)
         end
-        turtle.set({ digPolicy = 'dig' })
-        turtle.go(spt)
+        if turtle.selectSlotWithQuantity(0) then
+          turtle.set({ digPolicy = 'dig' })
+        end
+        while not turtle.go(spt) do
+          os.sleep(.5)
+        end
       else
         turtle.gotoY(spt.y)
-        turtle.go(spt)
+        while not turtle.go(spt) do
+          os.sleep(.5)
+        end
       end
     end)
 
