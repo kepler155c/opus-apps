@@ -126,9 +126,11 @@ local function process(list)
 
       -- fuel
       local fuel = f[FUEL_SLOT] or { count = 0 }
-      if fuel.count < 8 then
-        print('fueling ' ..furnace.name)
-        furnace.pullItems(localName, FUEL_SLOT, 8 - fuel.count, FUEL_SLOT)
+      if fuel.count < 8 and list[2] and list[2].count > 0 then
+        if fuel.count == 0 or fuel.name == list[2].name then
+          print('fueling ' ..furnace.name)
+          list[2].count = list[2].count - furnace.pullItems(localName, FUEL_SLOT, 8 - fuel.count, FUEL_SLOT)
+        end
       end
 
       local result = f[OUTPUT_SLOT]
