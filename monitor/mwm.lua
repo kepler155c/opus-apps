@@ -44,11 +44,14 @@ local monDim, termDim = { }, { }
 monDim.width, monDim.height = parentMon.getSize()
 termDim.width, termDim.height = parentTerm.getSize()
 
-local monitor = Terminal.window(parentMon, 1, 1, monDim.width, monDim.height, false)
+-- even though the monitor window is set to visible
+-- the canvas is not (possibly change default in terminal.lua)
+
+-- canvas is not visible so that redraws
+-- are done once in the event loop
+local monitor = Terminal.window(parentMon, 1, 1, monDim.width, monDim.height, true)
 monitor.setBackgroundColor(colors.gray)
 monitor.clear()
-
-monitor.canvas:setVisible(true)
 
 local function nextUID()
   UID = UID + 1
@@ -72,7 +75,9 @@ end
 local function redraw()
   --monitor.clear()
   monitor.canvas:dirty()
-  for k,process in ipairs(processes) do
+  --monitor.setBackgroundColor(colors.gray)
+  monitor.canvas:clear(colors.gray)
+  for k, process in ipairs(processes) do
     process.container.canvas:dirty()
     process:focus(k == #processes)
   end
@@ -94,11 +99,11 @@ end
 local Process = { }
 
 function Process:new(args)
-
   args.env = args.env or Util.shallowCopy(defaultEnv)
   args.width = args.width or termDim.width
   args.height = args.height or termDim.height
 
+  -- TODO: randomize start position
   local self = setmetatable({
     uid    = nextUID(),
     x      = args.x or 1,
@@ -111,18 +116,22 @@ function Process:new(args)
   }, { __index = Process })
 
   self:adjustDimensions()
+  if not args.x then
+    self.x = math.random(1, monDim.width - self.width + 1)
+    self.y = math.random(1, monDim.height - self.height + 1)
+  end
 
-  self.container = Terminal.window(monitor, self.x, self.y, self.width, self.height, false)
+  self.container = Terminal.window(monitor, self.x, self.y, self.width, self.height, true)
   self.window = window.create(self.container, 2, 3, args.width, args.height, true)
-
   self.terminal = self.window
 
   self.container.canvas.parent = monitor.canvas
-  table.insert(monitor.canvas.layers, self.container.canvas)
+  table.insert(monitor.canvas.layers, 1, self.container.canvas)
   self.container.canvas:setVisible(true)
 
-  self.co = coroutine.create(function()
+  --self.container.getSize = self.window.getSize
 
+  self.co = coroutine.create(function()
     local result, err
 
     if args.fn then
@@ -217,9 +226,10 @@ function Process:reposition()
   self.container.reposition(self.x, self.y, self.width, self.height)
   self.container.setBackgroundColor(colors.black)
   self.container.clear()
-
   self.window.reposition(2, 3, self.width - 2, self.height - 3)
-
+  if self.window ~= self.terminal then
+    self.terminal.reposition(1, 1, self.width - 2, self.height - 3)
+  end
   redraw()
 end
 
@@ -267,7 +277,8 @@ function Process:resume(event, ...)
   end
 
   if not self.filter or self.filter == event or event == "terminate" then
-    term.redirect(self.terminal)
+    --term.redirect(self.terminal)
+    local previousTerm = term.redirect(self.terminal)
 
     local previous = running
     running = self -- stupid shell set title
@@ -275,6 +286,8 @@ function Process:resume(event, ...)
     running = previous
 
     self.terminal = term.current()
+    term.redirect(previousTerm)
+
     if ok then
       self.filter = result
     else
@@ -355,13 +368,12 @@ function multishell.openTab(tabInfo)
 
   table.insert(processes, 1, process)
 
-  --process.container.canvas:setVisible(true)
-
-  local previousTerm = term.current()
+  --local previousTerm = term.current()
   process:resume()
-  term.redirect(previousTerm)
+  --term.redirect(previousTerm)
 
   multishell.saveSession(sessionFile)
+
   return process.uid
 end
 
@@ -370,12 +382,12 @@ function multishell.removeProcess(process)
   process.container.canvas:removeLayer()
 
   multishell.saveSession(sessionFile)
-  --redraw()
+  redraw()
 end
 
 function multishell.saveSession(filename)
   local t = { }
-  for _,process in pairs(processes) do
+  for _,process in ipairs(processes) do
     if process.path and not process.isShell then
       table.insert(t, {
         x = process.x,
@@ -393,8 +405,8 @@ end
 function multishell.loadSession(filename)
   local config = Util.readTable(filename)
   if config then
-    for _,v in pairs(config) do
-      multishell.openTab(v)
+    for k = #config, 1, -1 do
+      multishell.openTab(config[k])
     end
   end
 end
@@ -423,6 +435,7 @@ function multishell.start()
       if process then
         if key ~= #processes then
           multishell.setFocus(process.uid)
+          multishell.saveSession(sessionFile)
         end
         process:click(x - process.x + 1, y - process.y + 1)
 
@@ -464,17 +477,10 @@ function multishell.start()
     end
 
     monitor.canvas:render(parentMon)
-    local didRedraw = true
 
     local focused = processes[#processes]
-    if didRedraw and focused then
-      --focused.container.canvas:dirty()
-      --focused.container.canvas:redraw(parentTerm)
+    if focused then
       focused.window.restoreCursor()
-      local cx, cy = focused.container.getCursorPos()
-      monitor.setCursorPos(
-        focused.container.canvas.x + cx - 1,
-        focused.container.canvas.y + cy - 1)
     end
   end
 end
@@ -493,7 +499,7 @@ local function addShell()
   }, { __index = Process })
 
   function process:focus(focused)
-    --self.window.setVisible(focused)
+    self.window.setVisible(focused)
     if focused then
       self.window.restoreCursor()
     else

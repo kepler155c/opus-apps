@@ -598,6 +598,7 @@ end)
 
 UI:setPage(page)
 
+--[[
 Event.onTerminate(function()
   spt = Point.above(locate())
   for _, v in pairs(pool) do
@@ -606,6 +607,7 @@ Event.onTerminate(function()
   end
   abort = true
 end)
+]]
 
 Event.pullEvents()
 
