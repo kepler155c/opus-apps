@@ -1,61 +1,76 @@
-local Kinetic = require('neural.kinetic')
+local neural  = require('neural.interface')
 local Sound   = require('sound')
 local Util    = require('util')
 
-local device = _G.device
 local os     = _G.os
 
-local sensor = device['plethora:sensor']
-local scanner = device['plethora:scanner']
+local WALK_SPEED = 1.5
+local MAX_COWS   = 12
+
+neural.assertModules({
+  'plethora:sensor',
+  'plethora:scanner',
+  'plethora:laser',
+  'plethora:kinetic',
+  'plethora:introspection',
+})
 
 local fed = { }
 
 local function resupply()
-  local slot = sensor.getEquipment().list()[1]
+  local slot = neural.getEquipment().list()[1]
   if slot and slot.count > 32 then
     return
   end
   print('resupplying')
-  for _ = 1, 8 do
-    local dispenser = Util.find(scanner.scan(), 'name', 'minecraft:dispenser')
-    if dispenser and math.abs(dispenser.x) <= 1 and math.abs(dispenser.z) <= 1 then
-        Kinetic.lookAt(dispenser)
-        Kinetic.use(0, 'off')
+  for _ = 1, 2 do
+    local dispenser = Util.find(neural.scan(), 'name', 'minecraft:dispenser')
+    if not dispenser then
+      print('dispenser not found')
+      break
+    end
+    if math.abs(dispenser.x) <= 1 and math.abs(dispenser.z) <= 1 then
+      neural.lookAt(dispenser)
+      for _ = 1, 8 do
+        neural.use(0, 'off')
         os.sleep(.2)
-        Kinetic.getEquipment().suck(1, 64)
-    elseif dispenser then
-      Kinetic.walkTo(dispenser)
+        neural.getEquipment().suck(1, 64)
+      end
+      break
+    else
+      neural.walkTo({ x = dispenser.x, y = 0, z = dispenser.z }, WALK_SPEED)
     end
   end
 end
 
-local function feed(entity)
-  print('feeding')
+local function breed(entity)
+  print('breeding')
   entity.lastFed = os.clock()
   fed[entity.id] = entity
 
-  Kinetic.walkAgainst(entity)
-  entity = sensor.getMetaByID(entity.id)
+  neural.walkAgainst(entity, 1, WALK_SPEED)
+  entity = neural.getMetaByID(entity.id)
   if entity then
-    Kinetic.lookAt(entity)
-    Kinetic.use(1)
+    neural.lookAt(entity)
+    neural.use(1)
     os.sleep(.1)
   end
 end
 
 local function kill(entity)
   print('killing')
-  Kinetic.walkAgainst(entity, 2)
-  entity = sensor.getMetaByID(entity.id)
+  neural.walkAgainst(entity, 2.5, WALK_SPEED)
+  entity = neural.getMetaByID(entity.id)
   if entity then
-    Kinetic.lookAt(entity)
-    Kinetic.fireAt({ x = entity.x, y = 0, z = entity.z })
+    neural.lookAt(entity)
+    neural.fireAt({ x = entity.x, y = 0, z = entity.z })
     Sound.play('entity.firework.launch')
+    os.sleep(.2)
   end
 end
 
 local function getEntities()
-  return Util.filter(sensor.sense(), function(entity)
+  return Util.filter(neural.sense(), function(entity)
     if entity.name == 'Cow' and entity.y > -.5 then
       return true
     end
@@ -86,12 +101,12 @@ while true do
 
   local entities = getEntities()
 
-  if Util.size(entities) > 10 then
+  if Util.size(entities) > MAX_COWS then
     kill(randomEntity(entities))
   else
     local entity = getHungry(entities)
     if entity then
-      feed(entity)
+      breed(entity)
     else
       os.sleep(5)
     end

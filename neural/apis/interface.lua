@@ -1,17 +1,34 @@
-local Interface = { }
-
 local Angle = require('neural.angle')
 local Util  = require('util')
 
 local os         = _G.os
 local peripheral = _G.peripheral
 
-local ni = peripheral.find('neuralInterface') or { }
-for k,v in pairs(ni) do
-	Interface[k] = v
+local Neural = { }
+
+function Neural.assertModules(modules)
+	local all = {
+		[ 'plethora:glasses' ] = 'Overlay glasses',
+		[ 'plethora:sensor' ] = 'Entity sensor',
+		[ 'plethora:scanner' ] = 'Block scanner',
+		[ 'plethora:introspection' ] = 'Introspection module',
+		[ 'plethora:kinetic' ] = 'Kinetic augment',
+		[ 'plethora:laser' ] = 'Laser',
+	}
+
+	for _, m in pairs(modules) do
+		if not Neural.hasModule(m) then
+			print('Required:')
+			for _, v in pairs(modules) do
+				print(' * ' .. (modules[v] or v))
+			end
+			print('')
+			error('Missing: ' .. (all[m] or m))
+		end
+	end
 end
 
-function Interface.yap(spt, dpt)
+function Neural.yap(spt, dpt)
 	local x, y, z = dpt.x - spt.x, dpt.y - spt.y, dpt.z - spt.z
 	local pitch = -math.atan2(y, math.sqrt(x * x + z * z))
 	local yaw = math.atan2(-x, z)
@@ -19,7 +36,7 @@ function Interface.yap(spt, dpt)
   return math.deg(yaw), math.deg(pitch)
 end
 
-function Interface.launchTo(pt, strength)
+function Neural.launchTo(pt, strength)
 	local yaw = math.deg(math.atan2(pt.x, -pt.z))
 	if not strength then
 		local dist = math.sqrt(
@@ -28,29 +45,34 @@ function Interface.launchTo(pt, strength)
 		strength = math.sqrt(math.max(32, dist) / 3)
 		debug(strength)
 	end
-	Interface.launch(yaw, 225, strength or 1)
+	Neural.launch(yaw, 225, strength or 1)
 end
 
-function Interface.dropArmor()
+function Neural.dropArmor()
 	for i = 3, 5 do
-		Interface.unequip(i)
+		Neural.unequip(i)
 	end
 end
 
-function Interface.walkTo(pt)
-	local s, m = ni.walk(pt.x, pt.y, pt.z)
-	if not s then
-		_G.printError(m)
-	end
-  os.sleep(.05)
-  while ni.isWalking() do
-    os.sleep(0)
-  end
+function Neural.walkTo(pt, speed)
+  Neural.walk(pt.x, pt.y, pt.z, speed)
+  os.sleep(1)
+  repeat until not Neural.isWalking()
+end
+
+function Neural.walkAgainst(pt, radius, speed)
+  local angle = math.atan2(pt.x, pt.z)
+  local x = pt.x - ((radius or 1) * math.sin(angle))
+  local z = pt.z - ((radius or 1) * math.cos(angle))
+
+  Neural.walk(x, 0, z, speed)
+  os.sleep(1)
+  repeat until not Neural.isWalking()
 end
 
 -- flatten equipment functions
-function Interface.getEquipmentList()
-	local l = Interface.getEquipment and Interface.getEquipment().list() or { }
+function Neural.getEquipmentList()
+	local l = Neural.getEquipment and Neural.getEquipment().list() or { }
 
 	for k, v in pairs(l) do
 		v.slot = k
@@ -59,81 +81,56 @@ function Interface.getEquipmentList()
 	return l
 end
 
-function Interface.equip(slot)
-	return Interface.getEquipment and Interface.getEquipment().suck(slot) or 0
+function Neural.equip(slot)
+	return Neural.getEquipment and Neural.getEquipment().suck(slot) or 0
 end
 
-function Interface.unequip(slot)
-	return Interface.getEquipment and Interface.getEquipment().drop(slot)
+function Neural.unequip(slot)
+	return Neural.getEquipment and Neural.getEquipment().drop(slot)
 end
 
-function Interface.getUniqueNames()
+function Neural.getUniqueNames()
 	local t = { }
-	for _,v in pairs(Interface.sense()) do
+	for _,v in pairs(Neural.sense()) do
 		t[v.name] = v.name
 	end
 	return Util.transpose(t)
 end
 
-function Interface.lookAt(pt)
-	local yaw, pitch = Angle.towards(pt.x - .5, pt.y, pt.z - .5)
-  return Interface.look(yaw, pitch)
+function Neural.lookAt(pt)
+  if pt then
+    local yaw, pitch = Angle.towards(pt.x, pt.y, pt.z)
+    return Neural.look(yaw, pitch)
+  end
 end
 
-function Interface.shootAt(entity, strength)
-  Interface.lookAt(entity)
-  return Interface.shoot(strength or 1)
+function Neural.fireAt(pt, strength)
+  local yaw, pitch = Angle.towards(pt.x, pt.y, pt.z)
+  return Neural.fire(yaw, pitch, strength or .5)
 end
 
-function Interface.shootAt2(entity, strength)
-	local x, z = entity.x - .5, entity.z - .5
-
-	local function quad(a, b, c)
-	  if math.abs(a) < 1e-6 then
-	    if math.abs(b) < 1e-6 then
-	      return math.abs(c) < 1e-6 and 0, 0
-	    else
-	      return -c/b, -c/b
-	    end
-	  else
-	    local disc = b*b - 4*a*c
-	    if disc >= 0 then
-	      disc = math.sqrt(disc)
-	      a = 2*a
-	      return (-b-disc)/a, (-b+disc)/a
-	    end
-	  end
+function Neural.shootAt(pt, strength)
+	if Neural.fire then
+		return Neural.fireAt(pt, strength)
+	else
+		Neural.lookAt(pt)
+		return Neural.shoot(strength or 1)
 	end
-
-	 local v = .025 -- velocity of arrow
-
-	 local tvx = entity.motionX
-	 local tvz = entity.motionZ
-	 local a = tvx*tvx + tvz*tvz - v*v
-	 local b = 2 * (tvx * x + tvz * z)
-	 local c = x * x + z * z
-	 local t0, t1 = quad(a, b, c)
-	 if t0 then
-	   local t = math.min(t0, t1)
-	   if t < 0 then
-	     t = math.max(t0, t1)
-	   end
-	   if t > 0 then
-	   --Util.print({ x, t, tvx, x + tvx * t })
-	     x = x + tvx * t
-	     z = z + tvz * t
-	   end
-	 end
-
-	local yaw = math.deg(math.atan2(-(x - .5), z - .5))
-	local pitch = -math.deg(math.atan2(entity.y, math.sqrt(x * x + z * z)))
-
-  Interface.look(yaw, pitch) -- pitch is broken
-  return Interface.shoot(strength or 1)
 end
 
-function Interface.setStatus(s)
-  ni.status = s
+function Neural.setStatus(s)
+  Neural.status = s
 end
 
-return Interface
+function Neural.reload()
+	return setmetatable(Neural, {
+		__index = peripheral.find('neuralInterface')
+	})
+end
+
+function Neural.testWalk()
+  local e = Neural.getMetaByName('kepler155c')
+  Neural.walkAgainst(e)
+end
+
+return Neural.reload()
