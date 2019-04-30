@@ -1,4 +1,5 @@
 local Point = require('point')
+local Sound  = require('sound')
 local Util  = require('util')
 
 local device = _G.device
@@ -27,8 +28,9 @@ local function dropOff()
       print(b.x, b.z)
     end
     if b and math.abs(b.x) < 1 and math.abs(b.z) < 1 then
-print('dropped')
+      print('dropped')
       sensor.getEquipment().drop(1)
+      sensor.getEquipment().drop(2)
       os.sleep(1)
     end
   end
@@ -38,7 +40,7 @@ while true do
   local sensed = Util.reduce(sensor.sense(), function(acc, s)
     s.y = Util.round(s.y)
 
-    if s.y == 0 and s.id ~= id then
+    if s.y == 0 and s.name == 'Item' then
       --s.x = Util.round(s.x)
       --s.z = Util.round(s.z)
       acc[s.id] = s
@@ -65,10 +67,14 @@ while true do
       local amount = sensor.getEquipment().suck(1)
       print('sucked: ' .. amount)
       if amount == 0 then
-        print('dropping')
-        dropOff()
-        break
+        amount = sensor.getEquipment().suck(2)
+        if amount == 0 then
+          print('dropping')
+          dropOff()
+          break
+        end
       end
+      Sound.play('entity.item.pickup')
     end
   end
 
