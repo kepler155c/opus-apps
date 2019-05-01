@@ -1,5 +1,4 @@
 local Angle = require('neural.angle')
-local Util  = require('util')
 
 local os         = _G.os
 local peripheral = _G.peripheral

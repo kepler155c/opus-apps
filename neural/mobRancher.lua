@@ -1,11 +1,17 @@
+--[[
+  Breed either cows or sheep.
+  Must be run on a mob with the same height.
+]]
+
 local neural  = require('neural.interface')
 local Sound   = require('sound')
 local Util    = require('util')
 
 local os = _G.os
 
+local BREEDING  = 'Cow'
 local WALK_SPEED = 1.5
-local MAX_COWS   = 12
+local MAX_GROWN  = 12
 
 neural.assertModules({
   'plethora:sensor',
@@ -71,7 +77,7 @@ end
 
 local function getEntities()
   return Util.filter(neural.sense(), function(entity)
-    if entity.name == 'Cow' and entity.y > -.5 then
+    if entity.name == BREEDING and entity.y > -.5 then
       return true
     end
   end)
@@ -101,7 +107,7 @@ while true do
 
   local entities = getEntities()
 
-  if Util.size(entities) > MAX_COWS then
+  if Util.size(entities) > MAX_GROWN then
     kill(randomEntity(entities))
   else
     local entity = getHungry(entities)
