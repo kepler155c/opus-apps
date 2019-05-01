@@ -2,7 +2,7 @@ local neural  = require('neural.interface')
 local Sound   = require('sound')
 local Util    = require('util')
 
-local os     = _G.os
+local os = _G.os
 
 local WALK_SPEED = 1.5
 local MAX_COWS   = 12

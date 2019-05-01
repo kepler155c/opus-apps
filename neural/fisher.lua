@@ -1,28 +1,21 @@
 local machine = require('neural.statemachine')
+local neural  = require('neural.interface')
 
-local device = _G.device
-local os     = _G.os
+local os = _G.os
 
-local function Syntax(missing)
-  print([[Required: Neural Interface containing:
- * Kinetic augment
- * Entity sensor
- * Introspection module]])
- error('Missing: ' .. missing)
-end
+neural.assertModules({
+  'plethora:kinetic',
+  'plethora:introspection',
+  'plethora:sensor',
+})
 
-local kinetic = device['plethora:kinetic'] or Syntax('kinetic augment')
-local sensor  = device['plethora:sensor'] or Syntax('entity sensor')
-local canvas  = device['plethora:glasses'] and device['plethora:glasses'].canvas()
-
-if not sensor.getMetaOwner then Syntax('introspection module') end
-
-local depth = -3
-local icon
+local depth  = -3
 local scales = { .2, .4, .6, .8, 1, .8, .6, .4 }
-local scale = 0
+local scale  = 0
+local icon
 local w, h
 
+local canvas = neural.canvas and neural.canvas()
 if canvas then
   w, h = canvas.getSize()
   icon = canvas.addItem({ w - 20, h - 20 }, 'minecraft:fishing_rod' )
@@ -41,14 +34,14 @@ local fsm = machine.create({
   callbacks = {
     -- events
     oncast = function()
-      kinetic.use(.2)
+      neural.use(.2)
       os.sleep(.5)
-      local meta = sensor.getMetaByName('unknown')
+      local meta = neural.getMetaByName('unknown')
       depth = meta and meta.y - .5 or depth
     end,
 
     onreel =  function()
-      kinetic.use(.3)
+      neural.use(.3)
       os.sleep(.5)
     end,
 
@@ -76,7 +69,7 @@ local fsm = machine.create({
 })
 
 local function isHoldingRod()
-  local owner = sensor.getMetaOwner()
+  local owner = neural.getMetaOwner()
   local held = owner.heldItem and owner.heldItem.getMetadata()
   return held and held.rawName == 'item.fishingRod'
 end
@@ -84,7 +77,7 @@ end
 local function fish()
   fsm:startup()
   while true do
-    local meta = sensor.getMetaByName('unknown')
+    local meta = neural.getMetaByName('unknown')
     if isHoldingRod() then
       fsm:rod()
       if not meta then

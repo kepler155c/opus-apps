@@ -11,6 +11,15 @@ local args = { ... }
 local TARGET = args[1] or error('Syntax: robotWars <targetName>')
 local uid = ni.getID and ni.getID() or error('Introspection module is required')
 
+-- fix
+function ni.getUniqueNames()
+	local t = { }
+	for _,v in pairs(ni.sense()) do
+		t[v.name] = v.name
+	end
+	return Util.transpose(t)
+end
+
 local function findTarget(name)
 	for _, v in pairs(ni.sense()) do
 		if v.name == name and v.id ~= uid then

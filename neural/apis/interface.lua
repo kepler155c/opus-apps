@@ -43,15 +43,8 @@ function Neural.launchTo(pt, strength)
 					 math.pow(pt.x, 2) +
 					 math.pow(pt.z, 2))
 		strength = math.sqrt(math.max(32, dist) / 3)
-		debug(strength)
 	end
 	Neural.launch(yaw, 225, strength or 1)
-end
-
-function Neural.dropArmor()
-	for i = 3, 5 do
-		Neural.unequip(i)
-	end
 end
 
 function Neural.walkTo(pt, speed)
@@ -81,20 +74,18 @@ function Neural.getEquipmentList()
 	return l
 end
 
+function Neural.dropArmor()
+	for i = 3, 5 do
+		Neural.unequip(i)
+	end
+end
+
 function Neural.equip(slot)
 	return Neural.getEquipment and Neural.getEquipment().suck(slot) or 0
 end
 
 function Neural.unequip(slot)
 	return Neural.getEquipment and Neural.getEquipment().drop(slot)
-end
-
-function Neural.getUniqueNames()
-	local t = { }
-	for _,v in pairs(Neural.sense()) do
-		t[v.name] = v.name
-	end
-	return Util.transpose(t)
 end
 
 function Neural.lookAt(pt)

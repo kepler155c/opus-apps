@@ -1,22 +1,24 @@
 local Array   = require('array')
-local kinetic = require('neural.kinetic')
+local neural  = require('neural.interface')
 local Point   = require('point')
 
-local device = _G.device
-local os     = _G.os
+local os = _G.os
+
+neural.assertModules({
+  'plethora:sensor',
+  'plethora:introspection',
+})
 
 local pos = { x = 0, y = 0, z = 0 }
-local sensor = device['plethora:sensor'] or error('Missing sensor')
-local intro  = device['plethora:introspection'] or error('Missing introspection module')
 
-local ownerId = intro.getMetaOwner().id
+local ownerId = neural.getMetaOwner().id
 local targets = { }
 
 local function findTargets()
   local now = os.clock()
   local moved = { }
 
-  local l = Array.filter(sensor.sense(), function(a)
+  local l = Array.filter(neural.sense(), function(a)
     if math.abs(a.motionY) > 0 and ownerId ~= a.id then
       local loc = table.concat({ a.x, a.y, a.z }, ':')
       if not targets[a.id] then
@@ -53,10 +55,10 @@ while true do
   local target = findTargets()
   if target then
     count = 0
-    kinetic.lookAt(target)
+    neural.lookAt(target)
     os.sleep(0)
   elseif count > 25 then
-    kinetic.lookAt({
+    neural.lookAt({
       x = math.random(-10, 10),
       y = math.random(-10, 10),
       z = math.random(-10, 10)

@@ -41,17 +41,16 @@ local function getPoint()
 end
 
 local targets = {
-  ["minecraft:emerald_ore"] = { "minecraft:emerald_ore", 0 },
-  ["minecraft:diamond_ore"] = { "minecraft:diamond_ore", 0 },
-  ["minecraft:gold_ore"] = { "minecraft:gold_ore", 0 },
-  ["minecraft:redstone_ore"] = { "minecraft:redstone_ore", 0 },
+  ["minecraft:emerald_ore"]      = { "minecraft:emerald_ore", 0 },
+  ["minecraft:diamond_ore"]      = { "minecraft:diamond_ore", 0 },
+  ["minecraft:gold_ore"]         = { "minecraft:gold_ore", 0 },
+  ["minecraft:redstone_ore"]     = { "minecraft:redstone_ore", 0 },
   ["minecraft:lit_redstone_ore"] = { "minecraft:redstone_ore", 0 },
-  ["minecraft:iron_ore"] = { "minecraft:iron_ore", 0 },
-  ["minecraft:lapis_ore"] = { "minecraft:lapis_ore", 0 },
-  ["minecraft:coal_ore"] = { "minecraft:coal_ore", 0 },
-  --["quark:biotite_ore"] = 0x02051C66,
-  ["minecraft:quartz_ore"] = { "minecraft:quartz_ore", 0 },
-  ["minecraft:glowstone"] = { "minecraft:glowstone", 0 },
+  ["minecraft:iron_ore"]         = { "minecraft:iron_ore", 0 },
+  ["minecraft:lapis_ore"]        = { "minecraft:lapis_ore", 0 },
+  ["minecraft:coal_ore"]         = { "minecraft:coal_ore", 0 },
+  ["minecraft:quartz_ore"]       = { "minecraft:quartz_ore", 0 },
+  ["minecraft:glowstone"]        = { "minecraft:glowstone", 0 },
 }
 local projecting = { }
 local offset = getPoint() or showRequirements('GPS')
