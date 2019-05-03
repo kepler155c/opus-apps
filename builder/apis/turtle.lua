@@ -128,7 +128,7 @@ function supplyPage:enable(builder)
         self:sync()
       end)
       if not s then -- not sure why it's erroring :(
-        _G._debug(m)
+        _G._syslog(m)
       end
     end
   end)

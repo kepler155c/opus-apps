@@ -294,7 +294,6 @@ local function craftItem(ikey, item, items, machineStatus)
     local ingredient = itemDB:get(key)
 --    local c = item.craftable * qty
 --    while c > 0 do
---debug(key)
     inventoryAdapter:provide(ingredient, maxCount * qty, slot)
     if turtle.getItemCount(slot) ~= maxCount * qty then
       item.status = 'Extract failed: ' .. (ingredient.displayName or itemDB:getName(ingredient))

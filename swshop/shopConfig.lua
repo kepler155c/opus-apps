@@ -22,7 +22,7 @@ local wizardPage = UI.WizardPage {
 		[2] = UI.TextEntry {
 			formLabel = 'Password', formKey = 'password',
 			shadowText = 'password',
-			limit = 64,
+			limit = 256,
       required = true,
 			help = 'Krist wallet password',
 		},

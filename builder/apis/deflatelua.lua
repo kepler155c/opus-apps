@@ -125,8 +125,6 @@ local assert = assert
 local error = error
 local ipairs = ipairs
 local pairs = pairs
-local print = print
-local require = require
 local tostring = tostring
 local type = type
 local setmetatable = setmetatable
@@ -136,29 +134,11 @@ local table_sort = table.sort
 local math_max = math.max
 local string_char = string.char
 
---[[
- Requires the first module listed that exists, else raises like `require`.
- If a non-string is encountered, it is returned.
- Second return value is module name loaded (or '').
- --]]
-local function requireany(...)
-  local errs = {}
-  for i = 1, select('#', ...) do local name = select(i, ...)
-    if type(name) ~= 'string' then return name, '' end
-    local ok, mod = pcall(require, name)
-    if ok then return mod, name end
-    errs[#errs+1] = mod
-  end
-  error(table.concat(errs, '\n'), 2)
-end
-
 
 --local crc32 = require "digest.crc32lua" . crc32_byte
 --local bit, name_ = requireany('bit', 'bit32', 'bit.numberlua', nil)
 local bit
 local crc32
-
-local DEBUG = false
 
 -- Whether to use `bit` library functions in current module.
 -- Unlike the crc32 library, it doesn't make much difference in this module.
@@ -176,12 +156,6 @@ local function warn(s)
   io.stderr:write(s, '\n')
 end
 
-
-local function debug(...)
-  print('DEBUG', ...)
-end
-
-
 local function runtime_error(s, level)
   level = level or 1
   error({s}, level+1)
@@ -198,7 +172,6 @@ end
 
 
 local function output(outstate, byte)
-  -- debug('OUTPUT:', s)
   local window_pos = outstate.window_pos
   outstate.outbs(byte)
   outstate.window[window_pos] = byte
@@ -240,28 +213,6 @@ local pow2 = memoize(function(n) return 2^n end)
 -- weak metatable marking objects as bitstream type
 local is_bitstream = setmetatable({}, {__mode='k'})
 
-
--- DEBUG
--- prints LSB first
---[[
-local function bits_tostring(bits, nbits)
-  local s = ''
-  local tmp = bits
-  local function f()
-    local b = tmp % 2 == 1 and 1 or 0
-    s = s .. b
-    tmp = (tmp - b) / 2
-  end
-  if nbits then
-    for i=1,nbits do f() end
-  else
-    while tmp ~= 0 do f() end
-  end
-
-  return s
-end
---]]
-
 local function bytestream_from_file(fh)
   local o = {}
   function o:read()
@@ -288,18 +239,9 @@ end
 
 
 local function bytestream_from_function(f)
-  local i = 0
-  local buffer = ''
   local o = {}
   function o:read()
     return f()
---    i = i + 1
---    if i > #buffer then
---      buffer = f()
- --     if not buffer then return end
- --     i = 1
---    end
---    return buffer:byte(i,i)
   end
   return o
 end
@@ -395,13 +337,11 @@ local function HuffmanTable(init, is_full)
     for val,nbits in pairs(init) do
       if nbits ~= 0 then
         t[#t+1] = {val=val, nbits=nbits}
-        --debug('*',val,nbits)
       end
     end
   else
     for i=1,#init-2,2 do
       local firstval, nbits, nextval = init[i], init[i+1], init[i+2]
-      --debug(val, nextval, nbits)
       if nbits ~= 0 then
         for val=firstval,nextval-1 do
           t[#t+1] = {val=val, nbits=nbits}
@@ -422,7 +362,6 @@ local function HuffmanTable(init, is_full)
       nbits = s.nbits
     end
     s.code = code
-    --debug('huffman code:', i, s.nbits, s.val, code, bits_tostring(code))
     code = code + 1
   end
 
@@ -433,12 +372,6 @@ local function HuffmanTable(init, is_full)
     look[s.code] = s.val
   end
 
-  --for _,o in ipairs(t) do
-  --  debug(':', o.nbits, o.val)
-  --end
-
-  -- function t:lookup(bits) return look[bits] end
-
   local msb = NATIVE_BITOPS and function(bits, nbits)
     local res = 0
     for i=1,nbits do
@@ -448,14 +381,14 @@ local function HuffmanTable(init, is_full)
     return res
   end or function(bits, nbits)
     local res = 0
-    for i=1,nbits do
+    for _=1,nbits do
       local b = bits % 2
       bits = (bits - b) / 2
       res = res * 2 + b
     end
     return res
   end
-  
+
   local tfirstcode = memoize(
     function(bits) return pow2[minbits] + msb(bits, minbits) end)
 
@@ -470,14 +403,9 @@ local function HuffmanTable(init, is_full)
         local b = noeof(bs:read())
         nbits = nbits + 1
         code = code * 2 + b   -- MSB first
-        --[[NATIVE_BITOPS
-        code = lshift(code, 1) + b   -- MSB first
-        --]]
       end
-      --debug('code?', code, bits_tostring(code))
       local val = look[code]
       if val then
-        --debug('FOUND', val)
         return val
       end
     end
@@ -504,15 +432,6 @@ local function parse_gzip_header(bs)
   local mtime = bs:read(32) -- Modification TIME
   local xfl = bs:read(8) -- eXtra FLags
   local os = bs:read(8) -- Operating System
-
-  if DEBUG then
-    debug("CM=", cm)
-    debug("FLG=", flg)
-    debug("MTIME=", mtime)
-    -- debug("MTIME_str=",os.date("%Y-%m-%d %H:%M:%S",mtime)) -- non-portable
-    debug("XFL=", xfl)
-    debug("OS=", os)
-  end
 
   if not os then runtime_error 'invalid header' end
 
@@ -545,9 +464,6 @@ local function parse_gzip_header(bs)
     if not crc16 then runtime_error 'invalid header' end
     -- IMPROVE: check CRC.  where is an example .gz file that
     -- has this set?
-    if DEBUG then
-      debug("CRC16=", crc16)
-    end
   end
 end
 
@@ -607,7 +523,6 @@ local function parse_huffmantables(bs)
         if codelen <= 15 then
           nrepeat = 1
           nbits = codelen
-          --debug('w', nbits)
         elseif codelen == 16 then
           nrepeat = 3 + noeof(bs:read(2))
           -- nbits unchanged
@@ -645,7 +560,6 @@ local tdecode_dist_base
 local tdecode_dist_nextrabits
 local function parse_compressed_item(bs, outstate, littable, disttable)
   local val = littable:read(bs)
-  --debug(val, val < 256 and string_char(val))
   if val < 256 then -- literal
     output(outstate, val)
   elseif val == 256 then -- end of block
@@ -660,7 +574,6 @@ local function parse_compressed_item(bs, outstate, littable, disttable)
       end
       t[285] = 258
       tdecode_len_base = t
-      --for i=257,285 do debug('T1',i,t[i]) end
     end
     if not tdecode_len_nextrabits then
       local t = {}
@@ -677,7 +590,6 @@ local function parse_compressed_item(bs, outstate, littable, disttable)
       end
       t[285] = 0
       tdecode_len_nextrabits = t
-      --for i=257,285 do debug('T2',i,t[i]) end
     end
     local len_base = tdecode_len_base[val]
     local nextrabits = tdecode_len_nextrabits[val]
@@ -692,7 +604,6 @@ local function parse_compressed_item(bs, outstate, littable, disttable)
         if i ~= 1 then skip = skip * 2 end
       end
       tdecode_dist_base = t
-      --for i=0,29 do debug('T3',i,t[i]) end
     end
     if not tdecode_dist_nextrabits then
       local t = {}
@@ -708,7 +619,6 @@ local function parse_compressed_item(bs, outstate, littable, disttable)
         end
       end
       tdecode_dist_nextrabits = t
-      --for i=0,29 do debug('T4',i,t[i]) end
     end
     local dist_val = disttable:read(bs)
     local dist_base = tdecode_dist_base[dist_val]
@@ -716,7 +626,6 @@ local function parse_compressed_item(bs, outstate, littable, disttable)
     local dist_extrabits = bs:read(dist_nextrabits)
     local dist = dist_base + dist_extrabits
 
-    --debug('BACK', len, dist)
     for i=1,len do
       local pos = (outstate.window_pos - 1 - dist) % 32768 + 1  -- 32K
       output(outstate, assert(outstate.window[pos], 'invalid distance'))
@@ -735,17 +644,12 @@ local function parse_block(bs, outstate)
   local BTYPE_DYNAMIC_HUFFMAN = 2
   local BTYPE_RESERVED_ = 3
 
-  if DEBUG then
-    debug('bfinal=', bfinal)
-    debug('btype=', btype)
-  end
-
   if btype == BTYPE_NO_COMPRESSION then
     bs:read(bs:nbits_left_in_byte())
     local len = bs:read(16)
     local nlen_ = noeof(bs:read(16))
 
-    for i=1,len do
+    for _=1,len do
       local by = noeof(bs:read(8))
       output(outstate, by)
     end
@@ -804,10 +708,7 @@ function M.gunzip(t)
 
   local expected_crc32 = bs:read(32)
   local isize = bs:read(32) -- ignored
-  if DEBUG then
-    debug('crc32=', expected_crc32)
-    debug('isize=', isize)
-  end
+
   if not disable_crc and data_crc32 then
     if data_crc32 ~= expected_crc32 then
       runtime_error('invalid compressed data--crc error')
@@ -853,9 +754,7 @@ function M.inflate_zlib(t)
   local b1 = bs:read(8)
   local b0 = bs:read(8)
   local expected_adler32 = ((b3*256 + b2)*256 + b1)*256 + b0
-  if DEBUG then
-    debug('alder32=', expected_adler32)
-  end
+
   if not disable_crc then
     if data_adler32 ~= expected_adler32 then
       runtime_error('invalid compressed data--crc error')

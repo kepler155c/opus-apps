@@ -68,7 +68,7 @@ function TaskRunner:run()
 end
 
 function TaskRunner:onError(msg)
-  _G._debug(msg.errorMsg .. msg)
+  _G._syslog(msg.errorMsg .. msg)
 end
 
 return TaskRunner

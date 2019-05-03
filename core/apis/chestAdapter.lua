@@ -110,7 +110,7 @@ function ChestAdapter:listItems(throttle)
       return items
     end
   else
-    _debug(m)
+    _G._syslog(m)
   end
 end
 

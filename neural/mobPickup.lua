@@ -20,14 +20,11 @@ neural.assertModules({
 local function dropOff()
   print('dropping')
 
-  local blocks = neural.scan()
-  local b = Util.find(blocks, 'name', 'minecraft:hopper')
-
+  local b = Util.find(neural.scan(), 'name', 'minecraft:hopper')
   if b then
-    neural.walkTo({ x = b.x, y = 0, z = b.z })
+    neural.walkTo({ x = b.x, y = 0, z = b.z }, 2)
 
-    blocks = neural.scan()
-    b = Util.find(blocks, 'name', 'minecraft:hopper')
+    b = Util.find(neural.scan(), 'name', 'minecraft:hopper')
     if b and math.abs(b.x) < 1 and math.abs(b.z) < 1 then
       print('dropped')
       neural.getEquipment().drop(1)
@@ -40,7 +37,7 @@ end
 local function pickup(id)
   local b = neural.getMetaByID(id)
   if b then
-    neural.walkTo(b)
+    neural.walkTo(b, 2)
 
     local amount = neural.getEquipment().suck()
     print('sucked: ' .. amount)
@@ -53,8 +50,7 @@ end
 
 while true do
   local sensed = Util.reduce(neural.sense(), function(acc, s)
-    s.y = Util.round(s.y)
-    if s.y == 0 and s.name == 'Item' then
+    if Util.round(s.y) == 0 and s.name == 'Item' then
       acc[s.id] = s
     end
     return acc

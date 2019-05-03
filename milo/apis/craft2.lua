@@ -148,7 +148,7 @@ local function turtleCraft(recipe, storage, request, count)
 				request.status = 'rescan needed ?'
 				request.statusCode = Craft.STATUS_ERROR
 				failed = true
-	_debug('failed to export: ' .. item.name)
+	_G._syslog('failed to export: ' .. item.name)
 			end
 		end)
 	end
@@ -165,8 +165,8 @@ local function turtleCraft(recipe, storage, request, count)
 		local l = storage.turtleInventory.adapter.list()
 		local crafted = l[1]
 		if recipe.result ~= itemDB:makeKey(crafted) then
-			_debug('expected: ' .. recipe.result)
-			_debug('got: ' .. itemDB:makeKey(crafted))
+			_G._syslog('expected: ' .. recipe.result)
+			_G._syslog('got: ' .. itemDB:makeKey(crafted))
 			request.aborted = true
 			request.status = 'Failed to craft: ' .. recipe.result
 			request.statusCode = Craft.STATUS_ERROR
@@ -176,7 +176,7 @@ local function turtleCraft(recipe, storage, request, count)
 			request.statusCode = Craft.STATUS_SUCCESS
 		end
 	else
-		_debug('just failed')
+		_G._syslog('just failed')
 		request.status = 'Failed to craft'
 		request.statusCode = Craft.STATUS_ERROR
 	end

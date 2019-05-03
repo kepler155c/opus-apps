@@ -120,10 +120,10 @@ table.sort(context.tasks, function(a, b)
   return a.priority < b.priority
 end)
 
-_G._debug('Tasks\n-----')
+_G._syslog('Tasks\n-----')
 for _, task in ipairs(context.tasks) do
   task.execTime = 0
-  _G._debug('%d: %s', task.priority, task.name)
+  _G._syslog('%d: %s', task.priority, task.name)
 end
 
 Milo:clearGrid()
@@ -139,8 +139,8 @@ Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
       for _, entry in pairs(queue) do
         local s, m = pcall(entry.callback, entry.request)
         if not s and m then
-          _G._debug('callback crashed')
-          _G._debug(m)
+          _G._syslog('callback crashed')
+          _G._syslog(m)
         end
       end
     end
@@ -154,8 +154,8 @@ Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
       local timer = Util.timer()
       local s, m = pcall(function() task:cycle(context) end)
       if not s and m then
-        _G._debug(task.name .. ' crashed')
-        _G._debug(m)
+        _G._syslog(task.name .. ' crashed')
+        _G._syslog(m)
       end
       task.execTime = task.execTime + timer()
     end
@@ -182,7 +182,7 @@ cycleHandle = Event.onInterval(5, function()
   Event.trigger('milo_cycle')
   if context.taskCounter > 0 then
     --local average = context.taskTimer / context.taskCounter
-    --_debug('Interval: ' .. math.max(5, 2 + average * 3))
+    --_syslog('Interval: ' .. math.max(5, 2 + average * 3))
     --cycleHandle.updateInterval(math.max(5, 2 + average * 3))
   end
 end)
@@ -208,8 +208,8 @@ os.queueEvent(
   context.storage:isOnline() and 'storage_online' or 'storage_offline',
   context.storage:isOnline())
 
-local oldDebug = _G._debug
-_G._debug = function(...)
+local oldDebug = _G._syslog
+_G._syslog = function(...)
   for _,v in pairs(context.loggers) do
     v(...)
   end
@@ -220,5 +220,5 @@ local s, m = pcall(function()
   UI:pullEvents()
 end)
 
-_G._debug = oldDebug
+_G._syslog = oldDebug
 if not s then error(m) end

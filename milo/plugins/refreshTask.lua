@@ -11,7 +11,7 @@ function RefreshTask:cycle(context)
 	for node, adapter in context.storage:onlineAdapters() do
 		if node.refreshInterval then
 			if not adapter.lastRefresh or adapter.lastRefresh + node.refreshInterval < now then
-				_G._debug('REFRESHER: ' .. (node.displayName or node.name))
+				_G._syslog('REFRESHER: ' .. (node.displayName or node.name))
 				context.storage.dirty = true
 				adapter.dirty = true
 				adapter.lastRefresh = now

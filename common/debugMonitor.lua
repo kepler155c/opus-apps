@@ -13,9 +13,9 @@ mon.clear()
 mon.setTextScale(.5)
 mon.setCursorPos(1, 1)
 
-local oldDebug = _G._debug
+local oldDebug = _G._syslog
 
-_G._debug = function(...)
+_G._syslog = function(...)
 	local oldTerm = term.redirect(mon)
 	Util.print(...)
 	term.redirect(oldTerm)
@@ -30,4 +30,4 @@ repeat
 	end
 until e == 'terminate'
 
-_G._debug = oldDebug
+_G._syslog = oldDebug

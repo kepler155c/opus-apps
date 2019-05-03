@@ -36,7 +36,7 @@ Event.addRoutine(function()
           end
         end)
         if not s and m then
-          _G._debug(m)
+          _G._syslog(m)
         end
       end
     end

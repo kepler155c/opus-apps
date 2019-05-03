@@ -590,7 +590,7 @@ Event.addRoutine(function()
     { x = mining.x, y = 0, z = mining.z }
   )
 
-  _G._debug({ distance = distance, maxDistance = maxDistance })
+  _G._syslog({ distance = distance, maxDistance = maxDistance })
 
   if distance > maxDistance + 16 then
     term.clear()

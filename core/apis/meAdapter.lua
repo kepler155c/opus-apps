@@ -102,7 +102,7 @@ function MEAdapter:refresh()
   itemDB:flush()
 
   if not s and m then
-    _debug(m)
+    _G._syslog(m)
   end
 
   if s and not failed and hasItems and self.items and not Util.empty(self.items) then

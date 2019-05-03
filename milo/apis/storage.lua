@@ -66,7 +66,7 @@ function Storage:init()
   end
 
   Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
-_G._debug('%s: %s', e, tostring(dev))
+_G._syslog('%s: %s', e, tostring(dev))
     self:initStorage()
   end)
   Event.onInterval(60, function()
@@ -87,11 +87,11 @@ function Storage:showStorage()
     end
   end
   if #t > 0 then
-    _G._debug('Adapter:')
+    _G._syslog('Adapter:')
     for _, k in pairs(t) do
-      _G._debug(' offline: ' .. k)
+      _G._syslog(' offline: ' .. k)
     end
-    _G._debug('')
+    _G._syslog('')
   end
 end
 
@@ -143,7 +143,7 @@ function Storage:initStorage()
     self.storageOnline = online
     -- TODO: if online, then list items
     os.queueEvent(self.storageOnline and 'storage_online' or 'storage_offline', online)
-    _G._debug('Storage: %s', self.storageOnline and 'online' or 'offline')
+    _G._syslog('Storage: %s', self.storageOnline and 'online' or 'offline')
   end
 
   self:listItems()
@@ -229,7 +229,7 @@ end
 
 function Storage:refresh(throttle)
   self.dirty = true
-_G._debug('STORAGE: Forcing full refresh')
+_G._syslog('STORAGE: Forcing full refresh')
   for _, adapter in self:onlineAdapters() do
     adapter.dirty = true
   end
@@ -280,7 +280,7 @@ function Storage:listItems(throttle)
     end
   end
   itemDB:flush()
-  _G._debug('STORAGE: refresh '  .. #t .. ' inventories in ' .. Util.round(timer(), 2))
+  _G._syslog('STORAGE: refresh '  .. #t .. ' inventories in ' .. Util.round(timer(), 2))
 
   self.dirty = false
   self.cache = cache
@@ -300,7 +300,7 @@ function Storage:updateCache(adapter, item, count)
 
   if not entry then
     if count < 0 then
-      _G._debug('STORAGE: update cache - count < 0', 4)
+      _G._syslog('STORAGE: update cache - count < 0', 4)
     else
       entry = Util.shallowCopy(item)
       entry.count = count
@@ -315,7 +315,7 @@ function Storage:updateCache(adapter, item, count)
   end
 
   if not entry then
-    _G._debug('STORAGE: item missing details')
+    _G._syslog('STORAGE: item missing details')
     adapter.dirty = true
     self.dirty = true
   else
@@ -401,7 +401,7 @@ local function rawExport(source, target, item, qty, slot)
   end)
 
   if not s and m then
-    _G._debug(m)
+    _G._syslog(m)
   end
 
   return total, m
@@ -424,7 +424,7 @@ function Storage:export(target, slot, count, item)
     end
 
     if amount > 0 then
-      _G._debug('EXT: %s(%d): %s -> %s%s in %s',
+      _G._syslog('EXT: %s(%d): %s -> %s%s in %s',
         item.displayName or item.name, amount, self:_sn(adapter.name), self:_sn(target.name),
         slot and string.format('[%d]', slot) or '[*]', Util.round(timer(), 2))
     end
@@ -443,7 +443,7 @@ function Storage:export(target, slot, count, item)
     end
   end
 
-  _G._debug('STORAGE warning: %s(%d): %s%s %s failed to export',
+  _G._syslog('STORAGE warning: %s(%d): %s%s %s failed to export',
     item.displayName or item.name, count, self:_sn(target.name),
     slot and string.format('[%d]', slot) or '[*]', key)
 
@@ -460,15 +460,15 @@ local function rawInsert(source, target, slot, qty)
 
   local s, m = pcall(function()
     if isValidTransfer(source, target.name) then
---_debug('pull %s %s %d %d', source.name, target.name, slot, qty)
+--_syslog('pull %s %s %d %d', source.name, target.name, slot, qty)
       count = source.pullItems(target.name, slot, qty)
     else
---_debug('push %s %s', target.name, source.name)
+--_syslog('push %s %s', target.name, source.name)
       count = target.pushItems(source.name, slot, qty)
     end
   end)
   if not s and m then
-    _G._debug(m)
+    _G._syslog(m)
   end
 
   if count > 0 then
@@ -510,7 +510,7 @@ function Storage:import(source, slot, count, item)
     if amount > 0 then
       self:updateCache(adapter, item, amount)
 
-      _G._debug('INS: %s(%d): %s[%d] -> %s in %s',
+      _G._syslog('INS: %s(%d): %s[%d] -> %s in %s',
         item.displayName or item.name, amount,
         self:_sn(source.name), slot, self:_sn(adapter.name), Util.round(timer(), 2))
 
@@ -557,7 +557,7 @@ function Storage:import(source, slot, count, item)
   end
 
   if count ~= 0 then
-    _G._debug('STORAGE warning: %s(%d): %s -> INSERT failed',
+    _G._syslog('STORAGE warning: %s(%d): %s -> INSERT failed',
       item.displayName or item.name, count,
       self:_sn(source.name))
   end
@@ -579,17 +579,17 @@ function Storage:trash(source, slot, count, item)
         amount = target.adapter.pullItems(source.name, slot, count)
       end
 
-      _G._debug('TRA: %s(%d): %s%s -> %s in %s',
+      _G._syslog('TRA: %s(%d): %s%s -> %s in %s',
         item.displayName or item.name, amount, self:_sn(source.name),
         slot and string.format('[%d]', slot) or '[*]', self:_sn(target.name), Util.round(timer(), 2))
     end)
     if not s and m then
-      _G._debug(m)
+      _G._syslog(m)
     end
   end
 
   if amount ~= count then
-    _G._debug('STORAGE warning: %s(%d): %s -> TRASH failed',
+    _G._syslog('STORAGE warning: %s(%d): %s -> TRASH failed',
       item.displayName or item.name, count - amount,
       self:_sn(source.name))
   end

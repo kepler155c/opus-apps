@@ -75,7 +75,7 @@ function ImportTask:cycle(context)
 	end
 
 	function tasks:onError(msg)
-		_G._debug('IMPORT error: ' .. msg)
+		_G._syslog('IMPORT error: ' .. msg)
 	end
 	tasks:run()
 end

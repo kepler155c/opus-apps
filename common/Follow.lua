@@ -120,7 +120,7 @@ function swarm:onRemove(member, status, message)
     member.snmp = nil
   end
   if not status then
-    _G._debug(message)
+    _G._syslog(message)
   end
 end
 

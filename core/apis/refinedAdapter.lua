@@ -70,7 +70,7 @@ function RefinedAdapter:listItems(throttle)
   end)
 
   if not s and m then
-    _debug(m)
+    _G._syslog(m)
   end
 
   itemDB:flush()

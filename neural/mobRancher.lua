@@ -9,7 +9,7 @@ local Util    = require('util')
 
 local os = _G.os
 
-local BREEDING  = 'Cow'
+local BREEDING   = 'Cow'
 local WALK_SPEED = 1.5
 local MAX_GROWN  = 12
 
@@ -54,7 +54,7 @@ local function breed(entity)
   entity.lastFed = os.clock()
   fed[entity.id] = entity
 
-  neural.walkAgainst(entity, 1, WALK_SPEED)
+  neural.walkTo(entity, WALK_SPEED, 1)
   entity = neural.getMetaByID(entity.id)
   if entity then
     neural.lookAt(entity)
@@ -65,7 +65,7 @@ end
 
 local function kill(entity)
   print('killing')
-  neural.walkAgainst(entity, 2.5, WALK_SPEED)
+  neural.walkTo(entity, WALK_SPEED, 2.5)
   entity = neural.getMetaByID(entity.id)
   if entity then
     neural.lookAt(entity)

@@ -42,7 +42,6 @@ function ChestAdapter:getItemDetails(index, item)
   if self.getItemMeta then
     local s, detail = pcall(self.getItemMeta, index)
     if not s or not detail or detail.name ~= item.name then
-  --    debug({ s, detail })
       return
     end
     return detail

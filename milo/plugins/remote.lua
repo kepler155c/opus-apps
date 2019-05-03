@@ -13,7 +13,7 @@ local function getNameSafe(v)
 		name = v.getName()
 	end)
 	if not s then
-		_G._debug(m)
+		_G._syslog(m)
 	end
 	return name
 end
@@ -35,7 +35,7 @@ local function compactList(list)
 end
 
 local function client(socket)
-	_G._debug('REMOTE: connection from ' .. socket.dhost)
+	_G._syslog('REMOTE: connection from ' .. socket.dhost)
 
 	local user = socket:read(2)
 	if not user then
@@ -44,7 +44,7 @@ local function client(socket)
 
 	local manipulator = getManipulatorForUser(user)
 	if not manipulator then
-		_G._debug('REMOTE: Manipulator with introspection module bound with user not found. Closing connection.')
+		_G._syslog('REMOTE: Manipulator with introspection module bound with user not found. Closing connection.')
 		socket:write({
 			msg = 'Manipulator not found'
 			})
@@ -52,7 +52,7 @@ local function client(socket)
 		return
 	end
 
-	_G._debug('REMOTE: all good')
+	_G._syslog('REMOTE: all good')
 	socket:write({
 		data = 'ok',
 	})
@@ -166,7 +166,7 @@ local function client(socket)
 		end
 	until not socket.connected
 
-	_G._debug('REMOTE: disconnected from ' .. socket.dhost)
+	_G._syslog('REMOTE: disconnected from ' .. socket.dhost)
 end
 
 local handler
@@ -174,7 +174,7 @@ local handler
 local function listen()
 	if device.wireless_modem then
 		handler = Event.addRoutine(function()
-			_G._debug('REMOTE: listening on port 4242')
+			_G._syslog('REMOTE: listening on port 4242')
 			while true do
 				local socket = Socket.server(4242)
 				Event.addRoutine(function()
@@ -191,7 +191,7 @@ Event.on({ 'device_attach', 'device_detach' }, function(_, name)
 		if handler then
 			handler:terminate()
 			handler = nil
-			_G._debug('REMOTE: wireless modem disconnected')
+			_G._syslog('REMOTE: wireless modem disconnected')
 		else
 			listen()
 		end

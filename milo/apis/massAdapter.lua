@@ -44,7 +44,7 @@ function Adapter:init(args)
   end
 
   function self.pullItems(target, key, amount, slot)
-    _G._debug({target, key, amount, slot })
+    _G._syslog({target, key, amount, slot })
     return 0
   end
 

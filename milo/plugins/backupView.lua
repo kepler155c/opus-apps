@@ -82,7 +82,7 @@ local function backupNode(node)
   }
   local s, m = pcall(function()
     if not node.adapter.isDiskPresent() then
-      _G._debug('BACKUP error: No media present')
+      _G._syslog('BACKUP error: No media present')
     else
       local dir = node.adapter.getMountPath()
       for _, v in pairs(files) do
@@ -91,7 +91,7 @@ local function backupNode(node)
     end
   end)
   if not s and m then
-    _G._debug('BACKUP error:' .. m)
+    _G._syslog('BACKUP error:' .. m)
   end
 end
 
@@ -105,7 +105,7 @@ function BackupTask:cycle()
   for node in context.storage:filterActive('backup') do
     if not drives[node.name] then
       drives[node.name] = Event.onInterval(DAY, function()
-        _G._debug('BACKUP: started')
+        _G._syslog('BACKUP: started')
         if node.adapter and node.adapter.online then
           backupNode(node)
         end

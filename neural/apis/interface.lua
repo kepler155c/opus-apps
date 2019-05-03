@@ -46,20 +46,19 @@ function Neural.launchTo(pt, strength)
 	Neural.launch(yaw, 225, strength or 1)
 end
 
-function Neural.walkTo(pt, speed)
-  Neural.walk(pt.x, pt.y, pt.z, speed)
-  os.sleep(1)
-  repeat until not Neural.isWalking()
-end
+function Neural.walkTo(pt, speed, radius)
+	local x, z = pt.x, pt.z
+	if radius then
+		local angle = math.atan2(pt.x, pt.z)
+		x = pt.x - ((radius or 1) * math.sin(angle))
+		z = pt.z - ((radius or 1) * math.cos(angle))
+	end
 
-function Neural.walkAgainst(pt, radius, speed)
-  local angle = math.atan2(pt.x, pt.z)
-  local x = pt.x - ((radius or 1) * math.sin(angle))
-  local z = pt.z - ((radius or 1) * math.cos(angle))
-
-  Neural.walk(x, 0, z, speed)
-  os.sleep(1)
-  repeat until not Neural.isWalking()
+	if Neural.walk(x, pt.y, z, speed) then
+		os.sleep(1)
+		repeat until not Neural.isWalking()
+		return true
+	end
 end
 
 -- flatten equipment functions
@@ -118,9 +117,9 @@ function Neural.reload()
 	})
 end
 
-function Neural.testWalk()
-  local e = Neural.getMetaByName('kepler155c')
-  Neural.walkAgainst(e)
+function Neural.testWalk(name, speed, radius)
+  local e = Neural.getMetaByName(name)
+  Neural.walkTo(e, speed, radius)
 end
 
 return Neural.reload()

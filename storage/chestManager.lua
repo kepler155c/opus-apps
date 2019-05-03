@@ -1208,8 +1208,8 @@ local function learnRecipe(page)
         end
 
         if not recipe then
-          _debug(results)
-          _debug(newRecipe)
+          _G._syslog(results)
+          _G._syslog(newRecipe)
           error('Failed - view system log')
         end
 
@@ -1437,7 +1437,7 @@ listingPage:setFocus(listingPage.statusBar.filter)
 
 --[[
 Event.on('modem_message', function(e, side, sport, dport, item)
-  debug({ e, side, sport, dport, item })
+  _syslog({ e, side, sport, dport, item })
   if dport == 205 and type(item) == 'table' then
     inventoryAdapter:provide(
       item,
