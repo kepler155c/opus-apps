@@ -84,7 +84,7 @@ local function scan()
       return b.y == 0
     end
     if b.action == 'drop' then
-      return doDropOff and b.y == -1
+      return doDropOff and (b.y == -1 or b.y == 1)
     end
     if b.action == 'bash-smash' then
       if b.y == -1 then
@@ -135,17 +135,20 @@ local function harvest(blocks)
       turtle.digForwardAt(b)
 
     elseif b.action == 'drop' and not dropped then
-      if turtle.go(Point.above(b)) then
+      if turtle.go(b.y == 1 and Point.below(b) or Point.above(b)) then
+        local dropFn = b.y == 1 and turtle.dropUp or turtle.dropDown
+        local dropDir = b.y == 1 and 'down' or 'up'
+
         turtle.eachFilledSlot(function(slot)
           if not retain[slot.name] and not retain[slot.key] then
             turtle.select(slot.index)
-            turtle.dropDown()
+            dropFn()
           end
         end)
         local summed = turtle.getSummedInventory()
         for k,v in pairs(summed) do
           if v.count > 16 then
-            turtle.dropDown(k, v.count - 16)
+            dropFn(k, v.count - 16)
           end
         end
 
@@ -157,7 +160,7 @@ local function harvest(blocks)
           if inv and inv.list then
             for k, v in pairs(inv.list()) do
               if FUEL[table.concat({ v.name, v.damage }, ':')] then
-                local count = inv.pushItems('up', k, v.count)
+                local count = inv.pushItems(dropDir, k, v.count)
                 if count > 0 then
                   turtle.refuel(v.name, v.count)
                   print('Fuel: ' .. turtle.getFuelLevel())
