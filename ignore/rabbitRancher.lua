@@ -10,8 +10,9 @@ local Util    = require('util')
 local os = _G.os
 
 local BREEDING  = 'Rabbit'
-local WALK_SPEED = 2
-local MAX_GROWN  = 18
+local WALK_SPEED  = 1.3
+local MAX_GROWN   = 100
+local BREED_DELAY = 120
 
 neural.assertModules({
   'plethora:sensor',
@@ -46,7 +47,7 @@ local function breed(entity)
   entity.lastFed = os.clock()
   fed[entity.id] = entity
 
-  neural.walkTo(entity, WALK_SPEED, 1)
+  neural.walkTo(entity, WALK_SPEED, .5)
   entity = neural.getMetaByID(entity.id)
   if entity and not entity.isChild then
     neural.lookAt(entity)
@@ -57,7 +58,7 @@ end
 
 local function kill(entity)
   print('killing')
-  neural.walkTo(entity, WALK_SPEED, 2.5)
+  neural.walkTo(entity, WALK_SPEED, 2)
   entity = neural.getMetaByID(entity.id)
   if entity and not entity.isChild then
     neural.lookAt(entity)
@@ -77,7 +78,8 @@ end
 
 local function getHungry(entities)
   for _,v in pairs(entities) do
-    if not fed[v.id] or os.clock() - fed[v.id].lastFed > 90 then
+    if not fed[v.id] or
+       os.clock() - fed[v.id].lastFed > BREED_DELAY then
       return v
     end
   end

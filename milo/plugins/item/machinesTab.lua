@@ -51,11 +51,15 @@ end
 
 function machinesTab:eventHandler(event)
   if event.type == 'grid_select' then
-    Craft.machineLookup[self.item.key] = event.selected.name
+    if event.selected.name == Craft.machineLookup[self.item.key] then
+      Craft.machineLookup[self.item.key] = nil
+    else
+      Craft.machineLookup[self.item.key] = event.selected.name
+    end
     Util.writeTable(Craft.MACHINE_LOOKUP, Craft.machineLookup)
 
     self.grid:draw()
-    self:emit({ type = 'info_message', message = 'Machine saved' })
+    self:emit({ type = 'info_message', message = 'Saved' })
 
     return true
   end
