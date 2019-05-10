@@ -1,6 +1,6 @@
-local shell = require("openos.shell")
-local fs = require("openos.filesystem")
-local text = require("openos.text")
+local shell = require("shellex.shell")
+local fs = require("shellex.filesystem")
+local text = require("shellex.text")
 
 local USAGE =
 [===[Usage: find [path] [--type=[dfs]] [--[i]name=EXPR]

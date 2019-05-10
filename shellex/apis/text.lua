@@ -1,5 +1,5 @@
-local unicode = require("openos.unicode")
-local tx = require("openos.transforms")
+local unicode = require("shellex.unicode")
+local tx = require("shellex.transforms")
 
 local text = {}
 text.internal = {}

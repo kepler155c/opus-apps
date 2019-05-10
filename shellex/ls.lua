@@ -1,9 +1,10 @@
-local fs = require("openos.filesystem")
-local shell = require("openos.shell")
-local tty = require("openos.tty")
-local unicode = require("openos.unicode")
-local tx = require("openos.transforms")
-local text = require("openos.text")
+local fs = require("shellex.filesystem")
+local glob = require('shellex.glob')
+local shell = require("shellex.shell")
+local tty = require("shellex.tty")
+local unicode = require("shellex.unicode")
+local tx = require("shellex.transforms")
+local text = require("shellex.text")
 
 local dirsArg, ops = shell.parse(...)
 
@@ -42,7 +43,6 @@ local function stat(names, index)
   end
   local info = {}
   info.key = name
-info._path = name
   info.path = name:sub(1, 1) == "/" and "" or names.path
   info.full_path = fs.concat(info.path, name)
   info.isDir = fs.isDirectory(info.full_path)
@@ -248,7 +248,6 @@ local function display(names)
       local info = stat(names, index)
       local file_type = info.isLink and 'l' or info.isDir and 'd' or 'f'
       local link_target = info.isLink and string.format(" -> %s", info.link:gsub("/+$", "") .. (info.isDir and "/" or "")) or ""
-_G._p = info
       local write_mode = info.fs.isReadOnly() and '-' or 'w'
       local size = formatSize(info.size)
       local format = "%s-r%s %+"..tostring(max_size_width)..'s '
@@ -345,6 +344,7 @@ local function displayDirList(dirs)
     end
   end
 end
+--[[
 local dir_set, file_set = {}, {path=shell.getWorkingDirectory()}
 for _,dir in ipairs(dirsArg) do
   local path = shell.resolve(dir)
@@ -358,6 +358,23 @@ for _,dir in ipairs(dirsArg) do
     table.insert(dir_set, dir)
   else -- file or link
     table.insert(file_set, dir)
+  end
+end
+]]
+local dir_set, file_set = {}, {path=shell.getWorkingDirectory()}
+for _,dir in ipairs(dirsArg) do
+  local path = shell.resolve(dir)
+  if fs.isDirectory(path) then
+    table.insert(dir_set, dir)
+  else
+    local files = glob.matches(shell.getWorkingDirectory(), dir)
+    for _, v in pairs(files) do
+      table.insert(file_set, v)
+    end
+    if #files == 0 then
+      local access_msg = "cannot access " .. tostring(dir) .. ": "
+      perr(access_msg .. "No such file or directory")
+    end
   end
 end
 

@@ -1,5 +1,6 @@
-local shell = require("openos.shell")
-local fs = require("openos.filesystem")
+local fs    = require("shellex.filesystem")
+local glob  = require('shellex.glob')
+local shell = require("shellex.shell")
 
 local args, options = shell.parse(...)
 if #args == 0 then
@@ -107,22 +108,24 @@ local function visitor(rpath)
 end
 
 for _,arg in ipairs(args) do
-  local path = shell.resolve(arg)
-
-  if not fs.exists(path) then
-    io.stderr:write(string.format("du: cannot access '%s': no such file or directory\n", arg))
-    return 1
-  else
-    if fs.isDirectory(path) then
-      local total = visitor(arg)
-
-      if bSummary then
-        printSize(total, arg)
-      end
-    elseif fs.isLink(path) then
-      printSize(0, arg)
+  local files = glob.matches(shell.getWorkingDirectory(), arg)
+  for _, v in pairs(files) do
+    local path = shell.resolve(v)
+    if not fs.exists(path) then
+      io.stderr:write(string.format("du: cannot access '%s': no such file or directory\n", v))
+      return 1
     else
-      printSize(fs.size(path), arg)
+      if fs.isDirectory(path) then
+        local total = visitor(v)
+
+        if bSummary then
+          printSize(total, v)
+        end
+      elseif fs.isLink(path) then
+        printSize(0, v)
+      else
+        printSize(fs.size(path), v)
+      end
     end
   end
 end

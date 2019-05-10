@@ -1,5 +1,5 @@
-local shell = require("openos.shell")
-local transfer = require("openos.transfer")
+local shell = require("shellex.shell")
+local transfer = require("shellex.transfer")
 
 local args, options = shell.parse(...)
 options.h = options.h or options.help

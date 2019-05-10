@@ -1,0 +1,7 @@
+{
+	title = 'Shell utilities',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/shellex',
+	description = [[Experimental!
+	Linux style shell commands: grep, cat, touch, df, etc ]],
+	licence = 'MIT',
+}

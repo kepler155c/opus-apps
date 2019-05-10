@@ -6,10 +6,11 @@ https://raw.githubusercontent.com/OpenPrograms/Wobbo-Programs/master/grep/grep.l
 -- POSIX grep for OpenComputers
 -- one difference is that this version uses Lua regex, not POSIX regex.
 
-local fs = require("openos.filesystem")
-local shell = require("openos.shell")
-local tty = require("openos.tty")
-local computer = require("openos.computer")
+local computer = require("shellex.computer")
+local fs       = require("shellex.filesystem")
+local glob     = require('shellex.glob')
+local shell    = require("shellex.shell")
+local tty      = require("shellex.tty")
 
 -- Process the command line arguments
 
@@ -28,8 +29,14 @@ for more information, run: man grep
 ]])
 end
 
-local PATTERNS = {args[1]}
-local FILES = {select(2, table.unpack(args))}
+local PATTERNS = { table.remove(args, 1) }
+local FILES = { }
+for _, arg in pairs(args) do
+  local files = glob.matches(shell.getWorkingDirectory(), arg)
+  for _, v in pairs(files) do
+    table.insert(FILES, v)
+  end
+end
 
 local LABEL_COLOR = 0xb000b0
 local LINE_NUM_COLOR = 0x00FF00
@@ -167,7 +174,7 @@ end
 if search_recursively then
   local files = {}
   for _,arg in ipairs(FILES) do
-    if fs.isDirectory(arg) then
+    if fs.isDirectory(shell.resolve(arg)) then
       getAllFiles(arg, files)
     else
       files[#files+1]=arg

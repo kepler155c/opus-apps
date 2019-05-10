@@ -1,7 +1,7 @@
-local keys = require("openos.keyboard").keys
-local shell = require("openos.shell")
-local unicode = require("openos.unicode")
-local term = require("openos.term") -- using term for negative scroll feature
+local keys = require("shellex.keyboard").keys
+local shell = require("shellex.shell")
+local unicode = require("shellex.unicode")
+local term = require("shellex.term") -- using term for negative scroll feature
 
 local args, ops = shell.parse(...)
 if #args > 1 then

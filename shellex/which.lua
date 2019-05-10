@@ -1,4 +1,4 @@
-local shell = require("openos.shell")
+local shell = require("shellex.shell")
 
 local args = shell.parse(...)
 if #args == 0 then

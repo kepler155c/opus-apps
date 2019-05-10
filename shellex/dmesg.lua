@@ -1,4 +1,4 @@
-local tty = require("openos.tty")
+local tty = require("shellex.tty")
 
 local args = {...}
 local gpu = tty.gpu()

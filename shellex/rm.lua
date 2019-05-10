@@ -1,5 +1,6 @@
-local fs = require("openos.filesystem")
-local shell = require("openos.shell")
+local fs = require("shellex.filesystem")
+local glob = require('shellex.glob')
+local shell = require("shellex.shell")
 
 local function usage()
   print("Usage: rm [options] <filename1> [<filename2> [...]]"..[[
@@ -40,14 +41,14 @@ local function pout(...)
 end
 
 local metas = {}
+local remove
 
 -- promptLevel 3 done before fs.exists
 -- promptLevel 1 asks for each, displaying fs.exists on hit as it visits
 
 local function _path(m) return shell.resolve(m.rel) end
-local function _link(m) return fs.isLink(_path(m)) end
-local function _exists(m) return _link(m) or fs.exists(_path(m)) end
-local function _dir(m) return not _link(m) and fs.isDirectory(_path(m)) end
+local function _exists(m) return fs.exists(_path(m)) end
+local function _dir(m) return fs.isDirectory(_path(m)) end
 local function _readonly(m) return not _exists(m) or fs.get(_path(m)).isReadOnly() end
 local function _empty(m) return _exists(m) and _dir(m) and (fs.list(_path(m))==nil) end
 
@@ -94,7 +95,7 @@ local function remove_all(parent)
   return all_ok
 end
 
-local function remove(meta)
+remove = function(meta)
   if not remove_all(meta) then
     return false
   end
@@ -140,7 +141,10 @@ local function remove(meta)
 end
 
 for _,arg in ipairs(args) do
-  metas[#metas+1] = createMeta(arg, arg)
+  local files = glob.matches(shell.getWorkingDirectory(), arg)
+  for _, v in pairs(files) do
+    metas[#metas+1] = createMeta(v, v)
+  end
 end
 
 if promptLevel == 3 and #metas > 3 then

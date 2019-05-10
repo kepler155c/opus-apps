@@ -1,5 +1,5 @@
-local computer = require('openos.computer')
-local sh = require('openos.sh')
+local computer = require('shellex.computer')
+local sh = require('shellex.sh')
 
 local real_before, cpu_before = computer.uptime(), os.clock()
 local cmd_result = 0

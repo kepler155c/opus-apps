@@ -1,6 +1,6 @@
 local os = _G.os
 
-local shell = require("openos.shell")
+local shell = require("shellex.shell")
 local args = shell.parse(...)
 local hostname = args[1]
 

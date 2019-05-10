@@ -1,5 +1,5 @@
-local fs = require("openos.filesystem")
-local shell = require("openos.shell")
+local fs = require("shellex.filesystem")
+local shell = require("shellex.shell")
 
 local args = shell.parse(...)
 if #args == 0 then

@@ -1,6 +1,6 @@
-local fs = require("openos.filesystem")
-local shell = require("openos.shell")
-local text = require("openos.text")
+local fs = require("shellex.filesystem")
+local shell = require("shellex.shell")
+local text = require("shellex.text")
 
 local args, options = shell.parse(...)
 

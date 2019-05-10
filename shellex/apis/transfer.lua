@@ -1,6 +1,7 @@
-local fs = require("openos.filesystem")
-local shell = require("openos.shell")
-local text = require("openos.text")
+local fs = require("shellex.filesystem")
+local glob = require('shellex.glob')
+local shell = require("shellex.shell")
+local text = require("shellex.text")
 local lib = {}
 
 local function perr(ops, format, ...)
@@ -236,28 +237,31 @@ function lib.batch(args, options)
   end
   local originalToIsDir = fs.isDirectory(ok)
 
-  for _, fromArg in ipairs(args) do
-    -- a "contents of" copy is where src path ends in . or ..
-    -- a source path ending with . is not sufficient - could be the source filename
-    local contents_of
-    contents_of, ok = contents_check(fromArg, options, true)
-    if ok then
-      -- we do not append fromPath name to toPath in case of contents_of copy
-      local toPath = toArg
-      if contents_of and options.cmd == "mv" then
-        perr(options, "invalid move path '%s'", fromArg)
-      else
-        if not contents_of and originalToIsDir then
-          local fromName = fs.name(fromArg)
-          if fromName then
-            toPath = toPath .. "/" .. fromName
+  for _, arg in ipairs(args) do
+    local files = glob.matches(shell.getWorkingDirectory(), arg)
+    for _, fromArg in pairs(files) do
+      -- a "contents of" copy is where src path ends in . or ..
+      -- a source path ending with . is not sufficient - could be the source filename
+      local contents_of
+      contents_of, ok = contents_check(fromArg, options, true)
+      if ok then
+        -- we do not append fromPath name to toPath in case of contents_of copy
+        local toPath = toArg
+        if contents_of and options.cmd == "mv" then
+          perr(options, "invalid move path '%s'", fromArg)
+        else
+          if not contents_of and originalToIsDir then
+            local fromName = fs.name(fromArg)
+            if fromName then
+              toPath = toPath .. "/" .. fromName
+            end
           end
-        end
 
-        local result, reason = lib.recurse(fromArg, toPath, options, origin, true)
+          local result, reason = lib.recurse(fromArg, toPath, options, origin, true)
 
-        if not result then
-          perr(options, reason)
+          if not result then
+            perr(options, reason)
+          end
         end
       end
     end

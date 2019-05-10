@@ -1,5 +1,4 @@
-local shell = require("openos.shell")
-local fs = require("openos.filesystem")
+local shell = require("shellex.shell")
 
 local args, options = shell.parse(...)
 local error_code = 0
