@@ -1,6 +1,4 @@
-local Config = require('config')
-
-local kernel   = _G.kernel
+local fs       = _G.fs
 local os       = _G.os
 local settings = _G.settings
 
@@ -13,12 +11,7 @@ function os.getenv(k)
   return settings.get(k)
 end
 
-local config = Config.load('shell', { aliases = { } })
-if not config.openOsInit then
-  config.openOsInit = true
-  for _, alias in pairs({ 'ls', 'rm', 'cp', 'mv' }) do
-    config.aliases[alias] = nil
-    kernel.getShell().clearAlias(alias)
-  end
-  Config.update('shell', config)
-end
+fs.mount('rom/programs/list.lua', 'linkfs', 'packages/shellex/ls.lua')
+fs.mount('rom/programs/delete.lua', 'linkfs', 'packages/shellex/rm.lua')
+fs.mount('rom/programs/copy.lua', 'linkfs', 'packages/shellex/cp.lua')
+fs.mount('rom/programs/move.lua', 'linkfs', 'packages/shellex/mv.lua')

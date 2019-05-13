@@ -3,9 +3,9 @@
   Must be run on a mob with the same height.
 ]]
 
-local neural  = require('neural.interface')
-local Sound   = require('sound')
-local Util    = require('util')
+local neural = require('neural.interface')
+local Sound  = require('sound')
+local Map    = require('map')
 
 local os = _G.os
 
@@ -30,7 +30,7 @@ local function resupply()
   end
   print('resupplying')
   for _ = 1, 2 do
-    local dispenser = Util.find(neural.scan(), 'name', 'minecraft:dispenser')
+    local dispenser = Map.find(neural.scan(), 'name', 'minecraft:dispenser')
     if not dispenser then
       print('dispenser not found')
       break
@@ -76,7 +76,7 @@ local function kill(entity)
 end
 
 local function getEntities()
-  return Util.filter(neural.sense(), function(entity)
+  return Map.filter(neural.sense(), function(entity)
     if entity.name == BREEDING and entity.y > -.5 then
       return true
     end
@@ -92,7 +92,7 @@ local function getHungry(entities)
 end
 
 local function randomEntity(entities)
-  local r = math.random(1, Util.size(entities))
+  local r = math.random(1, Map.size(entities))
   local i = 1
   for _, v in pairs(entities) do
     i = i + 1
@@ -107,7 +107,7 @@ while true do
 
   local entities = getEntities()
 
-  if Util.size(entities) > MAX_GROWN then
+  if Map.size(entities) > MAX_GROWN then
     kill(randomEntity(entities))
   else
     local entity = getHungry(entities)

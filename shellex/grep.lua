@@ -40,7 +40,7 @@ end
 
 local LABEL_COLOR = 0xb000b0
 local LINE_NUM_COLOR = 0x00FF00
-local MATCH_COLOR = 0xFF0000
+local MATCH_COLOR = 0xB0B00F
 local COLON_COLOR = 0x00FFFF
 
 local function pop(...)
@@ -115,7 +115,7 @@ local quiet = pop('q','quiet','silent')
 
 local print_count = pop('c','count')
 local colorize = pop('color','colour') and io.output().tty and tty.isAvailable()
-
+colorize = true
 local noop = function(...)return ...;end
 local setc = colorize and gpu.setForeground or noop
 local getc = colorize and gpu.getForeground or noop
@@ -203,13 +203,19 @@ local function readLines()
         meta.label = file
         local file, reason = resolve(file)
         if fs.exists(file) then
-          curHand, reason = io.open(file, 'r')
-          if not curHand then
-            local msg = string.format("failed to read from %s: %s", meta.label, reason)
+          if fs.isDirectory(file) then
+            local msg = string.format("%s: Is a directory", meta.label)
             stderr:write("grep: ",msg,"\n")
             return false, 2
           else
-            curFile = meta.label
+            curHand, reason = io.open(file, 'r')
+            if not curHand then
+              local msg = string.format("failed to read from %s: %s", meta.label, reason)
+              stderr:write("grep: ",msg,"\n")
+              return false, 2
+            else
+              curFile = meta.label
+            end
           end
         else
           stderr:write("grep: ",file,": file not found\n")
