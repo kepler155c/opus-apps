@@ -50,7 +50,6 @@ local function stat(names, index)
   info.sort_name = info.name:gsub("^%.","")
   info.isLink, info.link = fs.isLink(info.full_path)
   info.size = info.isLink and 0 or fs.size(info.full_path)
-  info.fs = fs.get(info.full_path)
   info.ext = info.name:match("(%.[^.]+)$") or ""
   names[index] = info
   return info
@@ -248,7 +247,10 @@ local function display(names)
       local info = stat(names, index)
       local file_type = info.isLink and 'l' or info.isDir and 'd' or 'f'
       local link_target = info.isLink and string.format(" -> %s", info.link:gsub("/+$", "") .. (info.isDir and "/" or "")) or ""
-      local write_mode = info.fs.isReadOnly() and '-' or 'w'
+      pcall(function()
+        info.fs = fs.get(info.full_path)
+      end)
+      local write_mode = info.fs and info.fs.isReadOnly() and '-' or 'w'
       local size = formatSize(info.size)
       local format = "%s-r%s %+"..tostring(max_size_width)..'s '
       local meta = string.format(format, file_type, write_mode, size)
@@ -380,16 +382,19 @@ end
 
 io.output():setvbuf("line")
 
---local ok, msg = pcall(function()
+local ok, msg = pcall(function()
   if #file_set > 0 then display(sort(file_set)) end
   displayDirList(dir_set)
   msft.final()
---end)
+end)
 
 io.output():flush()
 io.output():setvbuf("no")
 set_color()
 
---assert(ok, msg)
+if not ok then
+  error(msg, 2)
+end
+assert(ok, msg)
 
 return ec
