@@ -338,7 +338,7 @@ local turtlesTab = UI.Tab {
     y = 1,
     values = pool,
     columns = {
-      { heading = 'ID',     key = 'id',       width = 4, },
+      { heading = 'ID',     key = 'id',       width = 5, },
       { heading = ' Fuel',  key = 'fuel',     width = 5, align = 'right' },
       { heading = ' Dist',  key = 'distance', width = 5, align = 'right' },
       { heading = 'Status', key = 'status' },
