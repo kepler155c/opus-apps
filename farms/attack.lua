@@ -18,12 +18,12 @@ local Runners = {
 }
 
 Equipper.equipLeft('minecraft:diamond_sword')
-local scanner = Equipper.equipRight('plethora:module:2', 'plethora:scanner')
+local scanner = Equipper.equipRight('plethora:scanner')
 
 local facing = scanner.getBlockMeta(0, 0, 0).state.facing
 turtle.point.heading = Point.facings[facing].heading
 
-local sensor = Equipper.equipRight('plethora:module:3', 'plethora:sensor')
+local sensor = Equipper.equipRight('plethora:sensor')
 
 turtle.setMovementStrategy('goto')
 turtle.set({ attackPolicy = 'attack' })
@@ -32,9 +32,9 @@ local function findChests()
 	if chest then
 		return { chest }
 	end
-	Equipper.equipRight('plethora:module:2', 'plethora:scanner')
+	Equipper.equipRight('plethora:scanner')
 	local chests = scanner.scan()
-	Equipper.equipRight('plethora:module:3', 'plethora:sensor')
+	Equipper.equipRight('plethora:sensor')
 
 	Util.filterInplace(chests, function(b)
 		if b.name == 'minecraft:chest' or

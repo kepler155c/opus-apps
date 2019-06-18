@@ -3,6 +3,7 @@ local GPS    = require('gps')
 local Util   = require('util')
 
 local args       = { ... }
+local colors     = _G.colors
 local fs         = _G.fs
 local gps 			 = _G.gps
 local os         = _G.os

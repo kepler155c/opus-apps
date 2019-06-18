@@ -9,8 +9,9 @@ Requirements
 * Standard Modem
 * Block Scanner
 * Entity Sensor
-* Crafting Table
+* Furnace
 * Vanilla Chest
+* Sapling
 * GPS
 
 Setup
@@ -19,18 +20,20 @@ Setup
 > package install farms
 > reboot
 
+The turtle will need some fuel initially.
+
 The tree farm fits exactly in one chunk. It's best to have a mostly level ground around the center of the farming area as the turtle will only collect saplings that have fallen to the same level as the turtle.
 
 To align the turtle perfectly in one chunk, position the turtle 8 blocks diagonally from the bottom left corner.
 
-Place a sapling directly in front of the turtle and place all the required items into the inventory.
+Place all the required items into the inventory.
 
 To start the program, run:
 
 > superTreefarm
 A startup file is created automatically the first time the program is run (usr/autorun/superTreefarm.lua).
 
-If the turtle does not get any saplings from the initial tree, place down another sapling in front of the turtle.
+If the turtle does not get any saplings from the initial tree, another sapling in the turtle.
 
 Tips
 ====

@@ -111,7 +111,14 @@ function pages.confirmation:validate()
 	}
 
 	for k,v in pairs(inventory) do
-		recipe.ingredients[k] = itemDB:makeKey(v)
+		if v.count == 1 then
+			recipe.ingredients[k] = itemDB:makeKey(v)
+		else
+			recipe.ingredients[k] = {
+				key = itemDB:makeKey(v),
+				count = v.count,
+			}
+		end
 	end
 
 	Milo:saveMachineRecipe(recipe, result, machine.name)

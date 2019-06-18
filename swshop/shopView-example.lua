@@ -15,75 +15,75 @@ local shopTab
 
 --[[ Display ]]--
 local function showListing(node)
-  local mon = node.adapter
-  local list = Milo:listItems()
+	local mon = node.adapter
+	local list = Milo:listItems()
 
-  mon.clear()
-  local i = 1
+	mon.clear()
+	local i = 1
 
-  for k,v in pairs(config) do
-    local item = list[k]
-    if item and item.count > 0 then
-      mon.setCursorPos(1, i)
-      mon.write(string.format('%d  %s: %d kst', v.count, v.displayName, v.price))
-      mon.setCursorPos(1, i + 1)
-      mon.write(v.info)
-      i = i + 2
-    end
-  end
+	for k,v in pairs(config) do
+		local item = list[k]
+		if item and item.count > 0 then
+			mon.setCursorPos(1, i)
+			mon.write(string.format('%d  %s: %d kst', v.count, v.displayName, v.price))
+			mon.setCursorPos(1, i + 1)
+			mon.write(v.info)
+			i = i + 2
+		end
+	end
 end
 
 -- everything below is important to keep
 local function startShop(node)
-  if shopTab then
-    multishell.terminate(shopTab)
-  end
-  shopTab = shell.openTab('/packages/swshop/swshop.lua', node.domain, node.password)
+	if shopTab then
+		multishell.terminate(shopTab)
+	end
+	shopTab = shell.openTab('/packages/swshop/swshop.lua', node.domain, node.password)
 end
 
 -- node has been reconfigured
 Event.on('shop_restart', function(_, node)
-  startShop(node)
+	startShop(node)
 end)
 
 -- milo is being terminated
 Event.on('terminate', function()
-  if shopTab then
-    multishell.terminate(shopTab)
-    shopTab = nil
-  end
+	if shopTab then
+		multishell.terminate(shopTab)
+		shopTab = nil
+	end
 end)
 
 -- called when an item to sell has been changed
 Event.on('shop_refresh', function()
-  config = Config.load('shop')
+	config = Config.load('shop')
 end)
 
 -- called from the shop when an item has been purchased
 Event.on('shop_provide', function(_, item, quantity, uid)
-  Milo:queueRequest({ }, function()
-    local count = Milo:eject(itemDB:splitKey(item), quantity)
-    os.queueEvent('shop_provided', uid, count)
-  end)
+	Milo:queueRequest({ }, function()
+		local count = Milo:eject(itemDB:splitKey(item), quantity)
+		os.queueEvent('shop_provided', uid, count)
+	end)
 end)
 
 --[[ Task ]]--
 local StoreTask = {
-  name = 'shop',
-  priority = 30,
+	name = 'shop',
+	priority = 30,
 }
 
 function StoreTask:cycle(context)
-  local node = context.storage:filterActive('shop')()
-  if node then
-    -- a monitor has been configured
-    if not shopTab then
-      -- first time running
-      startShop(node)
-    end
+	local node = context.storage:filterActive('shop')()
+	if node then
+		-- a monitor has been configured
+		if not shopTab then
+			-- first time running
+			startShop(node)
+		end
 
-    showListing(node)
-  end
+		showListing(node)
+	end
 end
 
 Milo:registerTask(StoreTask)

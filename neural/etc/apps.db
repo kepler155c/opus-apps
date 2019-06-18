@@ -1,36 +1,36 @@
 {
-  [ "elytraFly" ] = {
-    title = "ElytraFly",
-    category = "Neural",
-    run = "elytraFly.lua",
-    requires = "neuralInterface",
-  },
-  [ "fisher" ] = {
-    title = "Fisher",
-    category = "Neural",
-    run = "fisher.lua",
-    requires = "neuralInterface",
-  },
-  [ "9101fc1744ab274aaa0b54ee22b14ca53ee6e236" ] = {
-    title = "Sensor",
-    category = "Neural",
-    run = "Sensor.lua",
-    iconExt = "\0315\156\0305\031f\131\147\0300\159\129\031e\152\031f\139\
+	[ "elytraFly" ] = {
+		title = "ElytraFly",
+		category = "Neural",
+		run = "elytraFly.lua",
+		requires = "neuralInterface",
+	},
+	[ "fisher" ] = {
+		title = "Fisher",
+		category = "Neural",
+		run = "fisher.lua",
+		requires = "neuralInterface",
+	},
+	[ "9101fc1744ab274aaa0b54ee22b14ca53ee6e236" ] = {
+		title = "Sensor",
+		category = "Neural",
+		run = "Sensor.lua",
+		iconExt = "\0315\156\0305\031f\131\147\0300\159\129\031e\152\031f\139\
 \0315\157\131\0305\031f\145\030b\157\0300\031b\157\031e\136\140\030f\0316\148\
 \0305\031f\138\131\133\030f\0310\130\0300\031f\144\031e\137\030f\0310\135\0306\031f\149",
-  },
-  [ "c7ee483aa3d72126406fe52b8ed91bb9c419d02f" ] = {
-    title = "Scanner",
-    category = "Neural",
-    run = "Scanner.lua",
-    iconExt = "\030d\031f\143\143\143\0300\159\129\031e\152\031f\139\
+	},
+	[ "c7ee483aa3d72126406fe52b8ed91bb9c419d02f" ] = {
+		title = "Scanner",
+		category = "Neural",
+		run = "Scanner.lua",
+		iconExt = "\030d\031f\143\143\143\0300\159\129\031e\152\031f\139\
 \030c\031d\129\129\130\030b\031f\157\0300\031b\157\031e\136\140\030f\0316\148\
 \031c\143\143\143\0310\130\0300\031f\144\031e\137\030f\0310\135\0306\031f\149",
-  },
-  [ "orescanner" ] = {
-    title = "Ores",
-    category = "Neural",
-    run = "ores.lua",
-    requires = "neuralInterface",
-  },
+	},
+	[ "orescanner" ] = {
+		title = "Ores",
+		category = "Neural",
+		run = "ores.lua",
+		requires = "neuralInterface",
+	},
 }

@@ -3,4 +3,7 @@
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/neural',
 	description = [[ Applications using various plethora modules ]],
 	licence = 'MIT',
+	required = {
+		'core',
+	},
 }

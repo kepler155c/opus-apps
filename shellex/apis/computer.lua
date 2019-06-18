@@ -1,3 +1,3 @@
 return {
-  uptime = os.clock,
+	uptime = os.clock,
 }

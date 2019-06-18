@@ -11,7 +11,7 @@ local STARTUP_FILE = 'usr/autorun/spawner.lua'
 local mobTypes = { }
 
 Equipper.equipLeft('minecraft:diamond_sword')
-local scanner = Equipper.equipRight('plethora:module:2', 'plethora:scanner')
+local scanner = Equipper.equipRight('plethora:scanner')
 
 turtle.reset()
 local facing = scanner.getBlockMeta(0, 0, 0).state.facing
@@ -28,13 +28,13 @@ Util.filterInplace(data, function(b)
 end)
 local chest = Point.closest(spawner, data) or error('missing drop off chest')
 
-local sensor = Equipper.equipRight('plethora:module:3', 'plethora:sensor')
+local sensor = Equipper.equipRight('plethora:sensor')
 
 if not fs.exists(STARTUP_FILE) then
-  Util.writeFile(STARTUP_FILE,
-    string.format([[os.sleep(1)
+	Util.writeFile(STARTUP_FILE,
+		string.format([[os.sleep(1)
 shell.openForegroundTab('spawner.lua %s')]], table.concat({ ... }, ' ')))
-  print('Autorun program created: ' .. STARTUP_FILE)
+	print('Autorun program created: ' .. STARTUP_FILE)
 end
 
 turtle.setMovementStrategy('goto')
@@ -70,8 +70,8 @@ local function normalize(b)
 	b.z = Util.round(b.z) + turtle.point.z
 
 	return b.x >= spawner.x - 4 and b.x <= spawner.x + 4 and
-			   b.y >= spawner.y - 4 and b.y <= spawner.y + 4 and
-	       b.z >= spawner.z - 4 and b.z <= spawner.z + 4
+				 b.y >= spawner.y - 4 and b.y <= spawner.y + 4 and
+				 b.z >= spawner.z - 4 and b.z <= spawner.z + 4
 end
 
 local function aboveAttack(b)

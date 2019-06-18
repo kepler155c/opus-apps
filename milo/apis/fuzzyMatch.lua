@@ -11,9 +11,9 @@ local _find = string.find
 local _max  = math.max
 
 return function(str, pattern)
-  local start = _find(str, pattern, 1, true)
-  if start then
-    -- All letters before the current one are considered leading, so add them to our penalty
-    return SCORE_WEIGHT + _max(LEADING_LETTER_PENALTY * (start - 1), LEADING_LETTER_PENALTY_MAX)
-  end
+	local start = _find(str, pattern, 1, true)
+	if start then
+		-- All letters before the current one are considered leading, so add them to our penalty
+		return SCORE_WEIGHT + _max(LEADING_LETTER_PENALTY * (start - 1), LEADING_LETTER_PENALTY_MAX)
+	end
 end

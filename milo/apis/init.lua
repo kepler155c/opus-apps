@@ -224,8 +224,8 @@ function Milo:eject(item, count)
 		total = total + amount
 		count = count - amount
 
-		--Sound.play('ui.button.click')
-		Sound.play('entity.illusion_illager.death', .3)
+		Sound.play('ui.button.click')
+		--Sound.play('entity.illusion_illager.death', .3)
 		turtle.emptyInventory()
 	end
 	return total
@@ -273,6 +273,7 @@ function Milo:learnRecipe()
 					local tool = Util.shallowCopy(v2)
 					if tool.maxDamage > 0 then
 						tool.damage = '*'
+						v2.damage = '*'
 					end
 
 					--[[

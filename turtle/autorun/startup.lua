@@ -1,5 +1,5 @@
 if not _G.turtle then
-  return
+	return
 end
 
 -- update
@@ -20,37 +20,37 @@ fs.mount('sys/apps/system/turtle.lua', 'linkfs', 'packages/turtle/system/turtle.
 
 -- provide a turtle function for scanning
 function turtle.scan(whitelist, blacklist)
-  local pt = turtle.point
+	local pt = turtle.point
 
-  local scanner = device['plethora:scanner'] or error('Scanner not equipped')
+	local scanner = device['plethora:scanner'] or error('Scanner not equipped')
 
-  if not whitelist and not blacklist then
-    return Util.each(scanner.scan(), function(b)
-      b.x = pt.x + b.x
-      b.y = pt.y + b.y
-      b.z = pt.z + b.z
-    end)
-  end
+	if not whitelist and not blacklist then
+		return Util.each(scanner.scan(), function(b)
+			b.x = pt.x + b.x
+			b.y = pt.y + b.y
+			b.z = pt.z + b.z
+		end)
+	end
 
-  if whitelist then
-    return Util.filter(scanner.scan(), function(b)
-      if whitelist[b.name] then
-        b.x = pt.x + b.x
-        b.y = pt.y + b.y
-        b.z = pt.z + b.z
-        return true
-      end
-    end)
-  end
+	if whitelist then
+		return Util.filter(scanner.scan(), function(b)
+			if whitelist[b.name] then
+				b.x = pt.x + b.x
+				b.y = pt.y + b.y
+				b.z = pt.z + b.z
+				return true
+			end
+		end)
+	end
 
-  return Util.filter(scanner.scan(), function(b)
-    if not blacklist[b.name] then
-      b.x = pt.x + b.x
-      b.y = pt.y + b.y
-      b.z = pt.z + b.z
-      return true
-    end
-  end)
+	return Util.filter(scanner.scan(), function(b)
+		if not blacklist[b.name] then
+			b.x = pt.x + b.x
+			b.y = pt.y + b.y
+			b.z = pt.z + b.z
+			return true
+		end
+	end)
 end
 
 local function getHeading(apt)
@@ -62,34 +62,34 @@ local function getHeading(apt)
 	local bpt
 
 	repeat
-    if not turtle.inspect() and turtle.forward() then
-      bpt = GPS.locate()
+		if not turtle.inspect() and turtle.forward() then
+			bpt = GPS.locate()
 			break
 		end
 		turtle.turnRight()
-  until turtle.getHeading() == heading
+	until turtle.getHeading() == heading
 
-  if not bpt then
-    repeat
-      if not peripheral.getType('front') then
-        turtle.dig()
-        if turtle.forward() then
-          bpt = GPS.locate()
-          break
-        end
-      end
-      turtle.turnRight()
-    until turtle.point.heading == heading
-  end
+	if not bpt then
+		repeat
+			if not peripheral.getType('front') then
+				turtle.dig()
+				if turtle.forward() then
+					bpt = GPS.locate()
+					break
+				end
+			end
+			turtle.turnRight()
+		until turtle.point.heading == heading
+	end
 
-  if not bpt then
-    return false
-  end
+	if not bpt then
+		return false
+	end
 
-  local turns = (turtle.point.heading - heading) % 4
+	local turns = (turtle.point.heading - heading) % 4
 
-  turtle.back()
-  turtle.setHeading(heading)
+	turtle.back()
+	turtle.setHeading(heading)
 
 	if apt.x < bpt.x then
 		return (0 - turns) % 4
@@ -135,19 +135,19 @@ end
 
 -- return to home location if configured to do so
 if _G.device.wireless_modem then
-  local config = Config.load('gps')
+	local config = Config.load('gps')
 
-  if config.home then
-    if not turtle.enableGPS(2) then
-      error('Unable to get GPS position')
-    end
+	if config.home then
+		if not turtle.enableGPS(2) then
+			error('Unable to get GPS position')
+		end
 
-    if config.destructive then
-      turtle.set({ attackPolicy = 'attack', digPolicy = 'turtleSafe' })
-    end
+		if config.destructive then
+			turtle.set({ attackPolicy = 'attack', digPolicy = 'turtleSafe' })
+		end
 
-    if not turtle.pathfind(config.home) then
-      error('Failed to return home')
-    end
-  end
+		if not turtle.pathfind(config.home) then
+			error('Failed to return home')
+		end
+	end
 end

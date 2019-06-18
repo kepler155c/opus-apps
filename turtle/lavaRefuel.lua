@@ -15,7 +15,7 @@ if not turtle.has('minecraft:bucket') then
 end
 
 local swapSide = peripheral.getType('right') == 'modem' and 'left' or 'right'
-local scanner = Equipper.equip(swapSide, 'plethora:module:2', 'plethora:scanner')
+local scanner = Equipper.equip(swapSide, 'plethora:scanner')
 
 if not turtle.select('minecraft:bucket') then
 	error('bucket required')

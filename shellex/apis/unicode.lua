@@ -1,3 +1,3 @@
 return {
-  wlen = string.len
+	wlen = string.len
 }

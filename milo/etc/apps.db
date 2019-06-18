@@ -1,20 +1,20 @@
 {
-  [ "9302912a2d9794a47241faefc475335b4e07a581" ] = {
-    title = "Remote",
-    category = "Apps",
-    run = "MiloRemote",
-    requires = "neuralInterface",
-    iconExt = "\0304\031f\135\129\0314\128\128\031f\130\030f\128\
+	[ "9302912a2d9794a47241faefc475335b4e07a581" ] = {
+		title = "Remote",
+		category = "Apps",
+		run = "MiloRemote",
+		requires = "neuralInterface",
+		iconExt = "\0304\031f\135\129\0314\128\128\031f\130\030f\128\
 \031f\128\031c\159\149\0300\0317\143\0304\031c\149\030f\0314\133\
 \031f\128\030c\0310\142\030f\031c\149\030c\0310\139\030f\031c\149\031f\128",
-  },
-  [ "eea426f9baef72a8fcefd091e0cec5ab94a76698" ] = {
-    title = "Milo",
-    category = "Apps",
-    run = "MiloLocal",
-    requires = 'advancedTurtle',
-    iconExt = "\0304\031f\135\129\0314\128\128\031f\130\030f\128\
+	},
+	[ "eea426f9baef72a8fcefd091e0cec5ab94a76698" ] = {
+		title = "Milo",
+		category = "Apps",
+		run = "MiloLocal",
+		requires = 'advancedTurtle',
+		iconExt = "\0304\031f\135\129\0314\128\128\031f\130\030f\128\
 \031f\128\031c\159\149\0300\0317\143\0304\031c\149\030f\0314\133\
 \031f\128\030c\0310\142\030f\031c\149\030c\0310\139\030f\031c\149\031f\128",
-  },
+	},
 }

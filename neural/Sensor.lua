@@ -18,22 +18,13 @@ local projecting = { }
 local offset
 local canvas = glasses and intro and glasses.canvas3d().create()
 
-local config = Config.load('Sensor', {
-	ignore = { }
-})
+local config = Config.load('Sensor')
 
 local page = UI.Page {
 	tabs = UI.Tabs {
 		listing = UI.Tab {
 			tabTitle = 'Listing',
-			menuBar = UI.MenuBar {
-				buttons = {
-					{ text = 'Ignore',    event = 'ignore'  },
-					{ text = 'Details',   event = 'detail'  },
-				},
-			},
 			grid = UI.ScrollingGrid {
-				y = 2,
 				columns = {
 					{ heading = 'Name', key = 'displayName' },
 					{ heading = 'X',    key = 'x', width = 3, align = 'right' },
@@ -45,14 +36,7 @@ local page = UI.Page {
 		},
 		summary = UI.Tab {
 			tabTitle = 'Summary',
-			menuBar = UI.MenuBar {
-				buttons = {
-					{ text = 'Projector', event = 'project' },
-					{ text = 'Ignore',    event = 'ignore'  },
-				},
-			},
 			grid = UI.ScrollingGrid {
-				y = 2,
 				columns = {
 					{ heading = 'Name',  key = 'displayName' },
 					{ heading = 'Count', key = 'count', width = 5, align = 'right' },
@@ -134,13 +118,6 @@ local function project(entities)
 	end
 end
 
-local function ignoreEntity(entity)
-	if entity then
-		config.ignore[entity.name] = true
-		Config.update('Sensor', config)
-	end
-end
-
 function detail:enable(entity)
 	local function update()
 		local t = { }
@@ -194,8 +171,6 @@ end
 function listing:enable()
 	self.handler = Event.onInterval(.5, function()
 		local entities = sensor.sense()
-		Util.filterInplace(entities, function(e) return not config.ignore[e.name] end)
-
 		self.grid:setValues(entities)
 		self.grid:draw()
 		self:sync()
@@ -209,14 +184,11 @@ function listing:disable()
 end
 
 function listing:eventHandler(event)
-	if event.type == 'detail' or event.type == 'grid_select' then
+	if event.type == 'grid_select' then
 		local selected = self.grid:getSelected()
 		if selected then
 			UI:setPage(detail, selected)
 		end
-
-	elseif event.type == 'ignore' then
-		ignoreEntity(self.grid:getSelected())
 	end
 
 	return UI.Tab.eventHandler(self, event)
@@ -225,7 +197,6 @@ end
 function summary:enable()
 	self.handler = Event.onInterval(.5, function()
 		local entities = sensor.sense()
-		Util.filterInplace(entities, function(e) return not config.ignore[e.name] end)
 
 		local t = { }
 		local highlight = { }
@@ -265,10 +236,7 @@ function summary.grid:getRowTextColor(row, selected)
 end
 
 function summary:eventHandler(event)
-	if event.type == 'ignore' then
-		ignoreEntity(self.grid:getSelected())
-
-	elseif event.type == 'project' or event.type == 'grid_select' then
+	if event.type == 'grid_select' then
 		local selected = self.grid:getSelected()
 		if selected then
 			self.target = selected.name

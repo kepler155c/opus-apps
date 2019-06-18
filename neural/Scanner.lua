@@ -1,10 +1,11 @@
-local Event    = require('event')
-local itemDB   = require('core.itemDB')
-local UI       = require('ui')
-local Util     = require('util')
+local Event      = require('event')
+local itemDB     = require('core.itemDB')
+local UI         = require('ui')
+local Util       = require('util')
 
-local device   = _G.device
-local gps      = _G.gps
+local device     = _G.device
+local gps        = _G.gps
+local multishell = _ENV.multishell
 
 local glasses = device['plethora:glasses']
 local scanner = device['plethora:scanner'] or
@@ -14,11 +15,13 @@ local projecting = { }
 
 local function getPoint()
 	local pt = { gps.locate() }
-	return {
-		x = pt[1],
-		y = pt[2],
-		z = pt[3],
-	}
+	if pt[1] then
+		return {
+			x = pt[1],
+			y = pt[2],
+			z = pt[3],
+		}
+	end
 end
 
 local offset = getPoint()
@@ -60,7 +63,7 @@ local page = UI.Page {
 			},
 			sortColumn = 'name',
 			accelerators = {
-				grid_select = 'noop',
+				grid_select = 'inspect',
 			},
 		},
 	},
@@ -75,21 +78,25 @@ function page:scan()
 			local entry = itemDB:get(table.concat({ b.name, b.metadata }, ':'))
 			if not entry then
 				local meta = scanner.getBlockMeta(b.x, b.y, b.z)
-				entry = itemDB:add({
-					name = meta.name,
-					displayName = meta.displayName,
-					damage = meta.metadata,
-				})
+				if meta.name == b.name and meta.metadata == b.metadata then
+					entry = itemDB:add({
+						name = meta.name,
+						displayName = meta.displayName,
+						damage = meta.metadata,
+					})
+				end
 			end
-			b.key = entry.displayName
-			if acc[b.key] then
-				acc[b.key].count = acc[b.key].count + 1
-			else
-				entry = Util.shallowCopy(entry)
-				entry.lname = entry.displayName:lower()
-				entry.count = 1
-				entry.key = b.key
-				acc[b.key] = entry
+			if entry then
+				b.key = entry.displayName
+				if acc[b.key] then
+					acc[b.key].count = acc[b.key].count + 1
+				else
+					entry = Util.shallowCopy(entry)
+					entry.lname = entry.displayName:lower()
+					entry.count = 1
+					entry.key = b.key
+					acc[b.key] = entry
+				end
 			end
 			throttle()
 			return acc
@@ -121,43 +128,45 @@ function page.detail:show(blocks, entry)
 				local scanned = scanner.scan()
 				local pos = getPoint()
 
-				blocks = Util.reduce(scanned, function(acc, b)
-					if b.name == t.name and b.metadata == t.damage then
-						-- track block's world position
-						b.id = table.concat({
-							math.floor(pos.x + b.x),
-							math.floor(pos.y + b.y),
-							math.floor(pos.z + b.z) }, ':')
-						acc[b.id] = b
-					end
-					return acc
-				end, { })
-
-				for _, b in pairs(blocks) do
-					if not projecting[b.id] then
-						projecting[b.id] = b
-						pcall(function()
-							b.box = canvas.addItem({
-								pos.x - offset.x + b.x + -(pos.x % 1) + .5,
-								pos.y - offset.y + b.y + -(pos.y % 1) + .5,
-								pos.z - offset.z + b.z + -(pos.z % 1) + .5 },
-								b.name, b.damage, .5)
-						end)
-						if not b.box then
-							b.box = canvas.addBox(
-								pos.x - offset.x + b.x + -(pos.x % 1) + .25,
-								pos.y - offset.y + b.y + -(pos.y % 1) + .25,
-								pos.z - offset.z + b.z + -(pos.z % 1) + .25,
-								.5, .5, .5)
+				if pos and offset then
+					blocks = Util.reduce(scanned, function(acc, b)
+						if b.name == t.name and b.metadata == t.damage then
+							-- track block's world position
+							b.id = table.concat({
+								math.floor(pos.x + b.x),
+								math.floor(pos.y + b.y),
+								math.floor(pos.z + b.z) }, ':')
+							acc[b.id] = b
 						end
-						b.box.setDepthTested(false)
-					end
-				end
+						return acc
+					end, { })
 
-				for _, b in pairs(projecting) do
-					if not blocks[b.id] then
-						b.box.remove()
-						projecting[b.id] = nil
+					for _, b in pairs(blocks) do
+						if not projecting[b.id] then
+							projecting[b.id] = b
+							pcall(function()
+								b.box = canvas.addItem({
+									pos.x - offset.x + b.x + -(pos.x % 1) + .5,
+									pos.y - offset.y + b.y + -(pos.y % 1) + .5,
+									pos.z - offset.z + b.z + -(pos.z % 1) + .5 },
+									b.name, b.damage, .5)
+							end)
+							if not b.box then
+								b.box = canvas.addBox(
+									pos.x - offset.x + b.x + -(pos.x % 1) + .25,
+									pos.y - offset.y + b.y + -(pos.y % 1) + .25,
+									pos.z - offset.z + b.z + -(pos.z % 1) + .25,
+									.5, .5, .5)
+							end
+							b.box.setDepthTested(false)
+						end
+					end
+
+					for _, b in pairs(projecting) do
+						if not blocks[b.id] then
+							b.box.remove()
+							projecting[b.id] = nil
+						end
 					end
 				end
 			end
@@ -178,7 +187,14 @@ function page:eventHandler(event)
 	elseif event.type == 'scan' then
 		self:scan()
 
-	elseif event.type == 'grid_select' and event.element == page.grid then
+	elseif event.type == 'grid_select' and event.element == self.detail.grid then
+		multishell.openTab({
+			path = 'sys/apps/Lua.lua',
+			args = { event.selected },
+			focused = true,
+		})
+
+	elseif event.type == 'grid_select' and event.element == self.grid then
 		self.detail:show(self.blocks, self.grid:getSelected())
 
 	elseif event.type == 'cancel' then

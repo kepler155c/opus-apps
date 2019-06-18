@@ -35,6 +35,39 @@ local function makeRecipeKey(item)
 	return table.concat({ item.name, item.damage or 0, item.nbtHash }, ':')
 end
 
+local function convert(ingredient)
+	return type(ingredient) == 'table' and ingredient or {
+		key = ingredient,
+		count = 1,
+	}
+end
+
+local function getCraftingTool(storage, item)
+	local items = storage:listItems()
+
+	for _,v in pairs(items) do
+		if item.name == v.name and
+			(not item.damage or item.damage == v.damage) and
+			(not item.nbtHash or item.nbtHash == v.nbtHash) then
+			return v
+		end
+	end
+
+	return item
+end
+
+function Craft.ingedients(recipe)
+	local i = 0
+	local keys = Util.keys(recipe.ingredients)
+	return function()
+		i = i + 1
+		local a = keys[i]
+		if a then
+			return a, convert(recipe.ingredients[a])
+		end
+	end
+end
+
 function Craft.clearGrid(storage)
 	local success = true
 	local tasks = Tasks()
@@ -74,8 +107,9 @@ end
 function Craft.sumIngredients(recipe)
 	-- produces { ['minecraft:planks:0'] = 8 }
 	local t = { }
-	for _,item in pairs(recipe.ingredients) do
-		t[item] = (t[item] or 0) + 1
+	for _,entry in pairs(recipe.ingredients) do
+		local item = convert(entry)
+		t[item.key] = (t[item.key] or 0) + item.count
 	end
 	return t
 end
@@ -108,12 +142,13 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 	if count > 0 then
 		local xferred = { }
 		for k,v in pairs(recipe.ingredients) do
-			local provided = storage:export(machine, k, count, splitKey(v))
+			local entry = convert(v)
+			local provided = storage:export(machine, k, count * entry.count, splitKey(entry.key))
 			xferred[k] = {
-				key = v,
+				key = entry.key,
 				count = provided,
 			}
-			if provided ~= count then
+			if provided ~= count * entry.count then
 				-- take back out whatever we put in
 				for k2,v2 in pairs(xferred) do
 					if v2.count > 0 then
@@ -143,6 +178,9 @@ local function turtleCraft(recipe, storage, request, count)
 
 	for k,v in pairs(recipe.ingredients) do
 		local item = splitKey(v)
+		if recipe.craftingTools and recipe.craftingTools[v] then
+			item = getCraftingTool(storage, item)
+		end
 		tasks:add(function()
 			if storage:export(storage.turtleInventory, k, count, item) ~= count then
 				request.status = 'rescan needed ?'
@@ -185,7 +223,8 @@ local function turtleCraft(recipe, storage, request, count)
 end
 
 function Craft.processPending(item, storage)
-	for key, count in pairs(item.pending) do
+		for _, key in pairs(Util.keys(item.pending)) do
+		local count = item.pending[key]
 		local imported = storage.activity[key]
 		if imported then
 			local amount = math.min(imported, count)
@@ -238,7 +277,6 @@ end
 
 function Craft.craftRecipeInternal(recipe, count, storage, origItem, path)
 	local request = origItem.ingredients[recipe.result]
-
 	--[[
 	if origItem.pending[recipe.result] then
 		request.status = 'processing'
@@ -425,23 +463,24 @@ function Craft.getCraftableAmount(inRecipe, inCount, items, missing)
 		local canCraft = 0
 
 		for _ = 1, count do
-			for _,item in pairs(recipe.ingredients) do
-				local summedItem = summedItems[item] or Craft.getItemCount(items, item)
+			for _,entry in pairs(recipe.ingredients) do
+				local item = convert(entry)
+				local summedItem = summedItems[item.key] or Craft.getItemCount(items, item.key)
 
-				local irecipe = findValidRecipe(item, path)
+				local irecipe = findValidRecipe(item.key, path)
 				if irecipe and summedItem <= 0 then
 					local p = Util.shallowCopy(path)
 					p[irecipe.result] = true
-					summedItem = summedItem + sumItems(irecipe, summedItems, 1, p)
+					summedItem = summedItem + sumItems(irecipe, summedItems, item.count, p)
 				end
 				if summedItem <= 0 then
 					if missing and not irecipe then
-						missing.name = item
+						missing.name = item.key
 					end
 					return canCraft
 				end
-				if not recipe.craftingTools or not recipe.craftingTools[item] then
-					summedItems[item] = summedItem - 1
+				if not recipe.craftingTools or not recipe.craftingTools[item.key] then
+					summedItems[item.key] = summedItem - item.count
 				end
 			end
 			canCraft = canCraft + recipe.count

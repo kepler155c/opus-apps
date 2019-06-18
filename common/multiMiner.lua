@@ -22,37 +22,37 @@ local scanner = device['plethora:scanner'] or
 -- hud
 local canvas = glasses and glasses.canvas()
 if canvas then
-  local lh
+	local lh
 
-  local function addText(x, y, text, color)
-    local th = canvas.group.addText({ x, y }, text, color or 0xa0a0a0FF)
-    lh = lh or th.getLineHeight()
-    th.setShadow(true)
-    th.setScale(.75)
-    return th
-  end
+	local function addText(x, y, text, color)
+		local th = canvas.group.addText({ x, y }, text, color or 0xa0a0a0FF)
+		lh = lh or th.getLineHeight()
+		th.setShadow(true)
+		th.setScale(.75)
+		return th
+	end
 
-  canvas.group = canvas.addGroup({ 4, 90 })
-  canvas.group.bg = canvas.group.addRectangle(0, 0, 80, 10, 0x40404080)
-  canvas.group.addLines(
-        { 0,   0 },
-        { 80, 0 },
-        { 80, 10 },
-        { 0,   10 },
-        { 0,   0 },
-        0x202020FF,
-        2)
-  addText(20, 2, 'Swarm Miner', 0xc0c0c0FF)
+	canvas.group = canvas.addGroup({ 4, 90 })
+	canvas.group.bg = canvas.group.addRectangle(0, 0, 80, 10, 0x40404080)
+	canvas.group.addLines(
+				{ 0,   0 },
+				{ 80, 0 },
+				{ 80, 10 },
+				{ 0,   10 },
+				{ 0,   0 },
+				0x202020FF,
+				2)
+	addText(20, 2, 'Swarm Miner', 0xc0c0c0FF)
 
-  local y = 15
-  addText(3, y, 'Turtles')
-  canvas.turtles = addText(60, y, '')
-  canvas.group.addLine({ 0, y + lh - 2 }, { 80, y + lh - 2 }, 0x404040FF, 4)
+	local y = 15
+	addText(3, y, 'Turtles')
+	canvas.turtles = addText(60, y, '')
+	canvas.group.addLine({ 0, y + lh - 2 }, { 80, y + lh - 2 }, 0x404040FF, 4)
 
-  y = y + lh + 5
-  addText(3, y, 'Queue')
-  canvas.queue = addText(60, y, '')
-  canvas.group.addLine({ 0, y + lh - 2 }, { 80, y + lh - 2 }, 0x404040FF, 4)
+	y = y + lh + 5
+	addText(3, y, 'Queue')
+	canvas.queue = addText(60, y, '')
+	canvas.group.addLine({ 0, y + lh - 2 }, { 80, y + lh - 2 }, 0x404040FF, 4)
 end
 
 -- container
@@ -62,19 +62,19 @@ local box, offset
 local paused = false
 
 local function inBox(pt)
-  if not box or not box.ex then
-    return true
-  end
-  return Point.inBox(pt, box)
+	if not box or not box.ex then
+		return true
+	end
+	return Point.inBox(pt, box)
 end
 
 local function locate()
-  for _ = 1, 3 do
-    local pt = GPS.getPoint()
-    if pt then
-      return pt
-    end
-  end
+	for _ = 1, 3 do
+		local pt = GPS.getPoint()
+		if pt then
+			return pt
+		end
+	end
 end
 
 local spt = GPS.getPoint() or error('GPS failure')
@@ -88,7 +88,7 @@ local abort
 local function hijackTurtle(remoteId)
 	local socket, msg = Socket.connect(remoteId, 188)
 
-  if not socket then
+	if not socket then
 		error(msg)
 	end
 
@@ -111,240 +111,240 @@ local function hijackTurtle(remoteId)
 end
 
 local function getNextPoint(turtle)
-  if not paused then
-    local pt = Point.closest(turtle.getPoint(), queue)
-    if pt then
-      turtle.pt = pt
-      queue[pt.pkey] = nil
-      return pt
-    end
-  end
+	if not paused then
+		local pt = Point.closest(turtle.getPoint(), queue)
+		if pt then
+			turtle.pt = pt
+			queue[pt.pkey] = nil
+			return pt
+		end
+	end
 end
 
 local function run(member, point)
-  Event.addRoutine(function()
-    local turtle, socket
-    local _, m = pcall(function()
-      member.active = true
-      turtle, socket = hijackTurtle(member.id)
+	Event.addRoutine(function()
+		local turtle, socket
+		local _, m = pcall(function()
+			member.active = true
+			turtle, socket = hijackTurtle(member.id)
 
-      local function emptySlots(retain, pt)
-        local slots = turtle.getFilledSlots()
-        for _,slot in pairs(slots) do
-          if not retain[slot.key] then
-            turtle.select(slot.index)
-            if pt then
-              turtle.dropAt(pt, 64)
-            else
-              turtle.dropUp(64)
-            end
-          end
-        end
-      end
+			local function emptySlots(retain, pt)
+				local slots = turtle.getFilledSlots()
+				for _,slot in pairs(slots) do
+					if not retain[slot.key] then
+						turtle.select(slot.index)
+						if pt then
+							turtle.dropAt(pt, 64)
+						else
+							turtle.dropUp(64)
+						end
+					end
+				end
+			end
 
-      local function dropOff()
-        -- go to 2 above chest
-        local topPoint = Point.copy(chestPoint)
-        topPoint.y = topPoint.y + 2
-        turtle.gotoY(topPoint.y)
-        while not turtle.go(topPoint) do
-          os.sleep(.5)
-        end
+			local function dropOff()
+				-- go to 2 above chest
+				local topPoint = Point.copy(chestPoint)
+				topPoint.y = topPoint.y + 2
+				turtle.gotoY(topPoint.y)
+				while not turtle.go(topPoint) do
+					os.sleep(.5)
+				end
 
-        -- path to chest
-        local box = Point.makeBox(
-          { x = chestPoint.x - 3, y = chestPoint.y + 3, z = chestPoint.z - 3 },
-          { x = chestPoint.x + 3, y = chestPoint.y, z = chestPoint.z + 3 }
-        )
-        turtle.set({
-          movementStrategy = 'pathing',
-          pathingBox = Point.normalizeBox(box),
-          digPolicy = 'digNone',
-        })
-        while not turtle.moveAgainst(chestPoint) do
-          os.sleep(.5)
-        end
-        emptySlots({ }, chestPoint)
+				-- path to chest
+				local box = Point.makeBox(
+					{ x = chestPoint.x - 3, y = chestPoint.y + 3, z = chestPoint.z - 3 },
+					{ x = chestPoint.x + 3, y = chestPoint.y, z = chestPoint.z + 3 }
+				)
+				turtle.set({
+					movementStrategy = 'pathing',
+					pathingBox = Point.normalizeBox(box),
+					digPolicy = 'digNone',
+				})
+				while not turtle.moveAgainst(chestPoint) do
+					os.sleep(.5)
+				end
+				emptySlots({ }, chestPoint)
 
-        -- path to 3 above chest
-        turtle.pathfind(Point.above(topPoint))
-        turtle.set({
-          movementStrategy = 'goto',
-          digPolicy = 'blacklist',
-        })
-      end
+				-- path to 3 above chest
+				turtle.pathfind(Point.above(topPoint))
+				turtle.set({
+					movementStrategy = 'goto',
+					digPolicy = 'blacklist',
+				})
+			end
 
-      if turtle then
-        turtles[member.id] = turtle
+			if turtle then
+				turtles[member.id] = turtle
 
-        turtle.reset()
-        turtle.set({
-          attackPolicy = 'attack',
-          digPolicy = 'blacklist',
-          blacklist = {
-            'turtle',
-            'chest',
-            'shulker',
-          },
-          movementStrategy = 'goto',
-          point = point,
-        })
-        turtle.select(1)
+				turtle.reset()
+				turtle.set({
+					attackPolicy = 'attack',
+					digPolicy = 'blacklist',
+					blacklist = {
+						'turtle',
+						'chest',
+						'shulker',
+					},
+					movementStrategy = 'goto',
+					point = point,
+				})
+				turtle.select(1)
 
-        repeat
-          local pt = getNextPoint(turtle)
-          if pt then
-            member.status = 'digging'
+				repeat
+					local pt = getNextPoint(turtle)
+					if pt then
+						member.status = 'digging'
 
-            if blockTypes[pt.key] == true then
-              if turtle.moveAgainst(pt) then
-                local index = turtle.selectOpenSlot()
-                if turtle.digAt(pt, pt.name) then
-                  local slot = turtle.getSlot(index)
-                  if slot.count > 0 then
-                    blockTypes[pt.key] = slot.key
-                    if slot.key ~= pt.key then
-                      blockTypes[slot.key] = true
-                    end
-                  end
-                end
-              end
-              turtle.select(1)
-            else
-              turtle.digAt(pt, pt.name)
-            end
+						if blockTypes[pt.key] == true then
+							if turtle.moveAgainst(pt) then
+								local index = turtle.selectOpenSlot()
+								if turtle.digAt(pt, pt.name) then
+									local slot = turtle.getSlot(index)
+									if slot.count > 0 then
+										blockTypes[pt.key] = slot.key
+										if slot.key ~= pt.key then
+											blockTypes[slot.key] = true
+										end
+									end
+								end
+							end
+							turtle.select(1)
+						else
+							turtle.digAt(pt, pt.name)
+						end
 
-            if turtle.getItemCount(15) > 0 then
-              member.status = 'ejecting trash'
-              emptySlots(blockTypes)
-              turtle.condense()
-              if turtle.getItemCount(15) > 0 then
-                member.status = 'dropping off'
-                if not chestPoint then
-                  member.abort = true
-                  member.status = 'full'
-                else
-                  dropOff()
-                end
-              end
-              turtle.select(1)
-            end
-          else
-            member.status = 'waiting'
-            os.sleep(1)
-          end
-          if member.fuel < 100 then
-            member.status = 'out of fuel'
-            break
-          end
-        until member.abort
-      end
+						if turtle.getItemCount(15) > 0 then
+							member.status = 'ejecting trash'
+							emptySlots(blockTypes)
+							turtle.condense()
+							if turtle.getItemCount(15) > 0 then
+								member.status = 'dropping off'
+								if not chestPoint then
+									member.abort = true
+									member.status = 'full'
+								else
+									dropOff()
+								end
+							end
+							turtle.select(1)
+						end
+					else
+						member.status = 'waiting'
+						os.sleep(1)
+					end
+					if member.fuel < 100 then
+						member.status = 'out of fuel'
+						break
+					end
+				until member.abort
+			end
 
-      emptySlots(blockTypes)
+			emptySlots(blockTypes)
 
-      if chestPoint then
-        dropOff()
-        while not turtle.go(Point.above(spt)) do
-          os.sleep(.5)
-        end
-        --if turtle.selectSlotWithQuantity(0) then
-          --turtle.set({ digPolicy = 'dig' })
-        --end
-        while not turtle.go(spt) do
-          os.sleep(.5)
-        end
-      else
-        turtle.gotoY(spt.y)
-        while not turtle.go(spt) do
-          os.sleep(.5)
-        end
-      end
-    end)
+			if chestPoint then
+				dropOff()
+				while not turtle.go(Point.above(spt)) do
+					os.sleep(.5)
+				end
+				--if turtle.selectSlotWithQuantity(0) then
+					--turtle.set({ digPolicy = 'dig' })
+				--end
+				while not turtle.go(spt) do
+					os.sleep(.5)
+				end
+			else
+				turtle.gotoY(spt.y)
+				while not turtle.go(spt) do
+					os.sleep(.5)
+				end
+			end
+		end)
 
-    turtles[member.id] = nil
-    member.status = m
-    member.active = false
-    if socket then
-      socket:close()
-    end
-  end)
+		turtles[member.id] = nil
+		member.status = m
+		member.active = false
+		if socket then
+			socket:close()
+		end
+	end)
 end
 
 local function drawContainer(pos)
-  if canvas3d then
-    canvas3d.clear()
+	if canvas3d then
+		canvas3d.clear()
 
-    local function addBox(b)
-      canvas3d.addBox(
-        b.x - offset.x + .25,
-        b.y - offset.y + .25 ,
-        b.z - offset.z + .25 ,
-        .5, .5, .5).setDepthTested(false)
-    end
-    if box and box.ex then
-      addBox({ x = box.x,  y = box.y,  z = box.z  })
-      addBox({ x = box.x,  y = box.y,  z = box.ez })
-      addBox({ x = box.ex, y = box.y,  z = box.z  })
-      addBox({ x = box.ex, y = box.y,  z = box.ez })
-      addBox({ x = box.x,  y = box.ey, z = box.z  })
-      addBox({ x = box.x,  y = box.ey, z = box.ez })
-      addBox({ x = box.ex, y = box.ey, z = box.z  })
-      addBox({ x = box.ex, y = box.ey, z = box.ez })
-    elseif box then
-      canvas3d.recenter({ -(pos.x % 1), -(pos.y % 1), -(pos.z % 1) })
-      addBox(box)
-    end
-  end
+		local function addBox(b)
+			canvas3d.addBox(
+				b.x - offset.x + .25,
+				b.y - offset.y + .25 ,
+				b.z - offset.z + .25 ,
+				.5, .5, .5).setDepthTested(false)
+		end
+		if box and box.ex then
+			addBox({ x = box.x,  y = box.y,  z = box.z  })
+			addBox({ x = box.x,  y = box.y,  z = box.ez })
+			addBox({ x = box.ex, y = box.y,  z = box.z  })
+			addBox({ x = box.ex, y = box.y,  z = box.ez })
+			addBox({ x = box.x,  y = box.ey, z = box.z  })
+			addBox({ x = box.x,  y = box.ey, z = box.ez })
+			addBox({ x = box.ex, y = box.ey, z = box.z  })
+			addBox({ x = box.ex, y = box.ey, z = box.ez })
+		elseif box then
+			canvas3d.recenter({ -(pos.x % 1), -(pos.y % 1), -(pos.z % 1) })
+			addBox(box)
+		end
+	end
 end
 
 local pauseResume = {
-  { text = 'Pause', event = 'pause' },
-  { text = 'Resume', event = 'resume' },
+	{ text = 'Pause', event = 'pause' },
+	{ text = 'Resume', event = 'resume' },
 }
 local containerText = {
-  [[Set a corner to contain mining area]],
-  [[Set ending corner]],
-  [[Set again to clear]],
+	[[Set a corner to contain mining area]],
+	[[Set ending corner]],
+	[[Set again to clear]],
 }
 
 local containTab = UI.Tab {
-  tabTitle = 'Contain',
-  button = UI.Button {
-    x = 2, y = 2,
-    text = 'Set corner',
-    event = 'contain'
-  },
-  textArea = UI.TextArea {
-    x = 2, y = 4,
-    value = containerText[1],
-  },
+	tabTitle = 'Contain',
+	button = UI.Button {
+		x = 2, y = 2,
+		text = 'Set corner',
+		event = 'contain'
+	},
+	textArea = UI.TextArea {
+		x = 2, y = 4,
+		value = containerText[1],
+	},
 }
 
 local blocksTab = UI.Tab {
-  tabTitle = 'Blocks',
-  grid = UI.ScrollingGrid {
-    y = 1,
-    columns = {
-      { heading = 'Count', key = 'count', width = 6, align = 'right' },
-      { heading = 'Name',  key = 'displayName' },
-    },
-    sortColumn = 'displayName',
-  },
+	tabTitle = 'Blocks',
+	grid = UI.ScrollingGrid {
+		y = 1,
+		columns = {
+			{ heading = 'Count', key = 'count', width = 6, align = 'right' },
+			{ heading = 'Name',  key = 'displayName' },
+		},
+		sortColumn = 'displayName',
+	},
 }
 
 local turtlesTab = UI.Tab {
-  tabTitle = 'Turtles',
-  grid = UI.ScrollingGrid {
-    y = 1,
-    values = pool,
-    columns = {
-      { heading = 'ID',     key = 'id',       width = 5, },
-      { heading = ' Fuel',  key = 'fuel',     width = 5, align = 'right' },
-      { heading = ' Dist',  key = 'distance', width = 5, align = 'right' },
-      { heading = 'Status', key = 'status' },
-    },
-    sortColumn = 'label',
-  },
+	tabTitle = 'Turtles',
+	grid = UI.ScrollingGrid {
+		y = 1,
+		values = pool,
+		columns = {
+			{ heading = 'ID',     key = 'id',       width = 5, },
+			{ heading = ' Fuel',  key = 'fuel',     width = 5, align = 'right' },
+			{ heading = ' Dist',  key = 'distance', width = 5, align = 'right' },
+			{ heading = 'Status', key = 'status' },
+		},
+		sortColumn = 'label',
+	},
 }
 
 local page = UI.Page {
@@ -354,264 +354,264 @@ local page = UI.Page {
 			{ text = 'Abort', event = 'abort' },
 			pauseResume[1],
 		},
-  },
-  tabs = UI.Tabs {
-    y = 2, ey = -2,
-    [1] = blocksTab,
-    [2] = turtlesTab,
-    [3] = containTab,
-  },
-  info = UI.Window {
-    y = -1,
-    backgroundColor = colors.blue,
-  }
+	},
+	tabs = UI.Tabs {
+		y = 2, ey = -2,
+		[1] = blocksTab,
+		[2] = turtlesTab,
+		[3] = containTab,
+	},
+	info = UI.Window {
+		y = -1,
+		backgroundColor = colors.blue,
+	}
 }
 
 function page.info:draw()
-  self:clear()
-  self:write(2, 1, 'Turtles: ' .. Util.size(turtles))
-  if not chestPoint then
-    self:write(16, 1, 'No chest')
-  end
-  self:write(28, 1, 'Queue: ' .. Util.size(queue))
+	self:clear()
+	self:write(2, 1, 'Turtles: ' .. Util.size(turtles))
+	if not chestPoint then
+		self:write(16, 1, 'No chest')
+	end
+	self:write(28, 1, 'Queue: ' .. Util.size(queue))
 end
 
 function turtlesTab.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
-  row.distance = row.distance and Util.round(row.distance, 1)
-  row.fuel = row.fuel and row.fuel > 0 and Util.toBytes(row.fuel) or ''
-  return row
+	row.distance = row.distance and Util.round(row.distance, 1)
+	row.fuel = row.fuel and row.fuel > 0 and Util.toBytes(row.fuel) or ''
+	return row
 end
 
 function page:scan()
-  local gpt = GPS.getPoint()
-  if not gpt then
-    return
-  end
-  local rawBlocks = scanner:scan()
-  local candidates = { }
+	local gpt = GPS.getPoint()
+	if not gpt then
+		return
+	end
+	local rawBlocks = scanner:scan()
+	local candidates = { }
 
-  self.totals = Util.reduce(rawBlocks,
-    function(acc, b)
-      b.key = table.concat({ b.name, b.metadata }, ':')
-      local entry = acc[b.key]
-      if not entry then
-        b.displayName = itemDB:getName(b.key)
-        b.count = 1
-        acc[b.key] = b
+	self.totals = Util.reduce(rawBlocks,
+		function(acc, b)
+			b.key = table.concat({ b.name, b.metadata }, ':')
+			local entry = acc[b.key]
+			if not entry then
+				b.displayName = itemDB:getName(b.key)
+				b.count = 1
+				acc[b.key] = b
 			else
-        entry.count = entry.count + 1
-      end
+				entry.count = entry.count + 1
+			end
 
-      if b.name == 'computercraft:turtle_advanced' or
-        b.name == 'computercraft:turtle_expanded' or
-        b.name == 'computercraft:turtle' then
-          table.insert(candidates, b)
-      end
+			if b.name == 'computercraft:turtle_advanced' or
+				b.name == 'computercraft:turtle_expanded' or
+				b.name == 'computercraft:turtle' then
+					table.insert(candidates, b)
+			end
 
-      if b.name == 'minecraft:chest' or b.name:find('shulker') then
-        chestPoint = b
-      end
+			if b.name == 'minecraft:chest' or b.name:find('shulker') then
+				chestPoint = b
+			end
 
-      -- add relevant blocks to queue
-      b.x = gpt.x + b.x
-      b.y = gpt.y + b.y
-      b.z = gpt.z + b.z
-      b.pkey = table.concat({ b.x, b.y, b.z }, ':')
-      if blockTypes[b.key] and inBox(b) then
-        if not Util.any(turtles, function(t)
-            return t.pt and t.pt.pkey == b.pkey
-          end) then
-          queue[b.pkey] = b
-        end
-      else
-        queue[b.pkey] = nil
-      end
-      return acc
+			-- add relevant blocks to queue
+			b.x = gpt.x + b.x
+			b.y = gpt.y + b.y
+			b.z = gpt.z + b.z
+			b.pkey = table.concat({ b.x, b.y, b.z }, ':')
+			if blockTypes[b.key] and inBox(b) then
+				if not Util.any(turtles, function(t)
+						return t.pt and t.pt.pkey == b.pkey
+					end) then
+					queue[b.pkey] = b
+				end
+			else
+				queue[b.pkey] = nil
+			end
+			return acc
 		end,
-    { })
+		{ })
 
-  for _, b in pairs(candidates) do
-    local v = scanner.getBlockMeta(b.x - gpt.x, b.y - gpt.y, b.z - gpt.z)
-    if v and v.computer then
-      local member = pool[v.computer.id]
-      if not member then
-        member = {
-          id = v.computer.id,
-          label = v.computer.label,
-        }
-        pool[v.computer.id] = member
-      end
+	for _, b in pairs(candidates) do
+		local v = scanner.getBlockMeta(b.x - gpt.x, b.y - gpt.y, b.z - gpt.z)
+		if v and v.computer then
+			local member = pool[v.computer.id]
+			if not member then
+				member = {
+					id = v.computer.id,
+					label = v.computer.label,
+				}
+				pool[v.computer.id] = member
+			end
 
-      member.fuel = v.turtle.fuel
-      member.distance = 0
+			member.fuel = v.turtle.fuel
+			member.distance = 0
 
-      if not v.computer.isOn then
-        member.status = 'Powered off'
-      elseif v.turtle.fuel < 100 and not member.active then
-        member.status = 'Not enough fuel'
-      elseif not member.active and not member.abort then
-        local pt = Point.copy(b)
-        pt.heading = Point.facings[v.state.facing].heading
-        run(member, pt)
-      end
-    end
-  end
+			if not v.computer.isOn then
+				member.status = 'Powered off'
+			elseif v.turtle.fuel < 100 and not member.active then
+				member.status = 'Not enough fuel'
+			elseif not member.active and not member.abort then
+				local pt = Point.copy(b)
+				pt.heading = Point.facings[v.state.facing].heading
+				run(member, pt)
+			end
+		end
+	end
 end
 
 function blocksTab.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
 	row.count = Util.toBytes(row.count) .. ' '
-  return row
+	return row
 end
 
 function blocksTab.grid:getRowTextColor(row, selected)
-  return blockTypes[row.key] and
-    colors.yellow or
-    UI.Grid.getRowTextColor(self, row, selected)
+	return blockTypes[row.key] and
+		colors.yellow or
+		UI.Grid.getRowTextColor(self, row, selected)
 end
 
 function blocksTab:eventHandler(event)
 	if event.type == 'grid_select' then
-    local key = event.selected.key
-    if blockTypes[key] then
-      for k,v in pairs(queue) do
-        if v.key == key then
-          queue[k] = nil
-        end
-      end
-      blockTypes[key] = nil
-    else
-      blockTypes[key] = true
-    end
-    self.grid:draw()
-  end
+		local key = event.selected.key
+		if blockTypes[key] then
+			for k,v in pairs(queue) do
+				if v.key == key then
+					queue[k] = nil
+				end
+			end
+			blockTypes[key] = nil
+		else
+			blockTypes[key] = true
+		end
+		self.grid:draw()
+	end
 end
 
 function page:eventHandler(event)
-  if event.type == 'scan' then
-    blocksTab.grid:setValues(self.totals)
-    blocksTab.grid:draw()
-    self.tabs:selectTab(blocksTab)
+	if event.type == 'scan' then
+		blocksTab.grid:setValues(self.totals)
+		blocksTab.grid:draw()
+		self.tabs:selectTab(blocksTab)
 
-  elseif event.type == 'pause' then
-    paused = true
-    Util.merge(event.button, pauseResume[2])
-    event.button:draw()
+	elseif event.type == 'pause' then
+		paused = true
+		Util.merge(event.button, pauseResume[2])
+		event.button:draw()
 
-  elseif event.type == 'resume' then
-    paused = false
-    Util.merge(event.button, pauseResume[1])
-    event.button:draw()
+	elseif event.type == 'resume' then
+		paused = false
+		Util.merge(event.button, pauseResume[1])
+		event.button:draw()
 
-  elseif event.type == 'contain' then
-    local pt = { gps.locate() }
-    local pos = {
-      x = pt[1],
-      y = pt[2],
-      z = pt[3],
-    }
+	elseif event.type == 'contain' then
+		local pt = { gps.locate() }
+		local pos = {
+			x = pt[1],
+			y = pt[2],
+			z = pt[3],
+		}
 
-    if not box then
-      offset = {
-        x = math.floor(pos.x),
-        y = math.floor(pos.y),
-        z = math.floor(pos.z),
-      }
-      box = {
-        x = math.floor(pos.x),
-        y = math.floor(pos.y) - 1,
-        z = math.floor(pos.z),
-      }
-      containTab.textArea.value = containerText[2]
-    elseif not box.ex then
-      box.ex = math.floor(pos.x)
-      box.ey = math.floor(pos.y) - 1
-      box.ez = math.floor(pos.z)
-      box = Point.normalizeBox(box)
-      containTab.textArea.value = containerText[3]
-    else
-      box = nil
-      containTab.textArea.value = containerText[1]
-    end
+		if not box then
+			offset = {
+				x = math.floor(pos.x),
+				y = math.floor(pos.y),
+				z = math.floor(pos.z),
+			}
+			box = {
+				x = math.floor(pos.x),
+				y = math.floor(pos.y) - 1,
+				z = math.floor(pos.z),
+			}
+			containTab.textArea.value = containerText[2]
+		elseif not box.ex then
+			box.ex = math.floor(pos.x)
+			box.ey = math.floor(pos.y) - 1
+			box.ez = math.floor(pos.z)
+			box = Point.normalizeBox(box)
+			containTab.textArea.value = containerText[3]
+		else
+			box = nil
+			containTab.textArea.value = containerText[1]
+		end
 
-    containTab.textArea:draw()
-    drawContainer(pos)
+		containTab.textArea:draw()
+		drawContainer(pos)
 
-  elseif event.type == 'abort' then
-    for _, v in pairs(pool) do
-      v.abort = true
-      v.status = 'aborting'
-    end
-    spt = Point.above(locate())
-    abort = true
-  end
+	elseif event.type == 'abort' then
+		for _, v in pairs(pool) do
+			v.abort = true
+			v.status = 'aborting'
+		end
+		spt = Point.above(locate())
+		abort = true
+	end
 
 	UI.Page.eventHandler(self, event)
 end
 
 Event.onInterval(5, function()
-  if not abort and not paused then
+	if not abort and not paused then
 
-    --local meta = scanner.getMetaOwner()
-    --if meta.isSneaking then
-      page:scan()
-    --  Sound.play('entity.bobber.throw', .6)
-    --end
-  end
+		--local meta = scanner.getMetaOwner()
+		--if meta.isSneaking then
+			page:scan()
+		--  Sound.play('entity.bobber.throw', .6)
+		--end
+	end
 end)
 
 Event.onInterval(1, function()
-  for id,v in pairs(network) do
-    if v.fuel then
-      if pool[id] then
-        pool[id].fuel = v.fuel
-        pool[id].distance = v.distance
-      end
-    end
-  end
+	for id,v in pairs(network) do
+		if v.fuel then
+			if pool[id] then
+				pool[id].fuel = v.fuel
+				pool[id].distance = v.distance
+			end
+		end
+	end
 
-  if abort and Util.size(turtles) == 0 then
-    Event.exitPullEvents()
-  end
+	if abort and Util.size(turtles) == 0 then
+		Event.exitPullEvents()
+	end
 
-  if turtlesTab.enabled then
-    turtlesTab.grid:update()
-    turtlesTab.grid:draw()
-  end
+	if turtlesTab.enabled then
+		turtlesTab.grid:update()
+		turtlesTab.grid:draw()
+	end
 
-  page.info:draw()
-  page.info:sync()
+	page.info:draw()
+	page.info:sync()
 
-  if canvas then
-    canvas.turtles.setText(tostring(Util.size(turtles)))
-    canvas.queue.setText(tostring(Util.size(queue)))
-  end
+	if canvas then
+		canvas.turtles.setText(tostring(Util.size(turtles)))
+		canvas.queue.setText(tostring(Util.size(queue)))
+	end
 end)
 
 Event.onTimeout(.1, function()
-  page:scan()
-  blocksTab.grid:setValues(page.totals)
-  blocksTab.grid:draw()
-  page:sync()
+	page:scan()
+	blocksTab.grid:setValues(page.totals)
+	blocksTab.grid:draw()
+	page:sync()
 end)
 
 UI:setPage(page)
 
 --[[
 Event.onTerminate(function()
-  spt = Point.above(locate())
-  for _, v in pairs(pool) do
-    v.status = 'aborting'
-    v.abort = true
-  end
-  abort = true
+	spt = Point.above(locate())
+	for _, v in pairs(pool) do
+		v.status = 'aborting'
+		v.abort = true
+	end
+	abort = true
 end)
 ]]
 
 Event.pullEvents()
 
 if canvas then
-  canvas3d.clear()
-  canvas.group.remove()
+	canvas3d.clear()
+	canvas.group.remove()
 end

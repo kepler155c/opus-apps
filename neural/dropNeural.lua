@@ -1,10 +1,10 @@
 local device = _G.device
 
 local intro = device['plethora:introspection'] or
-  error('Missing Introspection module')
+	error('Missing Introspection module')
 
 if intro.getBaubles then
-  intro.getBaubles().drop(5)
+	intro.getBaubles().drop(5)
 else
-  intro.getEquipment().drop(6)
+	intro.getEquipment().drop(6)
 end

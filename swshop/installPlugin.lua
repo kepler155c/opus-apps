@@ -8,7 +8,7 @@ local CONFIG_FILE = '/usr/config/milo.state'
 
 local config = Util.readTable(CONFIG_FILE) or { }
 if not config.plugins then
-  config.plugins = { }
+	config.plugins = { }
 end
 
 local dir = fs.getDir(shell.getRunningProgram())

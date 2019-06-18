@@ -16,13 +16,13 @@ local page = UI.Page {
 		title = 'Auto-feeder',
 		previousPage = true,
 	},
-  grid = UI.ScrollingGrid {
-    y = 2, ey = -2,
-    columns = {
-      { heading = 'Name', key = 'displayName' },
-    },
-    sortColumn = 'displayName',
-  },
+	grid = UI.ScrollingGrid {
+		y = 2, ey = -2,
+		columns = {
+			{ heading = 'Name', key = 'displayName' },
+		},
+		sortColumn = 'displayName',
+	},
 	statusBar = UI.StatusBar {
 		values = 'Double-click to toggle'
 	},
@@ -55,45 +55,45 @@ function page.grid:getRowTextColor(row)
 end
 
 local function getFood(food)
-  for slot,v in pairs(ni.getInventory().list()) do
-    local key = itemDB:makeKey(v)
-    if key == food then
-      local item = ni.getInventory().getItem(slot)
-      if item and item.consume then
-        return item
-      end
-      break
-    end
-  end
+	for slot,v in pairs(ni.getInventory().list()) do
+		local key = itemDB:makeKey(v)
+		if key == food then
+			local item = ni.getInventory().getItem(slot)
+			if item and item.consume then
+				return item
+			end
+			break
+		end
+	end
 end
 
 function page:eventHandler(event)
-  if event.type == 'grid_select' then
-    if context.state.food == event.selected.key then
-      context:setState('food')
-      self.grid:draw()
-    elseif getFood(event.selected.key) then
-      context:setState('food', event.selected.key)
-      self.grid:draw()
-    else
-      Sound.play('entity.villager.no')
-    end
+	if event.type == 'grid_select' then
+		if context.state.food == event.selected.key then
+			context:setState('food')
+			self.grid:draw()
+		elseif getFood(event.selected.key) then
+			context:setState('food', event.selected.key)
+			self.grid:draw()
+		else
+			Sound.play('entity.villager.no')
+		end
 		return true
 	end
 end
 
 Event.onInterval(5, function()
-  local s, m = pcall(function() -- prevent errors from some mod items
-    if context.state.food and ni.getMetaOwner().food.hungry then
-      local item = getFood(context.state.food)
-      if item then
-        item.consume()
-      end
-    end
-  end)
-  if not s and m then
-    _G._syslog(m)
-  end
+	local s, m = pcall(function() -- prevent errors from some mod items
+		if context.state.food and ni.getMetaOwner().food.hungry then
+			local item = getFood(context.state.food)
+			if item then
+				item.consume()
+			end
+		end
+	end)
+	if not s and m then
+		_G._syslog(m)
+	end
 end)
 
 return {
