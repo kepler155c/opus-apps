@@ -56,7 +56,7 @@ local function getCraftingTool(storage, item)
 	return item
 end
 
-function Craft.ingedients(recipe)
+function Craft.ingredients(recipe)
 	local i = 0
 	local keys = Util.keys(recipe.ingredients)
 	return function()
@@ -297,7 +297,16 @@ function Craft.craftRecipeInternal(recipe, count, storage, origItem, path)
 		count = canCraft
 	end
 
+	local function maxBatch()
+		local max = 64
+		for _, i in Craft.ingredients(recipe) do
+			max = math.min(max, math.floor(64 / i.count))
+		end
+		return max
+	end
+
 	local maxCount = recipe.maxCount or math.floor(64 / recipe.count)
+	maxCount = math.min(maxCount, maxBatch())
 
 	repeat
 		local craftedIngredient
@@ -463,8 +472,7 @@ function Craft.getCraftableAmount(inRecipe, inCount, items, missing)
 		local canCraft = 0
 
 		for _ = 1, count do
-			for _,entry in pairs(recipe.ingredients) do
-				local item = convert(entry)
+			for _, item in Craft.ingredients(recipe) do
 				local summedItem = summedItems[item.key] or Craft.getItemCount(items, item.key)
 
 				local irecipe = findValidRecipe(item.key, path)

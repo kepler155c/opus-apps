@@ -37,9 +37,7 @@ function recipeTab:setItem(item)
 
 	local t = { }
 	if self.recipe then
-		for k, v in Craft.ingedients(self.recipe) do
-_syslog(k)
-_syslog(v)
+		for k, v in Craft.ingredients(self.recipe) do
 			table.insert(t, {
 				slot = k,
 				key = v.key,
