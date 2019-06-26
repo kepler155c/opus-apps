@@ -238,6 +238,12 @@ function Milo:learnRecipe()
 		return false, 'No recipe defined'
 	end
 
+	for _,v in pairs(ingredients) do
+		if v.count > 1 then
+			return false, 'Too many items'
+		end
+	end
+
 	turtle.select(1)
 	if not turtle.craft() then
 		return false, 'Failed to craft'

@@ -132,11 +132,13 @@ local function createPage(node)
 				v.index = #t
 				for k2,v2 in pairs(v.ingredients or { }) do
 					if v2.key ~= v.key --[[and v2.statusCode ]] then
-						table.insert(t, v2)
-						if not v2.displayName then
-							v2.displayName = itemDB:getName(k2)
+						if v2.need > 0 or v2.statusCode then
+							table.insert(t, v2)
+							if not v2.displayName then
+								v2.displayName = itemDB:getName(k2)
+							end
+							v2.index = #t
 						end
-						v2.index = #t
 					end
 				end
 			end

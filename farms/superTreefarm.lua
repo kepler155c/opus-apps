@@ -49,7 +49,11 @@ local retain = Util.transpose {
 	SENSOR,
 }
 
-local state = Util.readTable('usr/config/superTreefarm') or { }
+-- filters are separated by |
+local state = Util.readTable('usr/config/superTreefarm') or {
+	logFilter = 'log',
+	saplingFilter = 'sapling',
+}
 
 local clock = os.clock()
 
@@ -69,13 +73,22 @@ local function refuel()
 	return true
 end
 
+-- lua regex wtf
+local function mMatch(s, m)
+	for _,v in pairs(Util.split(m, '(.-)|')) do
+		if s:match(v) then
+			return true
+		end
+	end
+end
+
 local function makeCharcoal()
 	local slots = turtle.getSummedInventory()
 
 	local function getLogSlot()
 		local maxslot = { count = 0 }
 		for k,slot in pairs(slots) do
-			if string.match(k, 'minecraft:log') then
+			if mMatch(k, state.logFilter) then
 				if slot.count > maxslot.count then
 					maxslot = slot
 				end
@@ -112,7 +125,7 @@ local function makeCharcoal()
 			local count = inv[1] and inv[1].count or 0
 			if count < 32 then
 				for key, slot in pairs(turtle.getSummedInventory()) do
-					if string.match(key, 'minecraft:log') then
+					if mMatch(key, state.logFilter) then
 						if turtle.dropDown(key, 32-count) then
 							count = count + slot.count
 							if count >= 32 then
@@ -160,6 +173,8 @@ local function createChests()
 		setState('chest', pt)
 
 		turtle.dropDown(DIRT)
+
+		return
 	end
 	return true
 end
@@ -169,7 +184,7 @@ local function getSaplings()
 	local saplings = { }
 
 	for _, slot in pairs(slots) do
-		if slot.name == SAPLING then
+		if mMatch(slot.name, state.saplingFilter) then
 			table.insert(saplings, slot)
 		end
 	end
@@ -184,17 +199,28 @@ end
 local function dropOffItems()
 	local slots = turtle.getSummedInventory()
 
+	local function checkLogs()
+		for k,v in pairs(slots) do
+			if mMatch(k, state.logFilter) and v.count > 16 then
+				return true
+			end
+		end
+	end
+
 	if state.chest and
 			slots[CHARCOAL] and
 			slots[CHARCOAL].count >= MIN_CHARCOAL and
-			(turtle.getItemCount(LOG) > 16 or
-			turtle.getItemCount(LOG2) > 16) then
+			checkLogs() then
 
 		print('Storing logs')
 		turtle.pathfind(Point.above(state.chest))
 
 		for k,v in pairs(turtle.getInventory()) do
-			if v.count > 0 and not retain[v.name] and not retain[v.key] then
+			if v.count > 0 and
+				not retain[v.name] and
+				not retain[v.key] and
+				not mMatch(v.key, state.saplingFilter) then
+
 				turtle.select(k)
 				turtle.dropDown()
 			end
@@ -235,7 +261,7 @@ local function findDroppedSaplings()
 		b.x = Util.round(b.x) + turtle.point.x
 		b.y = math.ceil(b.y) + turtle.point.y
 		b.z = Util.round(b.z) + turtle.point.z
-		if b.y == 0 and string.find(b.displayName, 'sapling', 1, true) then
+		if b.y == 0 and mMatch(b.displayName, state.saplingFilter) then
 			b.sapling = true
 			acc[makeKey(b)] = b
 		end
@@ -268,7 +294,7 @@ local function getPlantLocations(blocks)
 		local key = makeKey(sapling)
 		local b = blocks[key]
 		if b then
-			if b.name == SAPLING then
+			if mMatch(b.name, state.saplingFilter) then
 				blocks[key] = nil
 			else
 				b.plant = true
@@ -322,7 +348,7 @@ local function fellTrees(blocks)
 			elseif pt.plant then
 				local s = randomSapling()
 
-				if pt.name and pt.name ~= SAPLING then
+				if pt.name and not mMatch(pt.name, state.saplingFilter) then
 					turtle.digDownAt(pt)
 				end
 				if s then
@@ -346,7 +372,7 @@ end
 
 local function fell()
 	local function filter(b)
-		return b.name == LOG or b.name == LOG2 or b.name == SAPLING
+		return mMatch(b.name, state.logFilter) or mMatch(b.name, state.saplingFilter)
 	end
 
 	local fuel = turtle.getFuelLevel()

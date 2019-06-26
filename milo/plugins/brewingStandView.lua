@@ -25,9 +25,10 @@ local wizardPage = UI.WizardPage {
 	},
 }
 
+-- Brewing stand shows as Cauldron is Minecraft 1.10
 function wizardPage:isValidType(node)
 	local m = device[node.name]
-	return m and m.type == 'minecraft:brewing_stand'and {
+	return m and (m.type == 'minecraft:brewing_stand' or m.type == 'Cauldron') and {
 		name = 'Brewing Stand',
 		value = 'brewingStand',
 		category = 'machine',

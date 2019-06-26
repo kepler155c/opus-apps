@@ -128,16 +128,21 @@ local function machineCraft(recipe, storage, machineName, request, count, item)
 		return
 	end
 
+	local pending = item.pending[recipe.result] or 0
+
 	local list = machine.adapter.list()
 	for k in pairs(recipe.ingredients) do
 		if list[k] then
-			request.status = 'machine in use'
-			request.statusCode = Craft.STATUS_WARNING
+			if pending >  0 then
+				request.status = 'processing'
+				request.statusCode = Craft.STATUS_INFO
+			else
+				request.status = 'machine in use'
+				request.statusCode = Craft.STATUS_WARNING
+			end
 			return
 		end
 	end
-
-	local pending = item.pending[recipe.result] or 0
 
 	if count > 0 then
 		local xferred = { }
@@ -187,6 +192,10 @@ local function turtleCraft(recipe, storage, request, count)
 				request.statusCode = Craft.STATUS_ERROR
 				failed = true
 	_G._syslog('failed to export: ' .. item.name)
+--	_G._p4 = recipe
+--	_G._p = storage
+--	_G._p2 = request
+--read()
 			end
 		end)
 	end
@@ -223,7 +232,7 @@ local function turtleCraft(recipe, storage, request, count)
 end
 
 function Craft.processPending(item, storage)
-		for _, key in pairs(Util.keys(item.pending)) do
+	for _, key in pairs(Util.keys(item.pending)) do
 		local count = item.pending[key]
 		local imported = storage.activity[key]
 		if imported then
@@ -332,7 +341,7 @@ function Craft.craftRecipeInternal(recipe, count, storage, origItem, path)
 					return 0
 				end
 				if origItem.forceCrafting and crafted < iqty then
-					canCraft = math.floor((itemCount + crafted) / icount)
+					canCraft = math.min(canCraft, math.floor((itemCount + crafted) / icount))
 				end
 				if crafted > 0 then
 					craftedIngredient = true
@@ -467,28 +476,29 @@ function Craft.getResourceList4(inRecipe, items, count)
 end
 
 -- given a certain quantity, return how many of those can be crafted
-function Craft.getCraftableAmount(inRecipe, inCount, items, missing)
-	local function sumItems(recipe, summedItems, count, path)
+function Craft.getCraftableAmount(inRecipe, limit, items)
+	local allIngredients = { }
+
+	local function sumItems(recipe, count, path)
 		local canCraft = 0
 
 		for _ = 1, count do
-			for _, item in Craft.ingredients(recipe) do
-				local summedItem = summedItems[item.key] or Craft.getItemCount(items, item.key)
+			for iKey, iCount in pairs(Craft.sumIngredients(recipe)) do
+				local quantity = allIngredients[iKey] or Craft.getItemCount(items, iKey)
 
-				local irecipe = findValidRecipe(item.key, path)
-				if irecipe and summedItem <= 0 then
-					local p = Util.shallowCopy(path)
-					p[irecipe.result] = true
-					summedItem = summedItem + sumItems(irecipe, summedItems, item.count, p)
-				end
-				if summedItem <= 0 then
-					if missing and not irecipe then
-						missing.name = item.key
+				if quantity < iCount then
+					local irecipe = findValidRecipe(iKey, path)
+					if irecipe then
+						local p = Util.shallowCopy(path)
+						p[irecipe.result] = true
+						quantity = quantity + sumItems(irecipe, iCount - quantity, p)
 					end
+				end
+				if quantity < iCount then
 					return canCraft
 				end
-				if not recipe.craftingTools or not recipe.craftingTools[item.key] then
-					summedItems[item.key] = summedItem - item.count
+				if not recipe.craftingTools or not recipe.craftingTools[iKey] then
+					allIngredients[iKey] = quantity - iCount
 				end
 			end
 			canCraft = canCraft + recipe.count
@@ -498,7 +508,7 @@ function Craft.getCraftableAmount(inRecipe, inCount, items, missing)
 	end
 
 	local path = { [ inRecipe.result ] = true }
-	return sumItems(inRecipe, { }, math.ceil(inCount / inRecipe.count), path)
+	return sumItems(inRecipe, math.ceil(limit / inRecipe.count), path)
 end
 
 function Craft.loadRecipes()
