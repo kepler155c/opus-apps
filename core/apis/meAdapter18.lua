@@ -76,7 +76,7 @@ end
 
 function MEAdapter:isCrafting(item)
 	self:clearFinished()
-_G._p = self.jobList
+
 	for _,job in pairs(self.jobList) do
 		if job.name == item.name and
 			 job.damage == item.damage and

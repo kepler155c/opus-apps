@@ -71,8 +71,6 @@ function Milo:setState(key, value)
 end
 
 function Milo:resetCraftingStatus()
-	self.context.storage.activity = { }
-
 	for _,key in pairs(Util.keys(self.context.craftingQueue)) do
 		local item = self.context.craftingQueue[key]
 		if item.crafted >= item.requested or item.aborted then

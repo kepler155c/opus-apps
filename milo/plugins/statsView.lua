@@ -91,14 +91,16 @@ local function createPage(node)
 					value = 'Storage Status',
 				},
 				onlineText = UI.Text {
-					x = 18, ex = -2, y = 2,
+					x = 18, y = 2,
+					width = 8,
 				},
 				tpsLabel = UI.Text {
 					x = 2, y = 3,
 					value = 'Tasks/sec',
 				},
 				tpsText = UI.Text {
-					x = 18, ex = -2, y = 3,
+					x = 18, y = 3,
+					width = 8,
 				},
 				tasksLabel = UI.Text {
 					x = -18, y = 3,
@@ -188,6 +190,7 @@ local function createPage(node)
 	local stateTab = page.tabs[4]
 	local activityTab = page.tabs[5]
 	local taskTab = page.tabs[6]
+	_G._p2 = overviewTab
 
 	local function getStorageStats()
 		local stats = { }

@@ -15,12 +15,16 @@ function craftTask:craft(recipe, item)
 		return
 	end
 
-	-- TODO: refactor into craft.lua
-	Craft.processPending(item, context.storage)
-
 	-- create a mini-list of items that are required for this recipe
 	item.ingredients = Craft.getResourceList(
 		recipe, Milo:listItems(), item.requested - item.crafted, item.pending)
+
+	for k,v in pairs(item.ingredients) do
+		if item.pending[k] then
+			v.status = 'processing'
+			v.statusCode = Craft.STATUS_INFO
+		end
+	end
 
 	for k, v in pairs(item.ingredients) do
 		v.crafted = v.used
@@ -39,6 +43,12 @@ function craftTask:craft(recipe, item)
 end
 
 function craftTask:cycle()
+	for _,item in pairs(context.craftingQueue) do
+		Craft.processPending(item, context.storage)
+	end
+
+	context.storage.activity = { }
+
 	for _,key in pairs(Util.keys(context.craftingQueue)) do
 		local item = context.craftingQueue[key]
 		if item.requested - item.crafted > 0 then
