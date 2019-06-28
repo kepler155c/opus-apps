@@ -2,7 +2,7 @@
 	For initially setting up large amounts of storage chests.
 ]]
 
-local Util = require('util')
+local Util = require('opus.util')
 
 local peripheral = _G.peripheral
 

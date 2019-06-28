@@ -1,4 +1,4 @@
-local Event  = require('event')
+local Event  = require('opus.event')
 
 local device = _G.device
 local os     = _G.os

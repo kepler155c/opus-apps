@@ -1,4 +1,4 @@
-local input = require('input')
+local input = require('opus.input')
 
 local colors     = _G.colors
 local fs         = _G.fs

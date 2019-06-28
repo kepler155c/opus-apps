@@ -1,0 +1,7 @@
+{
+	[ "mbs" ] = {
+		title = "MBS",
+		category = "Apps",
+		run = ".mbs/bin/shell.lua",
+	},
+}

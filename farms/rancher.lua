@@ -1,7 +1,7 @@
 local Adapter    = require('core.chestAdapter18')
-local Config     = require('config')
+local Config     = require('opus.config')
 local Equipper   = require('turtle.equipper')
-local Util       = require('util')
+local Util       = require('opus.util')
 
 local fs         = _G.fs
 local os         = _G.os

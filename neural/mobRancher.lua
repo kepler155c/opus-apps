@@ -4,8 +4,8 @@
 ]]
 
 local neural = require('neural.interface')
-local Sound  = require('sound')
-local Map    = require('map')
+local Sound  = require('opus.sound')
+local Map    = require('opus.map')
 
 local os = _G.os
 

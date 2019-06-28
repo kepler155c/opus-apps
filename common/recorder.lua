@@ -14,7 +14,7 @@ local version = "Version 1.1.6"
 -- Original code by Bomb Bloke
 -- Modified to integrate with opus os
 
-local Util = require('util')
+local Util = require('opus.util')
 
 local multishell = _ENV.multishell
 local os         = _G.os

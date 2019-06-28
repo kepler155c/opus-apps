@@ -1,6 +1,6 @@
-local Array   = require('array')
+local Array   = require('opus.array')
 local neural  = require('neural.interface')
-local Point   = require('point')
+local Point   = require('opus.point')
 
 local os = _G.os
 

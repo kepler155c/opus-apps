@@ -1,12 +1,6 @@
-if not _G.requireInjector then
-	local BASE ='https://raw.githubusercontent.com/kepler155c/opus/develop-1.8/sys/apis'
-	_ENV.LUA_PATH=BASE .. '/?.lua'
-	load(_G.http.get(BASE .. '/injector.lua').readAll())()(_ENV)
-end
-
-local Terminal = require('terminal')
-local trace    = require('trace')
-local Util     = require('util')
+local Terminal = require('opus.terminal')
+local trace    = require('opus.trace')
+local Util     = require('opus.util')
 
 local colors     = _G.colors
 local os         = _G.os

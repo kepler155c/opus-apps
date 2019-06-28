@@ -1,6 +1,6 @@
 local itemDB = require('core.itemDB')
 local Tasks  = require('milo.taskRunner')
-local Util   = require('util')
+local Util   = require('opus.util')
 
 local fs       = _G.fs
 local turtle   = _G.turtle

@@ -1,9 +1,9 @@
-local Event      = require('event')
+local Event      = require('opus.event')
 local Milo       = require('milo')
-local Sound      = require('sound')
+local Sound      = require('opus.sound')
 local Storage    = require('milo.storage')
-local UI         = require('ui')
-local Util       = require('util')
+local UI         = require('opus.ui')
+local Util       = require('opus.util')
 
 local colors     = _G.colors
 local device     = _G.device

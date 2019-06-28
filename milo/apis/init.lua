@@ -1,8 +1,8 @@
-local Config = require('config')
+local Config = require('opus.config')
 local Craft  = require('milo.craft2')
 local itemDB = require('core.itemDB')
-local Sound  = require('sound')
-local Util   = require('util')
+local Sound  = require('opus.sound')
+local Util   = require('opus.util')
 
 local os     = _G.os
 local turtle = _G.turtle

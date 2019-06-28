@@ -1,5 +1,5 @@
-local Terminal = require('terminal')
-local Util     = require('util')
+local Terminal = require('opus.terminal')
+local Util     = require('opus.util')
 
 local device   = _G.device
 local os       = _G.os

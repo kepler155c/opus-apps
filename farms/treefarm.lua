@@ -18,8 +18,8 @@
 		place the turtle in the original position before restarting the program.
 ]]--
 
-local Point  = require('point')
-local Util   = require('util')
+local Point  = require('opus.point')
+local Util   = require('opus.util')
 
 local fs     = _G.fs
 local os     = _G.os

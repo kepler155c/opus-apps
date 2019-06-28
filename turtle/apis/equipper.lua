@@ -1,4 +1,4 @@
-local Config = require('config')
+local Config = require('opus.config')
 
 local peripheral = _G.peripheral
 local turtle     = _G.turtle

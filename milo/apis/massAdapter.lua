@@ -1,4 +1,4 @@
-local class   = require('class')
+local class   = require('opus.class')
 local itemDB  = require('core.itemDB')
 local Mini    = require('milo.miniAdapter')
 

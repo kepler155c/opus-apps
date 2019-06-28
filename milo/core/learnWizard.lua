@@ -1,5 +1,5 @@
 local Milo   = require('milo')
-local UI     = require('ui')
+local UI     = require('opus.ui')
 
 local turtle = _G.turtle
 

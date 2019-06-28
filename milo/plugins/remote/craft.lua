@@ -1,4 +1,4 @@
-local Sound   = require('sound')
+local Sound   = require('opus.sound')
 
 local args    = { ... }
 local context = args[1]

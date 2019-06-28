@@ -1,7 +1,7 @@
-local Ansi       = require('ansi')
-local Event      = require('event')
+local Ansi       = require('opus.ansi')
+local Event      = require('opus.event')
 local Milo       = require('milo')
-local UI         = require('ui')
+local UI         = require('opus.ui')
 
 local colors     = _G.colors
 local device     = _G.device

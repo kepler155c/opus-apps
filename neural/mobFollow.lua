@@ -1,6 +1,6 @@
-local GPS        = require('gps')
-local Util       = require('util')
-local Point      = require('point')
+local GPS        = require('opus.gps')
+local Util       = require('opus.util')
+local Point      = require('opus.point')
 local Proxy      = require('core.proxy')
 
 local os = _G.os

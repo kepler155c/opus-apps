@@ -1,8 +1,8 @@
-local Ansi       = require('ansi')
-local Event      = require('event')
+local Ansi       = require('opus.ansi')
+local Event      = require('opus.event')
 local Milo       = require('milo')
-local UI         = require('ui')
-local Util       = require('util')
+local UI         = require('opus.ui')
+local Util       = require('opus.util')
 
 local colors     = _G.colors
 local context    = Milo:getContext()

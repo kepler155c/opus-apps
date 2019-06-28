@@ -7,11 +7,11 @@ if not device.wireless_modem then
   error('Wireless modem is required')
 end
 
-local Event  = require('event')
-local GPS    = require('gps')
-local Socket = require('socket')
-local UI     = require('ui')
-local Util   = require('util')
+local Event  = require('opus.event')
+local GPS    = require('opus.gps')
+local Socket = require('opus.socket')
+local UI     = require('opus.ui')
+local Util   = require('opus.util')
 
 multishell.setTitle(multishell.getCurrent(), 'Pickup Remote')
 

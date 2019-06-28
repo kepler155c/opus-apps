@@ -380,7 +380,7 @@ for _,dir in ipairs(dirsArg) do
 	end
 end
 
-io.output():setvbuf("line")
+--io.output():setvbuf("line")
 
 local ok, msg = pcall(function()
 	if #file_set > 0 then display(sort(file_set)) end
@@ -389,7 +389,7 @@ local ok, msg = pcall(function()
 end)
 
 io.output():flush()
-io.output():setvbuf("no")
+--io.output():setvbuf("no")
 set_color()
 
 if not ok then

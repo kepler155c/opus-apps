@@ -1,7 +1,7 @@
 local Builder   = require('builder.builder')
 local Schematic = require('builder.schematic')
 local TableDB   = require('core.tableDB')
-local Util      = require('util')
+local Util      = require('opus.util')
 
 local device    = _G.device
 local fs        = _G.fs

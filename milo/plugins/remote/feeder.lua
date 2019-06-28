@@ -1,7 +1,7 @@
 local itemDB = require('core.itemDB')
-local Event  = require('event')
-local Sound  = require('sound')
-local UI     = require('ui')
+local Event  = require('opus.event')
+local Sound  = require('opus.sound')
+local UI     = require('opus.ui')
 
 local args       = { ... }
 local colors     = _G.colors

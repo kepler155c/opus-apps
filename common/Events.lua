@@ -1,6 +1,6 @@
-local Event = require('event')
-local UI    = require('ui')
-local Util  = require('util')
+local Event = require('opus.event')
+local UI    = require('opus.ui')
+local Util  = require('opus.util')
 
 local multishell = _ENV.multishell
 local os         = _G.os

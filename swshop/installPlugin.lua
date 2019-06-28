@@ -1,4 +1,4 @@
-local Util  = require('util')
+local Util  = require('opus.util')
 
 local fs    = _G.fs
 local read  = _G.read

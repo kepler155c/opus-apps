@@ -1,8 +1,8 @@
-local Event        = require('event')
+local Event        = require('opus.event')
 local ChestAdapter = require('core.chestAdapter18')
-local Point        = require('point')
-local Socket       = require('socket')
-local Util         = require('util')
+local Point        = require('opus.point')
+local Socket       = require('opus.socket')
+local Util         = require('opus.util')
 
 local device     = _G.device
 local os         = _G.os

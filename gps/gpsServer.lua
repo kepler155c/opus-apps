@@ -1,6 +1,6 @@
-local Config = require('config')
-local GPS    = require('gps')
-local Util   = require('util')
+local Config = require('opus.config')
+local GPS    = require('opus.gps')
+local Util   = require('opus.util')
 
 local args       = { ... }
 local colors     = _G.colors

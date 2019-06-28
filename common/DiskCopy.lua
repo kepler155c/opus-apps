@@ -1,8 +1,8 @@
-local Ansi       = require('ansi')
-local Config     = require('config')
-local Event      = require('event')
-local UI         = require('ui')
-local Util       = require('util')
+local Ansi       = require('opus.ansi')
+local Config     = require('opus.config')
+local Event      = require('opus.event')
+local UI         = require('opus.ui')
+local Util       = require('opus.util')
 
 local colors     = _G.colors
 local fs         = _G.fs

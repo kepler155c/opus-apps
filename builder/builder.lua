@@ -3,13 +3,13 @@ if not _G.turtle and not _G.commands then
 end
 
 local Adapter   = require('core.inventoryAdapter')
-local Event     = require('event')
-local GPS       = require('gps')
+local Event     = require('opus.event')
+local GPS       = require('opus.gps')
 local itemDB    = require('core.itemDB')
 local Schematic = require('builder.schematic')
 local TableDB   = require('core.tableDB')
-local UI        = require('ui')
-local Util      = require('util')
+local UI        = require('opus.ui')
+local Util      = require('opus.util')
 
 local colors     = _G.colors
 local fs         = _G.fs

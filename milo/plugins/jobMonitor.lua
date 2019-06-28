@@ -1,10 +1,10 @@
 local Craft   = require('milo.craft2')
-local Event   = require('event')
+local Event   = require('opus.event')
 local itemDB  = require('core.itemDB')
 local Milo    = require('milo')
-local Sound   = require('sound')
-local UI      = require('ui')
-local Util    = require('util')
+local Sound   = require('opus.sound')
+local UI      = require('opus.ui')
+local Util    = require('opus.util')
 
 local colors  = _G.colors
 local context = Milo:getContext()
@@ -87,11 +87,11 @@ local function createPage(node)
 				{ heading = 'Qty',      key = 'remaining',   width = 4 },
 				{ heading = 'Crafting', key = 'displayName', },
 				{ heading = 'Status',   key = 'status',      },
-				{ heading = 'need',   key = 'need',    width = 4  },
+	--			{ heading = 'need',   key = 'need',    width = 4  },
 	--      { heading = 'total',   key = 'total',  width = 4    },
 	--      { heading = 'used',   key = 'used',   width = 4   },
 	--      { heading = 'count',   key = 'count', width = 4     },
-				{ heading = 'crafted',   key = 'crafted',  width = 5    },
+	--			{ heading = 'crafted',   key = 'crafted',  width = 5    },
 	--      { heading = 'Progress', key = 'progress',    width = 8 },
 			},
 			headerBackgroundColor = colors.black,

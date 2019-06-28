@@ -1,9 +1,0 @@
-{
-	required = {
-		'core',
-	},
-	title = 'Manage inventory',
-	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/storage',
-	description = [[Storage manager for Minecraft 1.7 (Use Milo for new versions)]],
-	licence = 'MIT',
-}

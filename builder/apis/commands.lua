@@ -1,6 +1,6 @@
 local Builder   = require('builder.builder')
-local Event     = require('event')
-local Util      = require('util')
+local Event     = require('opus.event')
+local Util      = require('opus.util')
 
 local commands   = _G.commands
 local fs         = _G.fs

@@ -1,8 +1,8 @@
-local Ansi       = require('ansi')
+local Ansi       = require('opus.ansi')
 local Milo       = require('milo')
 local Tasks      = require('milo.taskRunner')
-local UI         = require('ui')
-local Util       = require('util')
+local UI         = require('opus.ui')
+local Util       = require('opus.util')
 
 local colors     = _G.colors
 local device     = _G.device

@@ -1,7 +1,7 @@
-local Event      = require('event')
+local Event      = require('opus.event')
 local itemDB     = require('core.itemDB')
-local UI         = require('ui')
-local Util       = require('util')
+local UI         = require('opus.ui')
+local Util       = require('opus.util')
 
 local device     = _G.device
 local gps        = _G.gps

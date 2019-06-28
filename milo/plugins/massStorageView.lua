@@ -1,5 +1,5 @@
-local Ansi       = require('ansi')
-local UI         = require('ui')
+local Ansi       = require('opus.ansi')
+local UI         = require('opus.ui')
 
 local colors     = _G.colors
 local device     = _G.device

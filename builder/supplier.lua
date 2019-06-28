@@ -1,9 +1,9 @@
-local Event      = require('event')
+local Event      = require('opus.event')
 local MEProvider = require('core.meProvider')
 local Message    = require('core.message')
-local Point      = require('point')
+local Point      = require('opus.point')
 local TableDB    = require('core.tableDB')
-local Util       = require('util')
+local Util       = require('opus.util')
 
 local device = _G.device
 local os     = _G.os

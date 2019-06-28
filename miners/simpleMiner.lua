@@ -1,6 +1,6 @@
-local Pathing = require('pathfind')
-local Point   = require('point')
-local Util    = require('util')
+local Pathing = require('opus.pathfind')
+local Point   = require('opus.point')
+local Util    = require('opus.util')
 
 local fs     = _G.fs
 local read   = _G.read

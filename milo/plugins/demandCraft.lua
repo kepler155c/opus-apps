@@ -1,8 +1,8 @@
 local Craft  = require('milo.craft2')
 local itemDB = require('core.itemDB')
 local Milo   = require('milo')
-local UI     = require('ui')
-local Util   = require('util')
+local UI     = require('opus.ui')
+local Util   = require('opus.util')
 
 local colors = _G.colors
 

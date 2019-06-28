@@ -1,6 +1,6 @@
-local class   = require('class')
+local class   = require('opus.class')
 local itemDB  = require('core.itemDB')
-local Util    = require('util')
+local Util    = require('opus.util')
 
 local device = _G.device
 

@@ -1,9 +1,9 @@
 _G.requireInjector(_ENV)
 
-local Ansi  = require('ansi')
-local Event = require('event')
-local UI    = require('ui')
-local Util  = require('util')
+local Ansi  = require('opus.ansi')
+local Event = require('opus.event')
+local UI    = require('opus.ui')
+local Util  = require('opus.util')
 
 local colors = _G.colors
 local peripheral = _G.peripheral

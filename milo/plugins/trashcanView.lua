@@ -1,6 +1,6 @@
 local Milo  = require('milo')
 local Tasks = require('milo.taskRunner')
-local UI    = require('ui')
+local UI    = require('opus.ui')
 
 local colors   = _G.colors
 local device   = _G.device

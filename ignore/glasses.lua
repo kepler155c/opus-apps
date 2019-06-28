@@ -1,7 +1,7 @@
-local class = require('class')
-local UI = require('ui')
-local Event = require('event')
-local Peripheral = require('peripheral')
+local class = require('opus.class')
+local UI = require('opus.ui')
+local Event = require('opus.event')
+local Peripheral = require('opus.peripheral')
 
 --[[-- Glasses device --]]--
 local Glasses = class()

@@ -1,7 +1,6 @@
-local Sound = require('sound')
-
-local UI    = require('ui')
-local Util  = require('util')
+local Sound = require('opus.sound')
+local UI    = require('opus.ui')
+local Util  = require('opus.util')
 
 local peripheral = _G.peripheral
 

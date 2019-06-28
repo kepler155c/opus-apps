@@ -1,6 +1,6 @@
-local Config = require('config')
-local Map    = require('map')
-local UI     = require('ui')
+local Config = require('opus.config')
+local Map    = require('opus.map')
+local UI     = require('opus.ui')
 
 local os     = _G.os
 

@@ -1,10 +1,10 @@
-local Event  = require('event')
-local GPS    = require('gps')
-local Point  = require('point')
-local Socket = require('socket')
+local Event  = require('opus.event')
+local GPS    = require('opus.gps')
+local Point  = require('opus.point')
+local Socket = require('opus.socket')
 local Swarm  = require('core.swarm')
-local UI     = require('ui')
-local Util   = require('util')
+local UI     = require('opus.ui')
+local Util   = require('opus.util')
 
 local colors  = _G.colors
 local network = _G.network

@@ -34,7 +34,7 @@ local hex = {
 local function update()
 	local canvas  = device['plethora:glasses'] and device['plethora:glasses'].canvas()
 	if canvas then
-		local Tween  = require('ui.tween')
+		local Tween  = require('opus.ui.tween')
 
 		canvas.clear()
 		local w, h = canvas.getSize()

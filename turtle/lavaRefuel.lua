@@ -1,5 +1,5 @@
 local Equipper = require('turtle.equipper')
-local Point    = require('point')
+local Point    = require('opus.point')
 
 local peripheral = _G.peripheral
 local turtle     = _G.turtle

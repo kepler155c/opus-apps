@@ -1,7 +1,7 @@
-local class   = require('class')
-local Util    = require('util')
+local class   = require('opus.class')
+local Util    = require('opus.util')
 local TableDB = require('core.tableDB')
-local JSON    = require('json')
+local JSON    = require('opus.json')
 
 -- see https://github.com/Khroki/MCEdit-Unified/blob/master/pymclevel/minecraft.yaml
 -- see https://github.com/Khroki/MCEdit-Unified/blob/master/Items/minecraft/blocks.json

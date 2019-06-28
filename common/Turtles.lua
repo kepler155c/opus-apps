@@ -1,10 +1,10 @@
-local Config   = require('config')
-local Event    = require('event')
+local Config   = require('opus.config')
+local Event    = require('opus.event')
 local itemDB   = require('core.itemDB')
-local Socket   = require('socket')
-local Terminal = require('terminal')
-local UI       = require('ui')
-local Util     = require('util')
+local Socket   = require('opus.socket')
+local Terminal = require('opus.terminal')
+local UI       = require('opus.ui')
+local Util     = require('opus.util')
 
 local colors     = _G.colors
 local fs         = _G.fs

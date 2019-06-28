@@ -1,6 +1,6 @@
-local GPS  = require('gps')
-local Point = require('point')
-local Util = require('util')
+local GPS  = require('opus.gps')
+local Point = require('opus.point')
+local Util = require('opus.util')
 
 local os         = _G.os
 local parallel   = _G.parallel

@@ -5,10 +5,10 @@ end
 -- update
 if fs.exists('packages/turtle/autorun/gps.lua') then fs.delete('packages/turtle/autorun/gps.lua') end
 
-local Config = require('config')
-local GPS    = require('gps')
-local Point  = require('point')
-local Util   = require('util')
+local Config = require('opus.config')
+local GPS    = require('opus.gps')
+local Point  = require('opus.point')
+local Util   = require('opus.util')
 
 local device     = _G.device
 local fs         = _G.fs
