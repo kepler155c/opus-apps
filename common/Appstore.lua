@@ -1,5 +1,5 @@
 local Ansi   = require('ansi')
-local SHA1   = require('sha1')
+local SHA    = require('crypto.sha2')
 local UI     = require('ui')
 local Util   = require('util')
 
@@ -14,15 +14,13 @@ local REGISTRY_DIR = 'usr/.registry'
 
 --                                           FIX SOMEDAY
 local function registerApp(app, key)
-
-	app.key = SHA1.sha1(key)
+	app.key = SHA.compute(key)
 	Util.writeTable(fs.combine(REGISTRY_DIR, app.key), app)
 	os.queueEvent('os_register_app')
 end
 
 local function unregisterApp(key)
-
-	local filename = fs.combine(REGISTRY_DIR, SHA1.sha1(key))
+	local filename = fs.combine(REGISTRY_DIR, SHA.compute(key))
 	if fs.exists(filename) then
 		fs.delete(filename)
 		os.queueEvent('os_register_app')
