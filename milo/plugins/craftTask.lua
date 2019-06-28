@@ -62,18 +62,18 @@ function craftTask:cycle()
 
 				self:craft(recipe, item)
 
-				if item.crafted >= item.requested then
-					item.status = 'crafted'
-					item.statusCode = Craft.STATUS_SUCCESS
-					if item.callback then
-						item.callback(item) -- invoke callback
-					end
-				end
-
 			else
 				item.status = '(no recipe)'
 				item.statusCode = Craft.STATUS_ERROR
 				item.crafted = 0
+			end
+		end
+
+		if item.crafted >= item.requested then
+			item.status = 'crafted'
+			item.statusCode = Craft.STATUS_SUCCESS
+			if item.callback then
+				item.callback(item) -- invoke callback
 			end
 		end
 	end
