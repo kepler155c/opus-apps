@@ -53,6 +53,7 @@ local retain = Util.transpose {
 local state = Util.readTable('usr/config/superTreefarm') or {
 	logFilter = 'log',
 	saplingFilter = 'sapling',
+	updated = true,
 }
 
 local clock = os.clock()
@@ -534,6 +535,18 @@ local tasks = {
 	{ desc = 'Returning home',     fn = returnHome         },
 	{ desc = 'Sleeping',           fn = updateClock        },
 }
+
+if not state.updated then
+	print([[Super Tree Farm has had a major update.
+Unfortunately, you will need to remove the
+usr/config/superTreefarm and place the turtle in
+the starting location. Give the turtle a chest,
+furnace, scanner and sensor and restart.
+This message will not be repeated.
+]])
+	setState('updated', true)
+	read()
+end
 
 turtle.reset()
 turtle.set({

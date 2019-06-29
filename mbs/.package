@@ -1,11 +1,11 @@
 {
-	title = 'MBS - Mildly Better Shell',
+	title = 'A Mildly Better Shell',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/mbs',
 	description = [[
-		A shell alternative and more by SquidDev-CC. See:
-		https://github.com/SquidDev-CC/mbs
+A shell alternative and more by SquidDev-CC. See:
+https://github.com/SquidDev-CC/mbs
 
-		MBS is a series of utilities for improving the default CraftOS experience.
+MBS is a series of utilities for improving the default CraftOS experience.
 	]],
 	licence = 'MIT',
 }

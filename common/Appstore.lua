@@ -1,5 +1,5 @@
 local Ansi   = require('opus.ansi')
-local SHA    = require('crypto.sha2')
+local SHA    = require('opus.crypto.sha2')
 local UI     = require('opus.ui')
 local Util   = require('opus.util')
 
