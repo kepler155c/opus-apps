@@ -190,7 +190,6 @@ local function createPage(node)
 	local stateTab = page.tabs[4]
 	local activityTab = page.tabs[5]
 	local taskTab = page.tabs[6]
-	_G._p2 = overviewTab
 
 	local function getStorageStats()
 		local stats = { }
