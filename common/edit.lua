@@ -2,7 +2,6 @@ local input = require('opus.input')
 
 local colors     = _G.colors
 local fs         = _G.fs
-local keys       = _G.keys
 local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
@@ -48,28 +47,6 @@ local mark      = { }
 local searchPattern
 local undo      = { chain = { }, pointer = 0 }
 local complete  = { }
-local clipboard
-
--- do we need a clipboard shim
-if not multishell or not _G.kernel then -- is this OpusOS ?
-	if _G.clipboard then -- has it been installed already
-		clipboard = _G.clipboard
-	else
-		clipboard = { }
-
-		function clipboard.setData(data)
-			clipboard.data = data
-		end
-
-		function clipboard.getText()
-			if clipboard.data then
-				return tostring(clipboard.data)
-			end
-		end
-
-		_G.clipboard = clipboard
-	end
-end
 
 local color = {
 	textColor       = '0',
@@ -145,7 +122,7 @@ local keyMapping = {
 	-- copy/paste
 	[ 'control-x'           ] = 'cut',
 	[ 'control-c'           ] = 'copy',
-	[ 'control-shift-paste' ] = 'paste_internal',
+--	[ 'control-shift-paste' ] = 'paste_internal',
 
 	-- file
 	[ 'control-s'           ] = 'save',
@@ -1038,11 +1015,7 @@ local __actions = {
 
 	copy_marked = function()
 		local text = actions.copyText(mark.x, mark.y, mark.ex, mark.ey)
-		if clipboard then
-			clipboard.setData(text)
-		else
-			os.queueEvent('clipboard_copy', text)
-		end
+		os.queueEvent('clipboard_copy', text)
 		setStatus('shift-^v to paste')
 	end,
 
@@ -1069,12 +1042,6 @@ local __actions = {
 			setStatus('%d chars added', #text)
 		else
 			setStatus('Clipboard empty')
-		end
-	end,
-
-	paste_internal = function()
-		if clipboard then
-			actions.paste(clipboard.getText())
 		end
 	end,
 

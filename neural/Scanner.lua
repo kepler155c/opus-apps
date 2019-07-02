@@ -44,7 +44,7 @@ local page = UI.Page {
 		sortColumn = 'displayName',
 	},
 	accelerators = {
-		q = 'quit',
+		[ 'control-q' ] = 'quit',
 	},
 	detail = UI.SlideOut {
 		menuBar = UI.MenuBar {

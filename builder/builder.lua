@@ -597,7 +597,7 @@ local startPage = UI.Page {
 	throttle = UI.Throttle { },
 	accelerators = {
 		x = 'test',
-		q = 'quit'
+		[ 'control-q' ] = 'quit'
 	}
 }
 

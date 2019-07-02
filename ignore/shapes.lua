@@ -52,7 +52,7 @@ local page = UI.Page {
   first      = UI.Button {  x =  2, y = 11, text = 'First',    event = 'firstCoord' },
   cancel     = UI.Button {  x =  2, y = -3, text = 'Abort',    event = 'cancel'     },
   begin      = UI.Button {  x = -8, y = -3, text = 'Begin',    event = 'begin'      },
-  accelerators = { q = 'quit' },
+  accelerators = { [ 'control-q' ] = 'quit' },
   notification = UI.Notification(),
   statusBar = UI.StatusBar(),
 }

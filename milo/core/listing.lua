@@ -107,7 +107,7 @@ local page = UI.Page {
 
 		[ 'control-m' ] = 'network',
 
-		q = 'quit',
+		[ 'control-q' ] = 'quit',
 	},
 	allItems = { }
 }

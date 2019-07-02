@@ -33,7 +33,7 @@ local page = UI.Page {
 		p = 'toggle',
 		r = 'reset',
 		c = 'clear',
-		q = 'quit',
+		[ 'control-q' ] = 'quit',
 	},
 	filtered = { },
 }

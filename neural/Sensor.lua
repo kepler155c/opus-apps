@@ -45,7 +45,7 @@ local page = UI.Page {
 			},
 		},
 		accelerators = {
-			q = 'quit',
+			[ 'control-q' ] = 'quit',
 		},
 	},
 }

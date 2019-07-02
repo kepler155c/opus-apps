@@ -6,5 +6,3 @@ end
 
 _ENV.shell.setCompletionFunction("packages/common/edit.lua", c)
 _ENV.shell.setCompletionFunction("packages/common/hexedit.lua", c)
-
-fs.mount('packages/common/hexedit.lua', 'urlfs', 'https://pastebin.com/raw/Ds9ajsp4')

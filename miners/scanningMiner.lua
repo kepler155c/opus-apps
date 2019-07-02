@@ -112,7 +112,7 @@ local page = UI.Page {
 		},
 	},
 	accelerators = {
-		q = 'cancel',
+		[ 'control-q' ] = 'cancel',
 	}
 }
 

@@ -189,7 +189,7 @@ local appPage = UI.Page {
 	},
 	notification = UI.Notification(),
 	accelerators = {
-		q = 'back',
+		[ 'control-q' ] = 'back',
 		backspace = 'back',
 	},
 }
@@ -307,7 +307,7 @@ local categoryPage = UI.Page {
 	statusBar = UI.StatusBar(),
 	accelerators = {
 		l = 'lua',
-		q = 'quit',
+		[ 'control-q' ] = 'quit',
 	},
 }
 

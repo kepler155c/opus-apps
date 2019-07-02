@@ -106,8 +106,7 @@ local page = UI.Page {
 		[ 'control-e' ] = 'eject',
 		[ 'control-s' ] = 'eject_stack',
 		[ 'control-a' ] = 'eject_all',
-
-		q = 'quit',
+		[ 'control-q' ] = 'quit',
 	},
 	items = { },
 }

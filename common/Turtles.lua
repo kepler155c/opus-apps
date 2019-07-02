@@ -137,7 +137,7 @@ local page = UI.Page {
 	},
 	notification = UI.Notification(),
 	accelerators = {
-		q = 'quit',
+		[ 'control-q' ] = 'quit',
 	},
 }
 

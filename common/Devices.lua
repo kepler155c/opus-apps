@@ -23,7 +23,7 @@ local peripheralsPage = UI.Page {
 		values = 'Select peripheral',
 	},
 	accelerators = {
-		q = 'quit',
+		[ 'control-q' ] = 'quit',
 	},
 }
 
@@ -78,7 +78,7 @@ local methodsPage = UI.Page {
 		status = 'q to return',
 	},
 	accelerators = {
-		q = 'back',
+		[ 'control-q' ] = 'back',
 		backspace = 'back',
 	},
 }
