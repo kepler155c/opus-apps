@@ -8,6 +8,7 @@ if fs.exists('packages/milo/Milo.lua') then
 end
 
 fs.delete('packages/milo/apis/milo.lua')
+fs.delete('packages/milo/plugins/manipulator.lua')
 
 if peripheral.find('workbench') and shell.openForegroundTab then
 	shell.openForegroundTab('MiloLocal')

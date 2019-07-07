@@ -9,11 +9,20 @@ local fs         = _G.fs
 local peripheral = _G.peripheral
 
 local drives = { }
+if peripheral.getType('left') == 'drive' then
+		drives.left = Util.shallowCopy(peripheral.wrap('left'))
+		drives.left.name = 'left'
+end
+if peripheral.getType('right') == 'drive' then
+	drives.right = Util.shallowCopy(peripheral.wrap('right'))
+	drives.right.name = 'right'
+end
+
 peripheral.find('drive', function(n, v)
 	if not drives.left then
 		drives.left = Util.shallowCopy(v)
 		drives.left.name = n
-	else
+	elseif not drives.right then
 		drives.right = Util.shallowCopy(v)
 		drives.right.name = n
 	end
@@ -44,7 +53,7 @@ local page = UI.Page {
 		x = -19, y = 2, ey = 5, width = 18,
 	},
 	dir = UI.Button {
-		x = 17, y = 7, width = 6,
+		x = 17, y = 6, width = 6,
 		event = 'change_dir',
 	},
 	progress = UI.ProgressBar {
@@ -72,7 +81,7 @@ local page = UI.Page {
 		inactive = true,
 	},
 	warning = UI.Text {
-		x = 2, ex = -2, y = -5,
+		x = 2, ex = -2, y = -1,
 		align = 'center',
 		textColor = colors.orange,
 	},
