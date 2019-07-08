@@ -69,8 +69,8 @@ local page = UI.Page {
 			tabTitle = 'Inv',
 			columns = {
 				{ heading = '',          key = 'index', width = 2 },
-				{ heading = '',          key = 'qty', width = 2 },
-				{ heading = 'Inventory', key = 'id',  width = UI.term.width - 7 },
+				{ heading = '',          key = 'count', width = 2 },
+				{ heading = 'Inventory', key = 'key',  width = UI.term.width - 7 },
 			},
 			disableHeader = true,
 			sortColumn = 'index',
@@ -208,15 +208,28 @@ function page.tabs.inventory:draw()
 	local t = page.turtle
 	Util.clear(self.values)
 	if t then
-		for _,v in ipairs(t.inventory) do
-			if v.qty > 0 then
+		for k,v in pairs(t.inv or { }) do -- new method (less data)
+			local index, count = k:match('(%d+),(%d+)')
+			v = {
+				index = tonumber(index),
+				key = v,
+				count = tonumber(count),
+			}
+			table.insert(self.values, v)
+		end
+
+		for _,v in pairs(t.inventory or { }) do
+			if v.count > 0 then
 				table.insert(self.values, v)
-				if v.index == t.slotIndex then
-					v.selected = true
-				end
-				if v.id then
-					v.id = itemDB:getName(v)
-				end
+			end
+		end
+
+		for _,v in pairs(self.values) do
+			if v.index == t.slotIndex then
+				v.selected = true
+			end
+			if v.key then
+				v.key = itemDB:getName(v.key)
 			end
 		end
 	end
@@ -236,7 +249,6 @@ function page.tabs.inventory:eventHandler(event)
 end
 
 function page.tabs.scripts:draw()
-
 	Util.clear(self.values)
 	local files = fs.list(SCRIPTS_PATH)
 	for _,path in pairs(files) do
