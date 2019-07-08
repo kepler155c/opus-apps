@@ -592,7 +592,7 @@ Event.addRoutine(function()
 
 	_G._syslog({ distance = distance, maxDistance = maxDistance })
 
-	if distance > maxDistance + 16 then
+	if distance > maxDistance + 32 then
 		term.clear()
 		term.setCursorPos(1, 1)
 		_G.printError('WARNING\n\nTurtle is outside the mining area\n')

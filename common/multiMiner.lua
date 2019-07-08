@@ -131,7 +131,7 @@ local function run(member, point)
 			local function emptySlots(retain, pt)
 				local slots = turtle.getFilledSlots()
 				for _,slot in pairs(slots) do
-					if not retain[slot.key] then
+					if not retain[slot.key] and not slot.name:find('turtle') then
 						turtle.select(slot.index)
 						if pt then
 							turtle.dropAt(pt, 64)
