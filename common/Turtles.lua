@@ -309,7 +309,7 @@ function page.statusBar:draw()
 	local t = self.parent.turtle
 	if t then
 		self.values.status = t.status
-		self.values.distance = Util.round(t.distance, 2)
+		self.values.distance = t.distance and Util.round(t.distance, 2)
 		self.values.fuel = Util.toBytes(t.fuel)
 	end
 	UI.StatusBar.draw(self)

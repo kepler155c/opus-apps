@@ -72,7 +72,7 @@ local detail = UI.Page {
 
 local function getPoint()
 	local pt = { gps.locate() }
-	return {
+	return pt[1] and {
 		x = pt[1],
 		y = pt[2],
 		z = pt[3],
@@ -83,6 +83,10 @@ local function project(entities)
 	if canvas then
 		local pos = getPoint()
 		local pts = { }
+
+		if not pos then
+			return
+		end
 
 		if not offset then
 			offset = pos

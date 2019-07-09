@@ -522,16 +522,22 @@ function Storage:import(source, slot, count, item)
 	end
 
 	-- find a chest locked with this item
+	local doVoid
+
 	for node in self:onlineAdapters() do
 		if node.lock and node.lock[key] then
 			insert(node.adapter, item)
 			if count > 0 and node.void then
-				return total + self:trash(source, slot, count, item)
+				doVoid = true
 			end
 		end
 		if count <= 0 then
 			return total
 		end
+	end
+
+	if doVoid then
+		return total + self:trash(source, slot, count, item)
 	end
 
 	-- is this item in some chest

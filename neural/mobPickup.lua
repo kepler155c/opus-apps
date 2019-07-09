@@ -20,12 +20,16 @@ neural.assertModules({
 local function dropOff()
 	print('dropping')
 
-	local b = Util.find(neural.scan(), 'name', 'minecraft:hopper')
+	local hoppers = Util.filter(neural.scan(), function(h)
+		return h.name == 'minecraft:hopper' and h.y == -1
+	end)
+
+	local _, b = next(hoppers)
 	if b then
 		neural.walkTo({ x = b.x, y = 0, z = b.z }, 2)
 
-		b = Util.find(neural.scan(), 'name', 'minecraft:hopper')
-		if b and math.abs(b.x) < 1 and math.abs(b.z) < 1 then
+		b = neural.getBlockMeta(0, -1, 0)
+		if b.name == 'minecraft:hopper' then
 			print('dropped')
 			neural.getEquipment().drop(1)
 			neural.getEquipment().drop(2)
