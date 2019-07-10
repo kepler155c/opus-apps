@@ -1,4 +1,3 @@
-local Ansi       = require('opus.ansi')
 local Milo       = require('milo')
 local Tasks      = require('milo.taskRunner')
 local UI         = require('opus.ui')
@@ -91,6 +90,11 @@ local function transfer(node)
 	local target = context.storage.nodes[node.target]
 	if not target or not target.adapter or not target.adapter.online then
 		error(string.format('TRANSFER: target %s is not online', node.target))
+	end
+
+	if target.mtype == 'storage' then
+		context.storage.dirty = true
+		target.adapter.dirty = true
 	end
 
 	for k in pairs(node.adapter.list()) do
