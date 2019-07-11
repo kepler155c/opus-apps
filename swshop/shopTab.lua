@@ -15,6 +15,7 @@ local shopTab = UI.Tab {
 		[1] = UI.TextEntry {
 			formLabel = 'Name', formKey = 'name',
 			help = 'Unique name used when paying for an item',
+			transform = 'lowercase',
 			required = true,
 			width = 12,
 			limit = 64,

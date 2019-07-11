@@ -89,7 +89,7 @@ local function transfer(node)
 
 	local target = context.storage.nodes[node.target]
 	if not target or not target.adapter or not target.adapter.online then
-		error(string.format('TRANSFER: target %s is not online', node.target))
+		error(string.format('TRANSFER: target %s is not online', node.name))
 	end
 
 	if target.mtype == 'storage' then
