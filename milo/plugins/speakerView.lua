@@ -23,14 +23,13 @@ local wizardPage = UI.WizardPage {
 	form = UI.Form {
 		x = 2, ex = -2, y = 3, ey = -2,
 		manualControls = true,
-		volume = UI.TextEntry {
+		volume = UI.Slider {
 			formLabel = 'Volume', formKey = 'volume',
-			width = 5, limit = 3,
-			validate = 'numeric',
-			help = 'A value from 0 (mute) to 1 (loud)',
+			min = 0, max = 1,
+			help = 'Volume setting',
 		},
 		testSound = UI.Button {
-			x = 15, y = 2,
+			x = 15, y = 3,
 			text = 'Test', event = 'test_sound',
 			help = 'Test sound volume',
 		},
