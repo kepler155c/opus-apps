@@ -150,6 +150,8 @@ Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
 		local taskTimer = Util.timer()
 		Milo:resetCraftingStatus()
 
+		turtle.setStatus('Milo: tasks')
+
 		for _, task in ipairs(context.tasks) do
 			local timer = Util.timer()
 			local s, m = pcall(function() task:cycle(context) end)
@@ -159,9 +161,10 @@ Event.on({ 'milo_cycle', 'milo_queue' }, function(e)
 			end
 			task.execTime = task.execTime + timer()
 		end
+		turtle.setStatus('Milo: idle')
+
 		context.taskTimer = context.taskTimer + taskTimer()
 		context.taskCounter = context.taskCounter + 1
-
 	end
 
 	if context.storage:isOnline() and #context.queue > 0 then
@@ -219,6 +222,8 @@ end
 local s, m = pcall(function()
 	UI:pullEvents()
 end)
+
+turtle.setStatus('idle')
 
 _G._syslog = oldDebug
 if not s then error(m) end

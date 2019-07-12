@@ -38,6 +38,9 @@ local wizardPage = UI.WizardPage {
 
 function wizardPage:setNode(node)
 	self.form:setValues(node)
+	if not node.volume then
+		self.form.volume = 1
+	end
 end
 
 function wizardPage:saveNode(node)
