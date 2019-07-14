@@ -1,6 +1,8 @@
 local Config = require('opus.config')
 local GPS    = require('opus.gps')
 local Util   = require('opus.util')
+local UI     = require('opus.ui')
+local Event  = require('opus.event')
 
 local args       = { ... }
 local colors     = _G.colors
@@ -20,6 +22,19 @@ local ENDER_MODEM = 'computercraft:advanced_modem'
 local STARTUP_FILE = 'usr/autorun/gpsServer.lua'
 
 local positions = { }
+
+local page = UI.Page {
+	grid = UI.ScrollingGrid {
+		sortColumn = 'id',
+		autospace = true,
+		columns = {
+			{ heading = 'ID', key = 'id', align = 'right', width = 5 },
+			{ heading = 'X', key = 'x' },
+			{ heading = 'Y', key = 'y' },
+			{ heading = 'Z', key = 'z' },
+		},
+	}
+}
 
 local function build()
 	if not turtle.has(WIRED_MODEM, 5) or
@@ -152,33 +167,31 @@ local function server()
 		if #computer == 4 then
 			local pt = GPS.trilaterate(computer)
 			if pt then
+				pt.id = computerId
 				positions[computerId] = pt
-				term.clear()
-				for k,v in pairs(positions) do
-					Util.print('ID: %d: %s %s %s', k, v.x, v.y, v.z)
-				end
 			end
 			computers[computerId] = nil
+			page.grid.values = positions
+			page.grid:update()
+			page.grid:draw()
+			page.grid:sync()
 		end
 	end
 
-	while true do
-		local e, side, channel, computerId, message, distance = os.pullEvent( "modem_message" )
-		if e == "modem_message" then
-			if distance and modems[side] then
-				if channel == gps.CHANNEL_GPS and message == "PING" then
-					for _, modem in pairs(modems) do
-						modem.transmit(computerId, gps.CHANNEL_GPS, { modem.x, modem.y, modem.z })
-					end
-					getPosition(computerId, modems[side], distance)
+	Event.on('modem_message', function(e, side, channel, computerId, message, distance)
+		if distance and modems[side] then
+			if channel == gps.CHANNEL_GPS and message == "PING" then
+				for _, modem in pairs(modems) do
+					modem.transmit(computerId, gps.CHANNEL_GPS, { modem.x, modem.y, modem.z })
 				end
-
-				--if channel == gps.CHANNEL_GPS or channel == 999 then
-				--	getPosition(computerId, modems[side], distance)
-				--end
+				getPosition(computerId, modems[side], distance)
 			end
+
+			--if channel == gps.CHANNEL_GPS or channel == 999 then
+			--	getPosition(computerId, modems[side], distance)
+			--end
 		end
-	end
+	end)
 end
 
 if args[1] == 'build' then
@@ -199,3 +212,6 @@ else
 
 	error('Syntax: gpsServer [build | server]')
 end
+
+UI:setPage(page)
+UI:pullEvents()
