@@ -28,13 +28,18 @@ local page = UI.Page {
 		sortColumn = 'id',
 		autospace = true,
 		columns = {
-			{ heading = 'ID', key = 'id', align = 'right', width = 5 },
-			{ heading = 'X', key = 'x' },
-			{ heading = 'Y', key = 'y' },
-			{ heading = 'Z', key = 'z' },
+			{ heading = 'ID', key = 'id', align = 'right', width = 5, },
+			{ heading = 'X', key = 'x', align = 'right', },
+			{ heading = 'Y', key = 'y', align = 'right', width = 4, },
+			{ heading = 'Z', key = 'z', },
+			{ heading = 'Dist', key = 'dist', align = 'right', },
 		},
 	}
 }
+
+function page.grid:getRowTextColor(row, selected)
+	return ((row.x ~= row.lastPos.x) or (row.y ~= row.lastPos.y) or (row.z ~= row.lastPos.z)) and colors.yellow or colors.white
+end
 
 local function build()
 	if not turtle.has(WIRED_MODEM, 5) or
@@ -167,8 +172,17 @@ local function server()
 		if #computer == 4 then
 			local pt = GPS.trilaterate(computer)
 			if pt then
-				pt.id = computerId
-				positions[computerId] = pt
+				if not positions[computerId] then
+					positions[computerId] = { lastPos = {} }
+				end
+				positions[computerId].lastPos.x = positions[computerId].x or 0
+				positions[computerId].lastPos.y = positions[computerId].y or 0
+				positions[computerId].lastPos.z = positions[computerId].z or 0
+				positions[computerId].x = pt.x
+				positions[computerId].y = pt.y
+				positions[computerId].z = pt.z
+				positions[computerId].id = computerId
+				positions[computerId].dist = Util.round((vector.new(config.x, config.y, config.z) - vector.new(positions[computerId].x, positions[computerId].y, positions[computerId].z)):length())
 			end
 			computers[computerId] = nil
 			page.grid.values = positions
