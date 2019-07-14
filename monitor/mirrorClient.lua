@@ -51,7 +51,7 @@ while true do
 	local socket
 
 	while true do
-		socket = Socket.connect(remoteId, 5901)
+		socket = Socket.connect(remoteId, 5902)
 		if socket then
 			break
 		end

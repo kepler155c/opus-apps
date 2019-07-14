@@ -18,7 +18,7 @@ mon.setBackgroundColor(colors.black)
 mon.clear()
 
 while true do
-	local socket = Socket.server(5901)
+	local socket = Socket.server(5902)
 
 	print('mirror: connection from ' .. socket.dhost)
 
