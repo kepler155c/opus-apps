@@ -38,7 +38,10 @@ local page = UI.Page {
 }
 
 function page.grid:getRowTextColor(row, selected)
-	return ((row.x ~= row.lastPos.x) or (row.y ~= row.lastPos.y) or (row.z ~= row.lastPos.z)) and colors.yellow or colors.white
+	return row.lastUpdate and
+		os.clock()-row.lastUpdate < 15 and
+		colors.yellow or
+		UI.Grid.getRowTextColor(self, row, selected)
 end
 
 local function build()
@@ -182,7 +185,11 @@ local function server()
 				positions[computerId].y = pt.y
 				positions[computerId].z = pt.z
 				positions[computerId].id = computerId
-				positions[computerId].dist = Util.round((vector.new(config.x, config.y, config.z) - vector.new(positions[computerId].x, positions[computerId].y, positions[computerId].z)):length())
+				local dist = Util.round((vector.new(config.x, config.y, config.z) - vector.new(positions[computerId].x, positions[computerId].y, positions[computerId].z)):length())
+				if positions[computerId].dist ~= dist then
+					positions[computerId].lastUpdate = os.clock()
+				end
+				positions[computerId].dist = dist
 			end
 			computers[computerId] = nil
 			page.grid.values = positions
