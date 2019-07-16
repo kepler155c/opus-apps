@@ -67,7 +67,7 @@ function Storage:init()
 
 	Event.on({ 'device_attach', 'device_detach' }, function(e, dev)
 _G._syslog('%s: %s', e, tostring(dev))
-		self:initStorage()
+		self:initStorage() -- this can yield - so we might miss events
 	end)
 	Event.onInterval(60, function()
 		self:showStorage()
@@ -111,6 +111,9 @@ function Storage:initStorage()
 		if v.mtype ~= 'hidden' then
 			if v.adapter then
 				v.adapter.online = not not device[k]
+				if v.adapter.online then
+					Util.merge(v.adapter, device[k])
+				end
 			elseif device[k] and device[k].list and device[k].size and device[k].pullItems then
 				if v.adapterType then
 					v.adapter = require(v.adapterType)({ side = k })

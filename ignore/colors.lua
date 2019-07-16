@@ -1,5 +1,4 @@
-_G.requireInjector(_ENV)
-local Util = require('util')
+local Util = require('opus.util')
 
 local colors = _G.colors
 local term   = _G.term
