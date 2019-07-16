@@ -7,7 +7,7 @@ local Event  = require('opus.event')
 local args       = { ... }
 local colors     = _G.colors
 local fs         = _G.fs
-local gps 			 = _G.gps
+local gps        = _G.gps
 local os         = _G.os
 local peripheral = _G.peripheral
 local read       = _G.read
@@ -23,25 +23,33 @@ local STARTUP_FILE = 'usr/autorun/gpsServer.lua'
 
 local positions = { }
 
+---UI:configure('gps', ...)
+
 local page = UI.Page {
 	grid = UI.ScrollingGrid {
 		sortColumn = 'id',
 		autospace = true,
 		columns = {
-			{ heading = 'ID', key = 'id', align = 'right', width = 5, },
-			{ heading = 'X', key = 'x', align = 'right', },
-			{ heading = 'Y', key = 'y', align = 'right', width = 4, },
-			{ heading = 'Z', key = 'z', },
-			{ heading = 'Dist', key = 'dist', align = 'right', },
-		},
+			{ heading = 'ID', key = 'id', align = 'right', width = 5, textColor = colors.pink },
+			{ heading = 'X', key = 'x', align = 'right', width = 4 },
+			{ heading = 'Y', key = 'y', align = 'right', width = 4 },
+			{ heading = 'Z', key = 'z', width = 4 },
+			{ heading = 'Dist', key = 'dist', align = 'right', width = 5, textColor = colors.orange },
+		}
 	}
 }
 
+function page.grid:getDisplayValues(row)
+	row = Util.shallowCopy(row)
+	row.dist = Util.toBytes(Util.round(row.dist, 2))
+	return row
+end
+
 function page.grid:getRowTextColor(row, selected)
-	return row.lastUpdate and
-		os.clock()-row.lastUpdate < 15 and
-		colors.yellow or
-		UI.Grid.getRowTextColor(self, row, selected)
+	return ((row.x ~= row.lastPos.x) or
+		(row.y ~= row.lastPos.y) or
+		(row.z ~= row.lastPos.z)) and
+		colors.yellow or UI.Grid.getRowTextColor(self, row, selected)
 end
 
 local function build()
@@ -139,7 +147,7 @@ local function memoize(t, k, fn)
 	return e
 end
 
-local function server()
+local function server(mode)
 	local computers = { }
 
 	if not fs.exists('usr/config/gpsServer') then
@@ -160,13 +168,16 @@ local function server()
 		if not modem.open then
 			error('Modem is not activated or connected: ' .. k)
 		end
-		modem.open(gps.CHANNEL_GPS)
-		--modem.open(999)
+		if mode == 'gps' then
+			modem.open(gps.CHANNEL_GPS)
+		elseif mode == 'snmp' then
+			modem.open(999)
+		end
 	end
 
 	print('\nStarting GPS Server')
 
-	local function getPosition(computerId, modem, distance)
+	local function getPosition(computerId, modem, distance, msg)
 		local computer = memoize(computers, computerId, function() return { } end)
 		table.insert(computer, {
 			position = vector.new(modem.x, modem.y, modem.z),
@@ -185,11 +196,15 @@ local function server()
 				positions[computerId].y = pt.y
 				positions[computerId].z = pt.z
 				positions[computerId].id = computerId
-				local dist = Util.round((vector.new(config.x, config.y, config.z) - vector.new(positions[computerId].x, positions[computerId].y, positions[computerId].z)):length())
+				local dist = (vector.new(config.x, config.y, config.z) - vector.new(positions[computerId].x, positions[computerId].y, positions[computerId].z)):length()
 				if positions[computerId].dist ~= dist then
-					positions[computerId].lastUpdate = os.clock()
+					positions[computerId].needUpdate = true
+					positions[computerId].timestamp = os.clock()
 				end
 				positions[computerId].dist = dist
+			end
+			if mode == 'snmp' and type(msg) == "table" then
+				positions[computerId].label = msg.label or '*'
 			end
 			computers[computerId] = nil
 			page.grid.values = positions
@@ -201,16 +216,34 @@ local function server()
 
 	Event.on('modem_message', function(e, side, channel, computerId, message, distance)
 		if distance and modems[side] then
-			if channel == gps.CHANNEL_GPS and message == "PING" then
+			if mode == 'gps' and channel == gps.CHANNEL_GPS and message == "PING" then
 				for _, modem in pairs(modems) do
 					modem.transmit(computerId, gps.CHANNEL_GPS, { modem.x, modem.y, modem.z })
 				end
 				getPosition(computerId, modems[side], distance)
 			end
 
-			--if channel == gps.CHANNEL_GPS or channel == 999 then
-			--	getPosition(computerId, modems[side], distance)
-			--end
+			if mode == 'snmp' and channel == 999 then
+				getPosition(computerId, modems[side], distance, message)
+			end
+		end
+	end)
+
+	Event.onInterval(1, function()
+		local resync = false
+		for id, detail in pairs(positions) do
+			if os.clock() - detail.timestamp > 15 and detail.needUpdate then
+				detail.lastPos.x = detail.x
+				detail.lastPos.y = detail.y
+				detail.lastPos.z = detail.z
+				detail.timestamp = os.clock()
+				detail.needUpdate = false
+				resync = true
+			end
+		end
+		if resync then
+			page:draw()
+			page:sync()
 		end
 	end)
 end
@@ -224,14 +257,21 @@ if args[1] == 'build' then
 
 	configure()
 
-	server()
+	server('gps')
 
 elseif args[1] == 'server' then
-	server()
+	server('gps')
+
+elseif args[1] == 'snmp' then
+	table.insert(page.grid.columns,
+		{ heading = 'Label', key = 'label', textColor = colors.cyan }
+	)
+ page.grid:adjustWidth()
+	server('snmp')
 
 else
+	error('Syntax: gpsServer [build | server | snmp]')
 
-	error('Syntax: gpsServer [build | server]')
 end
 
 UI:setPage(page)
