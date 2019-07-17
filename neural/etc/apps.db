@@ -1,11 +1,11 @@
 {
-	[ "elytraFly" ] = {
+	[ "62b381dad87f9d9caeb4358c8bbeba88cf2268a2" ] = {
 		title = "ElytraFly",
 		category = "Neural",
 		run = "elytraFly.lua",
 		requires = "neuralInterface",
 	},
-	[ "fisher" ] = {
+	[ "0d57bd5497ca26a92593094bf3e21c5097192fa3" ] = {
 		title = "Fisher",
 		category = "Neural",
 		run = "fisher.lua",
@@ -23,7 +23,7 @@
 		run = "Scanner.lua",
 		iconExt = "\030d\031 \143\143\030 \031d\144\0300\031 \135\030e\0310\151\0300\031 \130\030 \0310\144\031 \128\010\030c\031d\129\130\030 \031c\149\030b\031f\132\0300\031b\132\030e\0310\155\0306\149\030 \031 \128\010\030 \031c\143\143\133\0310\139\0300\031e\138\030 \0310\159\129\0316\149",
 	},
-	[ "orescanner" ] = {
+	[ "fb219dd7bd048eab5c4ce7d35644f34b19a6f388" ] = {
 		title = "Ores",
 		category = "Neural",
 		run = "ores.lua",

@@ -2,18 +2,14 @@
 	[ "4486006f811b88cacd5f211fd579717e29b600cd" ] = {
 		title = "Simple",
 		category = "Mining",
-		icon = "    \0315\\\030 \031  \
- \0304\031f _ \030 \031c/\0315\\\
- \0304   ",
+		icon = "\030     \0315\\\030 \031  \010\030  \0304\031f _ \030 \031c/\0315\\\010\030  \0304   ",
 		run = "simpleMiner.lua",
 		requires = 'turtle',
 	},
-	[ "scanningMiner" ] = {
+	[ "da39a3ee5e6b4b0d3255bfef95601890afd80709" ] = {
 		title = "Scanning",
 		category = "Mining",
-		icon = "    \0315\\\030 \031  \
- \0304\031f _ \030 \031c/\0315\\\
- \0304   ",
+		icon = "\030     \0315\\\030 \031  \010\030  \0304\031f _ \030 \031c/\0315\\\010\030  \0304   ",
 		run = "scanningMiner.lua",
 		requires = 'turtle',
 	},

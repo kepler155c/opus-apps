@@ -5,7 +5,7 @@
 		run = "lavaRefuel.lua",
 		requires = 'turtle',
 	},
-	[ "obsidian" ] = {
+	[ "24c869802c3e242e28585a1c90c21847f259e4f8" ] = {
 		title = "Obsidian",
 		category = "Turtle",
 		run = "obsidian.lua",
