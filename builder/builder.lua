@@ -737,7 +737,7 @@ end
 --[[-- startup logic --]]--
 local args = {...}
 if #args < 1 then
-	error('supply file name')
+	error('supply file name or URL')
 end
 
 Builder.itemAdapter = Adapter.wrap({ side = 'bottom', direction = 'up' })

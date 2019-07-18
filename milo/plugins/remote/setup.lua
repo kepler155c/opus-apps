@@ -70,7 +70,9 @@ function setup:eventHandler(event)
 			if not fs.exists(STARTUP_FILE) then
 				Util.writeFile(STARTUP_FILE,
 					[[os.sleep(1)
-shell.openForegroundTab('packages/milo/MiloRemote')]])
+if shell.openForegroundTab then
+	shell.openForegroundTab('packages/milo/MiloRemote')
+end]])
 			end
 		elseif fs.exists(STARTUP_FILE) then
 			fs.delete(STARTUP_FILE)
