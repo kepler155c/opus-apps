@@ -71,14 +71,14 @@ function init(jua)
 	jua = jua
 	if async then
 		jua.on("websocket_success", function(event, url, handle)
-			local id = findID(url)
+			local success, id = pcall(findID,url)
 			if id and callbackRegistry[id] and callbackRegistry[id].success then
 				callbackRegistry[id].success(id, handle)
 			end
 		end)
 
 		jua.on("websocket_failure", function(event, url)
-			local id = findID(url)
+			local success, id = pcall(findID,url)
 			if id and callbackRegistry[id] and callbackRegistry[id].failure then
 				callbackRegistry[id].failure(id)
 			end
@@ -86,14 +86,14 @@ function init(jua)
 		end)
 
 		jua.on("websocket_message", function(event, url, data)
-			local id = findID(url)
+			local success, id = pcall(findID,url)
 			if id and callbackRegistry[id] and callbackRegistry[id].message then
 				callbackRegistry[id].message(id, data)
 			end
 		end)
 
 		jua.on("websocket_closed", function(event, url)
-			local id = findID(url)
+			local success, id = pcall(findID,url)
 			if id and callbackRegistry[id] and callbackRegistry[id].closed then
 				callbackRegistry[id].closed(id)
 			end
