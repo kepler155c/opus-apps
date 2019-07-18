@@ -31,9 +31,9 @@ local page = UI.Page {
 		autospace = true,
 		columns = {
 			{ heading = 'ID', key = 'id', align = 'right', width = 5, textColor = colors.pink },
-			{ heading = 'X', key = 'x', align = 'right', width = 4 },
+			{ heading = 'X', key = 'x', align = 'right', width = 6 },
 			{ heading = 'Y', key = 'y', align = 'right', width = 4 },
-			{ heading = 'Z', key = 'z', width = 4 },
+			{ heading = 'Z', key = 'z', width = 6 },
 			{ heading = 'Dist', key = 'dist', align = 'right', width = 5, textColor = colors.orange },
 		}
 	}
