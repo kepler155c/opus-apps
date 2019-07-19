@@ -29,7 +29,9 @@ local page = UI.Page {
 	grid = UI.ScrollingGrid {
 		sortColumn = 'id',
 		autospace = true,
+		focusIndicator = ' ',
 		columns = {
+			{ key = 'hbeat', width = 1, textColor = colors.red },
 			{ heading = 'ID', key = 'id', align = 'right', width = 5, textColor = colors.pink },
 			{ heading = 'X', key = 'x', align = 'right', width = 6 },
 			{ heading = 'Y', key = 'y', align = 'right', width = 4 },
@@ -42,6 +44,7 @@ local page = UI.Page {
 function page.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
 	row.dist = Util.toBytes(Util.round(row.dist, 2))
+	row.hbeat = row.hbeat and "\3" or "\183"
 	return row
 end
 
@@ -49,7 +52,7 @@ function page.grid:getRowTextColor(row, selected)
 	return ((row.x ~= row.lastPos.x) or
 		(row.y ~= row.lastPos.y) or
 		(row.z ~= row.lastPos.z)) and
-		colors.yellow or UI.Grid.getRowTextColor(self, row, selected)
+		colors.yellow or not row.alive and colors.lightGray or UI.Grid.getRowTextColor(self, row, selected)
 end
 
 local function build()
@@ -196,10 +199,12 @@ local function server(mode)
 				positions[computerId].y = pt.y
 				positions[computerId].z = pt.z
 				positions[computerId].id = computerId
+				positions[computerId].hbeat = not positions[computerId].hbeat
+				positions[computerId].alive = true
+				positions[computerId].timestamp = os.clock()
 				local dist = (vector.new(config.x, config.y, config.z) - vector.new(positions[computerId].x, positions[computerId].y, positions[computerId].z)):length()
 				if positions[computerId].dist ~= dist then
 					positions[computerId].needUpdate = true
-					positions[computerId].timestamp = os.clock()
 				end
 				positions[computerId].dist = dist
 			end
@@ -232,12 +237,17 @@ local function server(mode)
 	Event.onInterval(1, function()
 		local resync = false
 		for id, detail in pairs(positions) do
-			if os.clock() - detail.timestamp > 15 and detail.needUpdate then
+			local elapsed = os.clock() - detail.timestamp
+			if elapsed > 15 and detail.needUpdate then
 				detail.lastPos.x = detail.x
 				detail.lastPos.y = detail.y
 				detail.lastPos.z = detail.z
 				detail.timestamp = os.clock()
 				detail.needUpdate = false
+				resync = true
+			elseif elapsed > 60 and detail.alive then
+				detail.alive = false
+				detail.hbeat = false
 				resync = true
 			end
 		end
