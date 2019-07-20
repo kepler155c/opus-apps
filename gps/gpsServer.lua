@@ -26,7 +26,16 @@ local positions = { }
 ---UI:configure('gps', ...)
 
 local page = UI.Page {
+	menuBar = UI.MenuBar {
+		showBackButton = true,
+		buttons = {
+			{ text = 'Clear:', inactive = true },
+			{ text = 'Inactive', event = 'clear_inactive' },
+			{ text = 'All', event = 'clear_all' },
+		},
+	},
 	grid = UI.ScrollingGrid {
+		y = 2,
 		sortColumn = 'id',
 		autospace = true,
 		focusIndicator = ' ',
@@ -35,11 +44,12 @@ local page = UI.Page {
 			{ heading = 'ID', key = 'id', align = 'right', width = 5, textColor = colors.pink },
 			{ heading = 'X', key = 'x', align = 'right', width = 6 },
 			{ heading = 'Y', key = 'y', align = 'right', width = 4 },
-			{ heading = 'Z', key = 'z', width = 6 },
-			{ heading = 'Dist', key = 'dist', align = 'right', width = 5, textColor = colors.orange },
+			{ heading = 'Z', key = 'z', width = 6, align = 'right' },
+			{ heading = 'Dist', key = 'dist', align = 'right', width = 7, textColor = colors.orange },
 		}
 	}
 }
+page:setFocus(page.grid)
 
 function page.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
@@ -49,10 +59,25 @@ function page.grid:getDisplayValues(row)
 end
 
 function page.grid:getRowTextColor(row, selected)
-	return ((row.x ~= row.lastPos.x) or
-		(row.y ~= row.lastPos.y) or
-		(row.z ~= row.lastPos.z)) and
-		colors.yellow or not row.alive and colors.lightGray or UI.Grid.getRowTextColor(self, row, selected)
+	return row.changed and colors.yellow or not row.alive and colors.lightGray or UI.Grid.getRowTextColor(self, row, selected)
+end
+
+function page.menuBar:eventHandler(event)
+	if event.type == 'clear_inactive' then
+		for id, detail in pairs(positions) do
+			if not detail.alive then
+				positions[id] = nil
+			end
+		end
+	elseif event.type == 'clear_all' then
+		for id, detail in pairs(positions) do
+			positions[id] = nil
+		end
+	else return UI.MenuBar.eventHandler(self, event)
+	end
+	page.grid:update()
+	page:draw()
+	page:sync()
 end
 
 local function build()
@@ -189,28 +214,33 @@ local function server(mode)
 		if #computer == 4 then
 			local pt = GPS.trilaterate(computer)
 			if pt then
-				if not positions[computerId] then
-					positions[computerId] = { lastPos = {} }
+				local comp = { lastPos = {} }
+				if positions[computerId] then
+					comp = positions[computerId]
 				end
-				positions[computerId].lastPos.x = positions[computerId].x or 0
-				positions[computerId].lastPos.y = positions[computerId].y or 0
-				positions[computerId].lastPos.z = positions[computerId].z or 0
-				positions[computerId].x = pt.x
-				positions[computerId].y = pt.y
-				positions[computerId].z = pt.z
-				positions[computerId].id = computerId
-				positions[computerId].hbeat = not positions[computerId].hbeat
-				positions[computerId].alive = true
-				positions[computerId].timestamp = os.clock()
-				local dist = (vector.new(config.x, config.y, config.z) - vector.new(positions[computerId].x, positions[computerId].y, positions[computerId].z)):length()
-				if positions[computerId].dist ~= dist then
-					positions[computerId].needUpdate = true
+
+				comp.lastPos.x = comp.x or 0
+				comp.lastPos.y = comp.y or 0
+				comp.lastPos.z = comp.z or 0
+				comp.x = pt.x
+				comp.y = pt.y
+				comp.z = pt.z
+				comp.id = computerId
+				comp.hbeat = not comp.hbeat
+				comp.alive = true
+				comp.timestamp = os.clock()
+				comp.dist = (vector.new(config.x, config.y, config.z) - vector.new(comp.x, comp.y, comp.z)):length()
+				if (comp.x ~= comp.lastPos.x or comp.y ~= comp.lastPos.y or comp.z ~= comp.lastPos.z) then
+					comp.changed = true
+					comp.lastChanged = os.clock()
 				end
-				positions[computerId].dist = dist
+				if mode == 'snmp' and type(msg) == "table" then
+					comp.label = msg.label or '*'
+				end
+
+				positions[computerId] = comp
 			end
-			if mode == 'snmp' and type(msg) == "table" then
-				positions[computerId].label = msg.label or '*'
-			end
+
 			computers[computerId] = nil
 			page.grid.values = positions
 			page.grid:update()
@@ -237,15 +267,11 @@ local function server(mode)
 	Event.onInterval(1, function()
 		local resync = false
 		for id, detail in pairs(positions) do
-			local elapsed = os.clock() - detail.timestamp
-			if elapsed > 15 and detail.needUpdate then
-				detail.lastPos.x = detail.x
-				detail.lastPos.y = detail.y
-				detail.lastPos.z = detail.z
-				detail.timestamp = os.clock()
-				detail.needUpdate = false
+			if os.clock() - detail.lastChanged > 10 then
+				detail.changed = false
 				resync = true
-			elseif elapsed > 60 and detail.alive then
+			end
+			if os.clock() - detail.timestamp > 60 and detail.alive then
 				detail.alive = false
 				detail.hbeat = false
 				resync = true
@@ -276,7 +302,7 @@ elseif args[1] == 'snmp' then
 	table.insert(page.grid.columns,
 		{ heading = 'Label', key = 'label', textColor = colors.cyan }
 	)
- page.grid:adjustWidth()
+	page.grid:adjustWidth()
 	server('snmp')
 
 else
