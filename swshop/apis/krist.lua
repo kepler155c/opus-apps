@@ -3,7 +3,7 @@ local sha2 = require('opus.crypto.sha2')
 local Krist = { }
 
 local function sha256(key)
-	return sha2:digest(key):toHex()
+	return sha2.digest(key):toHex()
 end
 
 local function makeaddressbyte(byte)

@@ -6,9 +6,6 @@ local fs        = _G.fs
 local os        = _G.os
 local shell     = _ENV.shell
 
-local programDir = fs.getDir(shell.getRunningProgram())
-os.loadAPI(programDir .. '/'.. 'json')
-
 local w   = require("swshop.w")
 local r   = require("swshop.r")
 local k   = require("swshop.k")
