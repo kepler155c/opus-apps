@@ -4,7 +4,6 @@ local Util   = require('opus.util')
 
 local fs        = _G.fs
 local os        = _G.os
-local shell     = _ENV.shell
 
 local w   = require("swshop.w")
 local r   = require("swshop.r")
