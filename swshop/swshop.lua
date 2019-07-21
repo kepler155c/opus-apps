@@ -1,4 +1,5 @@
 local Config = require('opus.config')
+local Krist  = require('swshop.krist')
 local Util   = require('opus.util')
 
 local fs        = _G.fs
@@ -8,10 +9,10 @@ local shell     = _ENV.shell
 local programDir = fs.getDir(shell.getRunningProgram())
 os.loadAPI(programDir .. '/'.. 'json')
 
-local w   = require("w")
-local r   = require("r")
-local k   = require("k")
-local jua = require("jua")
+local w   = require("swshop.w")
+local r   = require("swshop.r")
+local k   = require("swshop.k")
+local jua = require("swshop.jua")
 
 local await     = jua.await
 local device    = _G.device
@@ -30,8 +31,8 @@ k.init(jua, json, w, r)
 
 local node = ({ ... })[1] or error('Node name is required')
 local config = storage[node]
-local privatekey = config.isPrivateKey and config.password or k.toKristWalletFormat(config.password)
-local address = k.makev2address(privatekey)
+local privatekey = config.isPrivateKey and config.password or Krist.toKristWalletFormat(config.password)
+local address = Krist.makev2address(privatekey)
 
 jua.on("terminate", function()
 	rs.setOutput('top', false)
