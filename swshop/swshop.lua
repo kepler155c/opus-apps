@@ -35,7 +35,6 @@ local domain = args[1] or Syntax()
 local password = args[2] or Syntax()
 local privatekey = args[3] and args[2] or k.toKristWalletFormat(password)
 local address = k.makev2address(privatekey)
-local transactions = Util.readTable('/usr/swshop.log') or { }
 
 jua.on("terminate", function()
 	rs.setOutput('top', false)
@@ -58,10 +57,12 @@ local function getItemDetails(item)
 end
 
 local function logTransaction(transaction, details)
+	local transactions = Util.readTable('/usr/swshop.log') or { }
 	transaction = Util.shallowCopy(transaction)
 	Util.merge(transaction, details)
 	table.insert(transactions, transaction)
 	Util.writeTable('/usr/swshop.log', transactions)
+	os.queueEvent('shop_transaction', transaction)
 end
 
 local function handleTransaction(transaction)
@@ -83,10 +84,12 @@ local function handleTransaction(transaction)
 		from = transaction.from,
 		value = transaction.value,
 		id = metadata.name,
+		time = math.floor(os.epoch('utc')/1000),
+		recipient = recipient,
 	}
 
 	local function refundTransaction(amount, reason)
-		print("Refunding to ", recipient)
+		print("Refunding to", recipient)
 		await(k.makeTransaction, privatekey, recipient, amount, reason)
 		logTransaction(t, { refund = amount, reason = reason })
 	end
@@ -109,9 +112,13 @@ local function handleTransaction(transaction)
 	print(string.format('requesting %d of %s', count, t.itemId))
 	os.queueEvent('shop_provide', t.itemId, count, uid)
 	local timerId = os.startTimer(60)
+
 	while true do
 		local e, p1, p2 = os.pullEvent()
-		if e == 'timer' and p1 == timerId then
+		if e == 'turtle_inventory' then
+			os.cancelTimer(timerId)
+			timerId = os.startTimer(60)
+		elseif e == 'timer' and p1 == timerId then
 			print('timed out waiting for provide')
 			refundTransaction(value, "error=Timed out attempting to provide items")
 			break
@@ -119,9 +126,9 @@ local function handleTransaction(transaction)
 		elseif e == 'shop_provided' and p1 == uid then
 			local extra = value - (t.price * p2)
 			logTransaction(t, { purchased = p2 })
+			local msg = string.format('PURCHASE: %s bought %d %s for %s',
+			recipient, p2, t.itemId, t.price * p2)
 			if chat and chat.tell then
-				local msg = string.format('PURCHASE: %s bought %d %s for %s',
-					recipient, p2, t.itemId, t.price * p2)
 				pcall(chat.tell, msg)
 			end
 			if extra > 0 then
@@ -135,6 +142,7 @@ end
 
 local function connect()
 	print('opening store for: ' .. domain)
+	print('using address: ' .. address)
 
 	local success, ws = await(k.connect, privatekey)
 	assert(success, "Failed to get websocket URL")

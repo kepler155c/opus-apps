@@ -23,7 +23,8 @@ local STARTUP_FILE = 'usr/autorun/gpsServer.lua'
 
 local positions = { }
 
----UI:configure('gps', ...)
+UI:configure('gps', ...)
+local args, options = Util.parse( ... )
 
 local page = UI.Page {
 	menuBar = UI.MenuBar {
@@ -78,6 +79,7 @@ function page.menuBar:eventHandler(event)
 	page.grid:update()
 	page:draw()
 	page:sync()
+	return true
 end
 
 local function build()
