@@ -140,7 +140,7 @@ end
 function page.grid:getDisplayValues(row)
 	row = Util.shallowCopy(row)
 	local x = row.recipient
-	row.from = x:match('(%w+)@') or x
+	row.from = x and x:match('(%w+)@') or row.from
 	return row
 end
 

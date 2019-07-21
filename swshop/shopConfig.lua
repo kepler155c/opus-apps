@@ -21,7 +21,7 @@ local wizardPage = UI.WizardPage {
 		},
 		[2] = UI.TextEntry {
 			formLabel = 'Password', formKey = 'password',
-			shadowText = 'password',
+			shadowText = 'password or private key',
 			limit = 256,
 			required = true,
 			help = 'Krist wallet password',
@@ -38,7 +38,12 @@ local wizardPage = UI.WizardPage {
 			help = 'Password is in private key format',
 			limit = 64,
 		},
-		[5] = UI.Chooser {
+		[5] = UI.Checkbox {
+			formLabel = 'Single shop', formKey = 'refundInvalid',
+			help = 'Only this shop using this domain',
+			limit = 64,
+		},
+		[6] = UI.Chooser {
 			width = 9,
 			formLabel = 'Font Size', formKey = 'textScale',
 			nochoice = 'Small',

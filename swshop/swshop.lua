@@ -1,4 +1,5 @@
-local Util = require('opus.util')
+local Config = require('opus.config')
+local Util   = require('opus.util')
 
 local fs        = _G.fs
 local os        = _G.os
@@ -19,6 +20,7 @@ local rs        = _G.rs
 local textutils = _G.textutils
 
 local chat = device['plethora:chat']
+local storage = Config.load('storage')
 
 rs.setOutput('top', false)
 
@@ -26,14 +28,9 @@ r.init(jua)
 w.init(jua)
 k.init(jua, json, w, r)
 
-local function Syntax()
-	error('Syntax: swshop [domain] [password | privateKey] [isPrivateKey]')
-end
-
-local args = { ... }
-local domain = args[1] or Syntax()
-local password = args[2] or Syntax()
-local privatekey = args[3] and args[2] or k.toKristWalletFormat(password)
+local node = ({ ... })[1] or error('Node name is required')
+local config = storage[node]
+local privatekey = config.isPrivateKey and config.password or k.toKristWalletFormat(config.password)
 local address = k.makev2address(privatekey)
 
 jua.on("terminate", function()
@@ -72,7 +69,7 @@ local function handleTransaction(transaction)
 	if to ~= address or not transaction.metadata then return end
 
 	local metadata = k.parseMeta(transaction.metadata)
-	if not metadata.domain or metadata.domain ~= domain then return end
+	if not metadata.domain or metadata.domain ~= config.domain then return end
 
 	local recipient = metadata.meta and (metadata.meta["return"] or from) or from
 	print("Handling transaction from ", recipient)
@@ -98,8 +95,10 @@ local function handleTransaction(transaction)
 	if not t.itemId or not t.price then
 		print('invalid item')
 		logTransaction(t, { reason = 'invalid item' })
-		--return refundTransaction(value, "error=Item specified is not valid")
-		return -- there could be multiple stores...
+		if config.refundInvalid then
+			return refundTransaction(value, "error=Item specified is not valid")
+		end
+		return -- multiple store setup
 	end
 
 	if value < t.price then
@@ -141,7 +140,7 @@ local function handleTransaction(transaction)
 end
 
 local function connect()
-	print('opening store for: ' .. domain)
+	print('opening store for: ' .. config.domain)
 	print('using address: ' .. address)
 
 	local success, ws = await(k.connect, privatekey)

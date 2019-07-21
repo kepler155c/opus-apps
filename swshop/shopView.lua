@@ -18,7 +18,7 @@ local function startShop(node)
 	if shopTab then
 		multishell.terminate(shopTab)
 	end
-	shopTab = shell.openTab('/packages/swshop/swshop.lua', node.domain, node.password, node.isPrivateKey and 'true')
+	shopTab = shell.openTab('/packages/swshop/swshop.lua', node.name)
 end
 
 -- node has been reconfigured
