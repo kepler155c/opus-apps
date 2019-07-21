@@ -115,12 +115,14 @@ local function createPage(node)
 				},
 				storage = UI.ProgressBar {
 					x = 2, ex = -2, y = 7, height = 3,
+					progressChar = ' ',
 				},
 				unlockedLabel = UI.Text {
 					x = 2, ex = -1, y = 12,
 				},
 				unlocked = UI.ProgressBar {
 					x = 2, ex = -2, y = 13, height = 3,
+					progressChar = ' ',
 				},
 				craftingLabel = UI.Text {
 					x = 2, ex = -1, y = 18,
@@ -128,6 +130,7 @@ local function createPage(node)
 				},
 				crafting = UI.ProgressBar {
 					x = 2, ex = -2, y = 19, height = 3,
+					progressChar = ' ',
 					value = 100,
 				},
 			},

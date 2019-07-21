@@ -4,7 +4,6 @@ local Util   = require('opus.util')
 local UI     = require('opus.ui')
 local Event  = require('opus.event')
 
-local args       = { ... }
 local colors     = _G.colors
 local fs         = _G.fs
 local gps        = _G.gps
@@ -24,7 +23,7 @@ local STARTUP_FILE = 'usr/autorun/gpsServer.lua'
 local positions = { }
 
 UI:configure('gps', ...)
-local args, options = Util.parse( ... )
+local args = Util.parse( ... )
 
 local page = UI.Page {
 	menuBar = UI.MenuBar {
@@ -60,7 +59,9 @@ function page.grid:getDisplayValues(row)
 end
 
 function page.grid:getRowTextColor(row, selected)
-	return row.changed and colors.yellow or not row.alive and colors.lightGray or UI.Grid.getRowTextColor(self, row, selected)
+	return row.changed and colors.yellow or
+				 not row.alive and colors.lightGray or
+				 UI.Grid.getRowTextColor(self, row, selected)
 end
 
 function page.menuBar:eventHandler(event)
@@ -71,7 +72,7 @@ function page.menuBar:eventHandler(event)
 			end
 		end
 	elseif event.type == 'clear_all' then
-		for id, detail in pairs(positions) do
+		for id in pairs(positions) do
 			positions[id] = nil
 		end
 	else return UI.MenuBar.eventHandler(self, event)
@@ -251,7 +252,7 @@ local function server(mode)
 		end
 	end
 
-	Event.on('modem_message', function(e, side, channel, computerId, message, distance)
+	Event.on('modem_message', function(_, side, channel, computerId, message, distance)
 		if distance and modems[side] then
 			if mode == 'gps' and channel == gps.CHANNEL_GPS and message == "PING" then
 				for _, modem in pairs(modems) do
@@ -268,7 +269,7 @@ local function server(mode)
 
 	Event.onInterval(1, function()
 		local resync = false
-		for id, detail in pairs(positions) do
+		for _, detail in pairs(positions) do
 			if os.clock() - detail.lastChanged > 10 then
 				detail.changed = false
 				resync = true

@@ -3,8 +3,12 @@ local Util   = require('opus.util')
 local Event  = require('opus.event')
 local Config = require('opus.config')
 
+local colors = _G.colors
+local fs     = _G.fs
+
 UI:configure('Shoplogs', ...)
-local args, options = Util.parse( ... )
+local args = Util.parse( ... )
+local logFile = args[1] or '/usr/swshop.log'
 
 local config = Config.load('Shoplogs', {
 	timezone = 0,
@@ -100,7 +104,7 @@ function page.menuBar:eventHandler(event)
 		page.grid.values = {}
 		page.grid:update()
 		page.grid:draw()
-		fs.delete(args[1])
+		fs.delete(logFile)
 
 	elseif event.type == "set_timezone" then
 		page.tzSlide:show()
@@ -146,7 +150,7 @@ function page.grid:addTransaction(transaction)
 end
 
 function page.grid:loadTransactions()
-	local logs = Util.readTable(args[1]) or {}
+	local logs = Util.readTable(logFile) or {}
 	self:setValues(logs)
 	self:update()
 end
