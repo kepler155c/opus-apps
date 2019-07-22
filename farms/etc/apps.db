@@ -6,6 +6,13 @@
 		run = "treefarm.lua",
 		requires = "turtle",
 	},
+	[ "8a744355e70345ca2becf4f7c2d2ea84389a07de" ] = {
+		title = "Super Treefarm",
+		icon = "\030 \031f \0305 \030    \030d \030  \010\0305\031f \030d  \030  \030d \0305 \030d \010\030 \031f \030c \030  \0304 \030  \030c \030  ",
+		category = "Farms",
+		run = "superTreefarm.lua",
+		requires = "turtle",
+	},
 	[ "ff892e4e9538168021ccf2c7add8a46bf97fb180" ] = {
 		title = "Rancher",
 		category = "Farms",
