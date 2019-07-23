@@ -3,15 +3,20 @@
 	Must be run on a mob with the same height.
 ]]
 
+local Array  = require('opus.array')
+local Config = require('opus.config')
 local neural = require('neural.interface')
 local Sound  = require('opus.sound')
 local Map    = require('opus.map')
 
 local os = _G.os
 
-local BREEDING   = 'Cow'
+local config = Config.load('mobRancher', {
+	animal = 'Cow',
+	maxAdults = 12,
+})
+
 local WALK_SPEED = 1.5
-local MAX_GROWN  = 12
 
 neural.assertModules({
 	'plethora:sensor',
@@ -76,8 +81,17 @@ local function kill(entity)
 end
 
 local function getEntities()
+	local sheep = Array.filter(neural.sense(), function(entity)
+		if entity.name == 'Sheep' and entity.y > -.5 then
+			return true
+		end
+	end)
+	if #sheep > config.maxAdults then
+		return sheep
+	end
+
 	return Map.filter(neural.sense(), function(entity)
-		if entity.name == BREEDING and entity.y > -.5 then
+		if entity.name == config.animal and entity.y > -.5 then
 			return true
 		end
 	end)
@@ -107,7 +121,7 @@ while true do
 
 	local entities = getEntities()
 
-	if Map.size(entities) > MAX_GROWN then
+	if Map.size(entities) > config.maxAdults then
 		kill(randomEntity(entities))
 	else
 		local entity = getHungry(entities)

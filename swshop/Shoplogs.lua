@@ -7,6 +7,7 @@ local colors = _G.colors
 local fs     = _G.fs
 
 UI:configure('Shoplogs', ...)
+
 local args = Util.parse( ... )
 local logFile = args[1] or '/usr/swshop.log'
 

@@ -6,7 +6,7 @@ local Proxy      = require('core.proxy')
 local os = _G.os
 
 local args = { ... }
-local remoteId = args[1] or error('mobFollow <remote id>')
+local remoteId = args[1] or error('mobFollow REMOTE_ID')
 local ni = Proxy.create(remoteId, 'device/neuralInterface')
 
 if not ni then

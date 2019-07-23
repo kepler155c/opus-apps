@@ -12,22 +12,23 @@ local window     = _G.window
 
 local function syntax()
 	printError('Syntax:')
-	error('mwm sessionName [monitor]')
+	error('mwm [--config=filename] [monitor]')
 end
 
-local args        = { ... }
+local args        = Util.parse(...)
 local UID         = 0
 local multishell  = { }
 local processes   = { }
 local parentTerm  = term.current()
-local sessionFile = args[1] or 'usr/config/mwm'
+local sessionFile = args.config or 'usr/config/mwm'
+local monName     = args[1]
 local running
 local parentMon
 
 local defaultEnv = Util.shallowCopy(_ENV)
 defaultEnv.multishell = multishell
-if args[2] then
-	parentMon = peripheral.wrap(args[2]) or syntax()
+if monName then
+	parentMon = peripheral.wrap(monName) or syntax()
 else
 	parentMon = peripheral.find('monitor') or syntax()
 end
