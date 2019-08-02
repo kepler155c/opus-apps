@@ -143,7 +143,7 @@ function networkPage:applyFilter()
 		return v.mtype ~= 'hidden'
 	end)
 
-	if #self.filter.value > 0 then
+	if self.filter.value and #self.filter.value > 0 then
 		local filter = self.filter.value:lower()
 		t = Util.filter(t, function(v)
 			return v.displayName and
