@@ -211,6 +211,16 @@ function Milo:makeRequest(item, count, callback)
 	return request
 end
 
+function Milo:emptyInventory()
+	for i = 1, 16 do
+		if turtle.getItemCount(i) > 0 then
+			turtle.select(i)
+			turtle.drop()
+		end
+	end
+	turtle.select(1)
+end
+
 function Milo:eject(item, count)
 	local total = 0
 	while count > 0 do
@@ -224,7 +234,7 @@ function Milo:eject(item, count)
 
 		--Sound.play('ui.button.click')
 		Sound.play('entity.illusion_illager.death', .3)
-		turtle.emptyInventory()
+		self:emptyInventory()
 	end
 	return total
 end

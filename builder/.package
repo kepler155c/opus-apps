@@ -1,6 +1,7 @@
 {
 	required = {
 		'core',
+		'turtle',
 	},
 	title = 'Schematic Builder',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/builder',

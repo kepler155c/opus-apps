@@ -23,7 +23,7 @@ function pages.turtleCraft:validate()
 	if recipe then
 		local displayName = itemDB:getName(recipe)
 
-		turtle.emptyInventory()
+		Milo:emptyInventory()
 
 		UI:setPage('listing', {
 			filter = displayName,

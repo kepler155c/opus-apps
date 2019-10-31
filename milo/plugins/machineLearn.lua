@@ -122,7 +122,7 @@ function pages.confirmation:validate()
 	end
 
 	Milo:saveMachineRecipe(recipe, result, machine.name)
-	turtle.emptyInventory()
+	Milo:emptyInventory()
 
 	local displayName = itemDB:getName(result)
 	UI:setPage('listing', {

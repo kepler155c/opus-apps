@@ -346,7 +346,7 @@ function nodeWizard.filter:eventHandler(event)
 		self:resetGrid()
 		self.grid:update()
 		self.grid:draw()
-		turtle.emptyInventory()
+		Milo:emptyInventory()
 
 	elseif event.type == 'remove_entry' then
 		local row = self.grid:getSelected()

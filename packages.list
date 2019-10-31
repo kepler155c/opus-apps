@@ -10,6 +10,7 @@
 	[ 'gps'        ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/gps/.package',
 	[ 'mbs'        ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/mbs/.package',
 	[ 'milo'       ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/milo/.package',
+	[ 'miloApps'   ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/miloApps/.package',
 	[ 'miners'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/miners/.package',
 	[ 'monitor'    ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/monitor/.package',
 	[ 'neural'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/neural/.package',

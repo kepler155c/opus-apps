@@ -1,4 +1,4 @@
-local Pathing = require('opus.pathfind')
+local Pathing = require('turtle.pathfind')
 local Point   = require('opus.point')
 local Util    = require('opus.util')
 

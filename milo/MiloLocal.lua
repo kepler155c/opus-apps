@@ -180,21 +180,17 @@ Event.on('turtle_inventory', function()
 	end)
 end)
 
-local cycleHandle
-cycleHandle = Event.onInterval(5, function()
+Event.onInterval(5, function()
 	Event.trigger('milo_cycle')
-	if context.taskCounter > 0 then
-		--local average = context.taskTimer / context.taskCounter
-		--_syslog('Interval: ' .. math.max(5, 2 + average * 3))
-		--cycleHandle.updateInterval(math.max(5, 2 + average * 3))
-	end
 end)
 
 Event.on({ 'storage_offline', 'storage_online' }, function()
 	if context.storage:isOnline() then
 		Milo:resumeCrafting({ key = 'storageOnline' })
+		turtle.setStatus('Milo: online')
 	else
 		Milo:pauseCrafting({ key = 'storageOnline', msg = 'Storage offline' })
+		turtle.setStatus('Milo: offline')
 	end
 end)
 

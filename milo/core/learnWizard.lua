@@ -77,7 +77,7 @@ end
 
 function learnPage:eventHandler(event)
 	if event.type == 'cancel' then
-		turtle.emptyInventory()
+		Milo:emptyInventory()
 		UI:setPreviousPage()
 
 	elseif event.type  == 'form_invalid' or event.type == 'general_error' then
