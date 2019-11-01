@@ -5,5 +5,5 @@
 	title = 'Milo extra applications',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/miloApps',
 	description = [[Programs for turtles in a Milo network]],
-	licence = 'MIT',
+	license = 'MIT',
 }

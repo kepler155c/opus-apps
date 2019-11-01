@@ -2,5 +2,5 @@
 	title = 'Games',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/games',
 	description = [[Games by various people]],
-	licence = 'MIT',
+	license = 'MIT',
 }

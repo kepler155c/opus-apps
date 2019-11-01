@@ -2,5 +2,5 @@
 	title = 'APIs used by various programs',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/core',
 	description = [[Provides APIs used by Opus applications.]],
-	licence = 'MIT',
+	license = 'MIT',
 }

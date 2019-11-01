@@ -10,5 +10,5 @@
 Includes: importing, exporting, autocrafting, replenish, limits and much more.
 
 Includes over 200 standard Minecraft recipes.]],
-	licence = 'MIT',
+	license = 'MIT',
 }

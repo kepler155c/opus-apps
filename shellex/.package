@@ -8,5 +8,5 @@ Linux style shell commands:
 grep, cat, touch, df, etc.
 
 Linux style cp, ls]],
-	licence = 'MIT',
+	license = 'MIT',
 }

@@ -6,5 +6,5 @@
 	title = 'Schematic Builder',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/builder',
 	description = [[Build structures from schematic files using a turtle or command computer. ]],
-	licence = 'MIT',
+	license = 'MIT',
 }

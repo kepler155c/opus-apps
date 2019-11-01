@@ -2,5 +2,5 @@
 	title = 'Various monitor related programs',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/monitor',
 	description = [[Mirror terminal to monitor, Monitor Window Manager (mwm), and more]],
-	licence = 'MIT',
+	license = 'MIT',
 }

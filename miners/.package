@@ -7,5 +7,5 @@
 	description = [[Provides two types of automated mining:
  * Scanning Miner: Uses a block scanner to very efficiently mine areas
  * Simple Miner: A single or multi-turtle miner]],
-	licence = 'MIT',
+	license = 'MIT',
 }

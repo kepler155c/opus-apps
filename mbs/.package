@@ -7,5 +7,5 @@ https://github.com/SquidDev-CC/mbs
 
 MBS is a series of utilities for improving the default CraftOS experience.
 	]],
-	licence = 'MIT',
+	license = 'MIT',
 }

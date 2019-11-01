@@ -2,5 +2,5 @@
 	title = 'Switchcraft basic shop',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/swshop',
 	description = 'Modification of the k store by Lemmmy\nRun installPlugin.lua after install',
-	licence = 'MIT',
+	license = 'MIT',
 }
