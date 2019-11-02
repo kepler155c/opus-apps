@@ -11,11 +11,7 @@ local config = Config.load('secure', {
     timeout = 60,
 })
 
-if not config.enabled then
-    return
-end
-
-local timer = os.startTimer(config.timeout)
+local timer = config.enabled and os.startTimer(config.timeout)
 
 local sandboxEnv = Util.shallowCopy(_ENV)
 setmetatable(sandboxEnv, { __index = _G })
@@ -45,7 +41,7 @@ local function buildLockScreen()
     function page:eventHandler(event)
         if event.type == 'password' then
 
-            if self.pass.value and 
+            if self.pass.value and
                 #self.pass.value > 0 and
                 Security.verifyPassword(SHA.compute(self.pass.value)) then
 
@@ -92,7 +88,7 @@ keyboard.addHotkey('control-l', function()
     end
 end)
 
-kernel.hook({ 'mouse_click', 'mouse_up', 'mouse_drag', 'key_up' }, function(event, eventData)
+kernel.hook({ 'mouse_click', 'mouse_up', 'mouse_drag', 'key_up', 'key' }, function()
     if timer then
         os.cancelTimer(timer)
         timer = os.startTimer(config.timeout)
@@ -102,5 +98,18 @@ end)
 kernel.hook('timer', function(_, eventData)
     if timer and eventData[1] == timer then
         showLockScreen()
+    end
+end)
+
+kernel.hook('config_update', function(_, eventData)
+    if eventData[1] == 'secure' then
+        Util.merge(config, eventData[2])
+        if timer then
+            os.cancelTimer(timer)
+            timer = nil
+        end
+        if config.enabled then
+            timer = os.startTimer(config.timeout)
+        end
     end
 end)

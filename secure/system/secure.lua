@@ -30,10 +30,6 @@ local tab = UI.Tab {
 			enter = 'update',
 		},
 	},
-	label3 = UI.Text {
-		ex = -2, y = -2, width = 20,
-		textColor = colors.yellow,
-	},
 	button = UI.Button {
 		x = 20, y = 6,
 		text = 'Update',
@@ -50,8 +46,7 @@ function tab:eventHandler(event)
 		Config.update('secure', config)
 
 		self:emit({ type = 'success_message', message = 'Settings updated' })
-		self.label3.value = 'Restart is required'
-		self.label3:draw()
+		os.queueEvent('config_update', 'secure', config)
 	end
 	return UI.Tab.eventHandler(self, event)
 end
