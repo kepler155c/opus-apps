@@ -92,7 +92,7 @@ keyboard.addHotkey('control-l', function()
     end
 end)
 
-kernel.hook({ 'mouse_click', 'mouse_up', 'mouse_drag', 'key_up', 'key' }, function()
+kernel.hook({ 'mouse_up', 'mouse_drag', 'key_up', 'mouse_scroll' }, function()
     if timer then
         os.cancelTimer(timer)
         timer = os.startTimer(config.timeout)

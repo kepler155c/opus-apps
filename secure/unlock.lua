@@ -19,11 +19,7 @@ repeat
     local s, m = pcall(function()
         local password = Terminal.readPassword('Enter password: ')
 
-        if not password then
-            error('Invalid password')
-        end
-
-        if Security.verifyPassword(SHA.compute(password or '')) then
+        if password and Security.verifyPassword(SHA.compute(password)) then
             return true
         end
         error('Invalid password')

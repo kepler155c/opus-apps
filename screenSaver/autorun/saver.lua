@@ -39,7 +39,7 @@ local function showScreenSaver()
     })
 end
 
-kernel.hook({ 'mouse_up', 'mouse_drag', 'key_up' }, function()
+kernel.hook({ 'mouse_up', 'mouse_drag', 'key_up', 'mouse_scroll' }, function()
     if config.enabled then
         if timer then
             os.cancelTimer(timer)
