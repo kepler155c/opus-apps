@@ -1,0 +1,8 @@
+sys/apps/system/saver.lua linkfs packages/screenSaver/system/saver.lua
+packages/screenSaver/savers/timespace.lua urlfs https://raw.githubusercontent.com/Allen2277/Computercraft/master/Time%20Space%20Screensaver
+packages/screenSaver/savers/visualizer.lua urlfs https://raw.githubusercontent.com/Allen2277/Computercraft/master/ScreenSaver
+packages/screenSaver/savers/random.lua urlfs https://pastebin.com/raw/XXW0r5zt
+packages/screenSaver/savers/melting.lua urlfs http://pastebin.com/raw/raUv6Pap
+packages/screenSaver/savers/bubbles.lua urlfs https://pastebin.com/raw/3CeFxk9X
+packages/screenSaver/savers/fire.lua urlfs https://pastebin.com/raw/4CY4AYj3
+packages/screenSaver/savers/rain.lua urlfs https://pastebin.com/raw/P86Hm99N

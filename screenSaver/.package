@@ -1,0 +1,6 @@
+{
+	title = 'Screen Savers',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/screenSaver',
+	description = [[ Various screen savers ]],
+	license = 'MIT',
+}

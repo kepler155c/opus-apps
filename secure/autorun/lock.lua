@@ -6,6 +6,10 @@ local kernel     = _G.kernel
 local keyboard   = device.keyboard
 local multishell = _ENV.multishell
 
+if not multishell then
+    return
+end
+
 local config = Config.load('secure', {
 	enabled = false,
     timeout = 60,
