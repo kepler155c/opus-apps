@@ -9,7 +9,7 @@ local STARTUP_FILE = 'usr/autorun/cobbleGen.lua'
 if not fs.exists(STARTUP_FILE) then
 	Util.writeFile(STARTUP_FILE,
 		[[os.sleep(1)
-shell.openForegroundTab('packages/milo/apps/cobblegen')]])
+shell.openForegroundTab('packages/miloApps/apps/cobblegen')]])
 end
 
 os.queueEvent('turtle_inventory')

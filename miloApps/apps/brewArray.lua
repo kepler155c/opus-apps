@@ -57,7 +57,7 @@ local inv = intro.getInventory()
 if not fs.exists(STARTUP_FILE) then
 	Util.writeFile(STARTUP_FILE,
 		[[os.sleep(1)
-shell.openForegroundTab('packages/milo/apps/brewArray.lua')]])
+shell.openForegroundTab('packages/miloApps/apps/brewArray.lua')]])
 end
 
 local brew

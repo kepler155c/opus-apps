@@ -19,7 +19,7 @@ local enderChest = device.manipulator and
 if not fs.exists(STARTUP_FILE) then
 	Util.writeFile(STARTUP_FILE,
 		[[os.sleep(1)
-shell.openForegroundTab('packages/milo/apps/enderchest')]])
+shell.openForegroundTab('packages/miloApps/apps/enderchest')]])
 end
 
 local directions = Util.transpose {

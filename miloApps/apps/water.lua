@@ -9,7 +9,7 @@ local STARTUP_FILE = 'usr/autorun/miloWater.lua'
 if not fs.exists(STARTUP_FILE) then
 	Util.writeFile(STARTUP_FILE,
 		[[os.sleep(2)
-shell.openForegroundTab('packages/milo/apps/water')]])
+shell.openForegroundTab('packages/miloApps/apps/water')]])
 end
 
 local played = false
