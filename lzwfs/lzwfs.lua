@@ -157,9 +157,11 @@ local function split(str, pattern)
 end
 
 local function matchesFilter(fname)
-    for _, filter in pairs(filters) do
-        if fname:match(filter) then
-            return true
+    if not fname:find('lzwfs') then  -- don't compress anything with lzwfs in name (sigh)
+        for _, filter in pairs(filters) do
+            if fname:match(filter) then
+                return true
+            end
         end
     end
 end
@@ -193,7 +195,7 @@ function fs.open(fname, flags)
 			end,
         }
     elseif flags == 'w' or flags == 'a' then
-        if not matchesFilter(fs.combine(fname, '')) or true then
+        if not matchesFilter(fs.combine(fname, '')) then
             return native.open(fname, flags)
         end
 

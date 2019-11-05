@@ -7,9 +7,9 @@ local fs = _G.fs
 local config = Config.load('lzwfs', {
 	enabled = false,
 	filters = {
-		'/packages',
-		'/sys',
-		'/usr/config',
+		'packages/',
+		'sys/',
+		'usr/config/',
 	}
 })
 
@@ -70,8 +70,10 @@ local function rewriteFiles(p)
 		local function recurse(path)
 			_G._syslog('rewriting: ' .. path)
 			if fs.isDir(path) then
-				for _, v in pairs(fs.list(path)) do
-					recurse(fs.combine(path, v))
+				for _, v in pairs(fs.listEx(path)) do
+					if not v.isReadOnly then
+						recurse(fs.combine(path, v.name))
+					end
 				end
 			else
 				local c = Util.readFile(path)
@@ -116,7 +118,7 @@ function tab:eventHandler(event)
 		if self.checkbox.value ~= config.enabled then
 			if not self.checkbox.value then
 				fs.option('compression', 'filters', { })
-				self:rewriteFiles(config.filters)
+				rewriteFiles(config.filters)
 				fs.option('compression', 'enabled', false)
 			else
 				fs.option('compression', 'enabled', true)

@@ -15,4 +15,4 @@ end
 
 os.run(_ENV, '/packages/lzwfs/lzwfs.lua')
 fs.option('compression', 'filters', config.filters)
-fs.option('compression', 'enable', config.enabled)
+fs.option('compression', 'enabled', config.enabled)
