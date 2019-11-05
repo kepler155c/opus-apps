@@ -5,9 +5,9 @@ local config = Config.load('lzwfs', {
     enabled = false,
     installed = false,
 	filters = {
-		'/packages',
-		'/sys',
-		'/usr/config',
+		'packages/',
+		'sys/',
+		'usr/config/',
 	}
 })
 
