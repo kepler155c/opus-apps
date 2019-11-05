@@ -8,6 +8,7 @@
 	[ 'games'      ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/games/.package',
 --	[ 'glasses'    ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/glasses/.package',
 	[ 'gps'        ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/gps/.package',
+	[ 'lzwfs'      ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/lzwfs/.package',
 	[ 'mbs'        ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/mbs/.package',
 	[ 'milo'       ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/milo/.package',
 	[ 'miloApps'   ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/miloApps/.package',
