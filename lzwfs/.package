@@ -1,0 +1,6 @@
+{
+	title = 'Disk compression',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/lzwfs',
+	description = [[ Disk compression ]],
+	license = 'MIT',
+}
