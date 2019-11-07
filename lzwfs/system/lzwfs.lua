@@ -115,6 +115,9 @@ function tab:eventHandler(event)
 			table.insert(filters, v.value)
 		end
 
+		self.statusBar:setStatus('Applying changes')
+		self:sync()
+
 		if self.checkbox.value ~= config.enabled then
 			if not self.checkbox.value then
 				fs.option('compression', 'filters', { })
@@ -129,13 +132,13 @@ function tab:eventHandler(event)
 			fs.option('compression', 'filters', filters)
 			for _,v in pairs(filters) do
 				if not Util.find(config.filters, v) then
-					rewriteFiles(v) -- uncompress paths not in current filter
+					rewriteFiles(v) -- compress
 				end
 			end
 
 			for _,v in pairs(config.filters) do
 				if not Util.find(filters, v) then
-					rewriteFiles(v) -- compress new filters
+					rewriteFiles(v) -- uncompress
 				end
 			end
 		end
