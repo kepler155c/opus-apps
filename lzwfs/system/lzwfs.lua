@@ -38,7 +38,7 @@ local tab = UI.Tab {
 		disableHeader = true,
 		columns = { { key = 'value' } },
 		autospace = true,
-		sortColumn = 'index',
+		sortColumn = 'value',
 		help = 'double-click to remove',
 		accelerators = {
 			delete = 'remove',
@@ -54,8 +54,8 @@ local tab = UI.Tab {
 
 function tab:enable()
 	self.grid.values = { }
-	for k,v in ipairs(config.filters or { }) do
-		table.insert(self.grid.values, { index = k, value = v })
+	for _,v in ipairs(config.filters or { }) do
+		table.insert(self.grid.values, { value = v })
 	end
 	self.grid:update()
 	UI.Tab.enable(self)
@@ -68,7 +68,6 @@ local function rewriteFiles(p)
 		end
 	else
 		local function recurse(path)
-			_G._syslog('rewriting: ' .. path)
 			if fs.isDir(path) then
 				for _, v in pairs(fs.listEx(path)) do
 					if not v.isReadOnly then
@@ -88,7 +87,6 @@ end
 function tab:eventHandler(event)
 	if event.type == 'add_path' then
 		table.insert(self.grid.values, {
-			index = #self.grid.values + 1,
 			value = self.entry.value,
 		})
 		self.entry:reset()
@@ -100,7 +98,7 @@ function tab:eventHandler(event)
 	elseif event.type == 'grid_select' or event.type == 'remove' then
 		local selected = self.grid:getSelected()
 		if selected then
-			table.remove(self.grid.values, selected.index)
+			Util.removeByValue(self.grid.values, selected)
 			self.grid:update()
 			self.grid:draw()
 		end

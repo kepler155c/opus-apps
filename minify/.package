@@ -1,0 +1,6 @@
+{
+	title = 'Lua minification',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/minify',
+	description = [[ Minifies Lua files ]],
+	license = 'MIT',
+}
