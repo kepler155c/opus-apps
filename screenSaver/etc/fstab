@@ -9,3 +9,6 @@ packages/screenSaver/savers/rain.lua urlfs https://pastebin.com/raw/P86Hm99N
 packages/screenSaver/savers/snow.lua urlfs https://pastebin.com/raw/j1dwdLKw
 packages/screenSaver/savers/fireworks.lua urlfs https://pastebin.com/raw/Yn5sWt3f
 packages/screenSaver/savers/starfield.lua urlfs https://pastebin.com/raw/AQm9R6nT
+packages/screenSaver/savers/nyan.lua urlfs https://pastebin.com/raw/YJnT6Adu
+packages/screenSaver/savers/bounce.lua urlfs https://pastebin.com/raw/WLrfdyNy
+packages/screenSaver/savers/antfarm.lua urlfs https://pastebin.com/raw/h9x3h7aw

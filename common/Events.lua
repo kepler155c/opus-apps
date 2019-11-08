@@ -3,7 +3,7 @@ local UI    = require('opus.ui')
 local Util  = require('opus.util')
 
 local multishell = _ENV.multishell
-local os         = _G.os
+local kernel     = _G.kernel
 
 UI:configure('Events', ...)
 
@@ -15,7 +15,7 @@ local page = UI.Page {
 			{ text = 'Pause ', event = 'toggle', name = 'pauseButton' },
 		},
 	},
-	grid = UI.Grid {
+	grid = UI.ScrollingGrid {
 		y = 2,
 		columns = {
 			{ key = 'event' },
@@ -112,28 +112,36 @@ function page.grid:draw()
 	UI.Grid.draw(self)
 end
 
-Event.addRoutine(function()
+local updated = false
+local hookFunction = function(event, e)
+	if not page.filtered[event] and not page.paused then
+		updated = true
+		table.insert(page.grid.values, 1, {
+			event = event,
+			p1 = e[1],
+			p2 = e[2],
+			p3 = e[3],
+			p4 = e[4],
+			p5 = e[5],
+		})
+	end
+end
 
-	while true do
-		local e = { os.pullEvent() }
-		if not page.paused and not page.filtered[e[1]] then
-			table.insert(page.grid.values, 1, {
-				event = e[1],
-				p1 = e[2],
-				p2 = e[3],
-				p3 = e[4],
-				p4 = e[5],
-				p5 = e[6],
-			})
-			if #page.grid.values > page.grid.height then
-				table.remove(page.grid.values, #page.grid.values)
-			end
-			page.grid:update()
-			page.grid:draw()
-			page:sync()
+kernel.hook('*', hookFunction)
+
+Event.onInterval(1, function()
+	if updated then
+		while #page.grid.values > 100 do -- page.grid.height do
+			table.remove(page.grid.values, 100) -- #page.grid.values)
 		end
+		updated = false
+		page.grid:update()
+		page.grid:draw()
+		page:sync()
 	end
 end)
 
 UI:setPage(page)
 UI:pullEvents()
+
+kernel.unhook('*', hookFunction)
