@@ -8,4 +8,10 @@ https://github.com/SquidDev-CC/mbs
 MBS is a series of utilities for improving the default CraftOS experience.
 	]],
 	license = 'MIT',
+	install = [[ 
+		require('opus.alternate').set('shell', '.mbs/bin/shell.lua')
+	]],
+	uninstall = [[
+		require('opus.alternate').remove('shell', '.mbs/bin/shell.lua')
+	]],
 }
