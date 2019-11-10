@@ -13,5 +13,6 @@ MBS is a series of utilities for improving the default CraftOS experience.
 	]],
 	uninstall = [[
 		require('opus.alternate').remove('shell', '.mbs/bin/shell.lua')
+		fs.delete('.mbs')
 	]],
 }

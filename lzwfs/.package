@@ -1,7 +1,8 @@
 {
 	title = 'Disk compression',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/lzwfs',
-	description = [[ Disk compression ]],
+	description = [[Transparent file compression.
+Go to System->Compression to activate]],
 	license = 'MIT',
 	install = [[ 
 		local Util = require('opus.util')
@@ -13,7 +14,7 @@
 				'sys/',
 				'usr/config/',
 			}
-		}
+		})
 		local boot = Util.readTable('.startup.boot')
 		table.insert(boot.preload, 1, '/packages/lzwfs/startup.lua')
 		Util.writeTable('.startup.boot', boot)
