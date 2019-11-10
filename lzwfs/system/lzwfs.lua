@@ -129,13 +129,13 @@ function tab:eventHandler(event)
 		elseif self.checkbox.value then
 			fs.option('compression', 'filters', filters)
 			for _,v in pairs(filters) do
-				if not Util.find(config.filters, v) then
+				if not Util.contains(config.filters, v) then
 					rewriteFiles(v) -- compress
 				end
 			end
 
 			for _,v in pairs(config.filters) do
-				if not Util.find(filters, v) then
+				if not Util.contains(filters, v) then
 					rewriteFiles(v) -- uncompress
 				end
 			end
