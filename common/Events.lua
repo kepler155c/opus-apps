@@ -113,8 +113,28 @@ function page.grid:draw()
 end
 
 local updated = false
+local timerId = os.startTimer(1)
+
+Event.addRoutine(function()
+	while true do
+		local _, id = os.pullEvent('timer')
+		if id == timerId then
+			if updated then
+				while #page.grid.values > 100 do -- page.grid.height do
+					table.remove(page.grid.values, 100) -- #page.grid.values)
+				end
+				updated = false
+				page.grid:update()
+				page.grid:draw()
+				page:sync()
+			end
+			timerId = os.startTimer(1)
+		end
+	end
+end)
+
 local hookFunction = function(event, e)
-	if not page.filtered[event] and not page.paused then
+	if not page.filtered[event] and not page.paused and not (event == 'timer' and e[1] == timerId) then
 		updated = true
 		table.insert(page.grid.values, 1, {
 			event = event,
@@ -128,18 +148,6 @@ local hookFunction = function(event, e)
 end
 
 kernel.hook('*', hookFunction)
-
-Event.onInterval(1, function()
-	if updated then
-		while #page.grid.values > 100 do -- page.grid.height do
-			table.remove(page.grid.values, 100) -- #page.grid.values)
-		end
-		updated = false
-		page.grid:update()
-		page.grid:draw()
-		page:sync()
-	end
-end)
 
 UI:setPage(page)
 UI:pullEvents()

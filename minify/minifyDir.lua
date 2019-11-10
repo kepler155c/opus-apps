@@ -10,7 +10,7 @@ local function recurse(path)
         end
     elseif path:match('%.lua$') and not fs.isReadOnly(path) then
         local sz = fs.getSize(path)
-        shell.run('packages/minify/minify.lua minify ' .. path)
+        shell.run('minify.lua minify ' .. path)
         print(string.format('%s : %.2f%%', path, (sz - fs.getSize(path)) / sz * 100))
     end
 end

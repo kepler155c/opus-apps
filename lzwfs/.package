@@ -3,4 +3,17 @@
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/lzwfs',
 	description = [[ Disk compression ]],
 	license = 'MIT',
+	install = [[
+		local Util = require('opus.util')
+		local boot = Util.readTable('.startup.boot')
+		table.insert(boot.preload, 1, '/packages/lzwfs/startup.lua')
+		Util.writeTable('.startup.boot', boot)
+	]],
+	uninstall = [[
+		local Array = require('opus.array')
+		local Util = require('opus.util')
+		local boot = Util.readTable('.startup.boot')
+		Array.removeByValue(boot.preload or { }, '/packages/lzwfs/startup.lua')
+		Util.writeTable('.startup.boot', boot)
+	]]
 }
