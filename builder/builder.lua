@@ -276,7 +276,7 @@ function substitutionPage:eventHandler(event)
 		self.info:draw()
 
 	elseif event.type == 'text_change' then
-		local text = event.text
+		local text = event.text or ''
 		if #text == 0 then
 			self.grid.values = self.allItems
 		else

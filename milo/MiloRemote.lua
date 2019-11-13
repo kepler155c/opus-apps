@@ -246,7 +246,7 @@ function page:eventHandler(event)
 		Config.update('miloRemote', context.state)
 
 	elseif event.type == 'text_change' and event.element == self.statusBar.filter then
-		self.filter = event.text
+		self.filter = event.text or ''
 		if #self.filter == 0 then
 			self.filter = nil
 		end

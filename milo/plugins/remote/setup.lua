@@ -21,7 +21,7 @@ local setup = UI.SlideOut {
 			help = 'ID for the server',
 			shadowText = 'Milo server ID',
 			limit = 6,
-			validate = 'numeric',
+			transform = 'number',
 			required = true,
 		},
 		[2] = UI.TextEntry {
@@ -29,7 +29,7 @@ local setup = UI.SlideOut {
 			help = 'Use a slot for sending to storage',
 			shadowText = 'Inventory slot #',
 			limit = 5,
-			validate = 'numeric',
+			transform = 'number',
 			required = false,
 		},
 		[3] = UI.Checkbox {

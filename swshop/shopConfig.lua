@@ -106,7 +106,7 @@ local passwordPage = UI.WizardPage {
 }
 
 local function makeAddress(text, isPrivateKey)
-	local privKey = text
+	local privKey = text or ''
 	if not isPrivateKey then
 		privKey = Krist.toKristWalletFormat(privKey)
 	end
@@ -116,7 +116,7 @@ end
 function passwordPage.form:eventHandler(event)
 	if (event.type == 'text_change' and event.element.pass) or
 		 (event.type == 'checkbox_change' and event.element.ispkey) then
-  self.passEntry.shadowText = self.pkeyCheck.value and 'Private key' or 'Password'
+		self.passEntry.shadowText = self.pkeyCheck.value and 'Private key' or 'Password'
 		self.preview.value = makeAddress(self.passEntry.value, self.pkeyCheck.value)
 		self:draw()
 	end

@@ -15,14 +15,14 @@ local storageView = UI.WizardPage {
 			formLabel = 'Priority', formKey = 'priority',
 			help = 'Larger values get precedence',
 			limit = 4,
-			validate = 'numeric',
+			transform = 'number',
 			shadowText = 'Numeric priority',
 		},
 		[2] = UI.TextEntry {
 			formLabel = 'Refresh', formKey = 'refreshInterval',
 			shadowText = 'seconds between refresh',
 			limit = 4,
-			validate = 'numeric',
+			tranform = 'number',
 			help = 'Refresh periodically',
 		},
 		[3] = UI.TextArea {

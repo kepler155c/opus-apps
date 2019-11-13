@@ -42,11 +42,15 @@ function tab:eventHandler(event)
 		config.enabled = not not event.checked
 
 	elseif event.type == 'update' then
-		config.timeout = self.timeout.value
-		Config.update('secure', config)
+		if self.timeout.value then
+			config.timeout = self.timeout.value
+			Config.update('secure', config)
 
-		self:emit({ type = 'success_message', message = 'Settings updated' })
-		os.queueEvent('config_update', 'secure', config)
+			self:emit({ type = 'success_message', message = 'Settings updated' })
+			os.queueEvent('config_update', 'secure', config)
+		else
+			self:emit({ type = 'error_message', message = 'Invalid timeout' })
+		end
 	end
 	return UI.Tab.eventHandler(self, event)
 end

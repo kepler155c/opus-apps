@@ -33,6 +33,7 @@ local tab = UI.Tab {
 			shadowText = 'id',
 			width = 5,
 			limit = 3,
+			transform = 'number',
 		},
 		add = UI.Button {
 			x = 28, y = 3,
@@ -78,23 +79,27 @@ end
 
 function tab:eventHandler(event)
 	if event.type == 'form_complete' then
-		ccemux.detach(event.values.side)
-		ccemux.attach(event.values.side, event.values.type)
+		if event.values.type == 'disk_drive' and not event.values.drive_id then
+			self:emit({ type = 'error_message', message = 'Invalid drive ID' })
+		else
+			ccemux.detach(event.values.side)
+			ccemux.attach(event.values.side, event.values.type)
 
-		local config = Config.load('ccemux')
-		config[event.values.side] = {
-			type = event.values.type
-		}
-		if event.values.type == 'disk_drive' and tonumber(event.values.drive_id) then
-			config[event.values.side].args = {
-				id = tonumber(event.values.drive_id)
+			local config = Config.load('ccemux')
+			config[event.values.side] = {
+				type = event.values.type
 			}
-		end
-		Config.update('ccemux', config)
-		self:updatePeripherals(config)
-		self.grid:draw()
+			if event.values.type == 'disk_drive' then
+				config[event.values.side].args = {
+					id = event.values.drive_id
+				}
+			end
+			Config.update('ccemux', config)
+			self:updatePeripherals(config)
+			self.grid:draw()
 
-		self:emit({ type = 'success_message', message = 'Attached' })
+			self:emit({ type = 'success_message', message = 'Attached' })
+		end
 
 	elseif event.type == 'choice_change' then
 		if event.element == self.form.ptype then

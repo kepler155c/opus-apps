@@ -21,12 +21,12 @@ local manageTab = UI.Tab {
 		[2] = UI.TextEntry {
 			width = 7,
 			formLabel = 'Min', formKey = 'low', help = 'Craft if below min',
-			validate = 'numeric',
+			transform = 'number',
 		},
 		[3] = UI.TextEntry {
 			width = 7,
 			formLabel = 'Max', formKey = 'limit', help = 'Send to trash if above max',
-			validate = 'numeric',
+			transform = 'number',
 		},
 		[4] = UI.Checkbox {
 			formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',

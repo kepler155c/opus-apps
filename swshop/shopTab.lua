@@ -25,7 +25,7 @@ local shopTab = UI.Tab {
 			formLabel = 'Price', formKey = 'price',
 			help = 'Per item cost',
 			required = true,
-			validate = 'numeric',
+			transform = 'number',
 		},
 		[3] = UI.TextEntry {
 			limit = 64,

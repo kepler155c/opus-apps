@@ -85,7 +85,7 @@ local function rewriteFiles(p)
 end
 
 function tab:eventHandler(event)
-	if event.type == 'add_path' then
+	if event.type == 'add_path' and self.entry.value then
 		table.insert(self.grid.values, {
 			value = self.entry.value,
 		})
