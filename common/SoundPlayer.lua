@@ -8,7 +8,7 @@ if not peripheral.find('speaker') then
 	error('No speaker attached')
 end
 
-local rawSounds = Util.readLines('packages/games/etc/sounds.txt') or error('Unable to read sounds file')
+local rawSounds = Util.readLines('packages/common/etc/sounds.txt') or error('Unable to read sounds file')
 local sounds = { }
 for _, s in pairs(rawSounds) do
 	table.insert(sounds, { name = s })

@@ -60,37 +60,37 @@ local page = UI.Page {
 		sortColumn = 'name',
 		autospace = true,
 	},
-  add = UI.SlideOut {
-    backgroundColor = colors.cyan,
-    titleBar = UI.TitleBar {
-      title = 'Add a new book',
-    },
-    form = UI.Form {
-      x = 2, ex = -2, y = 2, ey = -1,
-      [1] = UI.TextEntry {
-        formLabel = 'Name', formKey = 'name',
-				shadowText = 'Friendly name',
-				limit = 64,
-        required = true,
-      },
-      [2] = UI.TextEntry {
-        formLabel = 'Version', formKey = 'version',
-        shadowText = 'Mod version',
-        limit = 10,
-      },
-      [3] = UI.TextEntry {
-        formLabel = 'URL', formKey = 'url',
-				shadowText = 'URL for recipes',
-				limit = 128,
-        required = true,
-      },
-      [4] = UI.TextEntry {
-        formLabel = 'File name', formKey = 'localName',
-				shadowText = 'Short name for saving file',
-				limit = 20,
-        required = true,
-      },
-    },
+	add = UI.SlideOut {
+		backgroundColor = colors.cyan,
+		titleBar = UI.TitleBar {
+			title = 'Add a new book',
+		},
+		form = UI.Form {
+			x = 2, ex = -2, y = 2, ey = -1,
+			[1] = UI.TextEntry {
+				formLabel = 'Name', formKey = 'name',
+						shadowText = 'Friendly name',
+						limit = 64,
+				required = true,
+			},
+			[2] = UI.TextEntry {
+				formLabel = 'Version', formKey = 'version',
+				shadowText = 'Mod version',
+				limit = 10,
+			},
+			[3] = UI.TextEntry {
+				formLabel = 'URL', formKey = 'url',
+						shadowText = 'URL for recipes',
+						limit = 128,
+				required = true,
+			},
+			[4] = UI.TextEntry {
+				formLabel = 'File name', formKey = 'localName',
+						shadowText = 'Short name for saving file',
+						limit = 20,
+				required = true,
+			},
+		},
 	},
 	notification = UI.Notification { },
 }
@@ -156,8 +156,8 @@ function page:eventHandler(event)
 		self.grid:draw()
 
 	elseif event.type == 'add_book' then
-    self.add.form:setValues({ })
-    self.add:show()
+		self.add.form:setValues({ })
+		self.add:show()
 
 	elseif event.type == 'form_complete' then
 		self.add:hide()
@@ -166,8 +166,8 @@ function page:eventHandler(event)
 		self.grid:setValues(getRecipeBooks())
 		self.grid:draw()
 
-  elseif event.type == 'form_cancel' then
-    self.add:hide()
+	elseif event.type == 'form_cancel' then
+		self.add:hide()
 
 	elseif event.type == 'grid_focus_row' then
 		self.info:draw()

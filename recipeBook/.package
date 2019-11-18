@@ -1,6 +1,6 @@
 {
 	title = 'Recipe books for crafting programs',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/recipeBook',
-	description = [[ WIP ]],
+	description = [[Recipe book manager for Milo and programs that utilize crafting]],
 	license = 'MIT',
 }

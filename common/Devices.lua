@@ -1,5 +1,3 @@
-_G.requireInjector(_ENV)
-
 local Ansi  = require('opus.ansi')
 local Event = require('opus.event')
 local UI    = require('opus.ui')
@@ -27,7 +25,7 @@ local peripheralsPage = UI.Page {
 	},
 }
 
-function peripheralsPage.grid:draw()
+function peripheralsPage.grid:enable()
 	local sides = peripheral.getNames()
 
 	Util.clear(self.values)
@@ -39,7 +37,7 @@ function peripheralsPage.grid:draw()
 	end
 	self:update()
 	self:adjustWidth()
-	UI.Grid.draw(self)
+	UI.Grid.enable(self)
 end
 
 function peripheralsPage:updatePeripherals()
@@ -84,7 +82,6 @@ local methodsPage = UI.Page {
 }
 
 function methodsPage:enable(p)
-
 	self.peripheral = p or self.peripheral
 
 	p = peripheral.wrap(self.peripheral.side)
@@ -136,7 +133,6 @@ function methodsPage:eventHandler(event)
 end
 
 function methodsPage:getDocumentation()
-
 	local method = self.grid:getSelected()
 
 	if method.noext then    -- computercraft docs

@@ -1,0 +1,6 @@
+{
+	title = 'Example programs for coding in Opus',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/examples',
+	description = [[Starter/example programs for creating Opus programs.]],
+	license = 'MIT',
+}
