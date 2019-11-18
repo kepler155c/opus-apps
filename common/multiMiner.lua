@@ -351,8 +351,8 @@ local page = UI.Page {
 	menuBar = UI.MenuBar {
 		buttons = {
 			{ text = 'Scan',  event = 'scan' },
-			{ text = 'Abort', event = 'abort' },
 			pauseResume[1],
+			{ text = 'Abort', event = 'abort', x = -7 },
 		},
 	},
 	tabs = UI.Tabs {
