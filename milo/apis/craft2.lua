@@ -309,7 +309,7 @@ function Craft.craftRecipeInternal(recipe, count, storage, origItem, path)
 	local function maxBatch()
 		local max = 64
 		for _, i in Craft.ingredients(recipe) do
-			max = math.min(max, math.floor(64 / i.count))
+			max = math.min(max, math.floor(itemDB:getMaxCount(i.key) / i.count))
 		end
 		return max
 	end
