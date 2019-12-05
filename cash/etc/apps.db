@@ -1,7 +1,7 @@
 {
-	[ "a3c2cb0e2228250d98c481128f6837ef93111d73" ] = {
-		title = "MBS",
+	[ "16323efd4cb1f1f639d67b94161c2ef37a905517e" ] = {
+		title = "cash",
 		category = "Apps",
-		run = ".mbs/bin/shell.lua",
+		run = "packages/cash/cash.lua",
 	},
 }
