@@ -1,0 +1,7 @@
+{
+	[ "a3c2cb0e2228250d98c481128f6837ef93111d73" ] = {
+		title = "MBS",
+		category = "Apps",
+		run = ".mbs/bin/shell.lua",
+	},
+}

@@ -1,0 +1,30 @@
+{
+	title = 'ComputerCraft Advanced Shell',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/cash',
+	description = [[A Bourne-compatible shell for ComputerCraft.
+
+Features
+Bash/sh-style command line
+Tab completion (defaulting to file names where not supported)
+Customizable prompts (including ANSI support)
+Local & environment variables
+Argument quoting
+Multiple commands on one line with semicolons
+Many built-in functions (including in-line Lua commands)
+Arithmetic expansion
+If, while, for statements
+Function support
+Shell scripting/shebangs
+Background jobs
+rc files
+Restorable history
+Partial CCKernel2 support
+Full compatibility with CraftOS shell.lua]],
+	license = 'MIT',
+	install = [[
+		require('opus.alternate').set('shell', 'packages/cash/cash.lua')
+	]],
+	uninstall = [[
+		require('opus.alternate').remove('shell', 'packages/cash/cash.lua')
+	]],
+}
