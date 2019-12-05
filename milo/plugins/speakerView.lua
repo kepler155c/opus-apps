@@ -39,7 +39,7 @@ local wizardPage = UI.WizardPage {
 function wizardPage:setNode(node)
 	self.form:setValues(node)
 	if not node.volume then
-		self.form.volume = 1
+		self.form.volume.value = 1
 	end
 end
 
