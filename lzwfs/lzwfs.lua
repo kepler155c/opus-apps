@@ -180,7 +180,14 @@ function fs.open(fname, flags)
 		local ctr = 0
 		local lines
 		return {
-			readLine = function()
+            read = function()
+                if not lines then
+                    lines = decompress(f.readAll())
+				end
+                ctr = ctr + 1
+                return lines:sub(ctr, ctr)
+            end,
+            readLine = function()
 				if not lines then
                     lines = split(decompress(f.readAll()))
 				end
