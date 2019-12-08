@@ -5,6 +5,8 @@
 
 -- Updated to use new(ish) canvas3d
 
+local Config = require('opus.config')
+
 local gps        = _G.gps
 local keys       = _G.keys
 local os         = _G.os
@@ -43,7 +45,7 @@ local function getPoint()
 	end
 end
 
-local targets = {
+local targets = Config.load('ores', {
 	["minecraft:emerald_ore"]      = { "minecraft:emerald_ore", 0 },
 	["minecraft:diamond_ore"]      = { "minecraft:diamond_ore", 0 },
 	["minecraft:gold_ore"]         = { "minecraft:gold_ore", 0 },
@@ -54,7 +56,8 @@ local targets = {
 	["minecraft:coal_ore"]         = { "minecraft:coal_ore", 0 },
 	["minecraft:quartz_ore"]       = { "minecraft:quartz_ore", 0 },
 	["minecraft:glowstone"]        = { "minecraft:glowstone", 0 },
-}
+})
+
 local projecting = { }
 local offset = getPoint() or showRequirements('GPS')
 local canvas = modules.canvas3d().create({
@@ -85,7 +88,7 @@ local function update()
 
 			local blocks = { }
 			for _, b in pairs(scanned) do
-				if targets[b.name] then
+				if targets[b.name..(b.metadata ~= 0 and ":"..b.metadata or "")] then
 					-- track block's world position
 					b.id = table.concat({
 						math.floor(pos.x + b.x),
@@ -98,7 +101,8 @@ local function update()
 			for _, b in pairs(blocks) do
 				if not projecting[b.id] then
 					projecting[b.id] = b
-					local target = targets[b.name]
+
+					local target = targets[b.name..(b.metadata ~= 0 and ":"..b.metadata or "")]
 
 					local x = b.x - math.floor(offset.x) + math.floor(pos.x)
 					local y = b.y - math.floor(offset.y) + math.floor(pos.y)
