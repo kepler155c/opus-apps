@@ -1,6 +1,6 @@
 {
 	[ "16323efd4cb1f1f639d67b94161c2ef37a905517e" ] = {
-		title = "cash",
+		title = "Cash",
 		category = "Apps",
 		run = "packages/cash/cash.lua",
 	},

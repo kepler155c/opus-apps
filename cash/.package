@@ -23,6 +23,7 @@ Full compatibility with CraftOS shell.lua]],
 	license = 'MIT',
 	install = [[
 		require('opus.alternate').set('shell', 'packages/cash/cash.lua')
+		require('opus.util').writeFile('.cashrc', 'set TERMINATE_QUIT=yes')
 	]],
 	uninstall = [[
 		require('opus.alternate').remove('shell', 'packages/cash/cash.lua')
