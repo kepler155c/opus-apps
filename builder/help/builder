@@ -27,7 +27,7 @@ Copy a schematic file to the turtle/command computer (see downloading instructio
 Building
 ========
 Run:
-> builder <schematic file>
+> builder <schematic file or url>
 
 The first time you run the program, you must select a wrench. Place a wrench into the chest. Go to the supplies list and double-click the SelectAWrench item. Select the wrench and apply.
 
@@ -47,9 +47,13 @@ Simply copy a schematic file into the computer's folder.
 
 Multiplayer
 -----------
-Option 1: Use wget if the schematic is available for download (unreliable).
+Option 1: Pass the url of the schematic.
 
-Option 2: Transferring via pastebin (reliable)
+> builder <url>
+
+Option 2: Use wget if the schematic is available for download (unreliable).
+
+Option 3: Transferring via pastebin (reliable)
 To create a base64 file from a command line, do:
 
 * linux / max:
