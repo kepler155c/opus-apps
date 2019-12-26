@@ -247,7 +247,7 @@ function page:eventHandler(event)
 
 	elseif event.type == 'text_change' and event.element == self.statusBar.filter then
 		self.filter = event.text
-		if #self.filter == 0 then
+		if self.filter and #self.filter == 0 then
 			self.filter = nil
 		end
 		self:applyFilter()
