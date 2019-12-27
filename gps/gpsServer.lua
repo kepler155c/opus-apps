@@ -6,7 +6,6 @@ local Event  = require('opus.event')
 
 local colors     = _G.colors
 local fs         = _G.fs
-local gps        = _G.gps
 local os         = _G.os
 local peripheral = _G.peripheral
 local read       = _G.read
@@ -200,7 +199,7 @@ local function server(mode)
 			error('Modem is not activated or connected: ' .. k)
 		end
 		if mode == 'gps' then
-			modem.open(gps.CHANNEL_GPS)
+			modem.open(GPS.CHANNEL_GPS)
 		elseif mode == 'snmp' then
 			modem.open(999)
 		end
@@ -254,9 +253,9 @@ local function server(mode)
 
 	Event.on('modem_message', function(_, side, channel, computerId, message, distance)
 		if distance and modems[side] then
-			if mode == 'gps' and channel == gps.CHANNEL_GPS and message == "PING" then
+			if mode == 'gps' and channel == GPS.CHANNEL_GPS and message == "PING" then
 				for _, modem in pairs(modems) do
-					modem.transmit(computerId, gps.CHANNEL_GPS, { modem.x, modem.y, modem.z })
+					modem.transmit(computerId, GPS.CHANNEL_GPS, { modem.x, modem.y, modem.z })
 				end
 				getPosition(computerId, modems[side], distance)
 			end

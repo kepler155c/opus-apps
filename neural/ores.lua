@@ -6,8 +6,8 @@
 -- Updated to use new(ish) canvas3d
 
 local Config = require('opus.config')
+local GPS = require("opus.gps")
 
-local gps        = _G.gps
 local keys       = _G.keys
 local os         = _G.os
 local parallel   = _G.parallel
@@ -35,14 +35,7 @@ end
 local BLOCK_SIZE = .5
 
 local function getPoint()
-	local pt = { gps.locate() }
-	if pt[1] then
-		return {
-			x = pt[1],
-			y = pt[2],
-			z = pt[3],
-		}
-	end
+	return GPS.locate()
 end
 
 local targets = Config.load('ores', {
