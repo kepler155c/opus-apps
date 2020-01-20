@@ -40,7 +40,7 @@ local sources = {
 
 	{ text = "STD Default",
 		event = 'source',
-		url = "http://pastebin.com/raw/zVws7eLq" }, --stock
+		url = "https://github.com/LDDestroier/STD-GUI/raw/master/list.lua" }, --stock
 --[[
 	{ text = "Discover",
 		event = 'source',
