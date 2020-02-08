@@ -44,7 +44,7 @@ local function getItemDetails(item)
 		t = textutils.unserialize(t)
 		for key, v in pairs(t) do
 			if v.name == item then
-				return key, v.price
+				return key, tonumber(v.price)
 			end
 		end
 	end
