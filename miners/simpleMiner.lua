@@ -35,7 +35,12 @@ local fortuneBlocks = {
 
 local MIN_FUEL = 7500
 local LOW_FUEL = 1500
-local MAX_FUEL = turtle.getFuelLimit()
+
+if turtle.getFuelLimit() == 'unlimited' then
+	MAX_FUEL = 100000
+else
+	MAX_FUEL = turtle.getFuelLimit()
+end
 
 local PROGRESS_FILE = 'usr/config/mining.progress'
 local TRASH_FILE    = 'usr/config/mining.trash'
@@ -380,8 +385,9 @@ local function mineable(action)
 	if block.name == 'minecraft:chest' then
 		collectDrops(action.suck)
 	end
-
+		print(MAX_FUEL)	
 	if turtle.getFuelLevel() < (MAX_FUEL - 1000) then
+		print(MAX_FUEL)
 		if block.name == 'minecraft:lava' or block.name == 'minecraft:flowing_lava' then
 			if turtle.select('minecraft:bucket:0') then
 				if action.place() then
