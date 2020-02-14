@@ -391,8 +391,9 @@ end
 if type(turtle.getFuelLevel()) ~= 'number' then
 	-- Support unlimited fuel
 	function turtle.getFuelLevel()
-		return 100000
+		return math.huge
 	end
+	turtle.getFuelLimit = turtle.getFuelLevel
 end
 
 -- override to optionally specify a fuel
