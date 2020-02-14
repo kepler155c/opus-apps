@@ -385,9 +385,7 @@ local function mineable(action)
 	if block.name == 'minecraft:chest' then
 		collectDrops(action.suck)
 	end
-		print(MAX_FUEL)	
 	if turtle.getFuelLevel() < (MAX_FUEL - 1000) then
-		print(MAX_FUEL)
 		if block.name == 'minecraft:lava' or block.name == 'minecraft:flowing_lava' then
 			if turtle.select('minecraft:bucket:0') then
 				if action.place() then
