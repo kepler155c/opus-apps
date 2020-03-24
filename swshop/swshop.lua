@@ -19,7 +19,7 @@ local textutils = _G.textutils
 local chat = device['plethora:chat']
 local storage = Config.load('storage')
 
-rs.setOutput('top', false)
+Util.each(rs.getSides(), function(side) rs.setOutput(side, false) end)
 
 r.init(jua)
 w.init(jua)
@@ -31,7 +31,7 @@ local privatekey = config.isPrivateKey and config.password or Krist.toKristWalle
 local address = Krist.makev2address(privatekey)
 
 jua.on("terminate", function()
-	rs.setOutput('top', false)
+	rs.setOutput(config.rsSide, false)
 	jua.stop()
 	_G.printError("Terminated")
 end)
@@ -144,7 +144,7 @@ local function connect()
 	assert(success, "Failed to get websocket URL")
 
 	print("Connected to websocket.")
-	rs.setOutput('top', true)
+	rs.setOutput(config.rsSide, true)
 
 	success = await(ws.subscribe, "ownTransactions", function(data)
 		local transaction = data.transaction
@@ -160,7 +160,7 @@ local s, m = pcall(function()
 	end)
 end)
 
-rs.setOutput('top', false)
+rs.setOutput(config.rsSide, false)
 if not s then
 	error(m, 2)
 end

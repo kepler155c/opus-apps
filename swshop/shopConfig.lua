@@ -33,8 +33,22 @@ local wizardPage = UI.WizardPage {
 			limit = 64,
 		},
 		[4] = UI.Chooser {
+			formLabel = 'RS Signal', formKey = 'rsSide', formIndex = 5,
+			width = 10,
+			nochoice = 'Top',
+			choices = {
+				{name = 'Bottom', value = 'bottom'},
+				{name = 'Top', value = 'top'},
+				{name = 'Back', value = 'back'},
+				{name = 'Front', value = 'front'},
+				{name = 'Right', value = 'right'},
+				{name = 'Left', value = 'left'},
+			},
+			required = true,
+		},
+		[5] = UI.Chooser {
 			width = 9,
-			formIndex = 5,
+			formIndex = 6,
 			formLabel = 'Font Size', formKey = 'textScale',
 			nochoice = 'Small',
 			choices = {
