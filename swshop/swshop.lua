@@ -29,9 +29,10 @@ local node = ({ ... })[1] or error('Node name is required')
 local config = storage[node]
 local privatekey = config.isPrivateKey and config.password or Krist.toKristWalletFormat(config.password)
 local address = Krist.makev2address(privatekey)
+local rsSide = config.rsSide or 'top'
 
 jua.on("terminate", function()
-	rs.setOutput(config.rsSide, false)
+	rs.setOutput(rsSide, false)
 	jua.stop()
 	_G.printError("Terminated")
 end)
@@ -144,7 +145,7 @@ local function connect()
 	assert(success, "Failed to get websocket URL")
 
 	print("Connected to websocket.")
-	rs.setOutput(config.rsSide, true)
+	rs.setOutput(rsSide, true)
 
 	success = await(ws.subscribe, "ownTransactions", function(data)
 		local transaction = data.transaction
@@ -160,7 +161,7 @@ local s, m = pcall(function()
 	end)
 end)
 
-rs.setOutput(config.rsSide, false)
+rs.setOutput(rsSide, false)
 if not s then
 	error(m, 2)
 end
