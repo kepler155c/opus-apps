@@ -1,0 +1,25 @@
+An item shop software using Krist as its currency.
+
+Requirements
+============
+ * Advanced Turtle
+ * Chests (any type)
+ * Milo system
+
+Installation
+============
+> pastebin run uzghlbnc
+> package install swshop
+> reboot
+
+Setup
+=====
+From the shell, run the 'installPlugin.lua' once to install the shop component into your Milo installation.
+
+From Milo, open the setup page and find the monitor you wish to use in the list.
+
+Choose the monitor's type to be 'Store Front', and configure your domain and your wallet's key.
+
+Usage
+=====
+Setup prices by right-clicking on the desired item and going on the 'Shops' tab.

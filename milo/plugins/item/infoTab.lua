@@ -27,6 +27,9 @@ function infoTab:draw()
 		value = value .. item.nbtHash .. '\n'
 	end
 
+	value = value .. string.format('\n%sCount:%s %s',
+		Ansi.yellow, Ansi.reset, item.count)
+
 	value = value .. string.format('\n%sDamage:%s %s',
 		Ansi.yellow, Ansi.reset, item.damage)
 

@@ -19,7 +19,7 @@ local textutils = _G.textutils
 local chat = device['plethora:chat']
 local storage = Config.load('storage')
 
-rs.setOutput('top', false)
+Util.each(rs.getSides(), function(side) rs.setOutput(side, false) end)
 
 r.init(jua)
 w.init(jua)
@@ -29,9 +29,10 @@ local node = ({ ... })[1] or error('Node name is required')
 local config = storage[node]
 local privatekey = config.isPrivateKey and config.password or Krist.toKristWalletFormat(config.password)
 local address = Krist.makev2address(privatekey)
+local rsSide = config.rsSide or 'top'
 
 jua.on("terminate", function()
-	rs.setOutput('top', false)
+	rs.setOutput(rsSide, false)
 	jua.stop()
 	_G.printError("Terminated")
 end)
@@ -44,7 +45,7 @@ local function getItemDetails(item)
 		t = textutils.unserialize(t)
 		for key, v in pairs(t) do
 			if v.name == item then
-				return key, v.price
+				return key, tonumber(v.price)
 			end
 		end
 	end
@@ -144,7 +145,7 @@ local function connect()
 	assert(success, "Failed to get websocket URL")
 
 	print("Connected to websocket.")
-	rs.setOutput('top', true)
+	rs.setOutput(rsSide, true)
 
 	success = await(ws.subscribe, "ownTransactions", function(data)
 		local transaction = data.transaction
@@ -160,7 +161,7 @@ local s, m = pcall(function()
 	end)
 end)
 
-rs.setOutput('top', false)
+rs.setOutput(rsSide, false)
 if not s then
 	error(m, 2)
 end

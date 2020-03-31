@@ -50,7 +50,7 @@ local page = UI.Page {
 	},
 	statusBar = UI.StatusBar {
 		filter = UI.TextEntry {
-			x = 1, ex = -17,
+			x = 1, ex = -18,
 			limit = 50,
 			shadowText = 'filter',
 			shadowTextColor = colors.gray,
@@ -64,14 +64,14 @@ local page = UI.Page {
 			},
 		},
 		storageStatus = UI.Text {
-			x = -16, ex = -9,
+			x = -17, ex = -10,
 			textColor = colors.lime,
 			backgroundColor = colors.cyan,
 			value = '',
 		},
 		amount = UI.TextEntry {
-			x = -8, ex = -4,
-			limit = 3,
+			x = -9, ex = -4,
+			limit = 4,
 			shadowText = '1',
 			shadowTextColor = colors.gray,
 			backgroundColor = colors.black,

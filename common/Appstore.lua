@@ -38,7 +38,7 @@ local APP_DIR = 'usr/apps'
 local source = {
 	text = "STD Default",
 	event = 'source',
-	url = "http://pastebin.com/raw/zVws7eLq",
+	url = "https://github.com/LDDestroier/STD-GUI/raw/master/list.lua",
 }
 
 shell.setDir(APP_DIR)
@@ -325,7 +325,7 @@ function categoryPage:setCategory(name, index)
 			table.insert(self.grid.values, v)
 		end
 	end
-	self.statusBar:setStatus(string.format('%s: %s', self.source.text, name))
+	self.statusBar:setStatus(string.format('%s: %s', self.source.text or '', name))
 	self.grid:update()
 	self.grid:setIndex(1)
 end
@@ -346,7 +346,7 @@ function categoryPage:eventHandler(event)
 		UI:setPage(appPage, self.grid:getSelected())
 
 	elseif event.type == 'category' then
-		self:setCategory(self.source, event.button.text, event.button.index)
+		self:setCategory(event.button.text, event.button.index)
 		self:setFocus(self.grid)
 		self:draw()
 

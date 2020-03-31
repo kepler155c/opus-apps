@@ -60,7 +60,7 @@ local page = UI.Page {
 	statusBar = UI.Window {
 		y = -1,
 		filter = UI.TextEntry {
-			x = 1, ex = -12,
+			x = 1, ex = -13,
 			limit = 50,
 			shadowText = 'filter',
 			backgroundColor = colors.cyan,
@@ -73,8 +73,8 @@ local page = UI.Page {
 			},
 		},
 		amount = UI.TextEntry {
-			x = -11, ex = -7,
-			limit = 3,
+			x = -12, ex = -7,
+			limit = 4,
 			shadowText = '1',
 			shadowTextColor = colors.gray,
 			backgroundColor = colors.black,
