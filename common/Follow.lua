@@ -42,7 +42,6 @@ local page = UI.Page {
 	},
 	range = UI.SlideOut {
 		y = -7, height = 7,
-		backgroundColor = colors.cyan,
 		titleBar = UI.TitleBar {
 			event = 'cancel',
 			title = 'Enter range',

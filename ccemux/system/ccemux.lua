@@ -9,7 +9,7 @@ local tab = UI.Tab {
 	tabTitle = 'CCEmuX',
 	description = 'CCEmuX peripherals',
 	form = UI.Form {
-		x = 2, ex = -2, y = 1, ey = 4,
+		x = 2, ex = -2, y = 2, ey = 5,
 		values = {
 			side = 'bottom',
 			type = 'wireless_modem',
@@ -28,7 +28,7 @@ local tab = UI.Tab {
 			},
 		},
 		drive_id = UI.TextEntry {
-			x = 20, y = 3,
+			x = 19, y = 3,
 			formKey = 'drive_id',
 			shadowText = 'id',
 			width = 5,
@@ -36,13 +36,13 @@ local tab = UI.Tab {
 			transform = 'number',
 		},
 		add = UI.Button {
-			x = 28, y = 3,
+			x = -6, y = 3, width = 5,
 			text = 'Add', event = 'form_ok',
 			help = 'Add items to turtle to add to filter',
 		},
 	},
 	grid = UI.Grid {
-		x = 3, ex = -3, y = 6, ey = -2,
+		x = 2, ex = -2, y = 7, ey = -2,
 		columns = {
 			{ heading = 'Side', key = 'side', width = 8 },
 			{ heading = 'Type', key = 'type' },

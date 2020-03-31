@@ -15,7 +15,7 @@ local setup = UI.SlideOut {
 		title = 'Remote Setup',
 	},
 	form = UI.Form {
-		x = 2, ex = -2, y = 2, ey = -1,
+		y = 2, ey = -1,
 		[1] = UI.TextEntry {
 			formLabel = 'Server', formKey = 'server',
 			help = 'ID for the server',
@@ -40,15 +40,15 @@ local setup = UI.SlideOut {
 			formLabel = 'Run on startup', formKey = 'runOnStartup',
 			help = 'Run this program on startup'
 		},
-		info = UI.TextArea {
-			x = 1, ex = -1, y = 6, ey = -4,
-			textColor = colors.yellow,
-			marginLeft = 0,
-			marginRight = 0,
-			value = [[The Milo turtle must connect to a manipulator with a ]] ..
-							[[bound introspection module. The neural interface must ]] ..
-							[[also have an introspection module.]],
-		},
+	},
+	info = UI.TextArea {
+		x = 2, ex = -2, y = 8, ey = -4,
+		textColor = colors.yellow,
+		marginLeft = 0,
+		marginRight = 0,
+		value = [[The Milo turtle must connect to a manipulator with a ]] ..
+						[[bound introspection module. The neural interface must ]] ..
+						[[also have an introspection module.]],
 	},
 	statusBar = UI.StatusBar {
 		backgroundColor = colors.cyan,

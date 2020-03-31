@@ -241,6 +241,7 @@ The settings will take effect immediately!]],
 	notification = UI.Notification { },
 	filter = UI.SlideOut {
 		backgroundColor = colors.cyan,
+		noFill = true,
 		menuBar = UI.MenuBar {
 			buttons = {
 				{ text = 'Save',    event = 'save'    },
@@ -248,7 +249,8 @@ The settings will take effect immediately!]],
 			},
 		},
 		grid = UI.ScrollingGrid {
-			x = 2, ex = -6, y = 2, ey = -6,
+			x = 2, ex = -6, y = 3, ey = -7,
+			disableHeader = true,
 			columns = {
 				{ heading = 'Name', key = 'displayName' },
 			},
@@ -262,7 +264,7 @@ The settings will take effect immediately!]],
 			text = '-', event = 'remove_entry', help = 'Remove',
 		},
 		form = UI.Form {
-			x = 2, y = -4, height = 3,
+			x = 2, y = -5, height = 3,
 			margin = 1,
 			manualControls = true,
 			[1] = UI.Checkbox {

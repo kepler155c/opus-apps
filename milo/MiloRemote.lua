@@ -517,7 +517,7 @@ local function loadDirectory(dir)
 			})
 		end
 	end
-	page.menuBar.config:add({ dropmenu = UI.DropMenu { buttons = dropdown } })
+	page.menuBar.config.dropdown = dropdown
 end
 
 local programDir = fs.getDir(shell.getRunningProgram())

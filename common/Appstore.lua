@@ -8,9 +8,9 @@ local http       = _G.http
 local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
+local colors     = _G.colors
 
 local REGISTRY_DIR = 'usr/.registry'
-
 
 --                                           FIX SOMEDAY
 local function registerApp(app, key)
@@ -27,7 +27,6 @@ local function unregisterApp(key)
 	end
 end
 
-
 local sandboxEnv = Util.shallowCopy(_ENV)
 setmetatable(sandboxEnv, { __index = _G })
 
@@ -36,21 +35,10 @@ UI:configure('Appstore', ...)
 
 local APP_DIR = 'usr/apps'
 
-local sources = {
-
-	{ text = "STD Default",
-		event = 'source',
-		url = "http://pastebin.com/raw/zVws7eLq" }, --stock
---[[
-	{ text = "Discover",
-		event = 'source',
-		generateName = true,
-		url = "http://pastebin.com/raw/9bXfCz6M" }, --owned by dannysmc95
-
-	{ text = "Opus",
-		event = 'source',
-		url = "http://pastebin.com/raw/ajQ91Rmn" },
-]]
+local source = {
+	text = "STD Default",
+	event = 'source',
+	url = "http://pastebin.com/raw/zVws7eLq",
 }
 
 shell.setDir(APP_DIR)
@@ -87,14 +75,14 @@ local function runApp(app, checkExists, ...)
 				error('Failed to download')
 			end
 
-			local fn = loadstring(program, app.name)
+			fn = _G.loadstring(program, app.name)
 
 			if not fn then
 				error('Failed to download')
 			end
 
-			setfenv(fn, sandboxEnv)
-			fn(unpack(args))
+			_G.setfenv(fn, sandboxEnv)
+			fn(table.unpack(args))
 		end
 	end
 
@@ -134,16 +122,16 @@ local viewApp = function(app)
 	return true
 end
 
-local getSourceListing = function(source)
+local getSourceListing = function()
 	local contents = http.get(source.url)
 	if contents then
 
-		local fn = loadstring(contents.readAll(), source.text)
+		local fn = _G.loadstring(contents.readAll(), source.text)
 		contents.close()
 
 		local env = { std = { } }
 		setmetatable(env, { __index = _G })
-		setfenv(fn, env)
+		_G.setfenv(fn, env)
 		fn()
 
 		if env.contextualGet then
@@ -172,9 +160,28 @@ local getSourceListing = function(source)
 	end
 end
 
+getSourceListing()
+
+if not source.storeURLs then
+	error('Unable to download application list')
+end
+
+local buttons = { }
+for k,v in Util.spairs(source.storeCatagoryNames,
+			function(a, b) return a:lower() < b:lower() end) do
+
+	if v ~= 'Operating System' then
+		table.insert(buttons, {
+			text = v,
+			event = 'category',
+			index = k,
+		})
+	end
+end
+source.index, source.name = Util.first(source.storeCatagoryNames)
+
 local appPage = UI.Page {
 	menuBar = UI.MenuBar {
---    showBackButton = not pocket,
 		buttons = {
 			{ text = '\027',    event = 'back'    },
 			{ text = 'Install', event = 'install' },
@@ -213,7 +220,7 @@ function appPage.container.viewport:draw()
 	end
 end
 
-function appPage:enable(source, app)
+function appPage:enable(app)
 	self.source = source
 	self.app = app
 	UI.Page.enable(self)
@@ -293,8 +300,7 @@ end
 local categoryPage = UI.Page {
 	menuBar = UI.MenuBar {
 		buttons = {
-			{ text = 'Catalog',  dropdown = sources },
-			{ text = 'Category', name = 'categoryButton', dropdown = { } },
+			{ text = 'Category', name = 'categoryButton', dropdown = buttons },
 		},
 	},
 	grid = UI.ScrollingGrid {
@@ -309,60 +315,19 @@ local categoryPage = UI.Page {
 		l = 'lua',
 		[ 'control-q' ] = 'quit',
 	},
+	source = source,
 }
 
-function categoryPage:setCategory(source, name, index)
+function categoryPage:setCategory(name, index)
 	self.grid.values = { }
 	for _,v in pairs(source.storeURLs) do
 		if index == 0 or index == v.catagory then
 			table.insert(self.grid.values, v)
 		end
 	end
-	self.statusBar:setStatus(string.format('%s: %s', source.text, name))
+	self.statusBar:setStatus(string.format('%s: %s', self.source.text, name))
 	self.grid:update()
 	self.grid:setIndex(1)
-end
-
-function categoryPage:setSource(source)
-
-	if not source.categoryMenu then
-
-		self.statusBar:setStatus('Loading...')
-		self.statusBar:draw()
-		self:sync()
-
-		getSourceListing(source)
-
-		if not source.storeURLs then
-			error('Unable to download application list')
-		end
-
-		local buttons = { }
-		for k,v in Util.spairs(source.storeCatagoryNames,
-					function(a, b) return a:lower() < b:lower() end) do
-
-			if v ~= 'Operating System' then
-				table.insert(buttons, {
-					text = v,
-					event = 'category',
-					index = k,
-				})
-			end
-		end
-
-		source.categoryMenu = UI.DropMenu({
-			buttons = buttons,
-		})
-		source.index, source.name = Util.first(source.storeCatagoryNames)
-
-		categoryPage.menuBar.categoryButton:add({
-			categoryMenu = source.categoryMenu
-		})
-	end
-
-	self.source = source
-	self.menuBar.categoryButton.dropmenu = source.categoryMenu
-	categoryPage:setCategory(source, source.name, source.index)
 end
 
 function categoryPage.grid:sortCompare(a, b)
@@ -377,9 +342,8 @@ function categoryPage.grid:getRowTextColor(row, selected)
 end
 
 function categoryPage:eventHandler(event)
-
 	if event.type == 'grid_select' or event.type == 'select' then
-		UI:setPage(appPage, self.source, self.grid:getSelected())
+		UI:setPage(appPage, self.grid:getSelected())
 
 	elseif event.type == 'category' then
 		self:setCategory(self.source, event.button.text, event.button.index)
@@ -401,7 +365,7 @@ function categoryPage:eventHandler(event)
 end
 
 print("Retrieving catalog list")
-categoryPage:setSource(sources[1])
+categoryPage:setCategory(source.name, source.index)
 
 UI:setPage(categoryPage)
 UI:pullEvents()

@@ -4,41 +4,20 @@ local Util     = require('opus.util')
 
 local colors     = _G.colors
 local os         = _G.os
-local peripheral = _G.peripheral
 local printError = _G.printError
-local shell      = _ENV.shell
 local term       = _G.term
 local window     = _G.window
 
-local function syntax()
-	printError('Syntax:')
-	error('mwm [--config=filename] [monitor]')
-end
-
-local args        = Util.parse(...)
 local UID         = 0
 local multishell  = { }
 local processes   = { }
 local parentTerm  = term.current()
-local sessionFile = args.config or 'usr/config/mwm'
-local monName     = args[1]
+local sessionFile = 'usr/config/twm'
 local running
-local parentMon
+local parentMon   = term.current()
 
 local defaultEnv = Util.shallowCopy(_ENV)
 defaultEnv.multishell = multishell
-
-if monName == 'terminal' then
-	parentMon = term.current()
-elseif monName then
-	parentMon = peripheral.wrap(monName) or syntax()
-else
-	parentMon = peripheral.find('monitor') or syntax()
-end
-
-if parentMon.setTextScale then
-	parentMon.setTextScale(.5)
-end
 
 local monDim, termDim = { }, { }
 monDim.width, monDim.height = parentMon.getSize()
@@ -73,13 +52,10 @@ local function write(win, x, y, text)
 end
 
 local function redraw()
-	--monitor.clear()
 	monitor.canvas:dirty()
-	--monitor.setBackgroundColor(colors.gray)
 	monitor.canvas:clear(colors.gray)
-	for k, process in ipairs(processes) do
+	for _, process in ipairs(processes) do
 		process.container.canvas:dirty()
-		process:focus(k == #processes)
 	end
 end
 
@@ -112,7 +88,8 @@ function Process:new(args)
 		height = args.height + 1,
 		path   = args.path,
 		args   = args.args  or { },
-		title  = args.title or 'shell',
+        title  = args.title or 'shell',
+        timestamp = os.clock(),
 		isMoving   = false,
 		isResizing = false,
 	}, { __index = Process })
@@ -155,20 +132,12 @@ function Process:new(args)
 end
 
 function Process:focus(focused)
-	if focused then
-		self.container.setBackgroundColor(colors.yellow)
-	else
-		self.container.setBackgroundColor(colors.lightGray)
-	end
+    self.container.setBackgroundColor(focused and colors.yellow or colors.lightGray)
 	self.container.setTextColor(colors.black)
 	write(self.container, 1, 1, string.rep(' ', self.width))
 	write(self.container, 2, 1, self.title)
 	write(self.container, self.width - 1, 1, '*')
 	write(self.container, self.width - 3, 1, '\029')
-
-	if focused then
-		self.window.restoreCursor()
-	end
 end
 
 function Process:drawSizers()
@@ -188,17 +157,18 @@ function Process:adjustDimensions()
 	self.y = math.min(self.y, monDim.height - self.height + 1)
 end
 
-function Process:reposition()
+function Process:reposition(resizing)
 	self:adjustDimensions()
 	self.container.reposition(self.x, self.y, self.width, self.height)
-	self.container.setBackgroundColor(colors.black)
-	self.container.clear()
 	self.window.reposition(1, 2, self.width, self.height - 1)
 	if self.window ~= self.terminal then
 		if self.terminal.reposition then -- ??
 			self.terminal.reposition(1, 1, self.width, self.height - 1)
 		end
-	end
+    end
+    if resizing then
+        self:focus(self == processes[#processes])
+    end
 	redraw()
 end
 
@@ -225,7 +195,7 @@ function Process:resize(x, y)
 	self.height = y - self.isResizing.y + self.isResizing.h
 	self.width  = x - self.isResizing.x + self.isResizing.w
 
-	self:reposition()
+	self:reposition(true)
 	self:resume('term_resize')
 	self:drawSizers()
 	multishell.saveSession(sessionFile)
@@ -278,7 +248,8 @@ function multishell.setFocus(uid)
 
 			process.container.canvas:raise()
 			process:focus(true)
-			process.container.canvas:dirty()
+            process.container.canvas:dirty()
+            process.window.restoreCursor()
 		end
 		return true
 	end
@@ -423,14 +394,15 @@ function multishell.start()
 				elseif focused.isMoving then
 					focused.x = event[3] - focused.isMoving.x + focused.isMoving.ox
 					focused.y = event[4] - focused.isMoving.y + focused.isMoving.oy
-					focused:reposition()
+					focused:reposition(false)
 				end
 			end
 
 		elseif event[1] == 'char' or
 					 event[1] == 'key' or
 					 event[1] == 'key_up' or
-					 event[1] == 'paste' then
+					 event[1] == 'paste' or
+					 event[1] == 'mouse_scroll' then
 
 			local focused = processes[#processes]
 			if focused then

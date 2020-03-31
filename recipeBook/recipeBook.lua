@@ -61,12 +61,12 @@ local page = UI.Page {
 		autospace = true,
 	},
 	add = UI.SlideOut {
-		backgroundColor = colors.cyan,
+		height = 9, y = -9,
 		titleBar = UI.TitleBar {
 			title = 'Add a new book',
 		},
 		form = UI.Form {
-			x = 2, ex = -2, y = 2, ey = -1,
+			y = 2,
 			[1] = UI.TextEntry {
 				formLabel = 'Name', formKey = 'name',
 						shadowText = 'Friendly name',

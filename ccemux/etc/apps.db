@@ -1,0 +1,12 @@
+{
+	[ "emu_config" ] = {
+		title = "Config",
+		category = "CCEmuX",
+		run = "emu config",
+	},
+	[ "emu_data" ] = {
+		title = "Data",
+		category = "CCEmuX",
+		run = "emu data",
+	},
+}

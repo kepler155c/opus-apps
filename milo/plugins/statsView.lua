@@ -86,6 +86,7 @@ local function createPage(node)
 			[1] = UI.Tab {
 				tabTitle = 'Overview',
 				backgroundColor = colors.black,
+				noFill = true,
 				onlineLabel = UI.Text {
 					x = 2, y = 2,
 					value = 'Storage Status',

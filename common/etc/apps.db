@@ -57,7 +57,7 @@
 		category = "Apps",
 		requires = "advancedComputer",
 		iconExt = "\030 \031 \128\030d\159\030 \031d\140\030d\031 \155\030 \0315\140\0305\031 \155\030 \128\010\030 \031d\136\145\0315\136\145\031d\153\031 \128\0315\153\010\030 \031 \128\031d\130\140\134\0315\140\134\031 \128",
-		run = "packages/common/hexedit.lua",
+		run = "fileui --exec=hexedit.lua",
 	},
 	[ "fb1c39e9f4f3c2628ad173ab401a6e4e4baf783d" ] = {
 		title = "Sounds",
