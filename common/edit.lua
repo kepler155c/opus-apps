@@ -17,7 +17,6 @@ local tLines    = { }
 local fileInfo
 local lastAction
 local actions
-local sStatus = ''
 local lastSave
 local dirty     = { y = 1, ey = h }
 local mark      = { }
@@ -26,29 +25,25 @@ local undo      = { chain = { }, pointer = 0 }
 local complete  = { }
 local page
 
-h = h - 2
+h = h - 1
 
 local color = {
-	textColor       = '0',
-	keywordColor    = '4',
-	commentColor    = 'd',
-	stringColor     = 'e',
-	bgColor         = colors.black,
-	highlightColor  = colors.orange,
-	cursorColor     = colors.lime,
-	errorBackground = colors.red,
+	textColor    = '0',
+	keywordColor = '4',
+	commentColor = 'd',
+	stringColor  = 'e',
+	statusColor  = colors.gray,
+	panelColor   = colors.cyan,
 }
 
 if not term.isColor() then
 	color = {
-		textColor       = '0',
-		keywordColor    = '8',
-		commentColor    = '8',
-		stringColor     = '8',
-		bgColor         = colors.black,
-		highlightColor  = colors.lightGray,
-		cursorColor     = colors.white,
-		errorBackground = colors.gray,
+		textColor    = '0',
+		keywordColor = '8',
+		commentColor = '8',
+		stringColor  = '8',
+		statusColor  = colors.white,
+		panelColor   = colors.white,
 	}
 end
 
@@ -117,11 +112,12 @@ local keyMapping = {
 	[ 'control-n'           ] = 'find_next',
 
 	-- misc
---	[ 'control-g'           ] = 'status',
+	[ 'control-i'           ] = 'status',
 	[ 'control-r'           ] = 'refresh',
 }
 
 page = UI.Page {
+	backgroundColor = color.panelColor,
 	menuBar = UI.MenuBar {
 		transitionHint = 'slideLeft',
 		buttons = {
@@ -136,15 +132,19 @@ page = UI.Page {
 			{ text = 'Edit', dropdown = {
 				{ text = 'Cut           ^x', event = 'menu_action', action = 'cut'    },
 				{ text = 'Copy          ^c', event = 'menu_action', action = 'copy'   },
-				{ text = 'Paste         ^V', event = 'paste_internal' },
+				{ text = 'Paste         ^V', event = 'menu_action', action = 'paste_internal' },
 				{ spacer = true },
 				{ text = 'Find...       ^f', event = 'menu_action', action = 'find_prompt', noFocus = true },
 				{ text = 'Find Next     ^n', event = 'menu_action', action = 'find_next' },
 				{ spacer = true },
 				{ text = 'Go to line... ^g', event = 'menu_action', action = 'goto_line', noFocus = true },
 				{ text = 'Mark all      ^a', event = 'menu_action', action = 'mark_all' },
-
 			} },
+		},
+		status = UI.Text {
+			textColor = color.statusColor,
+			x = -11, width = 10,
+			align = 'right',
 		},
 	},
 	gotoLine = UI.SlideOut {
@@ -152,8 +152,8 @@ page = UI.Page {
 		noFill = true,
 		close = UI.Button {
 			x = -1,
-			backgroundColor = colors.cyan,
-			backgroundFocusColor = colors.cyan,
+			backgroundColor = color.panelColor,
+			backgroundFocusColor = color.panelColor,
 			text = 'x',
 			event = 'slide_hide',
 			noPadding = true,
@@ -197,8 +197,8 @@ page = UI.Page {
 		noFill = true,
 		close = UI.Button {
 			x = -1,
-			backgroundColor = colors.cyan,
-			backgroundFocusColor = colors.cyan,
+			backgroundColor = color.panelColor,
+			backgroundFocusColor = color.panelColor,
 			text = 'x',
 			event = 'slide_hide',
 			noPadding = true,
@@ -247,8 +247,8 @@ page = UI.Page {
 		noFill = true,
 		close = UI.Button {
 			x = -1,
-			backgroundColor = colors.cyan,
-			backgroundFocusColor = colors.cyan,
+			backgroundColor = color.panelColor,
+			backgroundFocusColor = color.panelColor,
 			text = 'x',
 			event = 'slide_hide',
 			noPadding = true,
@@ -296,8 +296,8 @@ page = UI.Page {
 		noFill = true,
 		close = UI.Button {
 			x = -1,
-			backgroundColor = colors.cyan,
-			backgroundFocusColor = colors.cyan,
+			backgroundColor = color.panelColor,
+			backgroundFocusColor = color.panelColor,
 			text = 'x',
 			event = 'slide_hide',
 			noPadding = true,
@@ -309,19 +309,19 @@ page = UI.Page {
 		save = UI.Button {
 			x = 7,
 			text = 'Yes',
-			backgroundColor = colors.cyan,
+			backgroundColor = color.panelColor,
 			event = 'save_yes',
 		},
 		quit = UI.Button {
 			x = 13,
 			text = 'No',
-			backgroundColor = colors.cyan,
+			backgroundColor = color.panelColor,
 			event = 'save_no',
 		},
 		cancel = UI.Button {
 			x = 18,
 			text = 'Cancel',
-			backgroundColor = colors.cyan,
+			backgroundColor = color.panelColor,
 			event = 'save_cancel',
 		},
 		disable = function(self)
@@ -346,7 +346,7 @@ page = UI.Page {
 		end,
 	},
 	editor = UI.Window {
-		y = 2, ey = -2,
+		y = 2,
 		backgroundColor = colors.black,
 		transitionHint = 'slideRight',
 		focus = function(self)
@@ -402,25 +402,13 @@ page = UI.Page {
 			end
 		end,
 	},
-	statusBar = UI.StatusBar {
-		transitionHint = 'slideLeft',
-		backgroundColor = colors.gray,
-		columns = {
-			{ key = 'general'        },
-			{ key = 'pos', width = 6, fg = colors.orange },
-		},
-	},
+	notification = UI.Notification { },
 	enable = function(self)
 		UI.Page.enable(self)
 		self:setFocus(page.editor)
 	end,
 	eventHandler = function(self, event)
-		if event.type == 'paste_internal' then
-			self:setFocus(page.editor)
-			os.queueEvent('clipboard_paste')
-			return true
-
-		elseif event.type == 'menu_action' then
+		if event.type == 'menu_action' then
 			actions.process(event.element.action)
 			if not event.element.noFocus then -- hacky
 				self:setFocus(self.editor)
@@ -430,15 +418,6 @@ page = UI.Page {
 		return UI.Page.eventHandler(self, event)
 	end,
 }
-
-local messages = {
-	wrapped = 'search hit BOTTOM, continuing at TOP',
-}
-if w < 32 then
-	messages = {
-		wrapped = 'search wrapped',
-	}
-end
 
 local function getFileInfo(path)
 	local abspath = shell.resolve(path)
@@ -455,22 +434,16 @@ local function getFileInfo(path)
 	else
 		fi.isReadOnly = fs.isReadOnly(fi.abspath)
 	end
-_G._p = fi
+
 	return fi
 end
 
 local function setStatus(pattern, ...)
-	sStatus = string.format(pattern, ...)
-	page.statusBar.textColor = colors.white
-	page.statusBar:setValue('general', sStatus)
-	page.statusBar:draw()
+	page.notification:info(string.format(pattern, ...))
 end
 
 local function setError(pattern, ...)
-	sStatus = string.format(pattern, ...)
-	page.statusBar.textColor = color.highlightColor
-	page.statusBar:setValue('general', sStatus)
-	page.statusBar:draw()
+	page.notification:error(string.format(pattern, ...))
 end
 
 local function load(path)
@@ -492,9 +465,6 @@ local function load(path)
 	end
 
 	local name = fileInfo.path
-	if w < 32 then
-		name = fs.getName(fileInfo.path)
-	end
 	if fileInfo.isNew then
 		if not fileInfo.dirExists then
 			setStatus('"%s" [New DIRECTORY]', name)
@@ -578,12 +548,7 @@ local function writeHighlighted(sLine, ny, dy)
 	local function tryWrite(line, regex, fgcolor)
 		local match = line:match(regex)
 		if match then
-			local fg
-			if type(fgcolor) == "string" then
-				fg = fgcolor
-			else
-				fg = fgcolor(match)
-			end
+			local fg = type(fgcolor) == "string" and fgcolor or fgcolor(match)
 			buffer.text = buffer.text .. match
 			buffer.fg = buffer.fg .. string.rep(fg, #match)
 			return line:sub(#match + 1)
@@ -611,10 +576,7 @@ local function writeHighlighted(sLine, ny, dy)
 	buffer.text = buffer.text .. '\183'
 
 	if mark.active and ny >= mark.y and ny <= mark.ey then
-		local sx = 1
-		if ny == mark.y then
-			sx = mark.x
-		end
+		local sx = ny == mark.y and mark.x or 1
 		local ex = #buffer.text
 		if ny == mark.ey then
 			ex = mark.ex
@@ -646,35 +608,15 @@ local function redraw()
 		end
 	end
 
-	-- Draw status
-	if #sStatus == 0 then
-		page.statusBar:setValue('general', '')
-		page.statusBar:draw()
-	end
-
-	if not (w < 32 and #sStatus > 0) then
-		local modifiedIndicator = ''
-		if undo.chain[#undo.chain] ~= lastSave then
-			modifiedIndicator = '*'
-		end
-
-		local str = string.format(' %d:%d%s',
-			y, x, modifiedIndicator)
-
-		page.statusBar:setValue('pos', str)
-		page.statusBar.columns[2].width = #str
-		page.statusBar:adjustWidth()
-		page.statusBar:draw()
-	end
+	local modifiedIndicator = undo.chain[#undo.chain] == lastSave and '' or '*'
+	page.menuBar.status.value = string.format(' %d:%d%s', y, x, modifiedIndicator)
+	page.menuBar.status:draw()
 
 	if page.editor.focused then
 		page.editor:setCursorPos(x - scrollX, y - scrollY)
 	end
 
 	dirty.y, dirty.ey = 0, 0
-	if #sStatus > 0 then
-		sStatus = ''
-	end
 end
 
 local function nextWord(line, cx)
@@ -703,7 +645,7 @@ actions = {
 
 	addUndo = function(entry)
 		local last = undo.chain[#undo.chain]
-		if last and last.action == entry.action and not last.saved then
+		if last and last.action == entry.action then
 			if last.action == 'deleteText' then
 				if last.args[3] == entry.args[1] and
 					 last.args[4] == entry.args[2] then
@@ -790,10 +732,10 @@ actions = {
 			if ny > nLines then
 				ny = ny - nLines
 			end
-			local nx = tLines[ny]:lower():find(pattern, sx)
+			local nx = tLines[ny]:lower():find(pattern, sx, true)
 			if nx then
 				if ny < y or ny == y and nx <= x then
-					setStatus(messages.wrapped)
+					setStatus('search hit BOTTOM, continuing at TOP')
 				end
 				actions.go_to(nx, ny)
 				actions.mark_to(nx + #pattern, ny)
@@ -1303,6 +1245,10 @@ actions = {
 		else
 			setStatus('Clipboard empty')
 		end
+	end,
+
+	paste_internal = function()
+		os.queueEvent('clipboard_paste')
 	end,
 
 	go_to = function(cx, cy)
