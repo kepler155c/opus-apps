@@ -23,7 +23,6 @@ local mark      = { }
 local searchPattern
 local undo      = { chain = { }, pointer = 0 }
 local complete  = { }
-local page
 
 h = h - 1
 
@@ -116,28 +115,31 @@ local keyMapping = {
 	[ 'control-r'           ] = 'refresh',
 }
 
-page = UI.Page {
+local page = UI.Page {
 	backgroundColor = color.panelColor,
 	menuBar = UI.MenuBar {
 		transitionHint = 'slideLeft',
 		buttons = {
 			{ text = 'File', dropdown = {
+				{ text = 'New             ', event = 'menu_action', action = 'file_new' },
+				{ text = 'Open            ', event = 'menu_action', action = 'file_open' },
+				{ spacer = true },
 				{ text = 'Save          ^s', event = 'menu_action', action = 'save' },
-				{ text = 'Save As...    ^S', event = 'menu_action', action = 'save_as', noFocus = true },
+				{ text = 'Save As...    ^S', event = 'menu_action', action = 'save_as' },
 				{ spacer = true },
 				{ text = 'Run',              event = 'menu_action', action = 'run' },
 				{ spacer = true },
-				{ text = 'Quit          ^q', event = 'menu_action', action = 'exit', noFocus = true },
+				{ text = 'Quit          ^q', event = 'menu_action', action = 'exit' },
 			} },
 			{ text = 'Edit', dropdown = {
 				{ text = 'Cut           ^x', event = 'menu_action', action = 'cut'    },
 				{ text = 'Copy          ^c', event = 'menu_action', action = 'copy'   },
 				{ text = 'Paste         ^V', event = 'menu_action', action = 'paste_internal' },
 				{ spacer = true },
-				{ text = 'Find...       ^f', event = 'menu_action', action = 'find_prompt', noFocus = true },
+				{ text = 'Find...       ^f', event = 'menu_action', action = 'find_prompt' },
 				{ text = 'Find Next     ^n', event = 'menu_action', action = 'find_next' },
 				{ spacer = true },
-				{ text = 'Go to line... ^g', event = 'menu_action', action = 'goto_line', noFocus = true },
+				{ text = 'Go to line... ^g', event = 'menu_action', action = 'goto_line' },
 				{ text = 'Mark all      ^a', event = 'menu_action', action = 'mark_all' },
 			} },
 		},
@@ -172,10 +174,6 @@ page = UI.Page {
 				[ 'enter' ] = 'accept',
 			},
 		},
-		disable = function(self)
-			UI.SlideOut.disable(self)
-			self:setFocus(page.editor)
-		end,
 		show = function(self)
 			self.lineNo:reset()
 			UI.SlideOut.show(self)
@@ -217,10 +215,6 @@ page = UI.Page {
 				[ 'enter' ] = 'accept',
 			},
 		},
-		disable = function(self)
-			UI.SlideOut.disable(self)
-			self:setFocus(page.editor)
-		end,
 		show = function(self)
 			self.search:markAll()
 			UI.SlideOut.show(self)
@@ -267,10 +261,6 @@ page = UI.Page {
 				[ 'enter' ] = 'accept',
 			},
 		},
-		disable = function(self)
-			UI.SlideOut.disable(self)
-			self:setFocus(page.editor)
-		end,
 		show = function(self)
 			self.filename.value = fileInfo.abspath
 			if self.filename.value then
@@ -283,7 +273,7 @@ page = UI.Page {
 			if event.type == 'accept' then
 				local text = self.filename.value
 				if text and #text > 0 then
-					actions.save(shell.resolve(text))
+					actions.save('/' .. text)
 				end
 				self:hide()
 				return true
@@ -291,7 +281,7 @@ page = UI.Page {
 			return UI.SlideOut.eventHandler(self, event)
 		end,
 	},
-	quit = UI.SlideOut {
+	unsaved = UI.SlideOut {
 		x = -26, height = 1, y = -2,
 		noFill = true,
 		close = UI.Button {
@@ -306,13 +296,13 @@ page = UI.Page {
 			x = 2,
 			value = 'Save',
 		},
-		save = UI.Button {
+		yes = UI.Button {
 			x = 7,
 			text = 'Yes',
 			backgroundColor = color.panelColor,
 			event = 'save_yes',
 		},
-		quit = UI.Button {
+		no = UI.Button {
 			x = 13,
 			text = 'No',
 			backgroundColor = color.panelColor,
@@ -324,25 +314,43 @@ page = UI.Page {
 			backgroundColor = color.panelColor,
 			event = 'save_cancel',
 		},
-		disable = function(self)
-			UI.SlideOut.disable(self)
-			self:setFocus(page.editor)
-		end,
-		show = function(self)
+		show = function(self, action)
+			self.action = action
 			UI.SlideOut.show(self)
 			self:addTransition('slideLeft', { easing = 'outBounce' })
 		end,
 		eventHandler = function(self, event)
 			if event.type == 'save_yes' then
 				if actions.save() then
-					UI:quit()
+					self:hide()
+					actions.process(self.action)
 				end
 			elseif event.type == 'save_no' then
-				UI:quit()
+				actions.process(self.action, true)
+				self:hide()
 			elseif event.type == 'save_cancel' then
 				self:hide()
 			end
 			return UI.SlideOut.eventHandler(self, event)
+		end,
+	},
+	file_open = UI.FileSelect {
+		modal = true,
+		enable = function() end,
+		transitionHint = 'expandUp',
+		show = function(self)
+			UI.FileSelect.enable(self, fs.getDir(fileInfo.abspath))
+			self:focusFirst()
+			self:draw()
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'select_cancel' then
+				self:disable()
+			elseif event.type == 'select_file' then
+				self:disable()
+				actions.process('open', event.file)
+			end
+			return UI.FileSelect.eventHandler(self, event)
 		end,
 	},
 	editor = UI.Window {
@@ -351,7 +359,7 @@ page = UI.Page {
 		transitionHint = 'slideRight',
 		focus = function(self)
 			if self.focused then
-				page.editor:setCursorPos(x - scrollX, y - scrollY)
+				self:setCursorPos(x - scrollX, y - scrollY)
 				self:setCursorBlink(true)
 			else
 				self:setCursorBlink(false)
@@ -380,6 +388,7 @@ page = UI.Page {
 				elseif ie.code == "mouse_click" or
 					ie.code == 'mouse_drag' or
 					--ie.code == 'mouse_up' or
+					ie.code == 'shift-mouse_click' or
 					ie.code == 'mouse_down' or
 					ie.code == 'mouse_doubleclick' then
 
@@ -405,14 +414,17 @@ page = UI.Page {
 	notification = UI.Notification { },
 	enable = function(self)
 		UI.Page.enable(self)
-		self:setFocus(page.editor)
+		self:setFocus(self.editor)
+	end,
+	checkFocus = function(self)
+		if not self.focused or not self.focused.enabled then
+			-- if no current focus, set it to the editor
+			self:setFocus(self.editor)
+		end
 	end,
 	eventHandler = function(self, event)
 		if event.type == 'menu_action' then
 			actions.process(event.element.action)
-			if not event.element.noFocus then -- hacky
-				self:setFocus(self.editor)
-			end
 			return true
 		end
 		return UI.Page.eventHandler(self, event)
@@ -435,6 +447,10 @@ local function getFileInfo(path)
 		fi.isReadOnly = fs.isReadOnly(fi.abspath)
 	end
 
+	if multishell then
+		multishell.setTitle(multishell.getCurrent(), fs.getName(fi.path))
+	end
+
 	return fi
 end
 
@@ -444,40 +460,6 @@ end
 
 local function setError(pattern, ...)
 	page.notification:error(string.format(pattern, ...))
-end
-
-local function load(path)
-	fileInfo = getFileInfo(path)
-
-	tLines = {}
-	if fs.exists(fileInfo.abspath) then
-		local file = io.open(fileInfo.abspath, "r")
-		local sLine = file:read()
-		while sLine do
-			table.insert(tLines, sLine)
-			sLine = file:read()
-		end
-		file:close()
-	end
-
-	if #tLines == 0 then
-		table.insert(tLines, '')
-	end
-
-	local name = fileInfo.path
-	if fileInfo.isNew then
-		if not fileInfo.dirExists then
-			setStatus('"%s" [New DIRECTORY]', name)
-		else
-			setStatus('"%s" [New File]', name)
-		end
-	elseif fileInfo.isReadOnly then
-		setStatus('"%s" [readonly] %dL, %dC',
-					name, #tLines, fs.getSize(fileInfo.abspath))
-	else
-		setStatus('"%s" %dL, %dC',
-					name, #tLines, fs.getSize(fileInfo.abspath))
-	end
 end
 
 local function save( _sPath )
@@ -758,6 +740,76 @@ actions = {
 		page.search:show()
 	end,
 
+	file_open = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('file_open')
+		else
+			page.file_open:show('file_open')
+		end
+	end,
+
+	file_new = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('file_new')
+		else
+			actions.open('/untitled.txt')
+		end
+	end,
+
+	open = function(filename)
+		if not actions.load(filename) then
+			setError('Unable to load file')
+		end
+	end,
+
+	load = function(path)
+		if fs.exists(path) and fs.isDir(path) then
+			return false
+		end
+		fileInfo = getFileInfo(path)
+
+		x, y = 1, 1
+		scrollX, scrollY = 0, 0
+		lastPos   = { x = 1, y = 1 }
+		lastSave = nil
+		dirty     = { y = 1, ey = h }
+		mark      = { }
+		undo      = { chain = { }, pointer = 0 }
+		complete  = { }
+
+		tLines = { }
+		if fs.exists(fileInfo.abspath) then
+			local file = io.open(fileInfo.abspath, "r")
+			local sLine = file:read()
+			while sLine do
+				table.insert(tLines, sLine)
+				sLine = file:read()
+			end
+			file:close()
+		end
+
+		if #tLines == 0 then
+			table.insert(tLines, '')
+		end
+
+		local name = fileInfo.path
+		if fileInfo.isNew then
+			if not fileInfo.dirExists then
+				setStatus('"%s" [New DIRECTORY]', name)
+			else
+				setStatus('"%s" [New File]', name)
+			end
+		elseif fileInfo.isReadOnly then
+			setStatus('"%s" [readonly] %dL, %dC',
+						name, #tLines, fs.getSize(fileInfo.abspath))
+		else
+			setStatus('"%s" %dL, %dC',
+						name, #tLines, fs.getSize(fileInfo.abspath))
+		end
+
+		return true
+	end,
+
 	save = function(filename)
 		filename = filename or fileInfo.abspath
 		if fs.isReadOnly(filename) then
@@ -767,9 +819,6 @@ actions = {
 			if ok then
 				lastSave = undo.chain[#undo.chain]
 				fileInfo = getFileInfo(filename)
-				if multishell then
-					multishell.setTitle(multishell.getCurrent(), fileInfo.path)
-				end
 				setStatus('"%s" %dL, %dC written',
 					 fileInfo.path, #tLines, fs.getSize(fileInfo.abspath))
 					 return true
@@ -783,9 +832,9 @@ actions = {
 		page.save_as:show()
 	end,
 
-	exit = function()
-		if undo.chain[#undo.chain] ~= lastSave then
-			page.quit:show()
+	exit = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('exit')
 		else
 			UI:quit()
 		end
@@ -810,12 +859,9 @@ actions = {
 	end,
 
 	status = function()
-		local modified = ''
-		if undo.chain[1] then
-			modified = '[Modified] '
-		end
+		local modified = undo.chain[#undo.chain] == lastSave and '' or '[Modified] '
 		setStatus('"%s" %s%d lines --%d%%--',
-				 fileInfo.path, modified, #tLines,
+				 fileInfo.abspath, modified, #tLines,
 				 math.floor((y - 1) / (#tLines - 1) * 100))
 	end,
 
@@ -1299,23 +1345,10 @@ actions = {
 	end,
 }
 
-local tArgs = { ... }
-if #tArgs == 0 then
-	error( "Usage: edit <path>" )
-end
-
--- Error checking
-local sPath = shell.resolve(tArgs[1])
-if fs.exists(sPath) and fs.isDir(sPath) then
-	error( "Cannot edit a directory." )
-end
-
-load(tArgs[1])
-
-if multishell then
-	multishell.setTitle(multishell.getCurrent(), fs.getName(sPath))
+local args = { ... }
+if not actions.load(args[1] and args[1] or 'untitled.txt') then
+	error('Error opening file')
 end
 
 UI:setPage(page)
 UI:start()
-
