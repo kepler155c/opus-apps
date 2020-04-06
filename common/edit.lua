@@ -15,14 +15,12 @@ local scrollY   = 0
 local lastPos   = { x = 1, y = 1 }
 local tLines    = { }
 local fileInfo
-local lastAction
 local actions
 local lastSave
 local dirty     = { y = 1, ey = h }
 local mark      = { }
 local searchPattern
 local undo      = { chain = { }, pointer = 0 }
-local complete  = { }
 
 h = h - 1
 
@@ -132,8 +130,8 @@ local page = UI.Page {
 				{ text = 'Quit          ^q', event = 'menu_action', action = 'exit' },
 			} },
 			{ text = 'Edit', dropdown = {
-				{ text = 'Cut           ^x', event = 'menu_action', action = 'cut'    },
-				{ text = 'Copy          ^c', event = 'menu_action', action = 'copy'   },
+				{ text = 'Cut           ^x', event = 'menu_action', action = 'cut' },
+				{ text = 'Copy          ^c', event = 'menu_action', action = 'copy' },
 				{ text = 'Paste         ^V', event = 'menu_action', action = 'paste_internal' },
 				{ spacer = true },
 				{ text = 'Find...       ^f', event = 'menu_action', action = 'find_prompt' },
@@ -142,28 +140,19 @@ local page = UI.Page {
 				{ text = 'Go to line... ^g', event = 'menu_action', action = 'goto_line' },
 				{ text = 'Mark all      ^a', event = 'menu_action', action = 'mark_all' },
 			} },
+			{ text = 'Code', dropdown = {
+				{ text = 'Complete  ^space', event = 'menu_action', action = 'autocomplete' },
+			} },
 		},
 		status = UI.Text {
 			textColor = color.statusColor,
-			x = -11, width = 10,
+			x = -9, width = 9,
 			align = 'right',
 		},
 	},
-	gotoLine = UI.SlideOut {
-		x = -15, height = 1, y = -2,
-		noFill = true,
-		close = UI.Button {
-			x = -1,
-			backgroundColor = color.panelColor,
-			backgroundFocusColor = color.panelColor,
-			text = 'x',
-			event = 'slide_hide',
-			noPadding = true,
-		},
-		label = UI.Text {
-			x = 2,
-			value = 'Line',
-		},
+	gotoLine = UI.MiniSlideOut {
+		x = -15, y = -2,
+		label = 'Line',
 		lineNo = UI.TextEntry {
 			x = 7, width = 7,
 			limit = 5,
@@ -176,8 +165,7 @@ local page = UI.Page {
 		},
 		show = function(self)
 			self.lineNo:reset()
-			UI.SlideOut.show(self)
-			self:addTransition('slideLeft', { easing = 'outBounce' })
+			UI.MiniSlideOut.show(self)
 		end,
 		eventHandler = function(self, event)
 			if event.type == 'accept' then
@@ -187,24 +175,12 @@ local page = UI.Page {
 				self:hide()
 				return true
 			end
-			return UI.SlideOut.eventHandler(self, event)
+			return UI.MiniSlideOut.eventHandler(self, event)
 		end,
 	},
-	search = UI.SlideOut {
-		x = -20, height = 1, y = -2,
-		noFill = true,
-		close = UI.Button {
-			x = -1,
-			backgroundColor = color.panelColor,
-			backgroundFocusColor = color.panelColor,
-			text = 'x',
-			event = 'slide_hide',
-			noPadding = true,
-		},
-		label = UI.Text {
-			x = 2,
-			value = 'Find',
-		},
+	search = UI.MiniSlideOut {
+		x = -20, y = -2,
+		label = 'Find',
 		search = UI.TextEntry {
 			x = 7, width = 12,
 			limit = 512,
@@ -217,8 +193,7 @@ local page = UI.Page {
 		},
 		show = function(self)
 			self.search:markAll()
-			UI.SlideOut.show(self)
-			self:addTransition('slideLeft', { easing = 'outBounce' })
+			UI.MiniSlideOut.show(self)
 		end,
 		eventHandler = function(self, event)
 			if event.type == 'accept' then
@@ -233,24 +208,12 @@ local page = UI.Page {
 				self:hide()
 				return true
 			end
-			return UI.SlideOut.eventHandler(self, event)
+			return UI.MiniSlideOut.eventHandler(self, event)
 		end,
 	},
-	save_as = UI.SlideOut {
-		x = -24, height = 1, y = -2,
-		noFill = true,
-		close = UI.Button {
-			x = -1,
-			backgroundColor = color.panelColor,
-			backgroundFocusColor = color.panelColor,
-			text = 'x',
-			event = 'slide_hide',
-			noPadding = true,
-		},
-		label = UI.Text {
-			x = 2,
-			value = 'Save',
-		},
+	save_as = UI.MiniSlideOut {
+		x = -24, y = -2,
+		label = 'Save',
 		filename = UI.TextEntry {
 			x = 7, width = 16,
 			limit = 512,
@@ -263,11 +226,8 @@ local page = UI.Page {
 		},
 		show = function(self)
 			self.filename.value = fileInfo.abspath
-			if self.filename.value then
-				self.filename:setPosition(#self.filename.value)
-			end
-			UI.SlideOut.show(self)
-			self:addTransition('slideLeft', { easing = 'outBounce' })
+			self.filename:setPosition(#self.filename.value)
+			UI.MiniSlideOut.show(self)
 		end,
 		eventHandler = function(self, event)
 			if event.type == 'accept' then
@@ -278,70 +238,45 @@ local page = UI.Page {
 				self:hide()
 				return true
 			end
-			return UI.SlideOut.eventHandler(self, event)
+			return UI.MiniSlideOut.eventHandler(self, event)
 		end,
 	},
-	unsaved = UI.SlideOut {
-		x = -26, height = 1, y = -2,
-		noFill = true,
-		close = UI.Button {
-			x = -1,
-			backgroundColor = color.panelColor,
-			backgroundFocusColor = color.panelColor,
-			text = 'x',
-			event = 'slide_hide',
-			noPadding = true,
-		},
-		label = UI.Text {
-			x = 2,
-			value = 'Save',
-		},
-		yes = UI.Button {
-			x = 7,
-			text = 'Yes',
-			backgroundColor = color.panelColor,
-			event = 'save_yes',
-		},
-		no = UI.Button {
-			x = 13,
-			text = 'No',
-			backgroundColor = color.panelColor,
-			event = 'save_no',
-		},
+	unsaved = UI.Question {
+		x = -25, y = -2,
+		label = 'Save',
 		cancel = UI.Button {
-			x = 18,
+			x = 16,
 			text = 'Cancel',
 			backgroundColor = color.panelColor,
-			event = 'save_cancel',
+			event = 'question_cancel',
 		},
 		show = function(self, action)
 			self.action = action
-			UI.SlideOut.show(self)
-			self:addTransition('slideLeft', { easing = 'outBounce' })
+			UI.MiniSlideOut.show(self)
 		end,
 		eventHandler = function(self, event)
-			if event.type == 'save_yes' then
+			if event.type == 'question_yes' then
 				if actions.save() then
 					self:hide()
 					actions.process(self.action)
 				end
-			elseif event.type == 'save_no' then
+			elseif event.type == 'question_no' then
 				actions.process(self.action, true)
 				self:hide()
-			elseif event.type == 'save_cancel' then
+			elseif event.type == 'question_cancel' then
 				self:hide()
 			end
-			return UI.SlideOut.eventHandler(self, event)
+			return UI.MiniSlideOut.eventHandler(self, event)
 		end,
 	},
 	file_open = UI.FileSelect {
 		modal = true,
 		enable = function() end,
-		transitionHint = 'expandUp',
 		show = function(self)
 			UI.FileSelect.enable(self, fs.getDir(fileInfo.abspath))
 			self:focusFirst()
 			self:draw()
+			self:addTransition('expandUp', { easing = 'outBounce', ticks = 12 })
 		end,
 		eventHandler = function(self, event)
 			if event.type == 'select_cancel' then
@@ -351,6 +286,49 @@ local page = UI.Page {
 				actions.process('open', event.file)
 			end
 			return UI.FileSelect.eventHandler(self, event)
+		end,
+	},
+	completions = UI.SlideOut {
+		x = -12, y = 2,
+		transitionHint = 'slideLeft',
+		grid = UI.Grid {
+			x = 2, y = 2, ey = -2,
+			columns = {
+				{ key = 'text', heading = 'Completion' },
+			},
+			accelerators = {
+				[ ' ' ] = 'down',
+				backspace = 'slide_hide',
+			}
+		},
+		show = function(self, values)
+			local m = 12
+			for _, v in pairs(values) do
+				m = #v.text > m and #v.text or m
+			end
+			m = m + 3
+			m = m > self.parent.width and self.parent.width or m
+			self.ox = -m
+			self:resize()
+			self.grid:setValues(values)
+			self.grid:setIndex(1)
+			UI.SlideOut.show(self)
+		end,
+		cancel = UI.Button {
+			y = -1, x = -9,
+			text = 'Cancel',
+			backgroundColor = colors.black,
+			backgroundFocusColor = colors.black,
+			textColor = colors.lightGray,
+			event = 'slide_hide',
+		},
+		eventHandler = function(self, event)
+			if event.type == 'grid_select' then
+				actions.process('insertText', x, y, event.selected.complete)
+				self:hide()
+				return true
+			end
+			return UI.SlideOut.eventHandler(self, event)
 		end,
 	},
 	editor = UI.Window {
@@ -590,7 +568,7 @@ local function redraw()
 		end
 	end
 
-	local modifiedIndicator = undo.chain[#undo.chain] == lastSave and '' or '*'
+	local modifiedIndicator = undo.chain[#undo.chain] == lastSave and ' ' or '*'
 	page.menuBar.status.value = string.format(' %d:%d%s', y, x, modifiedIndicator)
 	page.menuBar.status:draw()
 
@@ -648,52 +626,24 @@ actions = {
 	end,
 
 	autocomplete = function()
-		if lastAction ~= 'autocomplete' or not complete.results then
-			local sLine = tLines[y]:sub(1, x - 1)
-			local nStartPos = sLine:find("[a-zA-Z0-9_%.]+$")
-			if nStartPos then
-				sLine = sLine:sub(nStartPos)
-			end
-			if #sLine > 0 then
-				complete.results = textutils.complete(sLine)
-			else
-				complete.results = { }
-			end
-			complete.index = 0
-			complete.x = x
-		end
+		local sLine = tLines[y]:sub(1, x - 1):match("[a-zA-Z0-9_%.]+$")
+		local results = sLine and textutils.complete(sLine, _ENV) or { }
 
-		if #complete.results == 0 then
+		if #results == 0 then
 			setError('No completions available')
 
-		elseif #complete.results == 1 then
-			actions.insertText(x, y, complete.results[1])
-			complete.results = nil
+		elseif #results == 1 then
+			actions.insertText(x, y, results[1])
 
-		elseif #complete.results > 1 then
-			local prefix = complete.results[1]
-			for n = 1, #complete.results do
-				local result = complete.results[n]
-				while #prefix > 0 do
-					if result:find(prefix, 1, true) == 1 then
-						break
-					end
-					prefix = prefix:sub(1, #prefix - 1)
-				end
+		elseif #results > 1 then
+			local prefix = sLine:match('^.+%.(.*)$') or sLine
+			for i = 1, #results do
+				results[i] = {
+					text = prefix .. results[i],
+					complete = results[i],
+				}
 			end
-			if #prefix > 0 then
-				actions.insertText(x, y, prefix)
-				complete.results = nil
-			else
-				if complete.index > 0 then
-					actions.deleteText(complete.x, y, complete.x + #complete.results[complete.index], y)
-				end
-				complete.index = complete.index + 1
-				if complete.index > #complete.results then
-					complete.index = 1
-				end
-				actions.insertText(complete.x, y, complete.results[complete.index])
-			end
+			page.completions:show(results)
 		end
 	end,
 
@@ -775,7 +725,6 @@ actions = {
 		dirty     = { y = 1, ey = h }
 		mark      = { }
 		undo      = { chain = { }, pointer = 0 }
-		complete  = { }
 
 		tLines = { }
 		if fs.exists(fileInfo.abspath) then
@@ -1323,7 +1272,7 @@ actions = {
 		redraw()
 	end,
 
-	process = function(action, param, param2)
+	process = function(action, ...)
 		if not actions[action] then
 			error('Invaid action: ' .. action)
 		end
@@ -1331,8 +1280,7 @@ actions = {
 		local wasMarking = mark.continue
 		mark.continue = false
 
-		actions[action](param, param2)
-		lastAction = action
+		actions[action](...)
 
 		if x ~= lastPos.x or y ~= lastPos.y then
 			actions.setCursor()
