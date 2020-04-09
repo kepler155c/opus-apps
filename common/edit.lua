@@ -1,4 +1,5 @@
-local UI = require('opus.ui')
+local fuzzy = require('opus.fuzzy')
+local UI    = require('opus.ui')
 
 local colors     = _G.colors
 local fs         = _G.fs
@@ -29,8 +30,6 @@ local color = {
 	keywordColor = '4',
 	commentColor = 'd',
 	stringColor  = 'e',
-	statusColor  = colors.gray,
-	panelColor   = colors.cyan,
 }
 
 if not term.isColor() then
@@ -39,8 +38,6 @@ if not term.isColor() then
 		keywordColor = '8',
 		commentColor = '8',
 		stringColor  = '8',
-		statusColor  = colors.white,
-		panelColor   = colors.white,
 	}
 end
 
@@ -53,7 +50,6 @@ local keyMapping = {
 	pageUp                    = 'pageUp',
 	[ 'control-b'           ] = 'pageUp',
 	pageDown                  = 'pageDown',
---  [ 'control-f'           ] = 'pageDown',
 	home                      = 'home',
 	[ 'end'                 ] = 'toend',
 	[ 'control-home'        ] = 'top',
@@ -95,13 +91,13 @@ local keyMapping = {
 	-- copy/paste
 	[ 'control-x'           ] = 'cut',
 	[ 'control-c'           ] = 'copy',
---	[ 'control-shift-paste' ] = 'paste_internal',
 
 	-- file
 	[ 'control-s'           ] = 'save',
 	[ 'control-S'           ] = 'save_as',
 	[ 'control-q'           ] = 'exit',
 	[ 'control-enter'       ] = 'run',
+	[ 'control-p'           ] = 'quick_open',
 
 	-- search
 	[ 'control-f'           ] = 'find_prompt',
@@ -114,18 +110,16 @@ local keyMapping = {
 }
 
 local page = UI.Page {
-	backgroundColor = color.panelColor,
 	menuBar = UI.MenuBar {
 		transitionHint = 'slideLeft',
 		buttons = {
 			{ text = 'File', dropdown = {
 				{ text = 'New             ', event = 'menu_action', action = 'file_new' },
 				{ text = 'Open            ', event = 'menu_action', action = 'file_open' },
+				{ text = 'Quick Open... ^p', event = 'menu_action', action = 'quick_open' },
 				{ spacer = true },
 				{ text = 'Save          ^s', event = 'menu_action', action = 'save' },
 				{ text = 'Save As...    ^S', event = 'menu_action', action = 'save_as' },
-				{ spacer = true },
-				{ text = 'Run',              event = 'menu_action', action = 'run' },
 				{ spacer = true },
 				{ text = 'Quit          ^q', event = 'menu_action', action = 'exit' },
 			} },
@@ -142,10 +136,11 @@ local page = UI.Page {
 			} },
 			{ text = 'Code', dropdown = {
 				{ text = 'Complete  ^space', event = 'menu_action', action = 'autocomplete' },
+				{ text = 'Run       ^enter', event = 'menu_action', action = 'run' },
 			} },
 		},
 		status = UI.Text {
-			textColor = color.statusColor,
+			textColor = colors.gray,
 			x = -9, width = 9,
 			align = 'right',
 		},
@@ -247,7 +242,7 @@ local page = UI.Page {
 		cancel = UI.Button {
 			x = 16,
 			text = 'Cancel',
-			backgroundColor = color.panelColor,
+			backgroundColor = UI.colors.primary,
 			event = 'question_cancel',
 		},
 		show = function(self, action)
@@ -286,6 +281,107 @@ local page = UI.Page {
 				actions.process('open', event.file)
 			end
 			return UI.FileSelect.eventHandler(self, event)
+		end,
+	},
+	quick_open = UI.SlideOut {
+		filter_entry = UI.TextEntry {
+			x = 2, y = 2, ex = -2,
+			limit = 256,
+			shadowText = 'File name',
+			accelerators = {
+				[ 'enter' ] = 'accept',
+				[ 'up' ] = 'grid_up',
+				[ 'down' ] = 'grid_down',
+			},
+		},
+		grid = UI.ScrollingGrid {
+			x = 2, y = 4, ex = -2, ey = -4,
+			sortColumn = 'name',
+			columns = {
+				{ heading = 'Name', key = 'name' },
+				{ heading = 'Dir', key = 'dir' },
+			},
+			accelerators = {
+				grid_select = 'accept',
+			},
+		},
+		cancel = UI.Button {
+			x = -9, y = -2,
+			text = 'Cancel',
+			event = 'quick_cancel',
+		},
+		apply_filter = function(self, filter)
+			local t = { }
+			if filter then
+				filter = filter:lower()
+				self.grid.sortColumn = 'score'
+				self.grid.inverseSort = true
+
+				for _,v in pairs(self.listing) do
+					v.score = fuzzy(v.lname, filter)
+					if v.score then
+						table.insert(t, v)
+					end
+				end
+			else
+				self.grid.sortColumn = 'name'
+				self.grid.inverseSort = false
+				t = self.listing
+			end
+
+			self.grid:setValues(t)
+			self.grid:update()
+			self.grid:setIndex(1)
+		end,
+		show = function(self)
+			local listing = { }
+			local function recurse(dir)
+				local files = fs.native.list(dir)
+				for _,f in ipairs(files) do
+					local fullName = fs.combine(dir, f)
+					if fs.native.isDir(fullName) then
+						recurse(fullName)
+					else
+						table.insert(listing, {
+							name = f,
+							dir = dir,
+							lname = f:lower(),
+							fullName = '/' .. fullName,
+						})
+					end
+				end
+			end
+			recurse('')
+			self.listing = listing
+			self:apply_filter()
+			self.filter_entry:reset()
+			UI.SlideOut.show(self)
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'grid_up' then
+				self.grid:emit({ type = 'scroll_up' })
+
+			elseif event.type == 'grid_down' then
+				self.grid:emit({ type = 'scroll_down' })
+
+			elseif event.type == 'accept' then
+				local sel = self.grid:getSelected()
+				if sel then
+					actions.process('open', sel.fullName)
+					self:hide()
+				end
+
+			elseif event.type == 'quick_cancel' then
+				self:hide()
+
+			elseif event.type == 'text_change' then
+				self:apply_filter(event.text)
+				self.grid:draw()
+
+			else
+				return UI.SlideOut.eventHandler(self, event)
+			end
+			return true
 		end,
 	},
 	completions = UI.SlideOut {
@@ -690,11 +786,19 @@ actions = {
 		page.search:show()
 	end,
 
+	quick_open = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('quick_open')
+		else
+			page.quick_open:show()
+		end
+	end,
+
 	file_open = function(force)
 		if not force and undo.chain[#undo.chain] ~= lastSave then
 			page.unsaved:show('file_open')
 		else
-			page.file_open:show('file_open')
+			page.file_open:show()
 		end
 	end,
 
@@ -1299,4 +1403,9 @@ if not actions.load(args[1] and args[1] or 'untitled.txt') then
 end
 
 UI:setPage(page)
-UI:start()
+local s, m = pcall(function() UI:start() end)
+if not s then
+	actions.save('/crash.txt')
+	print('Editor has crashed. File saved as /crash.txt')
+	error(m)
+end

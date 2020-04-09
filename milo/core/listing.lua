@@ -1,6 +1,6 @@
 local Craft  = require('milo.craft2')
 local Event  = require('opus.event')
-local fuzzy  = require('milo.fuzzyMatch')
+local fuzzy  = require('opus.fuzzy')
 local Milo   = require('milo')
 local Sound  = require('opus.sound')
 local UI     = require('opus.ui')

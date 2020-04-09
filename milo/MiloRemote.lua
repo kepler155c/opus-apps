@@ -1,6 +1,6 @@
 local Config = require('opus.config')
 local Event  = require('opus.event')
-local fuzzy  = require('milo.fuzzyMatch')
+local fuzzy  = require('opus.fuzzy')
 local Sound  = require('opus.sound')
 local Socket = require('opus.socket')
 local sync   = require('opus.sync').sync
