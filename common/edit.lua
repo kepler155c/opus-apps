@@ -1,5 +1,6 @@
 local fuzzy = require('opus.fuzzy')
 local UI    = require('opus.ui')
+local Util  = require('opus.util')
 
 local colors     = _G.colors
 local fs         = _G.fs
@@ -8,6 +9,14 @@ local os         = _G.os
 local shell      = _ENV.shell
 local term       = _G.term
 local textutils  = _G.textutils
+
+local _format   = string.format
+local _rep      = string.rep
+local _sub      = string.sub
+local _concat   = table.concat
+local _insert   = table.insert
+local _remove   = table.remove
+local _unpack   = table.unpack
 
 local x, y      = 1, 1
 local w, h      = term.getSize()
@@ -21,7 +30,7 @@ local lastSave
 local dirty     = { y = 1, ey = h }
 local mark      = { }
 local searchPattern
-local undo      = { chain = { }, pointer = 0 }
+local undo      = { chain = { } }
 
 h = h - 1
 
@@ -47,9 +56,9 @@ local keyMapping = {
 	down                      = 'down',
 	left                      = 'left',
 	right                     = 'right',
-	pageUp                    = 'pageUp',
-	[ 'control-b'           ] = 'pageUp',
-	pageDown                  = 'pageDown',
+	pageUp                    = 'page_up',
+	[ 'control-b'           ] = 'page_up',
+	pageDown                  = 'page_down',
 	home                      = 'home',
 	[ 'end'                 ] = 'toend',
 	[ 'control-home'        ] = 'top',
@@ -77,6 +86,7 @@ local keyMapping = {
 	[ 'shift-home'          ] = 'mark_home',
 	[ 'mouse_down'          ] = 'mark_anchor',
 	[ 'mouse_doubleclick'   ] = 'mark_current_word',
+	[ 'mouse_tripleclick'   ] = 'mark_line',
 
 	-- editing
 	delete                    = 'delete',
@@ -91,6 +101,7 @@ local keyMapping = {
 	-- copy/paste
 	[ 'control-x'           ] = 'cut',
 	[ 'control-c'           ] = 'copy',
+	[ 'control-y'           ] = 'paste_internal',
 
 	-- file
 	[ 'control-s'           ] = 'save',
@@ -126,7 +137,7 @@ local page = UI.Page {
 			{ text = 'Edit', dropdown = {
 				{ text = 'Cut           ^x', event = 'menu_action', action = 'cut' },
 				{ text = 'Copy          ^c', event = 'menu_action', action = 'copy' },
-				{ text = 'Paste         ^V', event = 'menu_action', action = 'paste_internal' },
+				{ text = 'Paste      ^y,^V', event = 'menu_action', action = 'paste_internal' },
 				{ spacer = true },
 				{ text = 'Find...       ^f', event = 'menu_action', action = 'find_prompt' },
 				{ text = 'Find Next     ^n', event = 'menu_action', action = 'find_next' },
@@ -220,7 +231,7 @@ local page = UI.Page {
 			},
 		},
 		show = function(self)
-			self.filename.value = fileInfo.abspath
+			self.filename:setValue(fileInfo.abspath)
 			self.filename:setPosition(#self.filename.value)
 			UI.MiniSlideOut.show(self)
 		end,
@@ -295,11 +306,11 @@ local page = UI.Page {
 			},
 		},
 		grid = UI.ScrollingGrid {
-			x = 2, y = 4, ex = -2, ey = -4,
-			sortColumn = 'name',
+			x = 2, y = 3, ex = -2, ey = -4,
+			disableHeader = true,
 			columns = {
-				{ heading = 'Name', key = 'name' },
-				{ heading = 'Dir', key = 'dir' },
+				{ key = 'name' },
+				{ key = 'dir', textColor = colors.lightGray },
 			},
 			accelerators = {
 				grid_select = 'accept',
@@ -308,7 +319,7 @@ local page = UI.Page {
 		cancel = UI.Button {
 			x = -9, y = -2,
 			text = 'Cancel',
-			event = 'quick_cancel',
+			event = 'slide_hide',
 		},
 		apply_filter = function(self, filter)
 			local t = { }
@@ -320,17 +331,16 @@ local page = UI.Page {
 				for _,v in pairs(self.listing) do
 					v.score = fuzzy(v.lname, filter)
 					if v.score then
-						table.insert(t, v)
+						_insert(t, v)
 					end
 				end
 			else
-				self.grid.sortColumn = 'name'
+				self.grid.sortColumn = 'lname'
 				self.grid.inverseSort = false
 				t = self.listing
 			end
 
 			self.grid:setValues(t)
-			self.grid:update()
 			self.grid:setIndex(1)
 		end,
 		show = function(self)
@@ -340,9 +350,9 @@ local page = UI.Page {
 				for _,f in ipairs(files) do
 					local fullName = fs.combine(dir, f)
 					if fs.native.isDir(fullName) then
-						recurse(fullName)
+						if f ~= '.git' then recurse(fullName) end
 					else
-						table.insert(listing, {
+						_insert(listing, {
 							name = f,
 							dir = dir,
 							lname = f:lower(),
@@ -371,9 +381,6 @@ local page = UI.Page {
 					self:hide()
 				end
 
-			elseif event.type == 'quick_cancel' then
-				self:hide()
-
 			elseif event.type == 'text_change' then
 				self:apply_filter(event.text)
 				self.grid:draw()
@@ -395,7 +402,7 @@ local page = UI.Page {
 			accelerators = {
 				[ ' ' ] = 'down',
 				backspace = 'slide_hide',
-			}
+			},
 		},
 		show = function(self, values)
 			local m = 12
@@ -443,7 +450,7 @@ local page = UI.Page {
 			UI.Window.resize(self)
 
 			w, h = self.width, self.height
-			actions.setCursor(x, y)
+			actions.set_cursor(x, y)
 			actions.dirty_all()
 			actions.redraw()
 		end,
@@ -461,7 +468,6 @@ local page = UI.Page {
 
 				elseif ie.code == "mouse_click" or
 					ie.code == 'mouse_drag' or
-					--ie.code == 'mouse_up' or
 					ie.code == 'shift-mouse_click' or
 					ie.code == 'mouse_down' or
 					ie.code == 'mouse_doubleclick' then
@@ -528,121 +534,50 @@ local function getFileInfo(path)
 	return fi
 end
 
-local function setStatus(pattern, ...)
-	page.notification:info(string.format(pattern, ...))
-end
-
-local function setError(pattern, ...)
-	page.notification:error(string.format(pattern, ...))
-end
-
-local function save( _sPath )
-	-- Create intervening folder
-	local sDir = _sPath:sub(1, _sPath:len() - fs.getName(_sPath):len() )
-	if not fs.exists( sDir ) then
-		fs.makeDir( sDir )
-	end
-
-	-- Save
-	local file = nil
-	local function innerSave()
-		file = fs.open( _sPath, "w" )
-		if file then
-			for _,sLine in ipairs( tLines ) do
-				file.write(sLine .. "\n")
-			end
-		else
-			error( "Failed to open ".._sPath )
-		end
-	end
-
-	local ok, err = pcall( innerSave )
-	if file then
-		file.close()
-	end
-	return ok, err
-end
-
-local function split(str, pattern)
-	pattern = pattern or "(.-)\n"
-	local t = {}
-	local function helper(line) table.insert(t, line) return "" end
-	helper((str:gsub(pattern, helper)))
-	return t
-end
-
-local tKeywords = {
-	["and"] = true,
-	["break"] = true,
-	["do"] = true,
-	["else"] = true,
-	["elseif"] = true,
-	["end"] = true,
-	["false"] = true,
-	["for"] = true,
-	["function"] = true,
-	["if"] = true,
-	["in"] = true,
-	["local"] = true,
-	["nil"] = true,
-	["not"] = true,
-	["or"] = true,
-	["repeat"] = true,
-	["return"] = true,
-	["then"] = true,
-	["true"] = true,
-	["until"]= true,
-	["while"] = true,
+local keywords = Util.transpose {
+	'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function', 'if',
+	'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then', 'true', 'until', 'while'
 }
 
 local function writeHighlighted(sLine, ny, dy)
-	local buffer = {
-		fg = '',
-		text = '',
-	}
+	local buffer = { fg = { }, text = { } }
 
 	local function tryWrite(line, regex, fgcolor)
 		local match = line:match(regex)
 		if match then
 			local fg = type(fgcolor) == "string" and fgcolor or fgcolor(match)
-			buffer.text = buffer.text .. match
-			buffer.fg = buffer.fg .. string.rep(fg, #match)
-			return line:sub(#match + 1)
+			_insert(buffer.text, match)
+			_insert(buffer.fg, _rep(fg, #match))
+			return _sub(line, #match + 1)
 		end
 		return nil
 	end
 
 	while #sLine > 0 do
 		sLine =
+			-- tryWrite(sLine, "^[%\26]", '7' ) or
 			tryWrite(sLine, "^%-%-%[%[.-%]%]", color.commentColor ) or
 			tryWrite(sLine, "^%-%-.*",         color.commentColor ) or
 			tryWrite(sLine, "^\".-[^\\]\"",    color.stringColor  ) or
 			tryWrite(sLine, "^\'.-[^\\]\'",    color.stringColor  ) or
 			tryWrite(sLine, "^%[%[.-%]%]",     color.stringColor  ) or
 			tryWrite(sLine, "^[%w_]+", function(match)
-				if tKeywords[match] then
-					return color.keywordColor
-				end
-				return color.textColor
+				return keywords[match] and color.keywordColor or color.textColor
 			end) or
 			tryWrite(sLine, "^[^%w_]", color.textColor)
 	end
 
-	buffer.fg = buffer.fg .. '7'
-	buffer.text = buffer.text .. '\183'
+	buffer.fg = _concat(buffer.fg) .. '7'
+	buffer.text = _concat(buffer.text) .. '\183'
 
 	if mark.active and ny >= mark.y and ny <= mark.ey then
 		local sx = ny == mark.y and mark.x or 1
-		local ex = #buffer.text
-		if ny == mark.ey then
-			ex = mark.ex
-		end
-		buffer.bg = string.rep('f', sx - 1) ..
-					string.rep('7', ex - sx) ..
-					string.rep('f', #buffer.text - ex + 1)
-
+		local ex = ny == mark.ey and mark.ex or #buffer.text
+		buffer.bg = _rep('f', sx - 1) ..
+					_rep('7', ex - sx) ..
+					_rep('f', #buffer.text - ex + 1)
 	else
-		buffer.bg = string.rep('f', #buffer.text)
+		buffer.bg = _rep('f', #buffer.text)
 	end
 
 	page.editor:blit(1 - scrollX, dy, buffer.text, buffer.bg, buffer.fg)
@@ -651,7 +586,6 @@ end
 local function redraw()
 	if dirty.y > 0 then
 		for dy = 1, h do
-
 			local sLine = tLines[dy + scrollY]
 			if sLine ~= nil then
 				if dy + scrollY >= dirty.y and dy + scrollY <= dirty.ey then
@@ -665,7 +599,7 @@ local function redraw()
 	end
 
 	local modifiedIndicator = undo.chain[#undo.chain] == lastSave and ' ' or '*'
-	page.menuBar.status.value = string.format(' %d:%d%s', y, x, modifiedIndicator)
+	page.menuBar.status.value = _format('%d:%d%s', y, x, modifiedIndicator)
 	page.menuBar.status:draw()
 
 	if page.editor.focused then
@@ -688,36 +622,34 @@ local function nextWord(line, cx)
 end
 
 actions = {
+	info = function(pattern, ...)
+		page.notification:info(_format(pattern, ...))
+	end,
+
+	error = function(pattern, ...)
+		page.notification:error(_format(pattern, ...))
+	end,
+
 	undo = function()
-		local last = table.remove(undo.chain)
+		local last = _remove(undo.chain)
 		if last then
 			undo.active = true
-			actions[last.action](table.unpack(last.args))
+			for i = #last, 1, -1 do
+				local u = last[i]
+				actions[u.action](_unpack(u.args))
+			end
 			undo.active = false
 		else
-			setStatus('Already at oldest change')
+			actions.info('already at oldest change')
 		end
 	end,
 
-	addUndo = function(entry)
+	undo_add = function(entry)
 		local last = undo.chain[#undo.chain]
-		if last and last.action == entry.action then
-			if last.action == 'deleteText' then
-				if last.args[3] == entry.args[1] and
-					 last.args[4] == entry.args[2] then
-					last.args = {
-						last.args[1], last.args[2], entry.args[3], entry.args[4],
-						last.args[5] .. entry.args[5]
-					}
-				else
-					table.insert(undo.chain, entry)
-				end
-			else
-				-- insertText (need to finish)
-				table.insert(undo.chain, entry)
-			end
+		if last and undo.continue then
+			table.insert(last, entry)
 		else
-			table.insert(undo.chain, entry)
+			_insert(undo.chain, { entry })
 		end
 	end,
 
@@ -726,7 +658,7 @@ actions = {
 		local results = sLine and textutils.complete(sLine, _ENV) or { }
 
 		if #results == 0 then
-			setError('No completions available')
+			actions.error('no completions available')
 
 		elseif #results == 1 then
 			actions.insertText(x, y, results[1])
@@ -746,7 +678,7 @@ actions = {
 	refresh = function()
 		actions.dirty_all()
 		mark.continue = mark.active
-		setStatus('refreshed')
+		actions.info('refreshed')
 	end,
 
 	goto_line = function()
@@ -763,7 +695,7 @@ actions = {
 			local nx = tLines[ny]:lower():find(pattern, sx, true)
 			if nx then
 				if ny < y or ny == y and nx <= x then
-					setStatus('search hit BOTTOM, continuing at TOP')
+					actions.info('search hit BOTTOM, continuing at TOP')
 				end
 				actions.go_to(nx, ny)
 				actions.mark_to(nx + #pattern, ny)
@@ -772,7 +704,7 @@ actions = {
 			end
 			sx = 1
 		end
-		setError('Pattern not found')
+		actions.error('pattern not found')
 	end,
 
 	find_next = function()
@@ -812,7 +744,7 @@ actions = {
 
 	open = function(filename)
 		if not actions.load(filename) then
-			setError('Unable to load file')
+			actions.error('unable to load file')
 		end
 	end,
 
@@ -825,39 +757,51 @@ actions = {
 		x, y = 1, 1
 		scrollX, scrollY = 0, 0
 		lastPos   = { x = 1, y = 1 }
-		lastSave = nil
+		lastSave  = nil
 		dirty     = { y = 1, ey = h }
 		mark      = { }
-		undo      = { chain = { }, pointer = 0 }
+		undo      = { chain = { } }
 
-		tLines = { }
-		if fs.exists(fileInfo.abspath) then
-			local file = io.open(fileInfo.abspath, "r")
-			local sLine = file:read()
-			while sLine do
-				table.insert(tLines, sLine)
-				sLine = file:read()
-			end
-			file:close()
+		tLines = Util.readLines(fileInfo.abspath) or { }
+		if #tLines == 0 then
+			_insert(tLines, '')
 		end
 
-		if #tLines == 0 then
-			table.insert(tLines, '')
+		--[[
+		local function detabify(l)
+			return l:gsub('\26\26', '\9'):gsub('\26', '\9')
+		end ]]
+
+		-- since we can't handle tabs, convert them to spaces :(
+		local t1, t2 = ' ', '  '
+		local function tabify(l)
+			repeat
+				local i = l:find('\9')
+				if i then
+					local tabs = (i - 1) % 2 == 0 and t2 or t1
+					l = l:sub(1, i - 1) .. tabs .. l:sub(i + 1)
+				end
+			until not i
+			return l
+		end
+
+		for k, v in pairs(tLines) do
+			tLines[k] = tabify(v)
 		end
 
 		local name = fileInfo.path
 		if fileInfo.isNew then
 			if not fileInfo.dirExists then
-				setStatus('"%s" [New DIRECTORY]', name)
+				actions.info('"%s" [New DIRECTORY]', name)
 			else
-				setStatus('"%s" [New File]', name)
+				actions.info('"%s" [New File]', name)
 			end
 		elseif fileInfo.isReadOnly then
-			setStatus('"%s" [readonly] %dL, %dC',
-						name, #tLines, fs.getSize(fileInfo.abspath))
+			actions.info('"%s" [readonly] %dL, %dC',
+				name, #tLines, fs.getSize(fileInfo.abspath))
 		else
-			setStatus('"%s" %dL, %dC',
-						name, #tLines, fs.getSize(fileInfo.abspath))
+			actions.info('"%s" %dL, %dC',
+				name, #tLines, fs.getSize(fileInfo.abspath))
 		end
 
 		return true
@@ -866,17 +810,22 @@ actions = {
 	save = function(filename)
 		filename = filename or fileInfo.abspath
 		if fs.isReadOnly(filename) then
-			setError("Access denied")
+			actions.error("access denied")
 		else
-			local ok = save(filename)
-			if ok then
+			local s, m = pcall(function()
+				if not Util.writeLines(filename, tLines) then
+					error("Failed to open " .. filename)
+				end
+			end)
+
+			if s then
 				lastSave = undo.chain[#undo.chain]
 				fileInfo = getFileInfo(filename)
-				setStatus('"%s" %dL, %dC written',
+				actions.info('"%s" %dL, %dC written',
 					 fileInfo.path, #tLines, fs.getSize(fileInfo.abspath))
-					 return true
+				return true
 			else
-				setError("Error saving to %s", filename)
+				actions.error(m)
 			end
 		end
 	end,
@@ -894,26 +843,34 @@ actions = {
 	end,
 
 	run = function()
-		--input:reset()
-		local sTempPath = "/.temp"
-		local ok = save(sTempPath)
-		if ok then
-			local nTask = shell.openTab(sTempPath)
+		if undo.chain[#undo.chain] == lastSave then
+			local nTask = shell.openTab(fileInfo.abspath)
 			if nTask then
 				shell.switchTab(nTask)
 			else
-				setError("Error starting Task")
+				actions.error("error starting Task")
 			end
-			os.sleep(0)
-			fs.delete(sTempPath)
 		else
-			setError("Error saving to %s", sTempPath)
+			local fn, msg = load(_concat(tLines, '\n'), fileInfo.abspath)
+			if fn then
+				multishell.openTab({
+					fn = fn,
+					focused = true,
+					title = fs.getName(fileInfo.abspath),
+				})
+			else
+				local ln = msg:match(':(%d+):')
+				if ln and tonumber(ln) then
+					actions.go_to(1, tonumber(ln))
+				end
+				actions.error(msg)
+			end
 		end
 	end,
 
 	status = function()
 		local modified = undo.chain[#undo.chain] == lastSave and '' or '[Modified] '
-		setStatus('"%s" %s%d lines --%d%%--',
+		actions.info('"%s" %s%d lines --%d%%--',
 				 fileInfo.abspath, modified, #tLines,
 				 math.floor((y - 1) / (#tLines - 1) * 100))
 	end,
@@ -1019,6 +976,14 @@ actions = {
 		actions.mark_finish()
 	end,
 
+	mark_line = function()
+		actions.home()
+		actions.mark_begin()
+		actions.toend()
+		actions.right()
+		actions.mark_finish()
+	end,
+
 	mark_word = function()
 		actions.mark_begin()
 		actions.word()
@@ -1074,7 +1039,7 @@ actions = {
 		actions.dirty_all()
 	end,
 
-	setCursor = function()
+	set_cursor = function()
 		lastPos.x = x
 		lastPos.y = y
 
@@ -1128,11 +1093,11 @@ actions = {
 		actions.insertText(x, y, '  ')
 	end,
 
-	pageUp = function()
+	page_up = function()
 		actions.go_to(x, y - h)
 	end,
 
-	pageDown = function()
+	page_down = function()
 		actions.go_to(x, y + h)
 	end,
 
@@ -1208,21 +1173,21 @@ actions = {
 			actions.dirty_line(y)
 			x = x + #text
 		else
-			local lines = split(text)
+			local lines = Util.split(text)
 			local remainder = sLine:sub(x)
 			tLines[y] = sLine:sub(1, x - 1) .. lines[1]
 			actions.dirty_range(y, #tLines + #lines)
 			x = x + #lines[1]
 			for k = 2, #lines do
 				y = y + 1
-				table.insert(tLines, y, lines[k])
+				_insert(tLines, y, lines[k])
 				x = #lines[k] + 1
 			end
 			tLines[y] = tLines[y]:sub(1, x) .. remainder
 		end
 
 		if not undo.active then
-			actions.addUndo(
+			actions.undo_add(
 				{ action = 'deleteText', args = { sx, sy, x, y, text } })
 		end
 	end,
@@ -1233,14 +1198,14 @@ actions = {
 
 		if not undo.active then
 			local text = actions.copyText(sx, sy, ex, ey)
-			actions.addUndo(
+			actions.undo_add(
 				{ action = 'insertText', args = { sx, sy, text } })
 		end
 
 		local front = tLines[sy]:sub(1, sx - 1)
 		local back = tLines[ey]:sub(ex, #tLines[ey])
 		for _ = 2, ey - sy + 1 do
-			table.remove(tLines, y + 1)
+			_remove(tLines, y + 1)
 		end
 		tLines[y] = front .. back
 		if sy ~= ey then
@@ -1267,10 +1232,10 @@ actions = {
 				end
 				local str = line:sub(cx, ex)
 				count = count + #str
-				table.insert(lines, str)
+				_insert(lines, str)
 			end
 		end
-		return table.concat(lines, '\n'), count
+		return _concat(lines, '\n'), count
 	end,
 
 	delete = function()
@@ -1304,7 +1269,7 @@ actions = {
 		if mark.active then
 			actions.delete()
 		end
-		actions.insertText(x, y, '\n' .. string.rep(' ', spaces))
+		actions.insertText(x, y, '\n' .. _rep(' ', spaces))
 	end,
 
 	char = function(ch)
@@ -1317,7 +1282,7 @@ actions = {
 	copy_marked = function()
 		local text = actions.copyText(mark.x, mark.y, mark.ex, mark.ey)
 		os.queueEvent('clipboard_copy', text)
-		setStatus('shift-^v to paste')
+		actions.info('shift-^v to paste')
 	end,
 
 	cut = function()
@@ -1340,9 +1305,9 @@ actions = {
 		end
 		if text then
 			actions.insertText(x, y, text)
-			setStatus('%d chars added', #text)
+			actions.info('%d chars added', #text)
 		else
-			setStatus('Clipboard empty')
+			actions.info('clipboard empty')
 		end
 	end,
 
@@ -1384,10 +1349,16 @@ actions = {
 		local wasMarking = mark.continue
 		mark.continue = false
 
+		-- for undo purposes, treat tab and enter as char actions
+		local a = (action == 'tab' or action == 'enter') and 'char' or action
+		undo.continue = a == undo.lastAction
+
 		actions[action](...)
 
+		undo.lastAction = a
+
 		if x ~= lastPos.x or y ~= lastPos.y then
-			actions.setCursor()
+			actions.set_cursor()
 		end
 		if not mark.continue and wasMarking then
 			actions.unmark()
