@@ -6,7 +6,7 @@ local config = Config.load('saver', {
     timeout = 60,
 })
 
-local tab = UI.Tab {
+return UI.Tab {
 	tabTitle = 'Screen Saver',
 	description = 'Screen saver',
 	[1] = UI.Window {
@@ -38,24 +38,21 @@ local tab = UI.Tab {
 		text = 'Apply',
 		event = 'update',
 	},
-}
+	eventHandler = function(self, event)
+		if event.type =='checkbox_change' then
+			config.enabled = not not event.checked
 
-function tab:eventHandler(event)
-	if event.type =='checkbox_change' then
-		config.enabled = not not event.checked
+		elseif event.type == 'update' then
+			if self.timeout.value then
+				config.timeout = self.timeout.value
+				Config.update('saver', config)
 
-	elseif event.type == 'update' then
-		if self.timeout.value then
-			config.timeout = self.timeout.value
-			Config.update('saver', config)
-
-			self:emit({ type = 'success_message', message = 'Settings updated' })
-			os.queueEvent('config_update', 'saver', config)
-		else
-			self:emit({ type = 'error_message', message = 'Invalid timeout' })
+				self:emit({ type = 'success_message', message = 'Settings updated' })
+				os.queueEvent('config_update', 'saver', config)
+			else
+				self:emit({ type = 'error_message', message = 'Invalid timeout' })
+			end
 		end
-	end
-	return UI.Tab.eventHandler(self, event)
-end
-
-return tab
+		return UI.Tab.eventHandler(self, event)
+	end,
+}

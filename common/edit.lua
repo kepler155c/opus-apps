@@ -1,8 +1,11 @@
-local fuzzy = require('opus.fuzzy')
-local UI    = require('opus.ui')
-local Util  = require('opus.util')
+local Array  = require('opus.array')
+local Config = require('opus.config')
+local fuzzy  = require('opus.fuzzy')
+local UI     = require('opus.ui')
+local Util   = require('opus.util')
 
 local colors     = _G.colors
+local device     = _G.device
 local fs         = _G.fs
 local multishell = _ENV.multishell
 local os         = _G.os
@@ -18,6 +21,8 @@ local _insert   = table.insert
 local _remove   = table.remove
 local _unpack   = table.unpack
 
+local config = Config.load('edit')
+
 local x, y      = 1, 1
 local w, h      = term.getSize()
 local scrollX   = 0
@@ -30,7 +35,7 @@ local lastSave
 local dirty     = { y = 1, ey = h }
 local mark      = { }
 local searchPattern
-local undo      = { chain = { } }
+local undo      = { chain = { }, redo = { } }
 
 h = h - 1
 
@@ -96,7 +101,9 @@ local keyMapping = {
 	paste                     = 'paste',
 	tab                       = 'tab',
 	[ 'control-z'           ] = 'undo',
+	[ 'control-Z'           ] = 'redo',
 	[ 'control-space'       ] = 'autocomplete',
+	[ 'control-shift-space' ] = 'peripheral',
 
 	-- copy/paste
 	[ 'control-x'           ] = 'cut',
@@ -126,8 +133,9 @@ local page = UI.Page {
 		buttons = {
 			{ text = 'File', dropdown = {
 				{ text = 'New             ', event = 'menu_action', action = 'file_new' },
-				{ text = 'Open            ', event = 'menu_action', action = 'file_open' },
+				{ text = 'Open...         ', event = 'menu_action', action = 'file_open' },
 				{ text = 'Quick Open... ^p', event = 'menu_action', action = 'quick_open' },
+				{ text = 'Recent...       ', event = 'menu_action', action = 'recent' },
 				{ spacer = true },
 				{ text = 'Save          ^s', event = 'menu_action', action = 'save' },
 				{ text = 'Save As...    ^S', event = 'menu_action', action = 'save_as' },
@@ -146,8 +154,10 @@ local page = UI.Page {
 				{ text = 'Mark all      ^a', event = 'menu_action', action = 'mark_all' },
 			} },
 			{ text = 'Code', dropdown = {
-				{ text = 'Complete  ^space', event = 'menu_action', action = 'autocomplete' },
-				{ text = 'Run       ^enter', event = 'menu_action', action = 'run' },
+				{ text = 'Complete   ^space', event = 'menu_action', action = 'autocomplete' },
+				{ text = 'Run        ^enter', event = 'menu_action', action = 'run' },
+				{ spacer = true },
+				{ text = 'Peripheral ^SPACE', event = 'menu_action', action = 'peripheral' },
 			} },
 		},
 		status = UI.Text {
@@ -185,10 +195,10 @@ local page = UI.Page {
 		end,
 	},
 	search = UI.MiniSlideOut {
-		x = -20, y = -2,
+		x = '50%', y = -2,
 		label = 'Find',
 		search = UI.TextEntry {
-			x = 7, width = 12,
+			x = 7, ex = -3,
 			limit = 512,
 			markBackgroundColor = colors.lightGray,
 			backgroundFocusColor = colors.gray,
@@ -218,10 +228,10 @@ local page = UI.Page {
 		end,
 	},
 	save_as = UI.MiniSlideOut {
-		x = -24, y = -2,
+		x = '30%', y = -2,
 		label = 'Save',
 		filename = UI.TextEntry {
-			x = 7, width = 16,
+			x = 7, ex = -3,
 			limit = 512,
 			markBackgroundColor = colors.lightGray,
 			backgroundFocusColor = colors.gray,
@@ -294,6 +304,42 @@ local page = UI.Page {
 			return UI.FileSelect.eventHandler(self, event)
 		end,
 	},
+	recent = UI.SlideOut {
+		transitionHint = 'expandUp',
+		grid = UI.Grid {
+			x = 2, y = 2, ey = -4, ex = -2,
+			columns = {
+				{ key = 'name', heading = 'Name' },
+				{ key = 'dir', heading = 'Directory' },
+			},
+			accelerators = {
+				backspace = 'slide_hide',
+			},
+		},
+		cancel = UI.Button {
+			x = -9, y = -2,
+			text = 'Cancel',
+			event = 'slide_hide',
+		},
+		show = function(self)
+			local t = { }
+			for _,v in pairs(config.recent or { }) do
+				table.insert(t, { name = fs.getName(v), dir = fs.getDir(v), path = v })
+			end
+			self.grid:setValues(t)
+			self.grid:setIndex(1)
+			UI.SlideOut.show(self)
+			self:addTransition('expandUp', { easing = 'outBounce', ticks = 12 })
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'grid_select' then
+				actions.process('open', event.selected.path)
+				self:hide()
+				return true
+			end
+			return UI.SlideOut.eventHandler(self, event)
+		end,
+	},
 	quick_open = UI.SlideOut {
 		filter_entry = UI.TextEntry {
 			x = 2, y = 2, ex = -2,
@@ -346,10 +392,10 @@ local page = UI.Page {
 		show = function(self)
 			local listing = { }
 			local function recurse(dir)
-				local files = fs.native.list(dir)
+				local files = fs.list(dir)
 				for _,f in ipairs(files) do
 					local fullName = fs.combine(dir, f)
-					if fs.native.isDir(fullName) then
+					if fs.native.isDir(fullName) then -- skip virtual dirs
 						if f ~= '.git' then recurse(fullName) end
 					else
 						_insert(listing, {
@@ -366,6 +412,7 @@ local page = UI.Page {
 			self:apply_filter()
 			self.filter_entry:reset()
 			UI.SlideOut.show(self)
+			self:addTransition('expandUp', { easing = 'outBounce', ticks = 12 })
 		end,
 		eventHandler = function(self, event)
 			if event.type == 'grid_up' then
@@ -404,6 +451,14 @@ local page = UI.Page {
 				backspace = 'slide_hide',
 			},
 		},
+		cancel = UI.Button {
+			y = -1, x = -9,
+			text = 'Cancel',
+			backgroundColor = colors.black,
+			backgroundFocusColor = colors.black,
+			textColor = colors.lightGray,
+			event = 'slide_hide',
+		},
 		show = function(self, values)
 			local m = 12
 			for _, v in pairs(values) do
@@ -417,6 +472,72 @@ local page = UI.Page {
 			self.grid:setIndex(1)
 			UI.SlideOut.show(self)
 		end,
+		eventHandler = function(self, event)
+			if event.type == 'grid_select' then
+				actions.process('insertText', x, y, event.selected.complete)
+				self:hide()
+				return true
+			end
+			return UI.SlideOut.eventHandler(self, event)
+		end,
+	},
+	peripheral = UI.SlideOut {
+		x = '20%', y = 2,
+		transitionHint = 'slideLeft',
+		grid1 = UI.Grid {
+			x = 2, y = 2, ey = 5,
+			sortColumn = 'name',
+			columns = {
+				{ key = 'name', heading = 'Peripheral' },
+			},
+			accelerators = {
+				[ ' ' ] = 'down',
+				backspace = 'slide_hide',
+				grid_focus_row = 'select_peripheral',
+				grid_select = 'complete',
+			},
+			scan = function(self)
+				self.values = { }
+				for k, v in pairs(device) do
+					table.insert(self.values, { name = k, complete = 'peripheral.wrap("' .. v.side .. '")' })
+				end
+			end,
+			postInit = function(self)
+				self:scan()
+			end,
+		},
+		grid2 = UI.Grid {
+			x = 2, y = 6, ey = -2,
+			sortColumn = 'method',
+			columns = {
+				{ key = 'method', heading = 'Method' },
+			},
+			accelerators = {
+				[ ' ' ] = 'down',
+				backspace = 'slide_hide',
+				grid_select = 'complete',
+			},
+			showMethods = function(self)
+				local dev = device[self.parent.grid1:getSelected().name]
+				local t = { }
+				if dev then
+					pcall(function()
+						local docs = dev.getDocs and dev.getDocs()
+						for k, v in pairs(dev) do
+							if type(v) == 'function' then
+								local m = docs and docs[k] and docs[k]:match('^function%((.+)%).+')
+								table.insert(t, { method = k, complete = k .. '(' .. (m or '') .. ')' })
+							end
+						end
+					end)
+				end
+				self:setValues(t)
+			end,
+			enable = function(self)
+				self:showMethods()
+				UI.Grid.enable(self)
+			end,
+		},
 		cancel = UI.Button {
 			y = -1, x = -9,
 			text = 'Cancel',
@@ -426,10 +547,16 @@ local page = UI.Page {
 			event = 'slide_hide',
 		},
 		eventHandler = function(self, event)
-			if event.type == 'grid_select' then
+			if event.type == 'complete' then
 				actions.process('insertText', x, y, event.selected.complete)
+				actions.process('left')
 				self:hide()
 				return true
+			elseif event.type == 'select_peripheral' then
+				self.grid2:showMethods()
+				self.grid2:setIndex(1)
+				self.grid2:update()
+				self.grid2:draw()
 			end
 			return UI.SlideOut.eventHandler(self, event)
 		end,
@@ -525,6 +652,19 @@ local function getFileInfo(path)
 		fi.isReadOnly = true
 	else
 		fi.isReadOnly = fs.isReadOnly(fi.abspath)
+	end
+
+	if abspath ~= config.filename then
+		config.filename = abspath
+		config.recent = config.recent or { }
+
+		Array.removeByValue(config.recent, '/' .. abspath)
+		table.insert(config.recent, 1, '/' .. abspath)
+		while #config.recent > 10 do
+			table.remove(config.recent)
+		end
+
+		Config.update('edit', config)
 	end
 
 	if multishell then
@@ -634,6 +774,7 @@ actions = {
 		local last = _remove(undo.chain)
 		if last then
 			undo.active = true
+			table.insert(undo.redo, { })
 			for i = #last, 1, -1 do
 				local u = last[i]
 				actions[u.action](_unpack(u.args))
@@ -645,11 +786,36 @@ actions = {
 	end,
 
 	undo_add = function(entry)
-		local last = undo.chain[#undo.chain]
-		if last and undo.continue then
+		if undo.active then
+			local last = undo.redo[#undo.redo]
 			table.insert(last, entry)
 		else
-			_insert(undo.chain, { entry })
+			if not undo.redo_active then
+				undo.redo = { }
+			end
+			local last = undo.chain[#undo.chain]
+			if last and undo.continue then
+				table.insert(last, entry)
+			else
+				_insert(undo.chain, { entry })
+			end
+		end
+	end,
+
+	redo = function()
+		local last = _remove(undo.redo)
+		if last then
+			-- too many flags !
+			undo.redo_active = true
+			undo.continue = false
+			for i = #last, 1, -1 do
+				local u = last[i]
+				actions[u.action](_unpack(u.args))
+				undo.continue = true
+			end
+			undo.redo_active = false
+		else
+			actions.info('already at newest change')
 		end
 	end,
 
@@ -673,6 +839,10 @@ actions = {
 			end
 			page.completions:show(results)
 		end
+	end,
+
+	peripheral = function()
+		page.peripheral:show()
 	end,
 
 	refresh = function()
@@ -734,6 +904,14 @@ actions = {
 		end
 	end,
 
+	recent = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('recent')
+		else
+			page.recent:show()
+		end
+	end,
+
 	file_new = function(force)
 		if not force and undo.chain[#undo.chain] ~= lastSave then
 			page.unsaved:show('file_new')
@@ -749,7 +927,7 @@ actions = {
 	end,
 
 	load = function(path)
-		if fs.exists(path) and fs.isDir(path) then
+		if not path or (fs.exists(path) and fs.isDir(path)) then
 			return false
 		end
 		fileInfo = getFileInfo(path)
@@ -760,7 +938,7 @@ actions = {
 		lastSave  = nil
 		dirty     = { y = 1, ey = h }
 		mark      = { }
-		undo      = { chain = { } }
+		undo      = { chain = { }, redo = { } }
 
 		tLines = Util.readLines(fileInfo.abspath) or { }
 		if #tLines == 0 then
@@ -843,6 +1021,10 @@ actions = {
 	end,
 
 	run = function()
+		if not multishell then
+			actions.error('open available with multishell')
+			return
+		end
 		if undo.chain[#undo.chain] == lastSave then
 			local nTask = shell.openTab(fileInfo.abspath)
 			if nTask then
@@ -1186,21 +1368,17 @@ actions = {
 			tLines[y] = tLines[y]:sub(1, x) .. remainder
 		end
 
-		if not undo.active then
-			actions.undo_add(
-				{ action = 'deleteText', args = { sx, sy, x, y, text } })
-		end
+		actions.undo_add(
+			{ action = 'deleteText', args = { sx, sy, x, y } })
 	end,
 
 	deleteText = function(sx, sy, ex, ey)
 		x = sx
 		y = sy
 
-		if not undo.active then
-			local text = actions.copyText(sx, sy, ex, ey)
-			actions.undo_add(
-				{ action = 'insertText', args = { sx, sy, text } })
-		end
+		local text = actions.copyText(sx, sy, ex, ey)
+		actions.undo_add(
+			{ action = 'insertText', args = { sx, sy, text } })
 
 		local front = tLines[sy]:sub(1, sx - 1)
 		local back = tLines[ey]:sub(ex, #tLines[ey])
@@ -1252,9 +1430,7 @@ actions = {
 	end,
 
 	backspace = function()
-		if mark.active then
-			actions.delete()
-		elseif actions.left() then
+		if mark.active or actions.left() then
 			actions.delete()
 		end
 	end,
@@ -1369,7 +1545,7 @@ actions = {
 }
 
 local args = { ... }
-if not actions.load(args[1] and args[1] or 'untitled.txt') then
+if not (actions.load(args[1]) or actions.load(config.filename) or actions.load('untitled.txt')) then
 	error('Error opening file')
 end
 
