@@ -21,7 +21,7 @@ local _insert   = table.insert
 local _remove   = table.remove
 local _unpack   = table.unpack
 
-local config = Config.load('edit')
+local config = Config.load('editor')
 
 local x, y      = 1, 1
 local w, h      = term.getSize()
@@ -241,7 +241,7 @@ local page = UI.Page {
 			},
 		},
 		show = function(self)
-			self.filename:setValue(fileInfo.abspath)
+			self.filename:setValue(fileInfo.path)
 			self.filename:setPosition(#self.filename.value)
 			UI.MiniSlideOut.show(self)
 		end,
@@ -289,7 +289,7 @@ local page = UI.Page {
 		modal = true,
 		enable = function() end,
 		show = function(self)
-			UI.FileSelect.enable(self, fs.getDir(fileInfo.abspath))
+			UI.FileSelect.enable(self, fs.getDir(fileInfo.path))
 			self:focusFirst()
 			self:draw()
 			self:addTransition('expandUp', { easing = 'outBounce', ticks = 12 })
@@ -305,7 +305,6 @@ local page = UI.Page {
 		end,
 	},
 	recent = UI.SlideOut {
-		transitionHint = 'expandUp',
 		grid = UI.Grid {
 			x = 2, y = 2, ey = -4, ex = -2,
 			columns = {
@@ -402,7 +401,7 @@ local page = UI.Page {
 							name = f,
 							dir = dir,
 							lname = f:lower(),
-							fullName = '/' .. fullName,
+							fullName = fullName,
 						})
 					end
 				end
@@ -565,12 +564,10 @@ local page = UI.Page {
 		y = 2,
 		backgroundColor = colors.black,
 		transitionHint = 'slideRight',
+		cursorBlink = true,
 		focus = function(self)
 			if self.focused then
 				self:setCursorPos(x - scrollX, y - scrollY)
-				self:setCursorBlink(true)
-			else
-				self:setCursorBlink(false)
 			end
 		end,
 		resize = function(self)
@@ -639,32 +636,26 @@ local page = UI.Page {
 }
 
 local function getFileInfo(path)
-	local abspath = shell.resolve(path)
+	path = fs.combine('/', path)
 
 	local fi = {
-		abspath = abspath,
 		path = path,
-		isNew = not fs.exists(abspath),
-		dirExists = fs.exists(fs.getDir(abspath)),
-		modified = false,
+		isNew = not fs.exists(path),
+		dirExists = fs.exists(fs.getDir(path)),
+		isReadOnly = fs.isReadOnly(path),
 	}
-	if fi.isDir then
-		fi.isReadOnly = true
-	else
-		fi.isReadOnly = fs.isReadOnly(fi.abspath)
-	end
 
-	if abspath ~= config.filename then
-		config.filename = abspath
+	if path ~= config.filename then
+		config.filename = path
 		config.recent = config.recent or { }
 
-		Array.removeByValue(config.recent, '/' .. abspath)
-		table.insert(config.recent, 1, '/' .. abspath)
+		Array.removeByValue(config.recent, path)
+		table.insert(config.recent, 1, path)
 		while #config.recent > 10 do
 			table.remove(config.recent)
 		end
 
-		Config.update('edit', config)
+		Config.update('editor', config)
 	end
 
 	if multishell then
@@ -940,7 +931,7 @@ actions = {
 		mark      = { }
 		undo      = { chain = { }, redo = { } }
 
-		tLines = Util.readLines(fileInfo.abspath) or { }
+		tLines = Util.readLines(fileInfo.path) or { }
 		if #tLines == 0 then
 			_insert(tLines, '')
 		end
@@ -976,17 +967,17 @@ actions = {
 			end
 		elseif fileInfo.isReadOnly then
 			actions.info('"%s" [readonly] %dL, %dC',
-				name, #tLines, fs.getSize(fileInfo.abspath))
+				name, #tLines, fs.getSize(fileInfo.path))
 		else
 			actions.info('"%s" %dL, %dC',
-				name, #tLines, fs.getSize(fileInfo.abspath))
+				name, #tLines, fs.getSize(fileInfo.path))
 		end
 
 		return true
 	end,
 
 	save = function(filename)
-		filename = filename or fileInfo.abspath
+		filename = filename or fileInfo.path
 		if fs.isReadOnly(filename) then
 			actions.error("access denied")
 		else
@@ -1000,7 +991,7 @@ actions = {
 				lastSave = undo.chain[#undo.chain]
 				fileInfo = getFileInfo(filename)
 				actions.info('"%s" %dL, %dC written',
-					 fileInfo.path, #tLines, fs.getSize(fileInfo.abspath))
+					 fileInfo.path, #tLines, fs.getSize(fileInfo.path))
 				return true
 			else
 				actions.error(m)
@@ -1026,19 +1017,19 @@ actions = {
 			return
 		end
 		if undo.chain[#undo.chain] == lastSave then
-			local nTask = shell.openTab(fileInfo.abspath)
+			local nTask = shell.openTab(fileInfo.path)
 			if nTask then
 				shell.switchTab(nTask)
 			else
 				actions.error("error starting Task")
 			end
 		else
-			local fn, msg = load(_concat(tLines, '\n'), fileInfo.abspath)
+			local fn, msg = load(_concat(tLines, '\n'), fileInfo.path)
 			if fn then
 				multishell.openTab({
 					fn = fn,
 					focused = true,
-					title = fs.getName(fileInfo.abspath),
+					title = fs.getName(fileInfo.path),
 				})
 			else
 				local ln = msg:match(':(%d+):')
@@ -1053,7 +1044,7 @@ actions = {
 	status = function()
 		local modified = undo.chain[#undo.chain] == lastSave and '' or '[Modified] '
 		actions.info('"%s" %s%d lines --%d%%--',
-				 fileInfo.abspath, modified, #tLines,
+				 fileInfo.path, modified, #tLines,
 				 math.floor((y - 1) / (#tLines - 1) * 100))
 	end,
 
@@ -1229,10 +1220,10 @@ actions = {
 		local screenY = y - scrollY
 
 		if screenX < 1 then
-			scrollX = x - 1
+			scrollX = math.max(0, x - 4)
 			actions.dirty_all()
 		elseif screenX > w then
-			scrollX = x - w
+			scrollX = x - w + 3
 			actions.dirty_all()
 		end
 
@@ -1545,7 +1536,8 @@ actions = {
 }
 
 local args = { ... }
-if not (actions.load(args[1]) or actions.load(config.filename) or actions.load('untitled.txt')) then
+local filename = args[1] and shell.resolve(args[1])
+if not (actions.load(filename) or actions.load(config.filename) or actions.load('untitled.txt')) then
 	error('Error opening file')
 end
 

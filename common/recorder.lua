@@ -134,15 +134,17 @@ end
 recTerm = multishell.term
 
 for key, func in pairs(oldTerm) do
-	recTerm[key] = function(...)
-		local result = { func(...) }
+	if type(func) == 'function' then
+		recTerm[key] = function(...)
+			local result = { func(...) }
 
-		if callCount == 0 then
-			os.queueEvent('capture_frame')
+			if callCount == 0 then
+				os.queueEvent('capture_frame')
+			end
+			callCount = callCount + 1
+			curCalls[callCount] = { key, ... }
+			return unpack(result)
 		end
-		callCount = callCount + 1
-		curCalls[callCount] = { key, ... }
-		return unpack(result)
 	end
 end
 
