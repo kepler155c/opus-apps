@@ -2,7 +2,6 @@ local Config   = require('opus.config')
 local Event    = require('opus.event')
 local itemDB   = require('core.itemDB')
 local Socket   = require('opus.socket')
-local Terminal = require('opus.terminal')
 local UI       = require('opus.ui')
 local Util     = require('opus.util')
 
@@ -11,10 +10,7 @@ local fs         = _G.fs
 local multishell = _ENV.multishell
 local network    = _G.network
 local os         = _G.os
-local shell      = _ENV.shell
-local term       = _G.term
 
---UI.Button.defaults.focusIndicator = ' '
 UI:configure('Turtles', ...)
 
 local config = { }
@@ -31,13 +27,26 @@ local options = {
 
 local SCRIPTS_PATH = 'packages/common/etc/scripts'
 
-local nullTerm = Terminal.getNullTerm(term.current())
-local socket
+local socket, turtle, page
 
-local page = UI.Page {
+page = UI.Page {
 	coords = UI.Window {
 		backgroundColor = colors.black,
 		height = 3,
+		marginTop = 1, marginLeft = 1,
+		draw = function(self)
+			local t = turtle
+			self:clear()
+			if t then
+				self:setCursorPos(2, 2)
+				local ind = 'GPS'
+				if not t.point.gps then
+					ind = 'REL'
+				end
+				self:print(string.format('%s : %d,%d,%d',
+					ind, t.point.x, t.point.y, t.point.z))
+			end
+		end,
 	},
 	tabs = UI.Tabs {
 		x = 1, y = 4, ey = -2,
@@ -50,6 +59,23 @@ local page = UI.Page {
 			disableHeader = true,
 			sortColumn = 'label',
 			autospace = true,
+			draw = function(self)
+				Util.clear(self.values)
+				local files = fs.list(SCRIPTS_PATH)
+				for _,path in pairs(files) do
+					table.insert(self.values, { label = path, path = fs.combine(SCRIPTS_PATH, path) })
+				end
+				self:update()
+				UI.ScrollingGrid.draw(self)
+			end,
+			eventHandler = function(self, event)
+				if event.type == 'grid_select' then
+					page:runScript(event.selected.label)
+				else
+					return UI.ScrollingGrid.eventHandler(self, event)
+				end
+				return true
+			end,
 		},
 		turtles = UI.ScrollingGrid {
 			tabTitle = 'Select',
@@ -63,6 +89,41 @@ local page = UI.Page {
 			disableHeader = true,
 			sortColumn = 'label',
 			autospace = true,
+			getDisplayValues = function(_, row)
+				row = Util.shallowCopy(row)
+				if row.fuel then
+					row.fuel = Util.toBytes(row.fuel)
+				end
+				if row.distance then
+					row.distance = Util.round(row.distance, 1)
+				end
+				return row
+			end,
+			draw = function(self)
+				Util.clear(self.values)
+				for _,v in pairs(network) do
+					if v.fuel then
+						table.insert(self.values, v)
+					end
+				end
+				self:update()
+				UI.ScrollingGrid.draw(self)
+			end,
+			eventHandler = function(self, event)
+				if event.type == 'grid_select' then
+					turtle = event.selected
+					config.id = event.selected.id
+					Config.update('Turtles', config)
+					multishell.setTitle(multishell.getCurrent(), turtle.label)
+					if socket then
+						socket:close()
+						socket = nil
+					end
+				else
+					return UI.ScrollingGrid.eventHandler(self, event)
+				end
+				return true
+			end,
 		},
 		inventory = UI.ScrollingGrid {
 			backgroundColor = colors.cyan,
@@ -74,6 +135,54 @@ local page = UI.Page {
 			},
 			disableHeader = true,
 			sortColumn = 'index',
+			getRowTextColor = function(self, row, selected)
+				if turtle and row.selected then
+					return colors.yellow
+				end
+				return UI.ScrollingGrid.getRowTextColor(self, row, selected)
+			end,
+			draw = function(self)
+				local t = turtle
+				Util.clear(self.values)
+				if t then
+					for k,v in pairs(t.inv or { }) do -- new method (less data)
+						local index, count = k:match('(%d+),(%d+)')
+						v = {
+							index = tonumber(index),
+							key = v,
+							count = tonumber(count),
+						}
+						table.insert(self.values, v)
+					end
+
+					for _,v in pairs(t.inventory or { }) do
+						if v.count > 0 then
+							table.insert(self.values, v)
+						end
+					end
+
+					for _,v in pairs(self.values) do
+						if v.index == t.slotIndex then
+							v.selected = true
+						end
+						if v.key then
+							v.key = itemDB:getName(v.key)
+						end
+					end
+				end
+				self:adjustWidth()
+				self:update()
+				UI.ScrollingGrid.draw(self)
+			end,
+			eventHandler = function(self, event)
+				if event.type == 'grid_select' then
+					local fn = string.format('turtle.select(%d)', event.selected.index)
+					page:runFunction(fn)
+				else
+					return UI.ScrollingGrid.eventHandler(self, event)
+				end
+				return true
+			end,
 		},
 --[[
 		policy = UI.ScrollingGrid {
@@ -134,6 +243,15 @@ local page = UI.Page {
 			{ key = 'distance', width = 6 },
 			{ key = 'fuel',     width = 6 },
 		},
+		draw = function(self)
+			local t = turtle
+			if t then
+				self.values.status = t.status
+				self.values.distance = t.distance and Util.round(t.distance, 2)
+				self.values.fuel = Util.toBytes(t.fuel)
+			end
+			UI.StatusBar.draw(self)
+		end,
 	},
 	notification = UI.Notification(),
 	accelerators = {
@@ -141,15 +259,10 @@ local page = UI.Page {
 	},
 }
 
-function page:enable(turtle)
-	self.turtle = turtle
-	UI.Page.enable(self)
-end
-
 function page:runFunction(script, nowrap)
 	for _ = 1, 2 do
 		if not socket then
-			socket = Socket.connect(self.turtle.id, 161)
+			socket = Socket.connect(turtle.id, 161)
 		end
 
 		if socket then
@@ -170,149 +283,40 @@ function page:runFunction(script, nowrap)
 end
 
 function page:runScript(scriptName)
-	if self.turtle then
+	if turtle then
 		self.notification:info('Connecting')
 		self:sync()
 
-		local cmd = string.format('Script %d %s', self.turtle.id, scriptName)
-		local ot = term.redirect(nullTerm)
-		pcall(function() shell.run(cmd) end)
-		term.redirect(ot)
+		local script = Util.readFile(fs.combine(SCRIPTS_PATH, scriptName))
+		if not script then
+			print('Unable to read script file')
+		end
+
+		local socket = Socket.connect(turtle.id, 161)
+		if not socket then
+			print('Unable to connect to ' .. turtle.id)
+			return
+		end
+
+		local function processVariables(script)
+			local variables = {
+				COMPUTER_ID = os.getComputerID(),
+			}
+			for k,v in pairs(variables) do
+				local token = string.format('{%s}', k)
+				script = script:gsub(token, v)
+			end
+
+			return script
+		end
+
+		script = processVariables(script)
+
+		socket:write({ type = 'script', args = script })
+		socket:close()
+
 		self.notification:success('Sent')
 	end
-end
-
-function page.coords:draw()
-	local t = self.parent.turtle
-	self:clear()
-	if t then
-		self:setCursorPos(2, 2)
-		local ind = 'GPS'
-		if not t.point.gps then
-			ind = 'REL'
-		end
-		self:print(string.format('%s : %d,%d,%d',
-			ind, t.point.x, t.point.y, t.point.z))
-	end
-end
-
---[[ Inventory Tab ]]--
-function page.tabs.inventory:getRowTextColor(row, selected)
-	if page.turtle and row.selected then
-		return colors.yellow
-	end
-	return UI.ScrollingGrid.getRowTextColor(self, row, selected)
-end
-
-function page.tabs.inventory:draw()
-	local t = page.turtle
-	Util.clear(self.values)
-	if t then
-		for k,v in pairs(t.inv or { }) do -- new method (less data)
-			local index, count = k:match('(%d+),(%d+)')
-			v = {
-				index = tonumber(index),
-				key = v,
-				count = tonumber(count),
-			}
-			table.insert(self.values, v)
-		end
-
-		for _,v in pairs(t.inventory or { }) do
-			if v.count > 0 then
-				table.insert(self.values, v)
-			end
-		end
-
-		for _,v in pairs(self.values) do
-			if v.index == t.slotIndex then
-				v.selected = true
-			end
-			if v.key then
-				v.key = itemDB:getName(v.key)
-			end
-		end
-	end
-	self:adjustWidth()
-	self:update()
-	UI.ScrollingGrid.draw(self)
-end
-
-function page.tabs.inventory:eventHandler(event)
-	if event.type == 'grid_select' then
-		local fn = string.format('turtle.select(%d)', event.selected.index)
-		page:runFunction(fn)
-	else
-		return UI.ScrollingGrid.eventHandler(self, event)
-	end
-	return true
-end
-
-function page.tabs.scripts:draw()
-	Util.clear(self.values)
-	local files = fs.list(SCRIPTS_PATH)
-	for _,path in pairs(files) do
-		table.insert(self.values, { label = path, path = fs.combine(SCRIPTS_PATH, path) })
-	end
-	self:update()
-	UI.ScrollingGrid.draw(self)
-end
-
-function page.tabs.scripts:eventHandler(event)
-	if event.type == 'grid_select' then
-		page:runScript(event.selected.label)
-	else
-		return UI.ScrollingGrid.eventHandler(self, event)
-	end
-	return true
-end
-
-function page.tabs.turtles:getDisplayValues(row)
-	row = Util.shallowCopy(row)
-	if row.fuel then
-		row.fuel = Util.toBytes(row.fuel)
-	end
-	if row.distance then
-		row.distance = Util.round(row.distance, 1)
-	end
-	return row
-end
-
-function page.tabs.turtles:draw()
-	Util.clear(self.values)
-	for _,v in pairs(network) do
-		if v.fuel then
-			table.insert(self.values, v)
-		end
-	end
-	self:update()
-	UI.ScrollingGrid.draw(self)
-end
-
-function page.tabs.turtles:eventHandler(event)
-	if event.type == 'grid_select' then
-		page.turtle = event.selected
-		config.id = event.selected.id
-		Config.update('Turtles', config)
-		multishell.setTitle(multishell.getCurrent(), page.turtle.label)
-		if socket then
-			socket:close()
-			socket = nil
-		end
-	else
-		return UI.ScrollingGrid.eventHandler(self, event)
-	end
-	return true
-end
-
-function page.statusBar:draw()
-	local t = self.parent.turtle
-	if t then
-		self.values.status = t.status
-		self.values.distance = t.distance and Util.round(t.distance, 2)
-		self.values.fuel = Util.toBytes(t.fuel)
-	end
-	UI.StatusBar.draw(self)
 end
 
 function page:showBlocks()
@@ -354,19 +358,14 @@ function page:eventHandler(event)
 	return true
 end
 
-function page:enable()
-	UI.Page.enable(self)
---  self.tabs:activateTab(page.tabs.turtles)
-end
-
 if not Util.getOptions(options, { ... }, true) then
 	return
 end
 
 if options.turtle.value >= 0 then
 	for _ = 1, 10 do
-		page.turtle = _G.network[options.turtle.value]
-		if page.turtle then
+		turtle = _G.network[options.turtle.value]
+		if turtle then
 			break
 		end
 		os.sleep(1)
@@ -374,9 +373,9 @@ if options.turtle.value >= 0 then
 end
 
 Event.onInterval(1, function()
-	if page.turtle then
-		local t = _G.network[page.turtle.id]
-		page.turtle = t
+	if turtle then
+		--local t = _G.network[turtle.id]
+		--turtle = t
 		page:draw()
 		page:sync()
 	end
@@ -387,5 +386,4 @@ if config.tab then
 end
 
 UI:setPage(page)
-
-UI:pullEvents()
+UI:start()

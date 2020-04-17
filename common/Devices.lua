@@ -68,7 +68,7 @@ local methodsPage = UI.Page {
 	grid = UI.ScrollingGrid {
 		y = -6, ey = -2,
 		columns = {
-			{ heading = 'Name', key = 'name', width = UI.term.width }
+			{ heading = 'Name', key = 'name' }
 		},
 		sortColumn = 'name',
 	},

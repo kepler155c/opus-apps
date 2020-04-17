@@ -100,11 +100,10 @@ function page.info:draw()
 
 	self:clear()
 	if book then
-		self:setCursorPos(1, 1)
 		self:print(
-			string.format('Name:    %s%s%s\n', Ansi.yellow, book.name, Ansi.reset))
-		self:print(
-			string.format('Version: %s%s%s\n', Ansi.yellow, book.version, Ansi.reset))
+			string.format('Name:    %s%s%s\nVersion: %s%s%s\n',
+			Ansi.yellow, book.name, Ansi.reset,
+			Ansi.yellow, book.version, Ansi.reset))
 
 		self.button.text = book.enabled and 'Disable' or 'Enable'
 		self.button:draw()

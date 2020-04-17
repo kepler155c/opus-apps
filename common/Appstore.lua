@@ -211,9 +211,7 @@ function appPage.container.viewport:draw()
 		Ansi.yellow .. app.description .. Ansi.reset)
 
 	self:clear()
-	self:setCursorPos(1, 1)
 	self:print(str)
-	self.ymax = self.cursorY
 
 	if appPage.notification.enabled then
 		appPage.notification:draw()
@@ -369,4 +367,3 @@ categoryPage:setCategory(source.name, source.index)
 
 UI:setPage(categoryPage)
 UI:pullEvents()
-UI.term:reset()

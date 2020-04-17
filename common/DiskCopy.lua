@@ -122,7 +122,6 @@ function page:drawInfo(drive, textArea)
 		return isValid(drive) and fs.getFreeSpace(drive.getMountPath()) or 0
 	end
 
-	textArea:setCursorPos(1, 1)
 	textArea:print(string.format('Drive: %s%s%s\nLabel: %s%s%s\nUsed:  %s%s%s\nFree:  %s%s%s',
 		Ansi.yellow, drive.name, Ansi.reset,
 		isValid(drive) and Ansi.yellow or Ansi.orange, getLabel():sub(1, 10), Ansi.reset,

@@ -9,7 +9,7 @@ local context = Milo:getContext()
 local resetTab = UI.Tab {
 	tabTitle = 'Reset',
 	index = 5,
-	backgroundColor = colors.cyan,
+	noFill = true,
 	textArea = UI.TextArea {
 		y = 2, ey = 6,
 		textColor = colors.yellow,

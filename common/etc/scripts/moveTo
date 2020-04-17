@@ -2,8 +2,8 @@ turtle.run(function()
 
   _G.requireInjector(_ENV)
 
-  local GPS    = require('gps')
-  local Socket = require('socket')
+  local GPS    = require('opus.gps')
+  local Socket = require('opus.socket')
 
   local id = {COMPUTER_ID}
 

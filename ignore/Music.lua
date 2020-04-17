@@ -250,5 +250,3 @@ turtle.setStatus('Jamming')
 UI:pullEvents()
 turtle.setStatus('idle')
 page:play(false)
-
-UI.term:reset()
