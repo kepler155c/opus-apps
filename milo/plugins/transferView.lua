@@ -12,7 +12,6 @@ local context    = Milo:getContext()
 local wizardPage = UI.WizardPage {
 	title = 'Transfer Inventory',
 	index = 2,
-	backgroundColor = colors.cyan,
 	grid = UI.ScrollingGrid {
 		y = 2, ey = -2,
 		values = context.storage.nodes,

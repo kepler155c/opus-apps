@@ -269,4 +269,4 @@ Event.onTimeout(.2, function()
 end)
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()

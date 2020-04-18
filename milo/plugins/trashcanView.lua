@@ -9,7 +9,6 @@ local device   = _G.device
 local wizardPage = UI.WizardPage {
 	title = 'Trashcan',
 	index = 2,
-	backgroundColor = colors.cyan,
 	info = UI.TextArea {
 		x = 1, ex = -1, y = 2, ey = 4,
 		textColor = colors.yellow,

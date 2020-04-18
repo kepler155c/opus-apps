@@ -54,8 +54,8 @@ local page = UI.Page {
 			limit = 50,
 			shadowText = 'filter',
 			shadowTextColor = colors.gray,
-			backgroundColor = colors.cyan,
-			backgroundFocusColor = colors.cyan,
+			backgroundColor = UI.colors.primary,
+			backgroundFocusColor = UI.colors.primary,
 			accelerators = {
 				[ 'enter' ] = 'eject',
 				[ 'up' ] = 'grid_up',
@@ -66,7 +66,7 @@ local page = UI.Page {
 		storageStatus = UI.Text {
 			x = -17, ex = -10,
 			textColor = colors.lime,
-			backgroundColor = colors.cyan,
+			backgroundColor = UI.colors.primary,
 			value = '',
 		},
 		amount = UI.TextEntry {
@@ -208,7 +208,7 @@ end
 
 function page:eventHandler(event)
 	if event.type == 'quit' then
-		UI:exitPullEvents()
+		UI:quit()
 
 	elseif event.type == 'eject' or event.type == 'grid_select' then
 		self:eject(1)

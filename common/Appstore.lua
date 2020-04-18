@@ -354,7 +354,7 @@ function categoryPage:eventHandler(event)
 		self:draw()
 
 	elseif event.type == 'quit' then
-		UI:exitPullEvents()
+		UI:quit()
 
 	else
 		return UI.Page.eventHandler(self, event)
@@ -366,4 +366,4 @@ print("Retrieving catalog list")
 categoryPage:setCategory(source.name, source.index)
 
 UI:setPage(categoryPage)
-UI:pullEvents()
+UI:start()

@@ -15,7 +15,6 @@ local os         = _G.os
 local wizardPage = UI.WizardPage {
 	title = 'Crafting Monitor',
 	index = 2,
-	backgroundColor = colors.cyan,
 	[1] = UI.TextArea {
 		x = 2, ex = -2, y = 2, ey = 3,
 		marginRight = 0,

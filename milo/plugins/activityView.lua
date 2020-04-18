@@ -17,7 +17,6 @@ Right-clicking on the activity monitor will reset the totals.]]
 local wizardPage = UI.WizardPage {
 	title = 'Activity Monitor',
 	index = 2,
-	backgroundColor = colors.cyan,
 	[1] = UI.TextArea {
 		x = 2, ex = -2, y = 2, ey = 6,
 		marginRight = 0,

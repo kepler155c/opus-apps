@@ -724,8 +724,7 @@ function startPage:eventHandler(event)
 		Builder:begin()
 
 	elseif event.type == 'quit' then
-		UI.term:reset()
-		Event.exitPullEvents()
+		UI:quit()
 	end
 
 	return UI.Page.eventHandler(self, event)
@@ -769,5 +768,4 @@ UI:setPages({
 })
 
 UI:setPage('start')
-
-UI:pullEvents()
+UI:start()

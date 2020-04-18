@@ -49,7 +49,7 @@ end
 
 function peripheralsPage:eventHandler(event)
 	if event.type == 'quit' then
-		Event.exitPullEvents()
+		UI:quit()
 
 	elseif event.type == 'grid_select' then
 		UI:setPage('methods', event.selected)
@@ -198,4 +198,4 @@ UI:setPages({
 	methods = methodsPage,
 })
 
-UI:pullEvents()
+UI:start()

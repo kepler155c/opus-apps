@@ -9,7 +9,6 @@ local context = Milo:getContext()
 local machinesTab = UI.Tab {
 	tabTitle = 'Machine',
 	index = 3,
-	backgroundColor = colors.cyan,
 	grid = UI.ScrollingGrid {
 		x = 2, ex = -2, y = 2, ey = -2,
 		disableHeader = true,

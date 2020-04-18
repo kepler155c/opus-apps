@@ -3,7 +3,6 @@ local Event      = require('opus.event')
 local Milo       = require('milo')
 local UI         = require('opus.ui')
 
-local colors     = _G.colors
 local device     = _G.device
 local fs         = _G.fs
 local os         = _G.os
@@ -23,7 +22,6 @@ Backup configuration files each minecraft day.
 local wizardPage = UI.WizardPage {
 	title = 'Backup Drive',
 	index = 2,
-	backgroundColor = colors.cyan,
 	[1] = UI.TextArea {
 		x = 2, ex = -2, y = 2, ey = -2,
 		value = string.format(template, Ansi.yellow, Ansi.reset),

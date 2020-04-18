@@ -7,7 +7,6 @@ local Util   = require('opus.util')
 
 local colors = _G.colors
 local device = _G.device
-local turtle = _G.turtle
 
 local context = Milo:getContext()
 
@@ -22,8 +21,8 @@ local networkPage = UI.Page {
 		y = -2, x = 1, ex = -9,
 		limit = 50,
 		shadowText = 'filter',
-		backgroundColor = colors.cyan,
-		backgroundFocusColor = colors.cyan,
+		backgroundColor = UI.colors.primary,
+		backgroundFocusColor = UI.colors.primary,
 	},
 	grid = UI.ScrollingGrid {
 		y = 2, ey = -3,
@@ -195,7 +194,6 @@ nodeWizard = UI.Page {
 		pages = {
 			general = UI.WizardPage {
 				index = 1,
-				backgroundColor = colors.cyan,
 				form = UI.Form {
 					x = 2, ex = -2, y = 1, ey = 3,
 					manualControls = true,
@@ -236,11 +234,10 @@ The settings will take effect immediately!]],
 		},
 	},
 	statusBar = UI.StatusBar {
-		backgroundColor = colors.cyan,
+		backgroundColor = UI.colors.primary,
 	},
 	notification = UI.Notification { },
 	filter = UI.SlideOut {
-		backgroundColor = colors.cyan,
 		noFill = true,
 		menuBar = UI.MenuBar {
 			buttons = {
@@ -292,7 +289,7 @@ The settings will take effect immediately!]],
 			},
 		},
 		statusBar = UI.StatusBar {
-			backgroundColor = colors.cyan,
+			backgroundColor = UI.colors.primary,
 		},
 	},
 }

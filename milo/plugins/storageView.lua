@@ -7,7 +7,6 @@ local device = _G.device
 local storageView = UI.WizardPage {
 	title = 'Storage Options - General',
 	index = 2,
-	backgroundColor = colors.cyan,
 	form = UI.Form {
 		x = 2, ex = -2, y = 1, ey = -2,
 		manualControls = true,
@@ -62,7 +61,6 @@ UI:getPage('nodeWizard').wizard:add({ storageGeneral = storageView })
 local lockView = UI.WizardPage {
 	title = 'Storage Options - Locking',
 	index = 3,
-	backgroundColor = colors.cyan,
 	form = UI.Form {
 		x = 2, ex = -2, y = 1, ey = 3,
 		manualControls = true,

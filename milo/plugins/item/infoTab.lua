@@ -1,12 +1,9 @@
 local Ansi   = require('opus.ansi')
 local UI     = require('opus.ui')
 
-local colors = _G.colors
-
 local infoTab = UI.Tab {
 	tabTitle = 'Info',
 	index = 4,
-	backgroundColor = colors.cyan,
 	textArea = UI.TextArea {
 		x = 2, ex = -2, y = 2, ey = -2,
 	},

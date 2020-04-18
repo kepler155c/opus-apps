@@ -18,7 +18,6 @@ Right-clicking on the activity monitor will reset the totals.]]
 local wizardPage = UI.WizardPage {
 	title = 'Status Monitor',
 	index = 2,
-	backgroundColor = colors.cyan,
 	[1] = UI.TextArea {
 		x = 2, ex = -2, y = 2, ey = 6,
 		marginRight = 0,
@@ -137,12 +136,14 @@ local function createPage(node)
 			},
 			[2] = UI.Tab {
 				tabTitle = 'Stats',
+				noFill = true,
 				textArea = UI.TextArea {
 					y = 3,
 				},
 			},
 			[3] = UI.Tab {
 				tabTitle = 'Storage',
+				noFill = true,
 				grid = UI.ScrollingGrid {
 					y = 2,
 					columns = {
@@ -157,6 +158,7 @@ local function createPage(node)
 			},
 			[4] = UI.Tab {
 				tabTitle = 'Offline',
+				noFill = true,
 				grid = UI.ScrollingGrid {
 					y = 2,
 					columns = {
@@ -167,12 +169,14 @@ local function createPage(node)
 			},
 			[5] = UI.Tab {
 				tabTitle = 'Activity',
+				noFill = true,
 				term = UI.Embedded {
 					--visible = true,
 				},
 			},
 			[6] = UI.Tab {
 				tabTitle = 'Tasks',
+				noFill = true,
 				grid = UI.ScrollingGrid {
 					y = 2,
 					values = context.tasks,

@@ -238,6 +238,6 @@ Event.addRoutine(function()
 end)
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()
 
 swarm:stop()

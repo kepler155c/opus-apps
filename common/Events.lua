@@ -90,7 +90,7 @@ local page = UI.Page {
 			self.grid:draw()
 
 		elseif event.type == 'quit' then
-			UI:exitPullEvents()
+			UI:quit()
 
 		else
 			return UI.Page.eventHandler(self, event)

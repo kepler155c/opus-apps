@@ -10,7 +10,6 @@ local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
 local context = ({ ... })[1]
 
 local setup = UI.SlideOut {
-	backgroundColor = colors.cyan,
 	titleBar = UI.TitleBar {
 		title = 'Remote Setup',
 	},
@@ -51,7 +50,7 @@ local setup = UI.SlideOut {
 						[[also have an introspection module.]],
 	},
 	statusBar = UI.StatusBar {
-		backgroundColor = colors.cyan,
+		backgroundColor = UI.colors.primary,
 	},
 }
 

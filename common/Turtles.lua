@@ -292,30 +292,42 @@ function page:runScript(scriptName)
 			print('Unable to read script file')
 		end
 
-		local socket = Socket.connect(turtle.id, 161)
-		if not socket then
-			print('Unable to connect to ' .. turtle.id)
-			return
-		end
-
-		local function processVariables(script)
+		local function processVariables()
 			local variables = {
-				COMPUTER_ID = os.getComputerID(),
+				COMPUTER_ID = os.getComputerID,
+				GPS = function()
+					local pt = require('opus.gps').getPoint()
+					if not pt then
+						error('Unable to determine location')
+					end
+					return _G.textutils.serialize(pt)
+				end,
 			}
 			for k,v in pairs(variables) do
 				local token = string.format('{%s}', k)
-				script = script:gsub(token, v)
+				if script:find(token, 1, true) then
+					local s, m = pcall(v)
+					if not s then
+						self.notification:error(m)
+						return
+					end
+					script = script:gsub(token, m)
+				end
 			end
-
-			return script
+			return true
 		end
 
-		script = processVariables(script)
+		if processVariables(script) then
+			local socket = Socket.connect(turtle.id, 161)
+			if not socket then
+				self.notification:error('Unable to connect')
+				return
+			end
+			socket:write({ type = 'script', args = script })
+			socket:close()
 
-		socket:write({ type = 'script', args = script })
-		socket:close()
-
-		self.notification:success('Sent')
+			self.notification:success('Sent')
+		end
 	end
 end
 
@@ -339,7 +351,7 @@ end
 
 function page:eventHandler(event)
 	if event.type == 'quit' then
-		UI:exitPullEvents()
+		UI:quit()
 
 	elseif event.type == 'tab_select' then
 		config.tab = event.button.text

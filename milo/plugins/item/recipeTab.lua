@@ -3,12 +3,9 @@ local itemDB = require('core.itemDB')
 local Milo   = require('milo')
 local UI     = require('opus.ui')
 
-local colors = _G.colors
-
 local recipeTab = UI.Tab {
 	tabTitle = 'Recipe',
 	index = 2,
-	backgroundColor = colors.cyan,
 	grid = UI.ScrollingGrid {
 		x = 2, ex = -2, y = 2, ey = -4,
 		disableHeader = true,

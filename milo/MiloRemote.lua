@@ -63,8 +63,8 @@ local page = UI.Page {
 			x = 1, ex = -13,
 			limit = 50,
 			shadowText = 'filter',
-			backgroundColor = colors.cyan,
-			backgroundFocusColor = colors.cyan,
+			backgroundColor = UI.colors.primary,
+			backgroundFocusColor = UI.colors.primary,
 			accelerators = {
 				[ 'enter' ] = 'eject',
 				[ 'up' ] = 'grid_up',
@@ -169,7 +169,7 @@ end
 
 function page:eventHandler(event)
 	if event.type == 'quit' then
-		UI:exitPullEvents()
+		UI:quit()
 
 	elseif event.type == 'setup' then
 		self.setup.form:setValues(context.state)
@@ -524,7 +524,7 @@ local programDir = fs.getDir(shell.getRunningProgram())
 loadDirectory(fs.combine(programDir, 'plugins/remote'))
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()
 
 if context.socket then
 	context.socket:close()

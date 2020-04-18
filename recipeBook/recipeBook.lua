@@ -172,11 +172,11 @@ function page:eventHandler(event)
 		self.info:draw()
 
 	elseif event.type == 'quit' then
-		UI:exitPullEvents()
+		UI:quit()
 	end
 
 	UI.Page.eventHandler(self, event)
 end
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()

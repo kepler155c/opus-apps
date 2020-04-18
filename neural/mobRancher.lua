@@ -1,6 +1,15 @@
 --[[
-	Breed either cows or sheep.
-	Must be run on a mob with the same height.
+	Changed to use a 2-high mob (smaller mobs may work ?)
+	Updated due to entity.look working correctly now.
+
+	The mob looks head-on to the lever. Make sure the
+	lever is accessible by the mob.
+
+	Laser is now optional - if no laser, the mobs will be
+	punched (or provide a stick). Best mob may be a
+	skeleton (unlimited ammo).
+
+	Feeding hand has been changed to off-hand.
 ]]
 
 local Array  = require('opus.array')
@@ -21,7 +30,7 @@ local WALK_SPEED = 1.5
 neural.assertModules({
 	'plethora:sensor',
 	'plethora:scanner',
-	'plethora:laser',
+	--'plethora:laser',
 	'plethora:kinetic',
 	'plethora:introspection',
 })
@@ -29,27 +38,27 @@ neural.assertModules({
 local fed = { }
 
 local function resupply()
-	local slot = neural.getEquipment().list()[1]
+	local slot = neural.getEquipment().list()[2]
 	if slot and slot.count > 32 then
 		return
 	end
 	print('resupplying')
 	for _ = 1, 2 do
-		local dispenser = Map.find(neural.scan(), 'name', 'minecraft:dispenser')
+		local dispenser = Map.find(neural.scan(), 'name', 'minecraft:lever')
 		if not dispenser then
 			print('dispenser not found')
 			break
 		end
 		if math.abs(dispenser.x) <= 1 and math.abs(dispenser.z) <= 1 then
-			neural.lookAt(dispenser)
+			neural.lookAt({ x = dispenser.x, y = dispenser.y, z = dispenser.z })
 			for _ = 1, 8 do
 				neural.use(0, 'off')
 				os.sleep(.2)
-				neural.getEquipment().suck(1, 64)
+				neural.getEquipment().suck(2, 64)
 			end
 			break
 		else
-			neural.walkTo({ x = dispenser.x, y = 0, z = dispenser.z }, WALK_SPEED)
+			neural.walkTo({ x = dispenser.x, y = 0, z = dispenser.z }, WALK_SPEED, .5)
 		end
 	end
 end
@@ -63,18 +72,22 @@ local function breed(entity)
 	entity = neural.getMetaByID(entity.id)
 	if entity then
 		neural.lookAt(entity)
-		neural.use(1)
+		neural.use(1, 'off')
 		os.sleep(.1)
 	end
 end
 
 local function kill(entity)
 	print('killing')
-	neural.walkTo(entity, WALK_SPEED, 2.5)
+	neural.walkTo(entity, WALK_SPEED, (neural.fire or neural.shoot) and 2.5 or .5)
 	entity = neural.getMetaByID(entity.id)
 	if entity then
 		neural.lookAt(entity)
-		neural.fireAt({ x = entity.x, y = 0, z = entity.z })
+		if neural.fire or neural.shoot then
+			neural.shootAt(entity)
+		else
+			neural.swing()
+		end
 		Sound.play('entity.firework.launch')
 		os.sleep(.2)
 	end

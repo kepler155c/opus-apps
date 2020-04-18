@@ -216,7 +216,7 @@ _G._syslog = function(...)
 end
 
 local s, m = pcall(function()
-	UI:pullEvents()
+	UI:start()
 end)
 
 turtle.setStatus('idle')

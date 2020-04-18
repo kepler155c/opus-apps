@@ -14,7 +14,6 @@ end
 local wizardPage = UI.WizardPage {
 	title = 'Speaker',
 	index = 2,
-	backgroundColor = colors.cyan,
 	[1] = UI.Text {
 		x = 2, y = 2,
 		textColor = colors.yellow,
