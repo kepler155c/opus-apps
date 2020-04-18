@@ -256,7 +256,8 @@ function page:eventHandler(event)
 		self:setFocus(self.statusBar.filter)
 
 	elseif event.type == 'defrag' then
-		context.storage:defrag()
+		self:defrag()
+		self:refresh(true)
 
 	elseif event.type == 'toggle_display' then
 		displayMode = (displayMode + 1) % 2
@@ -362,6 +363,14 @@ function page:refresh(force)
 	self.throttle:enable()
 	self.allItems = Milo:mergeResources(Milo:listItems(force, throttle))
 	self:applyFilter()
+	self.throttle:disable()
+end
+
+function page:defrag()
+	local throttle = function() self.throttle:update() end
+
+	self.throttle:enable()
+	context.storage:defrag(throttle)
 	self.throttle:disable()
 end
 

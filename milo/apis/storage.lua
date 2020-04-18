@@ -293,30 +293,33 @@ end
 
 -- provide a raw list of all the items in all storage chests
 -- it might be beneficial to move this to the adapter class at some point and cache the raw item list in this class at some point
-function Storage:listItemsRaw()
+function Storage:listItemsRaw(throttle)
 	local res = {}
 
-  for _, v in pairs(self.nodes) do
-    if v.category == "storage" then
-      local chest = device[v.name]
+	throttle = throttle or Util.throttle()
+
+	for _, v in pairs(self.nodes) do
+		if v.category == "storage" then
+			local chest = device[v.name]
 			local items = chest.list()
 
 			for slot, item in pairs(items) do
 				items[slot] = itemDB:get(item, function() return chest.getItemMeta(slot) end)
 			end
 
-      res[v.name] = items
-    end
-  end
+			res[v.name] = items
+			throttle()
+		end
+	end
 
-  return res
+	return res
 end
 
 -- provide a list of items and which chests provide them
-function Storage:listProviders()
+function Storage:listProviders(throttle)
 	local res = {}
 
-	local rawItems = self:listItemsRaw()
+	local rawItems = self:listItemsRaw(throttle)
 
 	for chest, items in pairs(rawItems) do
 		for slot, item in pairs(items) do
@@ -331,8 +334,8 @@ function Storage:listProviders()
 end
 
 -- defrags the storage system
-function Storage:defrag()
-	local items = self:listProviders()
+function Storage:defrag(throttle)
+	local items = self:listProviders(throttle)
 
 	for _, providers in pairs(items) do
 		table.sort(providers, function(a, b)
