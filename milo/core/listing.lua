@@ -33,6 +33,11 @@ local page = UI.Page {
 						event = 'rescan',
 						help = 'Rescan all inventories'
 					},
+					{
+						text = 'Defragment storage',
+						event = 'defrag',
+						help = 'Defragments the storage'
+					}
 				},
 			},
 		},
@@ -249,6 +254,9 @@ function page:eventHandler(event)
 		self:refresh(true)
 		self.grid:draw()
 		self:setFocus(self.statusBar.filter)
+
+	elseif event.type == 'defrag' then
+		context.storage:defrag()
 
 	elseif event.type == 'toggle_display' then
 		displayMode = (displayMode + 1) % 2
