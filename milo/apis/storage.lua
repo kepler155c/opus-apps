@@ -336,6 +336,7 @@ end
 -- defrags the storage system
 function Storage:defrag(throttle)
 	local items = self:listProviders(throttle)
+	local slotsSaved = 0
 
 	for _, providers in pairs(items) do
 		table.sort(providers, function(a, b)
@@ -368,6 +369,7 @@ function Storage:defrag(throttle)
 
 			if from.item.count <= 0 then
 				table.remove(providers, 1)
+				slotsSaved = slotsSaved + 1
 			end
 
 			table.sort(providers, function(a, b)
@@ -375,6 +377,8 @@ function Storage:defrag(throttle)
 			end)
 		end
 	end
+
+	return slotsSaved
 end
 
 function Storage:updateCache(adapter, item, count)
