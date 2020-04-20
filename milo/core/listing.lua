@@ -370,8 +370,9 @@ function page:defrag()
 	local throttle = function() self.throttle:update() end
 
 	self.throttle:enable()
-	context.storage:defrag(throttle)
+	local saved = context.storage:defrag(throttle)
 	self.throttle:disable()
+	self:notifyInfo(("Saved %d slots"):format(saved))
 end
 
 function page:applyFilter()
