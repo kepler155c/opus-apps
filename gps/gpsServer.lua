@@ -246,8 +246,6 @@ local function server(mode)
 			computers[computerId] = nil
 			page.grid.values = positions
 			page.grid:update()
-			page.grid:draw()
-			page.grid:sync()
 		end
 	end
 
@@ -267,22 +265,17 @@ local function server(mode)
 	end)
 
 	Event.onInterval(1, function()
-		local resync = false
 		for _, detail in pairs(positions) do
 			if os.clock() - detail.lastChanged > 10 then
 				detail.changed = false
-				resync = true
 			end
 			if os.clock() - detail.timestamp > 60 and detail.alive then
 				detail.alive = false
 				detail.hbeat = false
-				resync = true
 			end
 		end
-		if resync then
-			page:draw()
-			page:sync()
-		end
+		page:draw()
+		page:sync()
 	end)
 end
 
@@ -304,6 +297,7 @@ elseif args[1] == 'snmp' then
 	table.insert(page.grid.columns,
 		{ heading = 'Label', key = 'label', textColor = colors.cyan }
 	)
+	page.grid.sortColumn = 'label'
 	page.grid:adjustWidth()
 	server('snmp')
 
