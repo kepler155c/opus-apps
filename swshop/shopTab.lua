@@ -10,7 +10,7 @@ local shopTab = UI.Tab {
 	tabTitle = 'Store',
 	index = 2,
 	form = UI.Form {
-		x = 2, ex = -2, y = 1, ey = -2,
+		x = 2, ex = -2, y = 2, ey = -2,
 		manualControls = true,
 		[1] = UI.TextEntry {
 			formLabel = 'Name', formKey = 'name',

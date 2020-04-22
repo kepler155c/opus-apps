@@ -637,8 +637,7 @@ Event.addRoutine(function()
 end)
 
 UI:setPage(page)
-UI:pullEvents()
-UI.term:reset()
+UI:start()
 
 turtle.reset()
 

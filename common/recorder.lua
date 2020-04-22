@@ -19,10 +19,14 @@ local Util = require('opus.util')
 local multishell = _ENV.multishell
 local os         = _G.os
 
-local recTerm, oldTerm, arg, showInput, skipLast, lastDelay, curInput = {}, Util.shallowCopy(multishell.term), {...}, false, false, 2, ""
+local colours = _G.colors
+
+local args, options = Util.parse(...)
+
+local oldTerm, showInput, skipLast, lastDelay, curInput = Util.shallowCopy(multishell.term), false, false, 2, ""
 local curBlink, oldBlink, tTerm, buffer, colourNum, xPos, yPos, oldXPos, oldYPos, tCol, bCol, xSize, ySize = false, false, {}, {}, {}, 1, 1, 1, 1, colours.white, colours.black, oldTerm.getSize()
 local greys, buttons = {["0"] = true, ["7"] = true, ["8"] = true, ["f"] = true}, {"l", "r", "m"}
-local charW, charH, chars, resp
+local charW, charH, chars
 
 local calls = { }
 local curCalls = { delay = 0 }
@@ -32,38 +36,44 @@ local callCount = 0
 local function showSyntax()
 	print('Gif Recorder by Bomb Bloke\n')
 	print('Syntax: recGif [-i] [-s] [-ld:<delay>] filename')
-	print('  -i  : show input')
-	print('  -s  : skip last')
-	print('  -ld : last delay')
+	print('  --showInput : show input')
+	print('  --skipLast  : skip last')
+	print('  --lastDelay : last delay')
+	print('  --noResize  : dont resize')
 end
 
-for i = #arg, 1, -1 do
-	local curArg = arg[i]:lower()
-
-	if curArg == "-i" then
-		showInput, ySize = true, ySize + 1
-		table.remove(arg, i)
-	elseif curArg == "-s" then
-		skipLast = true
-		table.remove(arg, i)
-	elseif curArg:sub(1, 4) == "-ld:" then
-		curArg = tonumber(curArg:sub(5))
-		if curArg then lastDelay = curArg end
-		table.remove(arg, i)
-	elseif curArg == '-?' then
-		showSyntax()
-		return
-	elseif i ~= #arg then
-		showSyntax()
-		printError('\nInvalid argument')
-		return
-	end
+if options.showInput then
+	showInput, ySize = true, ySize + 1
 end
 
-print('Gif Recorder by Bomb Bloke\n')
-print('Press control-p to stop recording')
+if options.skipLast then
+	skipLast = true
+end
 
-local filename = arg[#arg]
+if options.lastDelay then
+	lastDelay = options.lastDelay
+end
+
+if options.help then
+	showSyntax()
+	return
+end
+
+if options.daemon then
+	device.keyboard.addHotkey('control-P', function()
+		multishell.openTab({
+			path = 'sys/apps/shell.lua',
+			args = { arg[0], '--noResize', '--rawOutput', 'recorder.gif' },
+		})
+	end)
+	return
+end
+
+print('Gif Recorder by Bomb Bloke')
+print(version)
+print('\nPress control-p to stop recording')
+
+local filename = args[1]
 if not filename then
 	print('Enter file name:')
 	filename = read()
@@ -131,36 +141,33 @@ end
 
 -- Build a terminal that records stuff:
 
-recTerm = multishell.term
+local recTerm = multishell.term
 
 for key, func in pairs(oldTerm) do
-	recTerm[key] = function(...)
-		local result = { func(...) }
+	if type(func) == 'function' then
+		recTerm[key] = function(...)
+			local result = { func(...) }
 
-		if callCount == 0 then
-			os.queueEvent('capture_frame')
+			if callCount == 0 then
+				os.queueEvent('capture_frame')
+			end
+			callCount = callCount + 1
+			curCalls[callCount] = { key, ... }
+			return unpack(result)
 		end
-		callCount = callCount + 1
-		curCalls[callCount] = { key, ... }
-		return unpack(result)
 	end
 end
 
 local tabId = multishell.getCurrent()
+multishell.hideTab(tabId)
+
+if not options.noResize then
+	os.queueEvent('term_resize')
+end
 
 _G.device.keyboard.addHotkey('control-p', function()
 	os.queueEvent('recorder_stop')
 end)
-
-local tabs = multishell.getTabs()
-for _,tab in pairs(tabs) do
-	if tab.isOverview then
-		multishell.hideTab(tabId)
-		multishell.setFocus(tab.tabId)
-		os.queueEvent('term_resize')
-		break
-	end
-end
 
 local curTime = os.clock() - 1
 
@@ -200,8 +207,12 @@ if skipLast and #calls > 1 then calls[#calls] = nil end
 
 calls[#calls].delay = lastDelay
 
+if options.rawOutput then
+	Util.writeTable('tmp/raw.txt', calls)
+	return
+end
+
 print(string.format("Encoding %d frames...", #calls))
---Util.writeTable('tmp/raw.txt', calls)
 
 -- Perform a quick re-parse of the recorded data (adding frames for when the cursor blinks):
 

@@ -253,7 +253,7 @@ end
 
 function page:eventHandler(event)
 	if event.type == 'quit' then
-		Event.exitPullEvents()
+		UI:quit()
 
 	elseif event.type == 'tab_activate' then
 		config.activeTab = event.activated.tabTitle
@@ -268,7 +268,7 @@ if config.activeTab then
 end
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()
 
 if canvas then
 	canvas:clear()

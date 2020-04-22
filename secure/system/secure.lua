@@ -9,20 +9,23 @@ local config = Config.load('secure', {
 local tab = UI.Tab {
 	tabTitle = 'Secure',
 	description = 'Secure options',
+	[1] = UI.Window {
+		x = 2, y = 2, ex = -2, ey = 5,
+	},
 	label1 = UI.Text {
-		x = 2, y = 3,
+		x = 3, y = 3,
 		value = 'Screen Locking',
 	},
 	checkbox = UI.Checkbox {
-		x = 20, y = 3,
+		x = 21, y = 3,
 		value = config.enabled
 	},
 	label2 = UI.Text {
-		x = 2, y = 4,
+		x = 3, y = 4,
 		value = 'Lock timeout',
 	},
 	timeout = UI.TextEntry {
-		x = 20, y = 4, width = 6,
+		x = 21, y = 4, width = 6,
 		limit = 4,
 		transform = 'number',
 		value = config.timeout,
@@ -31,8 +34,8 @@ local tab = UI.Tab {
 		},
 	},
 	button = UI.Button {
-		x = 20, y = 6,
-		text = 'Update',
+		x = -8, ex = -2, y = -2,
+		text = 'Apply',
 		event = 'update',
 	},
 }

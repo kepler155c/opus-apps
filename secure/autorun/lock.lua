@@ -49,7 +49,7 @@ local function buildLockScreen()
                 #self.pass.value > 0 and
                 Security.verifyPassword(SHA.compute(self.pass.value)) then
 
-                UI:exitPullEvents() -- valid
+                UI:quit() -- valid
             else
                 self.notification:error('Invalid password', math.max(counter, 2))
                 self:sync()
@@ -66,7 +66,7 @@ local function buildLockScreen()
     Event.onTerminate(function() return false end)
 
     UI:setPage(page)
-    UI:pullEvents()
+    UI:start()
 
     -- restart lock timer
     timer = os.startTimer(config.timeout)

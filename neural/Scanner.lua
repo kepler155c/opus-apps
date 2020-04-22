@@ -182,7 +182,7 @@ end
 
 function page:eventHandler(event)
 	if event.type == 'quit' then
-		Event.exitPullEvents()
+		UI:quit()
 
 	elseif event.type == 'scan' then
 		self:scan()
@@ -211,7 +211,7 @@ Event.onTimeout(0, function()
 	page:sync()
 end)
 
-UI:pullEvents()
+UI:start()
 
 if canvas then
 	canvas:clear()

@@ -60,4 +60,4 @@ function page:eventHandler(event)
 end
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()

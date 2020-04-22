@@ -18,7 +18,6 @@ Note that you do not need to import items from the brewing stand or export blaze
 local wizardPage = UI.WizardPage {
 	title = 'Brewing Stand',
 	index = 2,
-	backgroundColor = colors.cyan,
 	[1] = UI.TextArea {
 		x = 2, ex = -2, y = 2, ey = -2,
 		value = string.format(template, Ansi.yellow, Ansi.reset),

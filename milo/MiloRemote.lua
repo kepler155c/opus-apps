@@ -1,6 +1,6 @@
 local Config = require('opus.config')
 local Event  = require('opus.event')
-local fuzzy  = require('milo.fuzzyMatch')
+local fuzzy  = require('opus.fuzzy')
 local Sound  = require('opus.sound')
 local Socket = require('opus.socket')
 local sync   = require('opus.sync').sync
@@ -63,8 +63,8 @@ local page = UI.Page {
 			x = 1, ex = -13,
 			limit = 50,
 			shadowText = 'filter',
-			backgroundColor = colors.cyan,
-			backgroundFocusColor = colors.cyan,
+			backgroundColor = 'primary',
+			backgroundFocusColor = 'primary',
 			accelerators = {
 				[ 'enter' ] = 'eject',
 				[ 'up' ] = 'grid_up',
@@ -169,7 +169,7 @@ end
 
 function page:eventHandler(event)
 	if event.type == 'quit' then
-		UI:exitPullEvents()
+		UI:quit()
 
 	elseif event.type == 'setup' then
 		self.setup.form:setValues(context.state)
@@ -517,14 +517,14 @@ local function loadDirectory(dir)
 			})
 		end
 	end
-	page.menuBar.config:add({ dropmenu = UI.DropMenu { buttons = dropdown } })
+	page.menuBar.config.dropdown = dropdown
 end
 
 local programDir = fs.getDir(shell.getRunningProgram())
 loadDirectory(fs.combine(programDir, 'plugins/remote'))
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()
 
 if context.socket then
 	context.socket:close()

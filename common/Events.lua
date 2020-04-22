@@ -27,6 +27,26 @@ local page = UI.Page {
 		},
 		autospace = true,
 		disableHeader = true,
+		getDisplayValues = function(_, row)
+			row = Util.shallowCopy(row)
+
+			local function tovalue(s)
+				if type(s) == 'table' then
+					return 'table'
+				end
+				return s
+			end
+
+			for k,v in pairs(row) do
+				row[k] = tovalue(v)
+			end
+
+			return row
+		end,
+		draw = function(self)
+			self:adjustWidth()
+			UI.Grid.draw(self)
+		end,
 	},
 	accelerators = {
 		f = 'filter',
@@ -36,81 +56,48 @@ local page = UI.Page {
 		[ 'control-q' ] = 'quit',
 	},
 	filtered = { },
-}
+	eventHandler = function(self, event)
+		if event.type == 'filter' then
+			local entry = self.grid:getSelected()
+			self.filtered[entry.event] = true
 
-function page:eventHandler(event)
+		elseif event.type == 'toggle' then
+			self.paused = not self.paused
+			if self.paused then
+				self.menuBar.pauseButton.text = 'Resume'
+			else
+				self.menuBar.pauseButton.text = 'Pause '
+			end
+			self.menuBar:draw()
 
-	if event.type == 'filter' then
-		local entry = self.grid:getSelected()
-		self.filtered[entry.event] = true
+		elseif event.type == 'grid_select' then
+			multishell.openTab({
+				path = 'sys/apps/Lua.lua',
+				args = { event.selected },
+				focused = true,
+			})
 
-	elseif event.type == 'toggle' then
-		self.paused = not self.paused
-		if self.paused then
-			self.menuBar.pauseButton.text = 'Resume'
-		else
-			self.menuBar.pauseButton.text = 'Pause '
-		end
-		self.menuBar:draw()
-
-	elseif event.type == 'grid_select' then
-		multishell.openTab({
-			path = 'sys/apps/Lua.lua',
-			args = { event.selected },
-			focused = true,
-		})
-
-	elseif event.type == 'reset' then
-		self.filtered = { }
-		self.grid:setValues({ })
-		self.grid:draw()
-		if self.paused then
-			self:emit({ type = 'toggle' })
-		end
-
-	elseif event.type == 'clear' then
-		self.grid:setValues({ })
-		self.grid:draw()
-
-	elseif event.type == 'quit' then
-		UI:exitPullEvents()
-
-	--[[
-	elseif event.type == 'focus_change' then
-		if event.focused == self.grid then
-			if not self.paused then
+		elseif event.type == 'reset' then
+			self.filtered = { }
+			self.grid:setValues({ })
+			self.grid:draw()
+			if self.paused then
 				self:emit({ type = 'toggle' })
 			end
+
+		elseif event.type == 'clear' then
+			self.grid:setValues({ })
+			self.grid:draw()
+
+		elseif event.type == 'quit' then
+			UI:quit()
+
+		else
+			return UI.Page.eventHandler(self, event)
 		end
-	--]]
-
-	else
-		return UI.Page.eventHandler(self, event)
-	end
-	return true
-end
-
-function page.grid:getDisplayValues(row)
-	row = Util.shallowCopy(row)
-
-	local function tovalue(s)
-		if type(s) == 'table' then
-			return 'table'
-		end
-		return s
-	end
-
-	for k,v in pairs(row) do
-		row[k] = tovalue(v)
-	end
-
-	return row
-end
-
-function page.grid:draw()
-	self:adjustWidth()
-	UI.Grid.draw(self)
-end
+		return true
+	end,
+}
 
 local updated = false
 local timerId = os.startTimer(1)
@@ -150,6 +137,6 @@ end
 kernel.hook('*', hookFunction)
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()
 
 kernel.unhook('*', hookFunction)

@@ -2,9 +2,9 @@ local function summon(id)
 
   _G.requireInjector(_ENV)
 
-  local GPS    = require('gps')
-  local Point  = require('point')
-  local Socket = require('socket')
+  local GPS    = require('opus.gps')
+  local Point  = require('opus.point')
+  local Socket = require('opus.socket')
 
   turtle.setStatus('GPSing')
   turtle.setPoint({ x = 0, y = 0, z = 0, heading = 0 })

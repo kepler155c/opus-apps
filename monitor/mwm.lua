@@ -121,7 +121,10 @@ function Process:new(args)
 	self.terminal = self.window
 
 	self.container.canvas.parent = monitor.canvas
-	table.insert(monitor.canvas.layers, 1, self.container.canvas)
+	if not monitor.canvas.children then
+		monitor.canvas.children = { }
+	end
+	table.insert(monitor.canvas.children, 1, self.container.canvas)
 	self.container.canvas:setVisible(true)
 
 	--self.container.getSize = self.window.getSize

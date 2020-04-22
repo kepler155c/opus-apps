@@ -29,4 +29,10 @@
 		run = "ores.lua",
 		requires = "neuralInterface",
 	},
+	[ "7f2465ac7cefab2766e6ee0714647089df9364b0ff09858c84b21b8a436a845d" ] = {
+		title = "Equipment",
+		category = "Neural",
+		run = "Equipment",
+		requires = "neuralInterface",
+	}
 }

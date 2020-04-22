@@ -11,7 +11,7 @@ if not multishell then
 end
 
 local config = Config.load('saver', {
-	enabled = true,
+	enabled = false,
     timeout = 60,
     random = true,
     specific = nil,

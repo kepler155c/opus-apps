@@ -1,5 +1,5 @@
 _G.requireInjector(_ENV)
-local Config = require('config')
+local Config = require('opus.config')
 local pt = turtle.enableGPS()
 if pt then
   local config = Config.load('gps', { })

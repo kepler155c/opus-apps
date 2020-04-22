@@ -1,0 +1,12 @@
+{
+	[ "87e89abb4c1c551fe08d355d097f18b8de78edca5f556997085681662fce8eed" ] = {
+		title = "Config",
+		category = "CCEmuX",
+		run = "emu config",
+	},
+	[ "cec3a9b89b2e391393d0f68e4bc12a9fa6cf358b3cdf79496dc442d52b8dd528" ] = {
+		title = "Data",
+		category = "CCEmuX",
+		run = "emu data",
+	},
+}

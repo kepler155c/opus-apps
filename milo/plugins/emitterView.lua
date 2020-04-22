@@ -4,12 +4,10 @@ local itemDB  = require('core.itemDB')
 
 local colors  = _G.colors
 local device  = _G.device
-local context = Milo:getContext()
 
 local wizardPage = UI.WizardPage {
 	title = 'Level Emitter',
 	index = 2,
-	backgroundColor = colors.cyan,
 	[1] = UI.TextArea {
 		x = 2, y = 1,
     height = 2,

@@ -1,6 +1,10 @@
-local input = require('opus.input')
+local Array  = require('opus.array')
+local Config = require('opus.config')
+local fuzzy  = require('opus.fuzzy')
+local UI     = require('opus.ui')
+local Util   = require('opus.util')
 
-local colors     = _G.colors
+local device     = _G.device
 local fs         = _G.fs
 local multishell = _ENV.multishell
 local os         = _G.os
@@ -8,27 +12,15 @@ local shell      = _ENV.shell
 local term       = _G.term
 local textutils  = _G.textutils
 
-shell.setCompletionFunction(shell.getRunningProgram(), function(_, index, text)
-	if index == 1 then
-		return fs.complete(text, shell.dir(), true, false)
-	end
-end)
+local _format   = string.format
+local _rep      = string.rep
+local _sub      = string.sub
+local _concat   = table.concat
+local _insert   = table.insert
+local _remove   = table.remove
+local _unpack   = table.unpack
 
-local tArgs = { ... }
-if #tArgs == 0 then
-	error( "Usage: edit <path>" )
-end
-
--- Error checking
-local sPath = shell.resolve(tArgs[1])
-local bReadOnly = fs.isReadOnly(sPath)
-if fs.exists(sPath) and fs.isDir(sPath) then
-	error( "Cannot edit a directory." )
-end
-
-if multishell then
-	multishell.setTitle(multishell.getCurrent(), fs.getName(sPath))
-end
+local config = Config.load('editor')
 
 local x, y      = 1, 1
 local w, h      = term.getSize()
@@ -36,39 +28,35 @@ local scrollX   = 0
 local scrollY   = 0
 local lastPos   = { x = 1, y = 1 }
 local tLines    = { }
-local bRunning  = true
-local sStatus   = ""
-local isError
 local fileInfo
-local lastAction
-
+local actions
+local lastSave
 local dirty     = { y = 1, ey = h }
 local mark      = { }
 local searchPattern
-local undo      = { chain = { }, pointer = 0 }
-local complete  = { }
+local undo      = { chain = { }, redo = { } }
 
+h = h - 1
+
+local bgColor = 'gray'
 local color = {
-	textColor       = '0',
-	keywordColor    = '4',
-	commentColor    = 'd',
-	stringColor     = 'e',
-	bgColor         = colors.black,
-	highlightColor  = colors.orange,
-	cursorColor     = colors.lime,
-	errorBackground = colors.red,
+	text    = '0',
+	keyword = '2',
+	comment = 'd',
+	string  = '1',
+	mark    = '8',
+	bg      = '7',
 }
 
 if not term.isColor() then
+	bgColor = 'black'
 	color = {
-		textColor       = '0',
-		keywordColor    = '8',
-		commentColor    = '8',
-		stringColor     = '8',
-		bgColor         = colors.black,
-		highlightColor  = colors.lightGray,
-		cursorColor     = colors.white,
-		errorBackground = colors.gray,
+		text    = '0',
+		keyword = '8',
+		comment = '8',
+		string  = '8',
+		mark    = '7',
+		bg      = 'f',
 	}
 end
 
@@ -78,10 +66,9 @@ local keyMapping = {
 	down                      = 'down',
 	left                      = 'left',
 	right                     = 'right',
-	pageUp                    = 'pageUp',
-	[ 'control-b'           ] = 'pageUp',
-	pageDown                  = 'pageDown',
---  [ 'control-f'           ] = 'pageDown',
+	pageUp                    = 'page_up',
+	[ 'control-b'           ] = 'page_up',
+	pageDown                  = 'page_down',
 	home                      = 'home',
 	[ 'end'                 ] = 'toend',
 	[ 'control-home'        ] = 'top',
@@ -93,7 +80,7 @@ local keyMapping = {
 	[ 'scroll_down'         ] = 'scroll_down',
 	[ 'control-down'        ] = 'scroll_down',
 	[ 'mouse_click'         ] = 'go_to',
-	[ 'control-l'           ] = 'goto_line',
+	[ 'control-g'           ] = 'goto_line',
 
 	-- marking
 	[ 'shift-up'            ] = 'mark_up',
@@ -108,6 +95,8 @@ local keyMapping = {
 	[ 'shift-end'           ] = 'mark_end',
 	[ 'shift-home'          ] = 'mark_home',
 	[ 'mouse_down'          ] = 'mark_anchor',
+	[ 'mouse_doubleclick'   ] = 'mark_current_word',
+	[ 'mouse_tripleclick'   ] = 'mark_line',
 
 	-- editing
 	delete                    = 'delete',
@@ -117,17 +106,21 @@ local keyMapping = {
 	paste                     = 'paste',
 	tab                       = 'tab',
 	[ 'control-z'           ] = 'undo',
+	[ 'control-Z'           ] = 'redo',
 	[ 'control-space'       ] = 'autocomplete',
+	[ 'control-shift-space' ] = 'peripheral',
 
 	-- copy/paste
 	[ 'control-x'           ] = 'cut',
 	[ 'control-c'           ] = 'copy',
---	[ 'control-shift-paste' ] = 'paste_internal',
+	[ 'control-y'           ] = 'paste_internal',
 
 	-- file
 	[ 'control-s'           ] = 'save',
+	[ 'control-S'           ] = 'save_as',
 	[ 'control-q'           ] = 'exit',
 	[ 'control-enter'       ] = 'run',
+	[ 'control-p'           ] = 'quick_open',
 
 	-- search
 	[ 'control-f'           ] = 'find_prompt',
@@ -135,264 +128,613 @@ local keyMapping = {
 	[ 'control-n'           ] = 'find_next',
 
 	-- misc
-	[ 'control-g'           ] = 'status',
+	[ 'control-i'           ] = 'status',
 	[ 'control-r'           ] = 'refresh',
-	[ 'control'             ] = 'menu',
 }
 
-local messages = {
-	menu    = '^s: save, ^q: quit, ^enter: run',
-	wrapped = 'search hit BOTTOM, continuing at TOP',
+local page = UI.Page {
+	menuBar = UI.MenuBar {
+		transitionHint = 'slideLeft',
+		buttons = {
+			{ text = 'File', dropdown = {
+				{ text = 'New             ', event = 'menu_action', action = 'file_new' },
+				{ text = 'Open...         ', event = 'menu_action', action = 'file_open' },
+				{ text = 'Quick Open... ^p', event = 'menu_action', action = 'quick_open' },
+				{ text = 'Recent...       ', event = 'menu_action', action = 'recent' },
+				{ spacer = true },
+				{ text = 'Save          ^s', event = 'menu_action', action = 'save' },
+				{ text = 'Save As...    ^S', event = 'menu_action', action = 'save_as' },
+				{ spacer = true },
+				{ text = 'Quit          ^q', event = 'menu_action', action = 'exit' },
+			} },
+			{ text = 'Edit', dropdown = {
+				{ text = 'Cut           ^x', event = 'menu_action', action = 'cut' },
+				{ text = 'Copy          ^c', event = 'menu_action', action = 'copy' },
+				{ text = 'Paste      ^y,^V', event = 'menu_action', action = 'paste_internal' },
+				{ spacer = true },
+				{ text = 'Find...       ^f', event = 'menu_action', action = 'find_prompt' },
+				{ text = 'Find Next     ^n', event = 'menu_action', action = 'find_next' },
+				{ spacer = true },
+				{ text = 'Go to line... ^g', event = 'menu_action', action = 'goto_line' },
+				{ text = 'Mark all      ^a', event = 'menu_action', action = 'mark_all' },
+			} },
+			{ text = 'Code', dropdown = {
+				{ text = 'Complete   ^space', event = 'menu_action', action = 'autocomplete' },
+				{ text = 'Run        ^enter', event = 'menu_action', action = 'run' },
+				{ spacer = true },
+				{ text = 'Peripheral ^SPACE', event = 'menu_action', action = 'peripheral' },
+			} },
+		},
+		status = UI.Text {
+			textColor = 'gray',
+			x = -9, width = 9,
+			align = 'right',
+		},
+	},
+	gotoLine = UI.MiniSlideOut {
+		x = -15, y = -2,
+		label = 'Line',
+		lineNo = UI.TextEntry {
+			x = 7, width = 7,
+			limit = 5,
+			transform = 'number',
+			accelerators = {
+				[ 'enter' ] = 'accept',
+			},
+		},
+		show = function(self)
+			self.lineNo:reset()
+			UI.MiniSlideOut.show(self)
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'accept' then
+				if self.lineNo.value then
+					actions.process('go_to', 1, self.lineNo.value)
+				end
+				self:hide()
+				return true
+			end
+			return UI.MiniSlideOut.eventHandler(self, event)
+		end,
+	},
+	search = UI.MiniSlideOut {
+		x = '50%', y = -2,
+		label = 'Find',
+		search = UI.TextEntry {
+			x = 7, ex = -3,
+			limit = 512,
+			accelerators = {
+				[ 'enter' ] = 'accept',
+			},
+		},
+		show = function(self)
+			self.search:markAll()
+			UI.MiniSlideOut.show(self)
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'accept' then
+				local text = self.search.value
+				if text and #text > 0 then
+					searchPattern = text:lower()
+					if searchPattern then
+						actions.unmark()
+						actions.process('find', searchPattern, x)
+					end
+				end
+				self:hide()
+				return true
+			end
+			return UI.MiniSlideOut.eventHandler(self, event)
+		end,
+	},
+	save_as = UI.MiniSlideOut {
+		x = '30%', y = -2,
+		label = 'Save',
+		filename = UI.TextEntry {
+			x = 7, ex = -3,
+			limit = 512,
+			accelerators = {
+				[ 'enter' ] = 'accept',
+			},
+		},
+		show = function(self)
+			self.filename:setValue(fileInfo.path)
+			self.filename:setPosition(#self.filename.value)
+			UI.MiniSlideOut.show(self)
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'accept' then
+				local text = self.filename.value
+				if text and #text > 0 then
+					actions.save('/' .. text)
+				end
+				self:hide()
+				return true
+			end
+			return UI.MiniSlideOut.eventHandler(self, event)
+		end,
+	},
+	unsaved = UI.Question {
+		x = -25, y = -2,
+		label = 'Save',
+		cancel = UI.Button {
+			x = 16,
+			text = 'Cancel',
+			backgroundColor = 'primary',
+			event = 'question_cancel',
+		},
+		show = function(self, action)
+			self.action = action
+			UI.MiniSlideOut.show(self)
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'question_yes' then
+				if actions.save() then
+					self:hide()
+					actions.process(self.action)
+				end
+			elseif event.type == 'question_no' then
+				actions.process(self.action, true)
+				self:hide()
+			elseif event.type == 'question_cancel' then
+				self:hide()
+			end
+			return UI.MiniSlideOut.eventHandler(self, event)
+		end,
+	},
+	file_open = UI.FileSelect {
+		modal = true,
+		enable = function() end,
+		show = function(self)
+			UI.FileSelect.enable(self, fs.getDir(fileInfo.path))
+			self:focusFirst()
+			self:draw()
+			self:addTransition('expandUp', { easing = 'outBounce', ticks = 12 })
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'select_cancel' then
+				self:disable()
+			elseif event.type == 'select_file' then
+				self:disable()
+				actions.process('open', event.file)
+			end
+			return UI.FileSelect.eventHandler(self, event)
+		end,
+	},
+	recent = UI.SlideOut {
+		grid = UI.Grid {
+			x = 2, y = 2, ey = -4, ex = -2,
+			columns = {
+				{ key = 'name', heading = 'Name' },
+				{ key = 'dir', heading = 'Directory' },
+			},
+			accelerators = {
+				backspace = 'slide_hide',
+			},
+		},
+		cancel = UI.Button {
+			x = -9, y = -2,
+			text = 'Cancel',
+			event = 'slide_hide',
+		},
+		show = function(self)
+			local t = { }
+			for _,v in pairs(config.recent or { }) do
+				table.insert(t, { name = fs.getName(v), dir = fs.getDir(v), path = v })
+			end
+			self.grid:setValues(t)
+			self.grid:setIndex(1)
+			UI.SlideOut.show(self)
+			self:addTransition('expandUp', { easing = 'outBounce', ticks = 12 })
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'grid_select' then
+				actions.process('open', event.selected.path)
+				self:hide()
+				return true
+			end
+			return UI.SlideOut.eventHandler(self, event)
+		end,
+	},
+	quick_open = UI.SlideOut {
+		filter_entry = UI.TextEntry {
+			x = 2, y = 2, ex = -2,
+			limit = 256,
+			shadowText = 'File name',
+			accelerators = {
+				[ 'enter' ] = 'accept',
+				[ 'up' ] = 'grid_up',
+				[ 'down' ] = 'grid_down',
+			},
+		},
+		grid = UI.ScrollingGrid {
+			x = 2, y = 3, ex = -2, ey = -4,
+			disableHeader = true,
+			columns = {
+				{ key = 'name' },
+				{ key = 'dir', textColor = 'lightGray' },
+			},
+			accelerators = {
+				grid_select = 'accept',
+			},
+		},
+		cancel = UI.Button {
+			x = -9, y = -2,
+			text = 'Cancel',
+			event = 'slide_hide',
+		},
+		apply_filter = function(self, filter)
+			local t = { }
+			if filter then
+				filter = filter:lower()
+				self.grid.sortColumn = 'score'
+				self.grid.inverseSort = true
+
+				for _,v in pairs(self.listing) do
+					v.score = fuzzy(v.lname, filter)
+					if v.score then
+						_insert(t, v)
+					end
+				end
+			else
+				self.grid.sortColumn = 'lname'
+				self.grid.inverseSort = false
+				t = self.listing
+			end
+
+			self.grid:setValues(t)
+			self.grid:setIndex(1)
+		end,
+		show = function(self)
+			local listing = { }
+			local function recurse(dir)
+				local files = fs.list(dir)
+				for _,f in ipairs(files) do
+					local fullName = fs.combine(dir, f)
+					if fs.native.isDir(fullName) then -- skip virtual dirs
+						if f ~= '.git' then recurse(fullName) end
+					else
+						_insert(listing, {
+							name = f,
+							dir = dir,
+							lname = f:lower(),
+							fullName = fullName,
+						})
+					end
+				end
+			end
+			recurse('')
+			self.listing = listing
+			self:apply_filter()
+			self.filter_entry:reset()
+			UI.SlideOut.show(self)
+			self:addTransition('expandUp', { easing = 'outBounce', ticks = 12 })
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'grid_up' then
+				self.grid:emit({ type = 'scroll_up' })
+
+			elseif event.type == 'grid_down' then
+				self.grid:emit({ type = 'scroll_down' })
+
+			elseif event.type == 'accept' then
+				local sel = self.grid:getSelected()
+				if sel then
+					actions.process('open', sel.fullName)
+					self:hide()
+				end
+
+			elseif event.type == 'text_change' then
+				self:apply_filter(event.text)
+				self.grid:draw()
+
+			else
+				return UI.SlideOut.eventHandler(self, event)
+			end
+			return true
+		end,
+	},
+	completions = UI.SlideOut {
+		x = -12, y = 2,
+		transitionHint = 'slideLeft',
+		grid = UI.Grid {
+			x = 2, y = 2, ey = -2,
+			columns = {
+				{ key = 'text', heading = 'Completion' },
+			},
+			accelerators = {
+				[ ' ' ] = 'down',
+				backspace = 'slide_hide',
+			},
+		},
+		cancel = UI.Button {
+			y = -1, x = -9,
+			text = 'Cancel',
+			backgroundColor = 'black',
+			backgroundFocusColor = 'black',
+			textColor = 'lightGray',
+			event = 'slide_hide',
+		},
+		show = function(self, values)
+			local m = 12
+			for _, v in pairs(values) do
+				m = #v.text > m and #v.text or m
+			end
+			m = m + 3
+			m = m > self.parent.width and self.parent.width or m
+			self.ox = -m
+			self:resize()
+			self.grid:setValues(values)
+			self.grid:setIndex(1)
+			UI.SlideOut.show(self)
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'grid_select' then
+				actions.process('insertText', x, y, event.selected.complete)
+				self:hide()
+				return true
+			end
+			return UI.SlideOut.eventHandler(self, event)
+		end,
+	},
+	peripheral = UI.SlideOut {
+		x = '20%', y = 2,
+		transitionHint = 'slideLeft',
+		grid1 = UI.Grid {
+			x = 2, y = 2, ey = 5,
+			sortColumn = 'name',
+			columns = {
+				{ key = 'name', heading = 'Peripheral' },
+			},
+			accelerators = {
+				[ ' ' ] = 'down',
+				backspace = 'slide_hide',
+				grid_focus_row = 'select_peripheral',
+				grid_select = 'complete',
+			},
+			scan = function(self)
+				self.values = { }
+				for k, v in pairs(device) do
+					table.insert(self.values, { name = k, complete = 'peripheral.wrap("' .. v.side .. '")' })
+				end
+			end,
+			postInit = function(self)
+				self:scan()
+			end,
+		},
+		grid2 = UI.Grid {
+			x = 2, y = 6, ey = -2,
+			sortColumn = 'method',
+			columns = {
+				{ key = 'method', heading = 'Method' },
+			},
+			accelerators = {
+				[ ' ' ] = 'down',
+				backspace = 'slide_hide',
+				grid_select = 'complete',
+			},
+			showMethods = function(self)
+				local dev = device[self.parent.grid1:getSelected().name]
+				local t = { }
+				if dev then
+					pcall(function()
+						local docs = dev.getDocs and dev.getDocs()
+						for k, v in pairs(dev) do
+							if type(v) == 'function' then
+								local m = docs and docs[k] and docs[k]:match('^function%((.+)%).+')
+								table.insert(t, { method = k, complete = k .. '(' .. (m or '') .. ')' })
+							end
+						end
+					end)
+				end
+				self:setValues(t)
+			end,
+			enable = function(self)
+				self:showMethods()
+				UI.Grid.enable(self)
+			end,
+		},
+		cancel = UI.Button {
+			y = -1, x = -9,
+			text = 'Cancel',
+			backgroundColor = 'black',
+			backgroundFocusColor = 'black',
+			textColor = 'lightGray',
+			event = 'slide_hide',
+		},
+		eventHandler = function(self, event)
+			if event.type == 'complete' then
+				actions.process('insertText', x, y, event.selected.complete)
+				actions.process('left')
+				self:hide()
+				return true
+			elseif event.type == 'select_peripheral' then
+				self.grid2:showMethods()
+				self.grid2:setIndex(1)
+				self.grid2:update()
+				self.grid2:draw()
+			end
+			return UI.SlideOut.eventHandler(self, event)
+		end,
+	},
+	editor = UI.Window {
+		y = 2,
+		backgroundColor = bgColor,
+		transitionHint = 'slideRight',
+		cursorBlink = true,
+		focus = function(self)
+			if self.focused then
+				self:setCursorPos(x - scrollX, y - scrollY)
+			end
+		end,
+		resize = function(self)
+			UI.Window.resize(self)
+
+			w, h = self.width, self.height
+			actions.set_cursor(x, y)
+			actions.dirty_all()
+			actions.redraw()
+		end,
+		draw = function()
+			actions.redraw()
+		end,
+		eventHandler = function(_, event)
+			if event.ie then
+				local action, param, param2
+				local ie = event.ie
+
+				if ie.code == 'char' then
+					action = keyMapping.char
+					param = ie.ch
+
+				elseif ie.code == "mouse_click" or
+					ie.code == 'mouse_drag' or
+					ie.code == 'shift-mouse_click' or
+					ie.code == 'mouse_down' or
+					ie.code == 'mouse_doubleclick' then
+
+					action = keyMapping[ie.code]
+					param = ie.x + scrollX
+					param2 = ie.y + scrollY
+
+				elseif event.type == 'paste' then
+					action = keyMapping.paste
+					param = event.text
+
+				else
+					action = keyMapping[ie.code]
+				end
+
+				if action then
+					actions.process(action, param, param2)
+					return true
+				end
+			end
+		end,
+	},
+	notification = UI.Notification { },
+	enable = function(self)
+		UI.Page.enable(self)
+		self:setFocus(self.editor)
+	end,
+	checkFocus = function(self)
+		if not self.focused or not self.focused.enabled then
+			-- if no current focus, set it to the editor
+			self:setFocus(self.editor)
+		end
+	end,
+	eventHandler = function(self, event)
+		if event.type == 'menu_action' then
+			actions.process(event.element.action)
+			return true
+		end
+		return UI.Page.eventHandler(self, event)
+	end,
 }
-if w < 32 then
-	messages = {
-		menu    = '^s = save, ^q = quit',
-		wrapped = 'search wrapped',
-	}
-end
 
 local function getFileInfo(path)
-	local abspath = shell.resolve(path)
+	path = fs.combine('/', path)
 
 	local fi = {
-		abspath = abspath,
 		path = path,
-		isNew = not fs.exists(abspath),
-		dirExists = fs.exists(fs.getDir(abspath)),
-		modified = false,
+		isNew = not fs.exists(path),
+		dirExists = fs.exists(fs.getDir(path)),
+		isReadOnly = fs.isReadOnly(path),
 	}
-	if fi.isDir then
-		fi.isReadOnly = true
-	else
-		fi.isReadOnly = fs.isReadOnly(fi.abspath)
+
+	if path ~= config.filename then
+		config.filename = path
+		config.recent = config.recent or { }
+
+		Array.removeByValue(config.recent, path)
+		table.insert(config.recent, 1, path)
+		while #config.recent > 10 do
+			table.remove(config.recent)
+		end
+
+		Config.update('editor', config)
+	end
+
+	if multishell then
+		multishell.setTitle(multishell.getCurrent(), fs.getName(fi.path))
 	end
 
 	return fi
 end
 
-local function setStatus(pattern, ...)
-	sStatus = string.format(pattern, ...)
-end
-
-local function setError(pattern, ...)
-	setStatus(pattern, ...)
-	isError = true
-end
-
-local function load(path)
-	tLines = {}
-	if fs.exists(path) then
-		local file = io.open(path, "r")
-		local sLine = file:read()
-		while sLine do
-			table.insert(tLines, sLine)
-			sLine = file:read()
-		end
-		file:close()
-	end
-
-	if #tLines == 0 then
-		table.insert(tLines, '')
-	end
-
-	fileInfo = getFileInfo(tArgs[1])
-
-	local name = fileInfo.path
-	if w < 32 then
-		name = fs.getName(fileInfo.path)
-	end
-	if fileInfo.isNew then
-		if not fileInfo.dirExists then
-			setStatus('"%s" [New DIRECTORY]', name)
-		else
-			setStatus('"%s" [New File]', name)
-		end
-	elseif fileInfo.isReadOnly then
-		setStatus('"%s" [readonly] %dL, %dC',
-					name, #tLines, fs.getSize(fileInfo.abspath))
-	else
-		setStatus('"%s" %dL, %dC',
-					name, #tLines, fs.getSize(fileInfo.abspath))
-	end
-end
-
-local function save( _sPath )
-	-- Create intervening folder
-	local sDir = _sPath:sub(1, _sPath:len() - fs.getName(_sPath):len() )
-	if not fs.exists( sDir ) then
-		fs.makeDir( sDir )
-	end
-
-	-- Save
-	local file = nil
-	local function innerSave()
-		file = fs.open( _sPath, "w" )
-		if file then
-			for _,sLine in ipairs( tLines ) do
-				file.write(sLine .. "\n")
-			end
-		else
-			error( "Failed to open ".._sPath )
-		end
-	end
-
-	local ok, err = pcall( innerSave )
-	if file then
-		file.close()
-	end
-	return ok, err
-end
-
-local function split(str, pattern)
-	pattern = pattern or "(.-)\n"
-	local t = {}
-	local function helper(line) table.insert(t, line) return "" end
-	helper((str:gsub(pattern, helper)))
-	return t
-end
-
-local tKeywords = {
-	["and"] = true,
-	["break"] = true,
-	["do"] = true,
-	["else"] = true,
-	["elseif"] = true,
-	["end"] = true,
-	["false"] = true,
-	["for"] = true,
-	["function"] = true,
-	["if"] = true,
-	["in"] = true,
-	["local"] = true,
-	["nil"] = true,
-	["not"] = true,
-	["or"] = true,
-	["repeat"] = true,
-	["return"] = true,
-	["then"] = true,
-	["true"] = true,
-	["until"]= true,
-	["while"] = true,
+local keywords = Util.transpose {
+	'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function', 'if',
+	'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then', 'true', 'until', 'while'
 }
 
-local function writeHighlighted(sLine, ny)
-	local buffer = {
-		fg = '',
-		text = '',
-	}
+local function writeHighlighted(sLine, ny, dy)
+	local buffer = { fg = { }, text = { } }
 
 	local function tryWrite(line, regex, fgcolor)
 		local match = line:match(regex)
 		if match then
-			local fg
-			if type(fgcolor) == "string" then
-				fg = fgcolor
-			else
-				fg = fgcolor(match)
-			end
-			buffer.text = buffer.text .. match
-			buffer.fg = buffer.fg .. string.rep(fg, #match)
-			return line:sub(#match + 1)
+			local fg = type(fgcolor) == "string" and fgcolor or fgcolor(match)
+			_insert(buffer.text, match)
+			_insert(buffer.fg, _rep(fg, #match))
+			return _sub(line, #match + 1)
 		end
 		return nil
 	end
 
 	while #sLine > 0 do
 		sLine =
-			tryWrite(sLine, "^%-%-%[%[.-%]%]", color.commentColor ) or
-			tryWrite(sLine, "^%-%-.*",         color.commentColor ) or
-			tryWrite(sLine, "^\".-[^\\]\"",    color.stringColor  ) or
-			tryWrite(sLine, "^\'.-[^\\]\'",    color.stringColor  ) or
-			tryWrite(sLine, "^%[%[.-%]%]",     color.stringColor  ) or
+			-- tryWrite(sLine, "^[%\26]", '7' ) or
+			tryWrite(sLine, "^%-%-%[%[.-%]%]", color.comment ) or
+			tryWrite(sLine, "^%-%-.*",         color.comment ) or
+			tryWrite(sLine, "^\".-[^\\]\"",    color.string  ) or
+			tryWrite(sLine, "^\'.-[^\\]\'",    color.string  ) or
+			tryWrite(sLine, "^%[%[.-%]%]",     color.string  ) or
 			tryWrite(sLine, "^[%w_]+", function(match)
-				if tKeywords[match] then
-					return color.keywordColor
-				end
-				return color.textColor
+				return keywords[match] and color.keyword or color.text
 			end) or
-			tryWrite(sLine, "^[^%w_]", color.textColor)
+			tryWrite(sLine, "^[^%w_]", color.text)
 	end
 
-	buffer.fg = buffer.fg .. '7'
-	buffer.text = buffer.text .. '.'
+	buffer.fg = _concat(buffer.fg) .. '7'
+	buffer.text = _concat(buffer.text) .. '\183'
 
 	if mark.active and ny >= mark.y and ny <= mark.ey then
-		local sx = 1
-		if ny == mark.y then
-			sx = mark.x
-		end
-		local ex = #buffer.text
-		if ny == mark.ey then
-			ex = mark.ex
-		end
-		buffer.bg = string.rep('f', sx - 1) ..
-								string.rep('7', ex - sx) ..
-								string.rep('f', #buffer.text - ex + 1)
-
+		local sx = ny == mark.y and mark.x or 1
+		local ex = ny == mark.ey and mark.ex or #buffer.text
+		buffer.bg = _rep(color.bg, sx - 1) ..
+					_rep(color.mark, ex - sx) ..
+					_rep(color.bg, #buffer.text - ex + 1)
 	else
-		buffer.bg = string.rep('f', #buffer.text)
+		buffer.bg = _rep(color.bg, #buffer.text)
 	end
 
-	term.blit(buffer.text, buffer.fg, buffer.bg)
+	page.editor:blit(1 - scrollX, dy, buffer.text, buffer.bg, buffer.fg)
 end
 
 local function redraw()
 	if dirty.y > 0 then
-		term.setBackgroundColor(color.bgColor)
 		for dy = 1, h do
-
 			local sLine = tLines[dy + scrollY]
 			if sLine ~= nil then
 				if dy + scrollY >= dirty.y and dy + scrollY <= dirty.ey then
-					term.setCursorPos(1 - scrollX, dy)
-					term.clearLine()
-					writeHighlighted(sLine, dy + scrollY)
+					page.editor:clearLine(dy)
+					writeHighlighted(sLine, dy + scrollY, dy)
 				end
 			else
-				term.setCursorPos(1 - scrollX, dy)
-				term.clearLine()
+				page.editor:clearLine(dy)
 			end
 		end
 	end
 
-	-- Draw status
-	if #sStatus > 0 then
-		if isError then
-			term.setTextColor(colors.white)
-			term.setBackgroundColor(color.errorBackground)
-		else
-			term.setTextColor(color.highlightColor)
-			term.setBackgroundColor(colors.gray)
-		end
-		term.setCursorPos(1, h)
-		term.clearLine()
-		term.write(string.format(' %s ', sStatus))
+	local modifiedIndicator = undo.chain[#undo.chain] == lastSave and ' ' or '*'
+	page.menuBar.status.value = _format('%d:%d%s', y, x, modifiedIndicator)
+	page.menuBar.status:draw()
+
+	if page.editor.focused then
+		page.editor:setCursorPos(x - scrollX, y - scrollY)
 	end
-
-	if not (w < 32 and #sStatus > 0) then
-		local modifiedIndicator = ' '
-		if undo.chain[1] then
-			modifiedIndicator = '*'
-		end
-
-		local str = string.format(' %d:%d %s',
-			y, x, modifiedIndicator)
-		term.setTextColor(color.highlightColor)
-		term.setBackgroundColor(colors.gray)
-		term.setCursorPos(w - #str + 1, h)
-		term.write(str)
-	end
-
-	term.setTextColor(color.cursorColor)
-	term.setCursorPos(x - scrollX, y - scrollY)
 
 	dirty.y, dirty.ey = 0, 0
-	if #sStatus > 0 then
-		sStatus = ''
-		dirty.y = scrollY + h
-		dirty.ey = dirty.y
-	end
-	isError = false
 end
 
 local function nextWord(line, cx)
@@ -407,148 +749,98 @@ local function nextWord(line, cx)
 	end
 end
 
-local function hacky_read()
-	local _oldSetCursorPos = term.setCursorPos
-	local _oldGetCursorPos = term.getCursorPos
+actions = {
+	info = function(pattern, ...)
+		page.notification:info(_format(pattern, ...))
+	end,
 
-	term.setCursorPos = function(cx)
-		return _oldSetCursorPos(cx, h)
-	end
-	term.getCursorPos = function()
-		local cx = _oldGetCursorPos()
-		return cx, 1
-	end
-
-	local s, m = pcall(function() return _G.read() end)
-	term.setCursorPos = _oldSetCursorPos
-	term.getCursorPos = _oldGetCursorPos
-	if s then
-		return m
-	end
-	if m == 'Terminated' then
-		bRunning = false
-	end
-	return ''
-end
-
-local actions
-local __actions = {
-
-	input = function(prompt)
-		term.setTextColor(color.highlightColor)
-		term.setBackgroundColor(colors.gray)
-		term.setCursorPos(1, h)
-		term.clearLine()
-		term.write(prompt)
-		local str = hacky_read()
-		term.setCursorBlink(true)
-		input:reset()
-		term.setCursorPos(x - scrollX, y - scrollY)
-		actions.dirty_line(scrollY + h)
-		return str
+	error = function(pattern, ...)
+		page.notification:error(_format(pattern, ...))
 	end,
 
 	undo = function()
-		local last = table.remove(undo.chain)
+		local last = _remove(undo.chain)
 		if last then
 			undo.active = true
-			actions[last.action](unpack(last.args))
+			table.insert(undo.redo, { })
+			for i = #last, 1, -1 do
+				local u = last[i]
+				actions[u.action](_unpack(u.args))
+			end
 			undo.active = false
 		else
-			setStatus('Already at oldest change')
+			actions.info('already at oldest change')
 		end
 	end,
 
-	addUndo = function(entry)
-		local last = undo.chain[#undo.chain]
-		if last and last.action == entry.action then
-			if last.action == 'deleteText' then
-				if last.args[3] == entry.args[1] and
-					 last.args[4] == entry.args[2] then
-					last.args = {
-						last.args[1], last.args[2], entry.args[3], entry.args[4],
-						last.args[5] .. entry.args[5]
-					}
-				else
-					table.insert(undo.chain, entry)
-				end
-			else
-				-- insertText (need to finish)
-				table.insert(undo.chain, entry)
-			end
+	undo_add = function(entry)
+		if undo.active then
+			local last = undo.redo[#undo.redo]
+			table.insert(last, entry)
 		else
-			table.insert(undo.chain, entry)
+			if not undo.redo_active then
+				undo.redo = { }
+			end
+			local last = undo.chain[#undo.chain]
+			if last and undo.continue then
+				table.insert(last, entry)
+			else
+				_insert(undo.chain, { entry })
+			end
+		end
+	end,
+
+	redo = function()
+		local last = _remove(undo.redo)
+		if last then
+			-- too many flags !
+			undo.redo_active = true
+			undo.continue = false
+			for i = #last, 1, -1 do
+				local u = last[i]
+				actions[u.action](_unpack(u.args))
+				undo.continue = true
+			end
+			undo.redo_active = false
+		else
+			actions.info('already at newest change')
 		end
 	end,
 
 	autocomplete = function()
-		if lastAction ~= 'autocomplete' or not complete.results then
-			local sLine = tLines[y]:sub(1, x - 1)
-			local nStartPos = sLine:find("[a-zA-Z0-9_%.]+$")
-			if nStartPos then
-				sLine = sLine:sub(nStartPos)
+		local sLine = tLines[y]:sub(1, x - 1):match("[a-zA-Z0-9_%.]+$")
+		local results = sLine and textutils.complete(sLine, _ENV) or { }
+
+		if #results == 0 then
+			actions.error('no completions available')
+
+		elseif #results == 1 then
+			actions.insertText(x, y, results[1])
+
+		elseif #results > 1 then
+			local prefix = sLine:match('^.+%.(.*)$') or sLine
+			for i = 1, #results do
+				results[i] = {
+					text = prefix .. results[i],
+					complete = results[i],
+				}
 			end
-			if #sLine > 0 then
-				complete.results = textutils.complete(sLine)
-			else
-				complete.results = { }
-			end
-			complete.index = 0
-			complete.x = x
+			page.completions:show(results)
 		end
+	end,
 
-		if #complete.results == 0 then
-			setError('No completions available')
-
-		elseif #complete.results == 1 then
-			actions.insertText(x, y, complete.results[1])
-			complete.results = nil
-
-		elseif #complete.results > 1 then
-			local prefix = complete.results[1]
-			for n = 1, #complete.results do
-				local result = complete.results[n]
-				while #prefix > 0 do
-					if result:find(prefix, 1, true) == 1 then
-						break
-					end
-					prefix = prefix:sub(1, #prefix - 1)
-				end
-			end
-			if #prefix > 0 then
-				actions.insertText(x, y, prefix)
-				complete.results = nil
-			else
-				if complete.index > 0 then
-					actions.deleteText(complete.x, y, complete.x + #complete.results[complete.index], y)
-				end
-				complete.index = complete.index + 1
-				if complete.index > #complete.results then
-					complete.index = 1
-				end
-				actions.insertText(complete.x, y, complete.results[complete.index])
-			end
-		end
+	peripheral = function()
+		page.peripheral:show()
 	end,
 
 	refresh = function()
 		actions.dirty_all()
 		mark.continue = mark.active
-		setStatus('refreshed')
-	end,
-
-	menu = function()
-		setStatus(messages.menu)
-		mark.continue = mark.active
+		actions.info('refreshed')
 	end,
 
 	goto_line = function()
-		local lineNo = tonumber(actions.input('Line: '))
-		if lineNo then
-			actions.go_to(1, lineNo)
-		else
-			setStatus('Invalid line number')
-		end
+		page.gotoLine:show()
 	end,
 
 	find = function(pattern, sx)
@@ -558,19 +850,18 @@ local __actions = {
 			if ny > nLines then
 				ny = ny - nLines
 			end
-			local nx = tLines[ny]:lower():find(pattern, sx)
+			local nx = tLines[ny]:lower():find(pattern, sx, true)
 			if nx then
 				if ny < y or ny == y and nx <= x then
-					setStatus(messages.wrapped)
+					actions.info('search hit BOTTOM, continuing at TOP')
 				end
 				actions.go_to(nx, ny)
 				actions.mark_to(nx + #pattern, ny)
-				actions.go_to(nx, ny)
 				return
 			end
 			sx = 1
 		end
-		setError('Pattern not found')
+		actions.error('pattern not found')
 	end,
 
 	find_next = function()
@@ -581,58 +872,174 @@ local __actions = {
 	end,
 
 	find_prompt = function()
-		local text = actions.input('/')
-		if #text > 0 then
-			searchPattern = text:lower()
-			if searchPattern then
-				actions.unmark()
-				actions.find(searchPattern, x)
-			end
-		end
+		page.search:show()
 	end,
 
-	save = function()
-		if bReadOnly then
-			setError("Access denied")
+	quick_open = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('quick_open')
 		else
-			local ok = save(sPath)
-			if ok then
-				setStatus('"%s" %dL, %dC written',
-					 fileInfo.path, #tLines, fs.getSize(fileInfo.abspath))
+			page.quick_open:show()
+		end
+	end,
+
+	file_open = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('file_open')
+		else
+			page.file_open:show()
+		end
+	end,
+
+	recent = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('recent')
+		else
+			page.recent:show()
+		end
+	end,
+
+	file_new = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('file_new')
+		else
+			actions.open('/untitled.txt')
+		end
+	end,
+
+	open = function(filename)
+		if not actions.load(filename) then
+			actions.error('unable to load file')
+		end
+	end,
+
+	load = function(path)
+		if not path or (fs.exists(path) and fs.isDir(path)) then
+			return false
+		end
+		fileInfo = getFileInfo(path)
+
+		x, y = 1, 1
+		scrollX, scrollY = 0, 0
+		lastPos   = { x = 1, y = 1 }
+		lastSave  = nil
+		dirty     = { y = 1, ey = h }
+		mark      = { }
+		undo      = { chain = { }, redo = { } }
+
+		tLines = Util.readLines(fileInfo.path) or { }
+		if #tLines == 0 then
+			_insert(tLines, '')
+		end
+
+		--[[
+		local function detabify(l)
+			return l:gsub('\26\26', '\9'):gsub('\26', '\9')
+		end ]]
+
+		-- since we can't handle tabs, convert them to spaces :(
+		local t1, t2 = ' ', '  '
+		local function tabify(l)
+			repeat
+				local i = l:find('\9')
+				if i then
+					local tabs = (i - 1) % 2 == 0 and t2 or t1
+					l = l:sub(1, i - 1) .. tabs .. l:sub(i + 1)
+				end
+			until not i
+			return l
+		end
+
+		for k, v in pairs(tLines) do
+			tLines[k] = tabify(v)
+		end
+
+		local name = fileInfo.path
+		if fileInfo.isNew then
+			if not fileInfo.dirExists then
+				actions.info('"%s" [New DIRECTORY]', name)
 			else
-				setError("Error saving to %s", sPath)
+				actions.info('"%s" [New File]', name)
+			end
+		elseif fileInfo.isReadOnly then
+			actions.info('"%s" [readonly] %dL, %dC',
+				name, #tLines, fs.getSize(fileInfo.path))
+		else
+			actions.info('"%s" %dL, %dC',
+				name, #tLines, fs.getSize(fileInfo.path))
+		end
+
+		return true
+	end,
+
+	save = function(filename)
+		filename = filename or fileInfo.path
+		if fs.isReadOnly(filename) then
+			actions.error("access denied")
+		else
+			local s, m = pcall(function()
+				if not Util.writeLines(filename, tLines) then
+					error("Failed to open " .. filename)
+				end
+			end)
+
+			if s then
+				lastSave = undo.chain[#undo.chain]
+				fileInfo = getFileInfo(filename)
+				actions.info('"%s" %dL, %dC written',
+					 fileInfo.path, #tLines, fs.getSize(fileInfo.path))
+				return true
+			else
+				actions.error(m)
 			end
 		end
 	end,
 
-	exit = function()
-		bRunning = false
+	save_as = function()
+		page.save_as:show()
+	end,
+
+	exit = function(force)
+		if not force and undo.chain[#undo.chain] ~= lastSave then
+			page.unsaved:show('exit')
+		else
+			UI:quit()
+		end
 	end,
 
 	run = function()
-		input:reset()
-		local sTempPath = "/.temp"
-		local ok = save(sTempPath)
-		if ok then
-			local nTask = shell.openTab(sTempPath)
+		if not multishell then
+			actions.error('open available with multishell')
+			return
+		end
+		if undo.chain[#undo.chain] == lastSave then
+			local nTask = shell.openTab(fileInfo.path)
 			if nTask then
 				shell.switchTab(nTask)
 			else
-				setError("Error starting Task")
+				actions.error("error starting Task")
 			end
-			os.sleep(0)
-			fs.delete(sTempPath)
 		else
-			setError("Error saving to %s", sTempPath)
+			local fn, msg = load(_concat(tLines, '\n'), fileInfo.path)
+			if fn then
+				multishell.openTab({
+					fn = fn,
+					focused = true,
+					title = fs.getName(fileInfo.path),
+				})
+			else
+				local ln = msg:match(':(%d+):')
+				if ln and tonumber(ln) then
+					actions.go_to(1, tonumber(ln))
+				end
+				actions.error(msg)
+			end
 		end
 	end,
 
 	status = function()
-		local modified = ''
-		if undo.chain[1] then
-			modified = '[Modified] '
-		end
-		setStatus('"%s" %s%d lines --%d%%--',
+		local modified = undo.chain[#undo.chain] == lastSave and '' or '[Modified] '
+		actions.info('"%s" %s%d lines --%d%%--',
 				 fileInfo.path, modified, #tLines,
 				 math.floor((y - 1) / (#tLines - 1) * 100))
 	end,
@@ -738,10 +1145,38 @@ local __actions = {
 		actions.mark_finish()
 	end,
 
+	mark_line = function()
+		actions.home()
+		actions.mark_begin()
+		actions.toend()
+		actions.right()
+		actions.mark_finish()
+	end,
+
 	mark_word = function()
 		actions.mark_begin()
 		actions.word()
 		actions.mark_finish()
+	end,
+
+	mark_current_word = function(cx, cy)
+		local index = 1
+		actions.go_to(cx, cy)
+		while true do
+			local s, e = tLines[y]:find('%w+', index)
+			if not s or s - 1 > x then
+				break
+			end
+			if x >= s and x <= e then
+				x = s
+				actions.mark_begin()
+				x = e + 1
+				actions.mark_finish()
+				x, y = cx, cy
+				break
+			end
+			index = e + 1
+		end
 	end,
 
 	mark_backword = function()
@@ -773,7 +1208,7 @@ local __actions = {
 		actions.dirty_all()
 	end,
 
-	setCursor = function()
+	set_cursor = function()
 		lastPos.x = x
 		lastPos.y = y
 
@@ -781,18 +1216,18 @@ local __actions = {
 		local screenY = y - scrollY
 
 		if screenX < 1 then
-			scrollX = x - 1
+			scrollX = math.max(0, x - 4)
 			actions.dirty_all()
 		elseif screenX > w then
-			scrollX = x - w
+			scrollX = x - w + 3
 			actions.dirty_all()
 		end
 
 		if screenY < 1 then
 			scrollY = y - 1
 			actions.dirty_all()
-		elseif screenY > h - 1 then
-			scrollY = y - (h - 1)
+		elseif screenY > h then
+			scrollY = y - h
 			actions.dirty_all()
 		end
 	end,
@@ -827,12 +1262,12 @@ local __actions = {
 		actions.insertText(x, y, '  ')
 	end,
 
-	pageUp = function()
-		actions.go_to(x, y - (h - 1))
+	page_up = function()
+		actions.go_to(x, y - h)
 	end,
 
-	pageDown = function()
-		actions.go_to(x, y + (h - 1))
+	page_down = function()
+		actions.go_to(x, y + h)
 	end,
 
 	home = function()
@@ -907,39 +1342,35 @@ local __actions = {
 			actions.dirty_line(y)
 			x = x + #text
 		else
-			local lines = split(text)
+			local lines = Util.split(text)
 			local remainder = sLine:sub(x)
 			tLines[y] = sLine:sub(1, x - 1) .. lines[1]
 			actions.dirty_range(y, #tLines + #lines)
 			x = x + #lines[1]
 			for k = 2, #lines do
 				y = y + 1
-				table.insert(tLines, y, lines[k])
+				_insert(tLines, y, lines[k])
 				x = #lines[k] + 1
 			end
 			tLines[y] = tLines[y]:sub(1, x) .. remainder
 		end
 
-		if not undo.active then
-			actions.addUndo(
-				{ action = 'deleteText', args = { sx, sy, x, y, text } })
-		end
+		actions.undo_add(
+			{ action = 'deleteText', args = { sx, sy, x, y } })
 	end,
 
 	deleteText = function(sx, sy, ex, ey)
 		x = sx
 		y = sy
 
-		if not undo.active then
-			local text = actions.copyText(sx, sy, ex, ey)
-			actions.addUndo(
-				{ action = 'insertText', args = { sx, sy, text } })
-		end
+		local text = actions.copyText(sx, sy, ex, ey)
+		actions.undo_add(
+			{ action = 'insertText', args = { sx, sy, text } })
 
 		local front = tLines[sy]:sub(1, sx - 1)
 		local back = tLines[ey]:sub(ex, #tLines[ey])
 		for _ = 2, ey - sy + 1 do
-			table.remove(tLines, y + 1)
+			_remove(tLines, y + 1)
 		end
 		tLines[y] = front .. back
 		if sy ~= ey then
@@ -966,10 +1397,10 @@ local __actions = {
 				end
 				local str = line:sub(cx, ex)
 				count = count + #str
-				table.insert(lines, str)
+				_insert(lines, str)
 			end
 		end
-		return table.concat(lines, '\n'), count
+		return _concat(lines, '\n'), count
 	end,
 
 	delete = function()
@@ -986,9 +1417,7 @@ local __actions = {
 	end,
 
 	backspace = function()
-		if mark.active then
-			actions.delete()
-		elseif actions.left() then
+		if mark.active or actions.left() then
 			actions.delete()
 		end
 	end,
@@ -1003,7 +1432,7 @@ local __actions = {
 		if mark.active then
 			actions.delete()
 		end
-		actions.insertText(x, y, '\n' .. string.rep(' ', spaces))
+		actions.insertText(x, y, '\n' .. _rep(' ', spaces))
 	end,
 
 	char = function(ch)
@@ -1016,7 +1445,7 @@ local __actions = {
 	copy_marked = function()
 		local text = actions.copyText(mark.x, mark.y, mark.ex, mark.ey)
 		os.queueEvent('clipboard_copy', text)
-		setStatus('shift-^v to paste')
+		actions.info('shift-^v to paste')
 	end,
 
 	cut = function()
@@ -1039,10 +1468,14 @@ local __actions = {
 		end
 		if text then
 			actions.insertText(x, y, text)
-			setStatus('%d chars added', #text)
+			actions.info('%d chars added', #text)
 		else
-			setStatus('Clipboard empty')
+			actions.info('clipboard empty')
 		end
+	end,
+
+	paste_internal = function()
+		os.queueEvent('clipboard_paste')
 	end,
 
 	go_to = function(cx, cy)
@@ -1059,54 +1492,19 @@ local __actions = {
 	end,
 
 	scroll_down = function()
-		local nMaxScroll = #tLines - (h-1)
+		local nMaxScroll = #tLines - h
 		if scrollY < nMaxScroll then
 			scrollY = scrollY + 1
 			actions.dirty_all()
 		end
 		mark.continue = mark.active
 	end,
-}
 
-actions = __actions
+	redraw = function()
+		redraw()
+	end,
 
-load(sPath)
-term.setCursorBlink(true)
-redraw()
-
-while bRunning do
-	local sEvent, param, param2, param3 = os.pullEventRaw()
-	local action
-
-	if sEvent == 'terminate' then
-		action = 'exit'
-	elseif sEvent == 'multishell_focus' then -- opus only event
-		input:reset()
-	elseif sEvent == "mouse_click" or
-				 sEvent == 'mouse_drag' or
-				 sEvent == 'mouse_up' or
-				 sEvent == 'mouse_down' then
-		local ie = input:translate(sEvent, param, param2, param3)
-		if param3 < h or sEvent == 'mouse_drag' then
-			if ie.code then
-				action = keyMapping[ie.code]
-				param = param2 + scrollX
-				param2 = param3 + scrollY
-			end
-		end
-	else
-		local ie = input:translate(sEvent, param, param2)
-		if ie then
-			if ie.ch and #ie.ch == 1 then
-				action = keyMapping.char
-				param = ie.ch
-			else
-				action = keyMapping[ie.code]
-			end
-		end
-	end
-
-	if action then
+	process = function(action, ...)
 		if not actions[action] then
 			error('Invaid action: ' .. action)
 		end
@@ -1114,31 +1512,35 @@ while bRunning do
 		local wasMarking = mark.continue
 		mark.continue = false
 
-		actions[action](param, param2)
-		if action ~= 'menu' then
-			lastAction = action
-		end
+		-- for undo purposes, treat tab and enter as char actions
+		local a = (action == 'tab' or action == 'enter') and 'char' or action
+		undo.continue = a == undo.lastAction
+
+		actions[action](...)
+
+		undo.lastAction = a
 
 		if x ~= lastPos.x or y ~= lastPos.y then
-			actions.setCursor()
+			actions.set_cursor()
 		end
 		if not mark.continue and wasMarking then
 			actions.unmark()
 		end
 
-		redraw()
+		actions.redraw()
+	end,
+}
 
-	elseif sEvent == "term_resize" then
-		w,h = term.getSize()
-		actions.setCursor(x, y)
-		actions.dirty_all()
-		redraw()
-	end
+local args = { ... }
+local filename = args[1] and shell.resolve(args[1])
+if not (actions.load(filename) or actions.load(config.filename) or actions.load('untitled.txt')) then
+	error('Error opening file')
 end
 
--- Cleanup
-term.setBackgroundColor(colors.black)
-term.setTextColor(colors.white)
-term.clear()
-term.setCursorBlink(false)
-term.setCursorPos(1, 1)
+UI:setPage(page)
+local s, m = pcall(function() UI:start() end)
+if not s then
+	actions.save('/crash.txt')
+	print('Editor has crashed. File saved as /crash.txt')
+	error(m)
+end

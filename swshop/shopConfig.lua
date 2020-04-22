@@ -9,7 +9,6 @@ local os     = _G.os
 local wizardPage = UI.WizardPage {
 	title = 'Store Front',
 	index = 2,
-	backgroundColor = colors.cyan,
 	form = UI.Form {
 		x = 2, ex = -2, y = 1, ey = -2,
 		manualControls = true,
@@ -90,7 +89,6 @@ end
 local passwordPage = UI.WizardPage {
 	title = 'Krist Settings',
 	index = 3,
-	backgroundColor = colors.cyan,
 	form = UI.Form {
 		x = 2, ex = -2, y = 1, ey = -2,
 		manualControls = true,
@@ -112,7 +110,7 @@ local passwordPage = UI.WizardPage {
 		preview = UI.TextEntry {
 			formIndex = 4,
 			formLabel = 'Using address', formKey = 'address',
-			backgroundColor = colors.cyan,
+			backgroundColor = 'primary',
 			textColor = colors.yellow,
 			inactive = true,
 		},

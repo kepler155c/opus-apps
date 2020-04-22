@@ -122,7 +122,6 @@ function page:drawInfo(drive, textArea)
 		return isValid(drive) and fs.getFreeSpace(drive.getMountPath()) or 0
 	end
 
-	textArea:setCursorPos(1, 1)
 	textArea:print(string.format('Drive: %s%s%s\nLabel: %s%s%s\nUsed:  %s%s%s\nFree:  %s%s%s',
 		Ansi.yellow, drive.name, Ansi.reset,
 		isValid(drive) and Ansi.yellow or Ansi.orange, getLabel():sub(1, 10), Ansi.reset,
@@ -138,6 +137,7 @@ function page:scan()
 	self.copyButton.inactive = not valid
 
 	self:draw()
+	self.progress:clear()
 	self.progress:centeredWrite(1, 'Analyzing Disks..')
 	self.progress:sync()
 
@@ -167,6 +167,7 @@ function page:copy()
 		throttle()
 	end
 
+	self.progress:clear()
 	self.progress:centeredWrite(1, 'Computing..')
 	self.progress:sync()
 
@@ -211,6 +212,8 @@ function page:copy()
 	self.progress:clear()
 	rawCopy(sdrive.getMountPath(), tdrive.getMountPath())
 	cleanup()
+
+	self.progress:clear()
 	self.progress:centeredWrite(1, 'Copy Complete', colors.lime, colors.black)
 	self.progress:sync()
 
@@ -270,4 +273,4 @@ Event.onTimeout(.2, function()
 end)
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()

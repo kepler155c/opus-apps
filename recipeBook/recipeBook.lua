@@ -61,12 +61,12 @@ local page = UI.Page {
 		autospace = true,
 	},
 	add = UI.SlideOut {
-		backgroundColor = colors.cyan,
+		height = 9, y = -9,
 		titleBar = UI.TitleBar {
 			title = 'Add a new book',
 		},
 		form = UI.Form {
-			x = 2, ex = -2, y = 2, ey = -1,
+			y = 2,
 			[1] = UI.TextEntry {
 				formLabel = 'Name', formKey = 'name',
 						shadowText = 'Friendly name',
@@ -100,11 +100,10 @@ function page.info:draw()
 
 	self:clear()
 	if book then
-		self:setCursorPos(1, 1)
 		self:print(
-			string.format('Name:    %s%s%s\n', Ansi.yellow, book.name, Ansi.reset))
-		self:print(
-			string.format('Version: %s%s%s\n', Ansi.yellow, book.version, Ansi.reset))
+			string.format('Name:    %s%s%s\nVersion: %s%s%s\n',
+			Ansi.yellow, book.name, Ansi.reset,
+			Ansi.yellow, book.version, Ansi.reset))
 
 		self.button.text = book.enabled and 'Disable' or 'Enable'
 		self.button:draw()
@@ -173,11 +172,11 @@ function page:eventHandler(event)
 		self.info:draw()
 
 	elseif event.type == 'quit' then
-		UI:exitPullEvents()
+		UI:quit()
 	end
 
 	UI.Page.eventHandler(self, event)
 end
 
 UI:setPage(page)
-UI:pullEvents()
+UI:start()

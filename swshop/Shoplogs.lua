@@ -189,4 +189,4 @@ end)
 
 page.grid:loadTransactions()
 UI:setPage(page)
-UI:pullEvents()
+UI:start()

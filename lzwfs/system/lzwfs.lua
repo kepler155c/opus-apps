@@ -16,16 +16,19 @@ local config = Config.load('lzwfs', {
 local tab = UI.Tab {
 	tabTitle = 'Compression',
 	description = 'Disk compression',
+	[1] = UI.Window {
+		x = 2, y = 2, ex = -2, ey = 6,
+	},
 	label1 = UI.Text {
-		x = 2, y = 2,
+		x = 3, y = 3,
 		value = 'Enable compression',
 	},
 	checkbox = UI.Checkbox {
-		x = 20, y = 2,
+		x = 21, y = 3,
 		value = config.enabled
 	},
 	entry = UI.TextEntry {
-		x = 2, y = 4, ex = -2,
+		x = 3, y = 5 , ex = -3,
 		limit = 256,
 		shadowText = 'enter new path',
 		accelerators = {
@@ -34,7 +37,7 @@ local tab = UI.Tab {
 		help = 'add a new path',
 	},
 	grid = UI.Grid {
-		x = 2, ex = -2, y = 6, ey = -5,
+		x = 2, ex = -2, y = 8, ey = -5,
 		disableHeader = true,
 		columns = { { key = 'value' } },
 		autospace = true,
@@ -45,7 +48,7 @@ local tab = UI.Tab {
 		},
 	},
 	button = UI.Button {
-		x = -9, ex = -2, y = -3,
+		x = -8, ex = -2, y = -3,
 		text = 'Apply',
 		event = 'apply',
 	},

@@ -236,10 +236,7 @@ function substitutionPage.info:draw()
 	end
 
 	self:clear()
-	self:setCursorPos(1, 1)
-	self:print(' Replace ' .. inName .. '\n')
-	--self:print('         ' .. sub.id .. ':' .. sub.dmg .. '\n', nil, colors.yellow)
-	self:print(' With    ' .. outName)
+	self:print(' Replace ' .. inName .. '\n' .. ' With    ' .. outName)
 end
 
 function substitutionPage:enable()
@@ -536,7 +533,7 @@ local startPage = UI.Page {
 			event = 'setStartLevel',
 			cancelEvent = 'slide_hide',
 			text = UI.Text {
-				x = 5, y = 1, width = 20,
+				x = 5, y = 1, width = 10,
 				textColor = colors.gray,
 			},
 			textEntry = UI.TextEntry {
@@ -554,7 +551,7 @@ local startPage = UI.Page {
 			event = 'setStartBlock',
 			cancelEvent = 'slide_hide',
 			text = UI.Text {
-				x = 2, y = 1, width = 20,
+				x = 2, y = 1, width = 13,
 				textColor = colors.gray,
 			},
 			textEntry = UI.TextEntry {
@@ -727,8 +724,7 @@ function startPage:eventHandler(event)
 		Builder:begin()
 
 	elseif event.type == 'quit' then
-		UI.term:reset()
-		Event.exitPullEvents()
+		UI:quit()
 	end
 
 	return UI.Page.eventHandler(self, event)
@@ -772,5 +768,4 @@ UI:setPages({
 })
 
 UI:setPage('start')
-
-UI:pullEvents()
+UI:start()
