@@ -110,7 +110,7 @@ local passwordPage = UI.WizardPage {
 		preview = UI.TextEntry {
 			formIndex = 4,
 			formLabel = 'Using address', formKey = 'address',
-			backgroundColor = UI.colors.primary,
+			backgroundColor = 'primary',
 			textColor = colors.yellow,
 			inactive = true,
 		},

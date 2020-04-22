@@ -63,8 +63,8 @@ local page = UI.Page {
 			x = 1, ex = -13,
 			limit = 50,
 			shadowText = 'filter',
-			backgroundColor = UI.colors.primary,
-			backgroundFocusColor = UI.colors.primary,
+			backgroundColor = 'primary',
+			backgroundFocusColor = 'primary',
 			accelerators = {
 				[ 'enter' ] = 'eject',
 				[ 'up' ] = 'grid_up',

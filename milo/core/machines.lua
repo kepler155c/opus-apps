@@ -21,8 +21,8 @@ local networkPage = UI.Page {
 		y = -2, x = 1, ex = -9,
 		limit = 50,
 		shadowText = 'filter',
-		backgroundColor = UI.colors.primary,
-		backgroundFocusColor = UI.colors.primary,
+		backgroundColor = 'primary',
+		backgroundFocusColor = 'primary',
 	},
 	grid = UI.ScrollingGrid {
 		y = 2, ey = -3,
@@ -234,7 +234,7 @@ The settings will take effect immediately!]],
 		},
 	},
 	statusBar = UI.StatusBar {
-		backgroundColor = UI.colors.primary,
+		backgroundColor = 'primary',
 	},
 	notification = UI.Notification { },
 	filter = UI.SlideOut {
@@ -289,7 +289,7 @@ The settings will take effect immediately!]],
 			},
 		},
 		statusBar = UI.StatusBar {
-			backgroundColor = UI.colors.primary,
+			backgroundColor = 'primary',
 		},
 	},
 }

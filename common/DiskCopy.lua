@@ -137,6 +137,7 @@ function page:scan()
 	self.copyButton.inactive = not valid
 
 	self:draw()
+	self.progress:clear()
 	self.progress:centeredWrite(1, 'Analyzing Disks..')
 	self.progress:sync()
 
@@ -166,6 +167,7 @@ function page:copy()
 		throttle()
 	end
 
+	self.progress:clear()
 	self.progress:centeredWrite(1, 'Computing..')
 	self.progress:sync()
 
@@ -210,6 +212,8 @@ function page:copy()
 	self.progress:clear()
 	rawCopy(sdrive.getMountPath(), tdrive.getMountPath())
 	cleanup()
+
+	self.progress:clear()
 	self.progress:centeredWrite(1, 'Copy Complete', colors.lime, colors.black)
 	self.progress:sync()
 

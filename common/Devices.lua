@@ -3,7 +3,6 @@ local Event = require('opus.event')
 local UI    = require('opus.ui')
 local Util  = require('opus.util')
 
-local colors = _G.colors
 local peripheral = _G.peripheral
 
 --[[ -- PeripheralsPage  -- ]] --
@@ -16,6 +15,20 @@ local peripheralsPage = UI.Page {
 		},
 		sortColumn = 'type',
 		autospace = true,
+		enable = function(self)
+			local sides = peripheral.getNames()
+
+			Util.clear(self.values)
+			for _,side in pairs(sides) do
+				table.insert(self.values, {
+					type = peripheral.getType(side),
+					side = side
+				})
+			end
+			self:update()
+			self:adjustWidth()
+			UI.Grid.enable(self)
+		end,
 	},
 	statusBar = UI.StatusBar {
 		values = 'Select peripheral',
@@ -23,47 +36,30 @@ local peripheralsPage = UI.Page {
 	accelerators = {
 		[ 'control-q' ] = 'quit',
 	},
+	updatePeripherals = function(self)
+		if UI:getCurrentPage() == self then
+			self.grid:draw()
+			self:sync()
+		end
+	end,
+	eventHandler = function(self, event)
+		if event.type == 'quit' then
+			UI:quit()
+
+		elseif event.type == 'grid_select' then
+			UI:setPage('methods', event.selected)
+
+		end
+		return UI.Page.eventHandler(self, event)
+	end,
 }
-
-function peripheralsPage.grid:enable()
-	local sides = peripheral.getNames()
-
-	Util.clear(self.values)
-	for _,side in pairs(sides) do
-		table.insert(self.values, {
-			type = peripheral.getType(side),
-			side = side
-		})
-	end
-	self:update()
-	self:adjustWidth()
-	UI.Grid.enable(self)
-end
-
-function peripheralsPage:updatePeripherals()
-	if UI:getCurrentPage() == self then
-		self.grid:draw()
-		self:sync()
-	end
-end
-
-function peripheralsPage:eventHandler(event)
-	if event.type == 'quit' then
-		UI:quit()
-
-	elseif event.type == 'grid_select' then
-		UI:setPage('methods', event.selected)
-
-	end
-	return UI.Page.eventHandler(self, event)
-end
 
 --[[ -- MethodsPage  -- ]] --
 local methodsPage = UI.Page {
-	backgroundColor = colors.black,
 	doc = UI.TextArea {
-		backgroundColor = colors.black,
-		x = 2, y = 2, ex = -1, ey = -7,
+		backgroundColor = 'black',
+		ey = -7,
+		marginLeft = 1, marginTop = 1,
 	},
 	grid = UI.ScrollingGrid {
 		y = -6, ey = -2,

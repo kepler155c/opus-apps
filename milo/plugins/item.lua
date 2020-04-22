@@ -41,7 +41,6 @@ function page:eventHandler(event)
 
 	elseif event.type == 'focus_change' then
 		self.statusBar:setStatus(event.focused.help)
-		self.statusBar:draw()
 
 	elseif event.type == 'success_message' then
 		self.notification:success(event.message)

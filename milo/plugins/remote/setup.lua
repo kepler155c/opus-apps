@@ -50,7 +50,7 @@ local setup = UI.SlideOut {
 						[[also have an introspection module.]],
 	},
 	statusBar = UI.StatusBar {
-		backgroundColor = UI.colors.primary,
+		backgroundColor = 'primary',
 	},
 }
 

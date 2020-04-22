@@ -131,7 +131,7 @@ page = UI.Page {
 			columns = {
 				{ heading = '',          key = 'index', width = 2 },
 				{ heading = '',          key = 'count', width = 2 },
-				{ heading = 'Inventory', key = 'key',  width = UI.term.width - 7 },
+				{ heading = 'Inventory', key = 'key' },
 			},
 			disableHeader = true,
 			sortColumn = 'index',

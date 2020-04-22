@@ -35,6 +35,12 @@ neural.assertModules({
 	'plethora:introspection',
 })
 
+local caninimals = config.animals or { [ config.animal ] = true }
+local animals = { }
+for k in pairs(caninimals) do
+	animals[k] = { }
+end
+
 local fed = { }
 
 local function resupply()
@@ -49,10 +55,12 @@ local function resupply()
 			print('dispenser not found')
 			break
 		end
-		if math.abs(dispenser.x) <= 1 and math.abs(dispenser.z) <= 1 then
+		if math.abs(dispenser.x) <= 1.2 and math.abs(dispenser.z) <= 1.2 then
 			neural.lookAt({ x = dispenser.x, y = dispenser.y, z = dispenser.z })
 			for _ = 1, 8 do
-				neural.use(0, 'off')
+				if not neural.use(0, 'off') then
+					break
+				end
 				os.sleep(.2)
 				neural.getEquipment().suck(2, 64)
 			end
@@ -64,21 +72,22 @@ local function resupply()
 end
 
 local function breed(entity)
-	print('breeding')
-	entity.lastFed = os.clock()
-	fed[entity.id] = entity
+	print('breeding ' .. entity.name)
 
 	neural.walkTo(entity, WALK_SPEED, 1)
 	entity = neural.getMetaByID(entity.id)
 	if entity then
 		neural.lookAt(entity)
-		neural.use(1, 'off')
+		if neural.use(1, 'off') then
+			entity.lastFed = os.clock()
+			fed[entity.id] = entity
+		end
 		os.sleep(.1)
 	end
 end
 
 local function kill(entity)
-	print('killing')
+	print('killing ' .. entity.name)
 	neural.walkTo(entity, WALK_SPEED, (neural.fire or neural.shoot) and 2.5 or .5)
 	entity = neural.getMetaByID(entity.id)
 	if entity then
@@ -93,21 +102,28 @@ local function kill(entity)
 	end
 end
 
-local function getEntities()
-	local sheep = Array.filter(neural.sense(), function(entity)
-		if entity.name == 'Sheep' and entity.y > -.5 then
-			return true
-		end
-	end)
-	if #sheep > config.maxAdults then
-		return sheep
+local function shuffle(tbl)
+	for i = #tbl, 2, -1 do
+		local j = math.random(i)
+		tbl[i], tbl[j] = tbl[j], tbl[i]
 	end
+	return tbl
+end
 
-	return Map.filter(neural.sense(), function(entity)
-		if entity.name == config.animal and entity.y > -.5 then
-			return true
+local function getEntities()
+	return shuffle(Array.filter(neural.sense(), function(entity)
+		if animals[entity.name] then
+			if not animals[entity.name].height then
+				entity = neural.getMetaByID(entity.id)
+				if entity and not entity.isChild and entity.motionX == 0 and entity.motionZ == 0 then
+					animals[entity.name].height = entity.y
+					return true
+				end
+			elseif entity.y == animals[entity.name].height then
+				return true
+			end
 		end
-	end)
+	end))
 end
 
 local function getHungry(entities)
@@ -118,13 +134,25 @@ local function getHungry(entities)
 	end
 end
 
-local function randomEntity(entities)
-	local r = math.random(1, Map.size(entities))
-	local i = 1
+local function getCount(entities, name)
+	local c = 0
 	for _, v in pairs(entities) do
-		i = i + 1
-		if i > r then
-			return v
+		if v.name == name then
+			c = c + 1
+		end
+	end
+	print(name .. ' ' .. c)
+	return c
+end
+
+local function getKillable(entities)
+	print('map: ' .. Map.size(fed))
+	if Map.size(fed) > 1000 then
+		fed = { }
+	end
+	for name in pairs(animals) do
+		if getCount(entities, name) > config.maxAdults then
+			return Array.find(entities, 'name', name)
 		end
 	end
 end
@@ -133,9 +161,10 @@ while true do
 	resupply()
 
 	local entities = getEntities()
+	local killable = getKillable(entities)
 
-	if Map.size(entities) > config.maxAdults then
-		kill(randomEntity(entities))
+	if killable then
+		kill(killable)
 	else
 		local entity = getHungry(entities)
 		if entity then

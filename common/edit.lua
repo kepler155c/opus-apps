@@ -4,7 +4,6 @@ local fuzzy  = require('opus.fuzzy')
 local UI     = require('opus.ui')
 local Util   = require('opus.util')
 
-local colors     = _G.colors
 local device     = _G.device
 local fs         = _G.fs
 local multishell = _ENV.multishell
@@ -39,19 +38,25 @@ local undo      = { chain = { }, redo = { } }
 
 h = h - 1
 
+local bgColor = 'gray'
 local color = {
-	textColor    = '0',
-	keywordColor = '4',
-	commentColor = 'd',
-	stringColor  = 'e',
+	text    = '0',
+	keyword = '2',
+	comment = 'd',
+	string  = '1',
+	mark    = '8',
+	bg      = '7',
 }
 
 if not term.isColor() then
+	bgColor = 'black'
 	color = {
-		textColor    = '0',
-		keywordColor = '8',
-		commentColor = '8',
-		stringColor  = '8',
+		text    = '0',
+		keyword = '8',
+		comment = '8',
+		string  = '8',
+		mark    = '7',
+		bg      = 'f',
 	}
 end
 
@@ -161,7 +166,7 @@ local page = UI.Page {
 			} },
 		},
 		status = UI.Text {
-			textColor = colors.gray,
+			textColor = 'gray',
 			x = -9, width = 9,
 			align = 'right',
 		},
@@ -172,8 +177,6 @@ local page = UI.Page {
 		lineNo = UI.TextEntry {
 			x = 7, width = 7,
 			limit = 5,
-			backgroundFocusColor = colors.gray,
-			backgroundColor = colors.gray,
 			transform = 'number',
 			accelerators = {
 				[ 'enter' ] = 'accept',
@@ -200,9 +203,6 @@ local page = UI.Page {
 		search = UI.TextEntry {
 			x = 7, ex = -3,
 			limit = 512,
-			markBackgroundColor = colors.lightGray,
-			backgroundFocusColor = colors.gray,
-			backgroundColor = colors.gray,
 			accelerators = {
 				[ 'enter' ] = 'accept',
 			},
@@ -233,9 +233,6 @@ local page = UI.Page {
 		filename = UI.TextEntry {
 			x = 7, ex = -3,
 			limit = 512,
-			markBackgroundColor = colors.lightGray,
-			backgroundFocusColor = colors.gray,
-			backgroundColor = colors.gray,
 			accelerators = {
 				[ 'enter' ] = 'accept',
 			},
@@ -263,7 +260,7 @@ local page = UI.Page {
 		cancel = UI.Button {
 			x = 16,
 			text = 'Cancel',
-			backgroundColor = UI.colors.primary,
+			backgroundColor = 'primary',
 			event = 'question_cancel',
 		},
 		show = function(self, action)
@@ -355,7 +352,7 @@ local page = UI.Page {
 			disableHeader = true,
 			columns = {
 				{ key = 'name' },
-				{ key = 'dir', textColor = colors.lightGray },
+				{ key = 'dir', textColor = 'lightGray' },
 			},
 			accelerators = {
 				grid_select = 'accept',
@@ -453,9 +450,9 @@ local page = UI.Page {
 		cancel = UI.Button {
 			y = -1, x = -9,
 			text = 'Cancel',
-			backgroundColor = colors.black,
-			backgroundFocusColor = colors.black,
-			textColor = colors.lightGray,
+			backgroundColor = 'black',
+			backgroundFocusColor = 'black',
+			textColor = 'lightGray',
 			event = 'slide_hide',
 		},
 		show = function(self, values)
@@ -540,9 +537,9 @@ local page = UI.Page {
 		cancel = UI.Button {
 			y = -1, x = -9,
 			text = 'Cancel',
-			backgroundColor = colors.black,
-			backgroundFocusColor = colors.black,
-			textColor = colors.lightGray,
+			backgroundColor = 'black',
+			backgroundFocusColor = 'black',
+			textColor = 'lightGray',
 			event = 'slide_hide',
 		},
 		eventHandler = function(self, event)
@@ -562,7 +559,7 @@ local page = UI.Page {
 	},
 	editor = UI.Window {
 		y = 2,
-		backgroundColor = colors.black,
+		backgroundColor = bgColor,
 		transitionHint = 'slideRight',
 		cursorBlink = true,
 		focus = function(self)
@@ -687,15 +684,15 @@ local function writeHighlighted(sLine, ny, dy)
 	while #sLine > 0 do
 		sLine =
 			-- tryWrite(sLine, "^[%\26]", '7' ) or
-			tryWrite(sLine, "^%-%-%[%[.-%]%]", color.commentColor ) or
-			tryWrite(sLine, "^%-%-.*",         color.commentColor ) or
-			tryWrite(sLine, "^\".-[^\\]\"",    color.stringColor  ) or
-			tryWrite(sLine, "^\'.-[^\\]\'",    color.stringColor  ) or
-			tryWrite(sLine, "^%[%[.-%]%]",     color.stringColor  ) or
+			tryWrite(sLine, "^%-%-%[%[.-%]%]", color.comment ) or
+			tryWrite(sLine, "^%-%-.*",         color.comment ) or
+			tryWrite(sLine, "^\".-[^\\]\"",    color.string  ) or
+			tryWrite(sLine, "^\'.-[^\\]\'",    color.string  ) or
+			tryWrite(sLine, "^%[%[.-%]%]",     color.string  ) or
 			tryWrite(sLine, "^[%w_]+", function(match)
-				return keywords[match] and color.keywordColor or color.textColor
+				return keywords[match] and color.keyword or color.text
 			end) or
-			tryWrite(sLine, "^[^%w_]", color.textColor)
+			tryWrite(sLine, "^[^%w_]", color.text)
 	end
 
 	buffer.fg = _concat(buffer.fg) .. '7'
@@ -704,11 +701,11 @@ local function writeHighlighted(sLine, ny, dy)
 	if mark.active and ny >= mark.y and ny <= mark.ey then
 		local sx = ny == mark.y and mark.x or 1
 		local ex = ny == mark.ey and mark.ex or #buffer.text
-		buffer.bg = _rep('f', sx - 1) ..
-					_rep('7', ex - sx) ..
-					_rep('f', #buffer.text - ex + 1)
+		buffer.bg = _rep(color.bg, sx - 1) ..
+					_rep(color.mark, ex - sx) ..
+					_rep(color.bg, #buffer.text - ex + 1)
 	else
-		buffer.bg = _rep('f', #buffer.text)
+		buffer.bg = _rep(color.bg, #buffer.text)
 	end
 
 	page.editor:blit(1 - scrollX, dy, buffer.text, buffer.bg, buffer.fg)
@@ -860,7 +857,6 @@ actions = {
 				end
 				actions.go_to(nx, ny)
 				actions.mark_to(nx + #pattern, ny)
-				actions.go_to(nx, ny)
 				return
 			end
 			sx = 1

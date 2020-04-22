@@ -54,8 +54,8 @@ local page = UI.Page {
 			limit = 50,
 			shadowText = 'filter',
 			shadowTextColor = colors.gray,
-			backgroundColor = UI.colors.primary,
-			backgroundFocusColor = UI.colors.primary,
+			backgroundColor = 'primary',
+			backgroundFocusColor = 'primary',
 			accelerators = {
 				[ 'enter' ] = 'eject',
 				[ 'up' ] = 'grid_up',
@@ -66,7 +66,7 @@ local page = UI.Page {
 		storageStatus = UI.Text {
 			x = -17, ex = -10,
 			textColor = colors.lime,
-			backgroundColor = UI.colors.primary,
+			backgroundColor = 'primary',
 			value = '',
 		},
 		amount = UI.TextEntry {
