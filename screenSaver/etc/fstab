@@ -4,11 +4,11 @@ packages/screenSaver/savers/visualizer.lua urlfs https://raw.githubusercontent.c
 packages/screenSaver/savers/random.lua urlfs https://pastebin.com/raw/XXW0r5zt
 packages/screenSaver/savers/melting.lua urlfs http://pastebin.com/raw/raUv6Pap
 packages/screenSaver/savers/bubbles.lua urlfs https://pastebin.com/raw/JCR8YTww
-packages/screenSaver/savers/fire.lua urlfs https://pastebin.com/raw/4CY4AYj3
+#packages/screenSaver/savers/fire.lua urlfs https://pastebin.com/raw/4CY4AYj3
 packages/screenSaver/savers/rain.lua urlfs https://pastebin.com/raw/P86Hm99N
 packages/screenSaver/savers/snow.lua urlfs https://pastebin.com/raw/j1dwdLKw
 packages/screenSaver/savers/fireworks.lua urlfs https://pastebin.com/raw/Yn5sWt3f
 packages/screenSaver/savers/starfield.lua urlfs https://pastebin.com/raw/AQm9R6nT
-packages/screenSaver/savers/nyan.lua urlfs https://pastebin.com/raw/YJnT6Adu
+#packages/screenSaver/savers/nyan.lua urlfs https://pastebin.com/raw/YJnT6Adu
 packages/screenSaver/savers/bounce.lua urlfs https://pastebin.com/raw/WLrfdyNy
 packages/screenSaver/savers/antfarm.lua urlfs https://pastebin.com/raw/h9x3h7aw

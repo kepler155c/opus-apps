@@ -43,10 +43,6 @@ local page = UI.Page {
 
 			return row
 		end,
-		draw = function(self)
-			self:adjustWidth()
-			UI.Grid.draw(self)
-		end,
 	},
 	accelerators = {
 		f = 'filter',

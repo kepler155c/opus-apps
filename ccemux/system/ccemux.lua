@@ -46,6 +46,7 @@ local tab = UI.Tab {
 		columns = {
 			{ heading = 'Side', key = 'side', width = 8 },
 			{ heading = 'Type', key = 'type' },
+			{ heading = 'ID',   key = 'args', width = 4 },
 		},
 	},
 }
@@ -56,7 +57,7 @@ function tab:updatePeripherals(config)
 		table.insert(self.grid.values, {
 			side = k,
 			type = v.type,
-			args = v.args,
+			args = v.args and v.args.id,
 		})
 	end
 	self.grid:update()
@@ -83,7 +84,6 @@ function tab:eventHandler(event)
 			self:emit({ type = 'error_message', message = 'Invalid drive ID' })
 		else
 			ccemux.detach(event.values.side)
-			ccemux.attach(event.values.side, event.values.type)
 
 			local config = Config.load('ccemux')
 			config[event.values.side] = {
@@ -93,6 +93,9 @@ function tab:eventHandler(event)
 				config[event.values.side].args = {
 					id = event.values.drive_id
 				}
+				ccemux.attach(event.values.side, event.values.type, { id = event.values.drive_id })
+			else
+				ccemux.attach(event.values.side, event.values.type)
 			end
 			Config.update('ccemux', config)
 			self:updatePeripherals(config)

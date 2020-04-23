@@ -575,6 +575,10 @@ local page = UI.Page {
 			actions.dirty_all()
 			actions.redraw()
 		end,
+		setCursorPos = function(self, cx, cy)
+			self.cursorBlink = cy >= 1 and cy <= self.height
+			UI.Window.setCursorPos(self, cx, cy)
+		end,
 		draw = function()
 			actions.redraw()
 		end,
@@ -715,7 +719,7 @@ local function redraw()
 	if dirty.y > 0 then
 		for dy = 1, h do
 			local sLine = tLines[dy + scrollY]
-			if sLine ~= nil then
+			if sLine and #sLine > 0 then
 				if dy + scrollY >= dirty.y and dy + scrollY <= dirty.ey then
 					page.editor:clearLine(dy)
 					writeHighlighted(sLine, dy + scrollY, dy)

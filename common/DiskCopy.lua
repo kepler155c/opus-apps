@@ -94,7 +94,7 @@ function page:enable()
 	self.eject.value = config.eject
 	self.automatic.value = config.automatic
 
-	self.dir.x = math.floor((self.width / 2) - 3) + 1
+	self.dir:move(math.floor((self.width / 2) - 3) + 1, self.dir.y)
 
 	UI.Page.enable(self)
 end
@@ -218,7 +218,7 @@ function page:copy()
 	self.progress:sync()
 
 	self.progress.value = 0
-	self.progress:clear()
+--	self.progress:clear()
 
 	self:scan()
 
