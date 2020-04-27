@@ -9,7 +9,7 @@ if turtle then
 	local config = Config.load('gps')
 
 	local gpsTab = UI.Tab {
-		tabTitle = 'Home',
+		title = 'Home',
 		description = 'Turtle home location',
 		labelText = UI.Text {
 			x = 3, ex = -3, y = 2,

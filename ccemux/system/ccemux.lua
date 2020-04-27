@@ -6,7 +6,7 @@ local ccemux = _G.ccemux
 local sides = { 'bottom', 'top', 'back', 'front', 'right', 'left' }
 
 local tab = UI.Tab {
-	tabTitle = 'CCEmuX',
+	title = 'CCEmuX',
 	description = 'CCEmuX peripherals',
 	form = UI.Form {
 		x = 2, ex = -2, y = 2, ey = 5,

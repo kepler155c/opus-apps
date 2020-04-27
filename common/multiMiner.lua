@@ -308,7 +308,7 @@ local containerText = {
 }
 
 local containTab = UI.Tab {
-	tabTitle = 'Contain',
+	title = 'Contain',
 	button = UI.Button {
 		x = 2, y = 2,
 		text = 'Set corner',
@@ -321,7 +321,7 @@ local containTab = UI.Tab {
 }
 
 local blocksTab = UI.Tab {
-	tabTitle = 'Blocks',
+	title = 'Blocks',
 	grid = UI.ScrollingGrid {
 		y = 1,
 		columns = {
@@ -333,7 +333,7 @@ local blocksTab = UI.Tab {
 }
 
 local turtlesTab = UI.Tab {
-	tabTitle = 'Turtles',
+	title = 'Turtles',
 	grid = UI.ScrollingGrid {
 		y = 1,
 		values = pool,

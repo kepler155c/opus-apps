@@ -14,7 +14,7 @@ local config = Config.load('lzwfs', {
 })
 
 local tab = UI.Tab {
-	tabTitle = 'Compression',
+	title = 'Compression',
 	description = 'Disk compression',
 	[1] = UI.Window {
 		x = 2, y = 2, ex = -2, ey = 6,

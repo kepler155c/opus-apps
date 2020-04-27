@@ -172,7 +172,7 @@ function lib.recurse(fromPath, toPath, options, origin, top)
 			end
 		end
 		if mv then
-			if fs.list(toReal)() then -- to is NOT empty
+			if fs.exists(toPath) then -- to is NOT empty
 				return nil, "cannot move '" .. fromPath .. "' to '" .. toPath .. "': Directory not empty"
 			end
 			status(verbose, fromPath, toPath)

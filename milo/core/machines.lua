@@ -35,6 +35,36 @@ local networkPage = UI.Page {
 		},
 		sortColumn = 'displayName',
 		help = 'Select Node',
+		getDisplayValues = function(_, row)
+			row = Util.shallowCopy(row)
+			local t = { row.name:match(':(.+)_(%d+)$') }
+			if #t ~= 2 then
+				t = { row.name:match('(.+)_(%d+)$') }
+			end
+			if t and #t == 2 then
+				row.name, row.suffix = table.unpack(t)
+				row.name = row.name .. '_' .. row.suffix
+			end
+			row.displayName = row.displayName or row.name
+			return row
+		end,
+		getRowTextColor = function(self, row, selected)
+			if not device[row.name] then
+				return colors.red
+			end
+			if row.mtype == 'ignore' then
+				return colors.lightGray
+			end
+			return UI.Grid.getRowTextColor(self, row, selected)
+		end,
+		sortCompare = function(self, a, b)
+			if self.sortColumn == 'displayName' then
+				local an = a.displayName or a.name
+				local bn = b.displayName or b.name
+				return an:lower() < bn:lower()
+			end
+			return UI.Grid.sortCompare(self, a, b)
+		end,
 	},
 	remove = UI.Button {
 		y = -2, x = -4,
@@ -55,39 +85,6 @@ local networkPage = UI.Page {
 	}
 }
 
-function networkPage.grid:getDisplayValues(row)
-	row = Util.shallowCopy(row)
-	local t = { row.name:match(':(.+)_(%d+)$') }
-	if #t ~= 2 then
-		t = { row.name:match('(.+)_(%d+)$') }
-	end
-	if t and #t == 2 then
-		row.name, row.suffix = table.unpack(t)
-		row.name = row.name .. '_' .. row.suffix
-	end
-	row.displayName = row.displayName or row.name
-	return row
-end
-
-function networkPage.grid:getRowTextColor(row, selected)
-	if not device[row.name] then
-		return colors.red
-	end
-	if row.mtype == 'ignore' then
-		return colors.lightGray
-	end
-	return UI.Grid:getRowTextColor(row, selected)
-end
-
-function networkPage.grid:sortCompare(a, b)
-	if self.sortColumn == 'displayName' then
-		local an = a.displayName or a.name
-		local bn = b.displayName or b.name
-		return an:lower() < bn:lower()
-	end
-	return UI.Grid.sortCompare(self, a, b)
-end
-
 function networkPage:getList()
 	for _, v in pairs(device) do
 		if not context.storage.nodes[v.name] then
@@ -96,7 +93,7 @@ function networkPage:getList()
 				mtype = 'ignore',
 				category = 'ignore',
 			}
-			for _, page in pairs(nodeWizard.wizard.pages) do
+			for _, page in pairs(nodeWizard.wizard:getPages()) do
 				if page.isValidType and page:isValidType(node) then
 					context.storage.nodes[v.name] = node
 					break
@@ -191,46 +188,91 @@ nodeWizard = UI.Page {
 	titleBar = UI.TitleBar { title = 'Configure' },
 	wizard = UI.Wizard {
 		y = 2, ey = -2,
-		pages = {
-			general = UI.WizardPage {
-				index = 1,
-				form = UI.Form {
-					x = 2, ex = -2, y = 1, ey = 3,
-					manualControls = true,
-					[1] = UI.TextEntry {
-						formLabel = 'Name', formKey = 'displayName',
-						help = 'Set a friendly name',
-						limit = 64,
-					},
-					[2] = UI.Chooser {
-						width = 25,
-						formLabel = 'Type', formKey = 'mtype',
-						--nochoice = 'Storage',
-						help = 'Select type',
-					},
+		general = UI.WizardPage {
+			index = 1,
+			form = UI.Form {
+				x = 2, ex = -2, y = 1, ey = 3,
+				manualControls = true,
+				[1] = UI.TextEntry {
+					formLabel = 'Name', formKey = 'displayName',
+					help = 'Set a friendly name',
+					limit = 64,
 				},
-				grid = UI.ScrollingGrid {
-					y = 5, ey = -2, x = 2, ex = -2,
-					columns = {
-						{ heading = 'Slot', key = 'slot',        width = 4 },
-						{ heading = 'Name', key = 'displayName',           },
-						{ heading = 'Qty',  key = 'count'      , width = 3 },
-					},
-					sortColumn = 'slot',
-					help = 'Contents of inventory',
+				[2] = UI.Chooser {
+					width = 25,
+					formLabel = 'Type', formKey = 'mtype',
+					--nochoice = 'Storage',
+					help = 'Select type',
 				},
 			},
-			confirmation = UI.WizardPage {
-				title = 'Confirm changes',
-				index = 2,
-				notice = UI.TextArea {
-					x = 2, ex = -2, y = 2, ey = -2,
-					value =
+			grid = UI.ScrollingGrid {
+				y = 5, ey = -2, x = 2, ex = -2,
+				columns = {
+					{ heading = 'Slot', key = 'slot',        width = 4 },
+					{ heading = 'Name', key = 'displayName',           },
+					{ heading = 'Qty',  key = 'count'      , width = 3 },
+				},
+				sortColumn = 'slot',
+				help = 'Contents of inventory',
+			},
+			getDisplayValues = function(_, row)
+				row = Util.shallowCopy(row)
+				row.displayName = itemDB:getName(row)
+				return row
+			end,
+			enable = function(self)
+				UI.WizardPage.enable(self)
+				self:focusFirst()
+			end,
+			isValidFor = function()
+				return false
+			end,
+			showInventory = function(self, node)
+				local inventory
+
+				if device[node.name] and device[node.name].list then
+					pcall(function()
+						inventory = device[node.name].list()
+						for k,v in pairs(inventory) do
+							v.slot = k
+						end
+					end)
+				end
+
+				self.grid:setValues(inventory or { })
+			end,
+			validate = function(self)
+				if self.form:save() then
+					nodeWizard.node.category = Util.find(nodeWizard.choices, 'value', nodeWizard.node.mtype).category
+
+					nodeWizard.nodePages = { }
+					table.insert(nodeWizard.nodePages, nodeWizard.wizard.general)
+					for _, page in pairs(nodeWizard.wizard:getPages()) do
+						if not page.isValidFor or page:isValidFor(nodeWizard.node) then
+							table.insert(nodeWizard.nodePages, page)
+							if page.setNode then
+								page:setNode(nodeWizard.node)
+							end
+						end
+					end
+					table.insert(nodeWizard.nodePages, nodeWizard.wizard.confirmation)
+					return true
+				end
+			end,
+		},
+		confirmation = UI.WizardPage {
+			title = 'Confirm changes',
+			index = 2,
+			notice = UI.TextArea {
+				x = 2, ex = -2, y = 2, ey = -2,
+				value =
 [[Press accept to save the changes.
 
 The settings will take effect immediately!]],
-				},
 			},
+			isValidFor = function()
+				return false
+			end,
 		},
 	},
 	statusBar = UI.StatusBar {
@@ -255,6 +297,11 @@ The settings will take effect immediately!]],
 			accelerators = {
 				delete = 'remove_entry',
 			},
+			getDisplayValues = function(_, row)
+				row = Util.shallowCopy(row)
+				row.displayName = itemDB:getName(row)
+				return row
+			end,
 		},
 		remove = UI.Button {
 			x = -4, y = 4,
@@ -291,142 +338,75 @@ The settings will take effect immediately!]],
 		statusBar = UI.StatusBar {
 			backgroundColor = 'primary',
 		},
+		show = function(self, entry, callback, whitelistOnly)
+			self.entry = entry
+			self.callback = callback
+
+			if not self.entry.filter then
+				self.entry.filter = { }
+			end
+
+			self.form:setValues(entry)
+			self:resetGrid()
+
+			self.form[3].inactive = whitelistOnly
+
+			UI.SlideOut.show(self)
+			self:setFocus(self.form.scan)
+
+			Milo:pauseCrafting({ key = 'gridInUse', msg = 'Crafting paused' })
+		end,
+		hide = function(self)
+			UI.SlideOut.hide(self)
+			Milo:resumeCrafting({ key = 'gridInUse' })
+		end,
+		resetGrid = function(self)
+			local t = { }
+			for k in pairs(self.entry.filter) do
+				table.insert(t, itemDB:splitKey(k))
+			end
+			self.grid:setValues(t)
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'focus_change' then
+				self.statusBar:setStatus(event.focused.help)
+
+			elseif event.type == 'scan_turtle' then
+				local inventory = Milo:getTurtleInventory()
+				for _,item in pairs(inventory) do
+					self.entry.filter[itemDB:makeKey(item)] = true
+				end
+				self:resetGrid()
+				self.grid:update()
+				self.grid:draw()
+				Milo:emptyInventory()
+
+			elseif event.type == 'remove_entry' then
+				local row = self.grid:getSelected()
+				if row then
+					Util.removeByValue(self.grid.values, row)
+					self.grid:update()
+					self.grid:draw()
+				end
+
+			elseif event.type == 'save' then
+				self.form:save()
+				self.entry.filter = { }
+				for _,v in pairs(self.grid.values) do
+					self.entry.filter[itemDB:makeKey(v)] = true
+				end
+				self:hide()
+				self.callback()
+
+			elseif event.type == 'cancel' then
+				self:hide()
+			else
+				return UI.SlideOut.eventHandler(self, event)
+			end
+			return true
+		end,
 	},
 }
-
---[[ Filter slide out ]] --
-function nodeWizard.filter:show(entry, callback, whitelistOnly)
-	self.entry = entry
-	self.callback = callback
-
-	if not self.entry.filter then
-		self.entry.filter = { }
-	end
-
-	self.form:setValues(entry)
-	self:resetGrid()
-
-	self.form[3].inactive = whitelistOnly
-
-	UI.SlideOut.show(self)
-	self:setFocus(self.form.scan)
-
-	Milo:pauseCrafting({ key = 'gridInUse', msg = 'Crafting paused' })
-end
-
-function nodeWizard.filter:hide()
-	UI.SlideOut.hide(self)
-	Milo:resumeCrafting({ key = 'gridInUse' })
-end
-
-function nodeWizard.filter:resetGrid()
-	local t = { }
-	for k in pairs(self.entry.filter) do
-		table.insert(t, itemDB:splitKey(k))
-	end
-	self.grid:setValues(t)
-end
-
-function nodeWizard.filter.grid:getDisplayValues(row)
-	row = Util.shallowCopy(row)
-	row.displayName = itemDB:getName(row)
-	return row
-end
-
-function nodeWizard.filter:eventHandler(event)
-	if event.type == 'focus_change' then
-		self.statusBar:setStatus(event.focused.help)
-
-	elseif event.type == 'scan_turtle' then
-		local inventory = Milo:getTurtleInventory()
-		for _,item in pairs(inventory) do
-			self.entry.filter[itemDB:makeKey(item)] = true
-		end
-		self:resetGrid()
-		self.grid:update()
-		self.grid:draw()
-		Milo:emptyInventory()
-
-	elseif event.type == 'remove_entry' then
-		local row = self.grid:getSelected()
-		if row then
-			Util.removeByValue(self.grid.values, row)
-			self.grid:update()
-			self.grid:draw()
-		end
-
-	elseif event.type == 'save' then
-		self.form:save()
-		self.entry.filter = { }
-		for _,v in pairs(self.grid.values) do
-			self.entry.filter[itemDB:makeKey(v)] = true
-		end
-		self:hide()
-		self.callback()
-
-	elseif event.type == 'cancel' then
-		self:hide()
-
-	else
-		return UI.SlideOut.eventHandler(self, event)
-	end
-	return true
-end
-
---[[ General Page ]] --
-function nodeWizard.wizard.pages.general:enable()
-	UI.WizardPage.enable(self)
-	self:focusFirst()
-end
-
-function nodeWizard.wizard.pages.general:isValidFor()
-	return false
-end
-
-function nodeWizard.wizard.pages.general:showInventory(node)
-	local inventory
-
-	if device[node.name] and device[node.name].list then
-		pcall(function()
-			inventory = device[node.name].list()
-			for k,v in pairs(inventory) do
-				v.slot = k
-			end
-		end)
-	end
-
-	self.grid:setValues(inventory or { })
-end
-
-function nodeWizard.wizard.pages.general.grid:getDisplayValues(row)
-	row = Util.shallowCopy(row)
-	row.displayName = itemDB:getName(row)
-	return row
-end
-
-function nodeWizard.wizard.pages.general:validate()
-	if self.form:save() then
-		nodeWizard.node.category = Util.find(nodeWizard.choices, 'value', nodeWizard.node.mtype).category
-
-		nodeWizard.nodePages = { }
-		table.insert(nodeWizard.nodePages, nodeWizard.wizard.pages.general)
-		for _, page in pairs(nodeWizard.wizard.pages) do
-			if not page.isValidFor or page:isValidFor(nodeWizard.node) then
-				table.insert(nodeWizard.nodePages, page)
-				if page.setNode then
-					page:setNode(nodeWizard.node)
-				end
-			end
-		end
-		table.insert(nodeWizard.nodePages, nodeWizard.wizard.pages.confirmation)
-		return true
-	end
-end
-
---[[ Confirmation ]]--
-function nodeWizard.wizard.pages.confirmation:isValidFor()
-	return false
-end
 
 --[[ Wizard ]] --
 function nodeWizard:enable(node)
@@ -440,7 +420,7 @@ function nodeWizard:enable(node)
 		{ name = 'Ignore', value = 'ignore', category = 'ignore' },
 		{ name = 'Hidden', value = 'hidden', category = 'ignore', help = 'Do not show in list' },
 	}
-	for _, page in pairs(self.wizard.pages) do
+	for _, page in pairs(self.wizard:getPages()) do
 		if page.isValidType then
 			local choice = page:isValidType(self.node)
 			if choice and not Util.find(self.choices, 'value', choice.value) then
@@ -448,15 +428,15 @@ function nodeWizard:enable(node)
 			end
 		end
 	end
-	self.wizard.pages.general.form[1].shadowText = self.node.name
-	self.wizard.pages.general.form[2].choices = self.choices
-	self.wizard.pages.general.form:setValues(self.node)
+	self.wizard.general.form[1].shadowText = self.node.name
+	self.wizard.general.form[2].choices = self.choices
+	self.wizard.general.form:setValues(self.node)
 
-	self.wizard.pages.general:showInventory(self.node)
+	self.wizard.general:showInventory(self.node)
 
 	self.nodePages = { }
-	table.insert(self.nodePages, self.wizard.pages.general)
-	table.insert(self.nodePages, self.wizard.pages.confirmation)
+	table.insert(self.nodePages, self.wizard.general)
+	table.insert(self.nodePages, self.wizard.confirmation)
 
 	UI.Page.enable(self)
 end

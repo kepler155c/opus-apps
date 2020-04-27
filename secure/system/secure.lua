@@ -7,7 +7,7 @@ local config = Config.load('secure', {
 })
 
 local tab = UI.Tab {
-	tabTitle = 'Secure',
+	title = 'Secure',
 	description = 'Secure options',
 	[1] = UI.Window {
 		x = 2, y = 2, ex = -2, ey = 5,

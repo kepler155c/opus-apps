@@ -7,7 +7,7 @@ local Util   = require('opus.util')
 local context = Milo:getContext()
 
 local manageTab = UI.Tab {
-	tabTitle = 'Manage',
+	title = 'Manage',
 	index = 1,
 	form = UI.Form {
 		x = 1, ex = -1, ey = -1,

@@ -83,7 +83,7 @@ local function createPage(node)
 		parent = monitor,
 		tabs = UI.Tabs {
 			[1] = UI.Tab {
-				tabTitle = 'Overview',
+				title = 'Overview',
 				backgroundColor = colors.black,
 				noFill = true,
 				onlineLabel = UI.Text {
@@ -135,14 +135,14 @@ local function createPage(node)
 				},
 			},
 			[2] = UI.Tab {
-				tabTitle = 'Stats',
+				title = 'Stats',
 				noFill = true,
 				textArea = UI.TextArea {
 					y = 3,
 				},
 			},
 			[3] = UI.Tab {
-				tabTitle = 'Storage',
+				title = 'Storage',
 				noFill = true,
 				grid = UI.ScrollingGrid {
 					y = 2,
@@ -157,7 +157,7 @@ local function createPage(node)
 				},
 			},
 			[4] = UI.Tab {
-				tabTitle = 'Offline',
+				title = 'Offline',
 				noFill = true,
 				grid = UI.ScrollingGrid {
 					y = 2,
@@ -168,14 +168,14 @@ local function createPage(node)
 				},
 			},
 			[5] = UI.Tab {
-				tabTitle = 'Activity',
+				title = 'Activity',
 				noFill = true,
 				term = UI.Embedded {
 					--visible = true,
 				},
 			},
 			[6] = UI.Tab {
-				tabTitle = 'Tasks',
+				title = 'Tasks',
 				noFill = true,
 				grid = UI.ScrollingGrid {
 					y = 2,
@@ -449,7 +449,7 @@ Unlocked Slots : %d of %d (%d%%)
 	function page:eventHandler(event)
 		if event.type == 'tab_activate' then
 			local state = Milo:getState('statusState') or { }
-			state[node.name] = event.activated.tabTitle
+			state[node.name] = event.activated.title
 			Milo:setState('statusState', state)
 		end
 		return UI.Page.eventHandler(self, event)
@@ -472,7 +472,7 @@ Unlocked Slots : %d of %d (%d%%)
 	-- restore active tab
 	local tabState = Milo:getState('statusState') or { }
 	if tabState[node.name] then
-		page.tabs:selectTab(Util.find(page.tabs, 'tabTitle', tabState[node.name]))
+		page.tabs:selectTab(Util.find(page.tabs, 'title', tabState[node.name]))
 	end
 
 	return page

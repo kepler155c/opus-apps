@@ -23,7 +23,7 @@ local config = Config.load('Sensor')
 local page = UI.Page {
 	tabs = UI.Tabs {
 		listing = UI.Tab {
-			tabTitle = 'Listing',
+			title = 'Listing',
 			grid = UI.ScrollingGrid {
 				columns = {
 					{ heading = 'Name', key = 'displayName' },
@@ -35,7 +35,7 @@ local page = UI.Page {
 			},
 		},
 		summary = UI.Tab {
-			tabTitle = 'Summary',
+			title = 'Summary',
 			grid = UI.ScrollingGrid {
 				columns = {
 					{ heading = 'Name',  key = 'displayName' },
@@ -256,7 +256,7 @@ function page:eventHandler(event)
 		UI:quit()
 
 	elseif event.type == 'tab_activate' then
-		config.activeTab = event.activated.tabTitle
+		config.activeTab = event.activated.title
 		Config.update('Sensor', config)
 	end
 
@@ -264,7 +264,7 @@ function page:eventHandler(event)
 end
 
 if config.activeTab then
-	page.tabs:selectTab(Util.find(page.tabs.children, 'tabTitle', config.activeTab))
+	page.tabs:selectTab(Util.find(page.tabs.children, 'title', config.activeTab))
 end
 
 UI:setPage(page)

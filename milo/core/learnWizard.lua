@@ -1,33 +1,29 @@
 local Milo   = require('milo')
 local UI     = require('opus.ui')
 
-local turtle = _G.turtle
-
 local learnPage = UI.Page {
 	titleBar = UI.TitleBar { title = 'Learn Recipe' },
 	wizard = UI.Wizard {
 		y = 2, ey = -2,
-		pages = {
-			general = UI.WizardPage {
-				index = 1,
-				grid = UI.ScrollingGrid {
-					x = 2, ex = -2, y = 2, ey = -2,
-					disableHeader = true,
-					columns = {
-						{ heading = 'Name', key = 'name'},
-					},
-					sortColumn = 'name',
+		general = UI.WizardPage {
+			index = 1,
+			grid = UI.ScrollingGrid {
+				x = 2, ex = -2, y = 2, ey = -2,
+				disableHeader = true,
+				columns = {
+					{ heading = 'Name', key = 'name'},
 				},
-				accelerators = {
-					grid_select = 'nextView',
-				},
+				sortColumn = 'name',
+			},
+			accelerators = {
+				grid_select = 'nextView',
 			},
 		},
 	},
 	notification = UI.Notification { },
 }
 
-local general = learnPage.wizard.pages.general
+local general = learnPage.wizard.general
 
 function general:validate()
 	Milo:setState('learnType', self.grid:getSelected().value)
@@ -37,7 +33,7 @@ end
 function learnPage:enable()
 	local t = { }
 
-	for _, page in pairs(self.wizard.pages) do
+	for _, page in pairs(self.wizard:getPages()) do
 		if page.validFor then
 			t[page.validFor] = {
 				name = page.validFor,
@@ -63,7 +59,7 @@ function learnPage.wizard:getPage(index)
 	local pages = { }
 	table.insert(pages, general)
 	local selected = general.grid:getSelected()
-	for _, page in pairs(self.pages) do
+	for _, page in pairs(self:getPages()) do
 		if page.validFor and (not selected or selected.value == page.validFor) then
 			table.insert(pages, page)
 		end

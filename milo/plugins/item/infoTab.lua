@@ -2,7 +2,7 @@ local Ansi   = require('opus.ansi')
 local UI     = require('opus.ui')
 
 local infoTab = UI.Tab {
-	tabTitle = 'Info',
+	title = 'Info',
 	index = 4,
 	textArea = UI.TextArea {
 		x = 2, ex = -2, y = 2, ey = -2,

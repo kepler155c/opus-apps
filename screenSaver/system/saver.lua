@@ -7,7 +7,7 @@ local config = Config.load('saver', {
 })
 
 return UI.Tab {
-	tabTitle = 'Screen Saver',
+	title = 'Screen Saver',
 	description = 'Screen saver',
 	[1] = UI.Window {
 		x = 2, y = 2, ex = -2, ey = 5,

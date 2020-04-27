@@ -23,7 +23,7 @@ local page = UI.Page {
 	tabs = UI.Tabs {
 		y = 2, ey = -2,
 		inventory = UI.Tab {
-			tabTitle = 'Inventory',
+			title = 'Inventory',
 			grid = UI.ScrollingGrid {
 				y = 2, ey = -2,
 				columns = {
@@ -33,7 +33,7 @@ local page = UI.Page {
 			},
 		},
 		autostore = UI.Tab {
-			tabTitle = 'Deposit',
+			title = 'Deposit',
 			grid = UI.ScrollingGrid {
 				y = 2, ey = -2,
 				columns = {

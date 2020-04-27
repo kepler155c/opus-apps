@@ -4,7 +4,7 @@ local Milo   = require('milo')
 local UI     = require('opus.ui')
 
 local recipeTab = UI.Tab {
-	tabTitle = 'Recipe',
+	title = 'Recipe',
 	index = 2,
 	grid = UI.ScrollingGrid {
 		x = 2, ex = -2, y = 2, ey = -4,
