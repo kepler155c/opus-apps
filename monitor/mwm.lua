@@ -120,6 +120,9 @@ function Process:new(args)
 	self.window = window.create(self.container, 2, 3, args.width, args.height, true)
 	self.terminal = self.window
 
+	self.container.setBackgroundColor(colors.black)
+	self.container.clear()
+
 	self.container.canvas.parent = monitor.canvas
 	if not monitor.canvas.children then
 		monitor.canvas.children = { }

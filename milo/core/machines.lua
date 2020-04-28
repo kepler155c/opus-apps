@@ -214,12 +214,12 @@ nodeWizard = UI.Page {
 				},
 				sortColumn = 'slot',
 				help = 'Contents of inventory',
+				getDisplayValues = function(_, row)
+					row = Util.shallowCopy(row)
+					row.displayName = itemDB:getName(row)
+					return row
+				end,
 			},
-			getDisplayValues = function(_, row)
-				row = Util.shallowCopy(row)
-				row.displayName = itemDB:getName(row)
-				return row
-			end,
 			enable = function(self)
 				UI.WizardPage.enable(self)
 				self:focusFirst()

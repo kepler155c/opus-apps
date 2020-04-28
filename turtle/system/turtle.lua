@@ -1,7 +1,6 @@
 local Config = require('opus.config')
 local UI     = require('opus.ui')
 
-local colors = _G.colors
 local fs     = _G.fs
 local turtle = _G.turtle
 
@@ -11,9 +10,10 @@ if turtle then
 	local gpsTab = UI.Tab {
 		title = 'Home',
 		description = 'Turtle home location',
+		noFill = true,
 		labelText = UI.Text {
 			x = 3, ex = -3, y = 2,
-			textColor = colors.yellow,
+			textColor = 'yellow',
 			value = 'On restart, return to this location'
 		},
 		grid = UI.Grid {
