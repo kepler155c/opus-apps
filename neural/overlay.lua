@@ -2,6 +2,7 @@ local Terminal = require('opus.terminal')
 
 local colors = _G.colors
 local device = _G.device
+local kernel = _G.kernel
 
 --[[
 	Create a device for glasses
@@ -51,7 +52,8 @@ local map = {
 local xs, ys = 6 * scale, 9 * scale
 
 -- Position bottom left
-local group = canvas.addGroup({ x = 1, y = gh - (h * ys) - 10 })
+local pos = { x = 1, y = gh - (h * ys) - 10 }
+local group = canvas.addGroup(pos)
 
 for y = 1, h do
 	lines[y] = {
@@ -106,3 +108,9 @@ function device.glasses.setTextScale() end
 device.glasses.side = 'glasses'
 device.glasses.type = 'glasses'
 device.glasses.name = 'glasses'
+
+kernel.hook('glasses_click', function(_, eventData)
+	os.queueEvent('monitor_touch', 'glasses',
+		math.floor((eventData[2] - pos.x) / xs),
+		math.floor((eventData[3] - pos.y) / ys))
+end)
