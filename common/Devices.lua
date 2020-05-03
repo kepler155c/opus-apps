@@ -3,26 +3,26 @@ local Event = require('opus.event')
 local UI    = require('opus.ui')
 local Util  = require('opus.util')
 
-local peripheral = _G.peripheral
+local device = _G.device
 
 --[[ -- PeripheralsPage  -- ]] --
 local peripheralsPage = UI.Page {
 	grid = UI.ScrollingGrid {
 		ey = -2,
 		columns = {
+			--{ heading = 'Name', key = 'name' },
 			{ heading = 'Type', key = 'type' },
 			{ heading = 'Side', key = 'side' },
 		},
 		sortColumn = 'type',
 		autospace = true,
 		enable = function(self)
-			local sides = peripheral.getNames()
-
 			Util.clear(self.values)
-			for _,side in pairs(sides) do
+			for _,v  in pairs(device) do
 				table.insert(self.values, {
-					type = peripheral.getType(side),
-					side = side
+					type = v.type,
+					side = v.side,
+					name = v.name,
 				})
 			end
 			self:update()
@@ -75,48 +75,49 @@ local methodsPage = UI.Page {
 		[ 'control-q' ] = 'back',
 		backspace = 'back',
 	},
+	enable = function(self, p)
+		self.peripheral = p or self.peripheral
+
+		p = device[self.peripheral.name]
+		if p.getDocs then
+			-- plethora
+			self.grid.values = { }
+			for k,v in pairs(p.getDocs()) do
+				table.insert(self.grid.values, {
+					name = k,
+					doc = v,
+				})
+			end
+		elseif not p.getAdvancedMethodsData then
+			-- computercraft
+			self.grid.values = { }
+			for k,v in pairs(p) do
+				if type(v) == 'function' then
+					table.insert(self.grid.values, {
+						name = k,
+						noext = true,
+					})
+				end
+			end
+		else
+			-- open peripherals
+			self.grid.values = p.getAdvancedMethodsData()
+			for name,f in pairs(self.grid.values) do
+				f.name = name
+			end
+		end
+
+		self.grid:update()
+		self.grid:setIndex(1)
+
+		self.doc:setText(self:getDocumentation())
+
+		self.statusBar:setStatus(self.peripheral.type)
+		UI.Page.enable(self)
+
+		self:setFocus(self.grid)
+	end,
 }
-
-function methodsPage:enable(p)
-	self.peripheral = p or self.peripheral
-
-	p = peripheral.wrap(self.peripheral.side)
-	if p.getDocs then
-		-- plethora
-		self.grid.values = { }
-		for k,v in pairs(p.getDocs()) do
-			table.insert(self.grid.values, {
-				name = k,
-				doc = v,
-			})
-		end
-	elseif not p.getAdvancedMethodsData then
-		-- computercraft
-		self.grid.values = { }
-		for name in pairs(p) do
-			table.insert(self.grid.values, {
-				name = name,
-				noext = true,
-			})
-		end
-	else
-		-- open peripherals
-		self.grid.values = p.getAdvancedMethodsData()
-		for name,f in pairs(self.grid.values) do
-			f.name = name
-		end
-	end
-
-	self.grid:update()
-	self.grid:setIndex(1)
-
-	self.doc:setText(self:getDocumentation())
-
-	self.statusBar:setStatus(self.peripheral.type)
-	UI.Page.enable(self)
-
-	self:setFocus(self.grid)
-end
 
 function methodsPage:eventHandler(event)
 	if event.type == 'back' then

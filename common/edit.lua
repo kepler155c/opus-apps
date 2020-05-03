@@ -306,7 +306,7 @@ local page = UI.Page {
 			x = 2, y = 2, ey = -4, ex = -2,
 			columns = {
 				{ key = 'name', heading = 'Name' },
-				{ key = 'dir', heading = 'Directory' },
+				{ key = 'dir', heading = 'Directory', textColor = 'lightGray' },
 			},
 			accelerators = {
 				backspace = 'slide_hide',

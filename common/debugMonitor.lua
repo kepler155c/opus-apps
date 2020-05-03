@@ -1,11 +1,12 @@
 local Util = require('opus.util')
 
+local device     = _G.device
 local os         = _G.os
 local peripheral = _G.peripheral
 local term       = _G.term
 
 local args = { ... }
-local mon = args[1] and peripheral.wrap(args[1]) or
+local mon = args[1] and device[args[1]] or peripheral.wrap(args[1]) or
 	peripheral.find('monitor') or
 	error('Syntax: debug <monitor>')
 
