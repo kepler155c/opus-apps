@@ -363,9 +363,26 @@ function Storage:defrag(throttle)
 			end
 
 			local toMove = math.min(to.item.maxCount - to.item.count, from.item.count)
-			from.device.pushItems(to.device.name, from.slot, toMove, to.slot)
-			to.item.count = to.item.count + toMove
-			from.item.count = from.item.count - toMove
+			local s, m = pcall(function()
+				from.device.pushItems(to.device.name, from.slot, toMove, to.slot)
+			end)
+
+			if not s and m then
+				_G._syslog(m)
+			end
+
+			if s then
+				to.item.count = to.item.count + toMove
+				from.item.count = from.item.count - toMove
+			else
+				-- Do not try to send to the target again after it failed
+				for i = 2, #providers do
+					if to == providers[i] then
+						table.remove(providers, i)
+						break
+					end
+				end
+			end
 
 			if from.item.count <= 0 then
 				table.remove(providers, 1)
