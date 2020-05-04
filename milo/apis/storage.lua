@@ -378,7 +378,7 @@ function Storage:defrag(throttle)
 					to = providers[i]
 				elseif (to.lockedToThis == providers[i].lockedToThis) and providers[i].item.count < providers[i].item.maxCount then
 					to = providers[i]
-				else
+				elseif providers[i].item.count == providers[i].item.maxCount then
 					-- As this slot is already at maxCount, all the remaining ones will also be due to sorting
 					-- If any of the remaining providers is locked that doesn't matter. We wouldn't have been able to push there anyways
 					break
