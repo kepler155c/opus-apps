@@ -29,10 +29,13 @@ local wizardPage = UI.WizardPage {
 		[3] = UI.Checkbox {
 			formLabel = 'Single shop', formKey = 'refundInvalid',
 			help = 'Only this shop uses this domain',
-			limit = 64,
 		},
-		[4] = UI.Chooser {
-			formLabel = 'RS Signal', formKey = 'rsSide', formIndex = 5,
+		[4] = UI.Checkbox {
+			formLabel = 'Show out of stock', formKey = 'showOutOfStock',
+			help = 'Show out of stock items in red',
+		},
+		[5] = UI.Chooser {
+			formLabel = 'RS Signal', formKey = 'rsSide', formIndex = 6,
 			width = 10,
 			nochoice = 'Top',
 			choices = {
@@ -45,9 +48,9 @@ local wizardPage = UI.WizardPage {
 			},
 			required = true,
 		},
-		[5] = UI.Chooser {
+		[6] = UI.Chooser {
 			width = 9,
-			formIndex = 6,
+			formIndex = 7,
 			formLabel = 'Font Size', formKey = 'textScale',
 			nochoice = 'Small',
 			choices = {

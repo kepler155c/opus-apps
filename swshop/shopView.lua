@@ -49,15 +49,15 @@ local function createPage(node)
 	local page = UI.Page {
 		parent = monitor,
 		header = UI.Window {
-			backgroundColor = colors.cyan,
+			backgroundColor = 'primary',
 			ey = 3,
 		},
 		grid = UI.Grid {
 			y = 4, ey = -7,
 			headerHeight = 3,
-			headerBackgroundColor = colors.gray,
+			headerBackgroundColor = 'tertiary',
 			backgroundSelectedColor = colors.black,
-			unfocusedBackgroundSelectedColor = colors.gray,
+			unfocusedBackgroundSelectedColor = 'tertiary',
 			columns = {
 				{ heading = 'Stock',   key = 'count',     width = 6, align = 'right' },
 				{ heading = 'Name',    key = 'displayName' },
@@ -68,17 +68,17 @@ local function createPage(node)
 		},
 		footer = UI.Window {
 			y = -6,
-			backgroundColor = colors.gray,
+			backgroundColor = 'tertiary',
 			prevButton = UI.Button {
 				x = 2, y = 3, height = 3, width = 5,
 				event = 'previous',
-				backgroundColor = colors.lightGray,
+				backgroundColor = 'secondary',
 				text = ' \017 ',
 			},
 			nextButton = UI.Button {
 				x = -6, y = 3, height = 3, width = 5,
 				event = 'next',
-				backgroundColor = colors.lightGray,
+				backgroundColor = 'secondary',
 				text = ' \016 ',
 			},
 			info = UI.Window {
@@ -94,7 +94,7 @@ local function createPage(node)
 		if node.header then
 			self:centeredWrite(2, node.header, nil, colors.white)
 		end
-		self:write(self.width - 15, 3, 'powered by Milo', nil, colors.gray)
+		self:write(self.width - 15, 3, 'powered by Milo', nil, 'tertiary')
 	end
 
 	function page.footer.info:draw()
@@ -112,6 +112,9 @@ local function createPage(node)
 	end
 
 	function page.grid:getRowTextColor(row, selected)
+		if row.count < 1 then
+			return colors.red
+		end
 		if selected then
 			return colors.yellow
 		end
@@ -151,11 +154,11 @@ local function createPage(node)
 		local list = Milo:listItems()
 		self.grid.values = { }
 		for k,v in pairs(config) do
-			local item = list[k]
-			if item and item.count > 0 then
+			local item = list[k] or itemDB:get(k)
+			if item and (node.showOutOfStock or item.count > 0) then
 				table.insert(self.grid.values, {
 					displayName = item.displayName,
-					count = item.count,
+					count = item.count or 0,
 					name = v.name,
 					price = v.price,
 					info = v.info,
