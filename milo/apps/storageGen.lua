@@ -1,7 +1,3 @@
---[[
-	For initially setting up large amounts of storage chests.
-]]
-
 local UI         = require('opus.ui')
 local Util       = require('opus.util')
 local Peripheral = require('opus.peripheral')
@@ -72,10 +68,8 @@ local page = UI.Page {
 }
 
 function page:scan()
-	_syslog("Scanned")
-
 	self.storages = Util.filter(Peripheral.getList(), function(dev)
-		return not not dev.pushItems
+		return dev.pushItems
 	end)
 
 	local types = {}
@@ -90,11 +84,9 @@ function page:scan()
 end
 
 function page:saveConfig(path)
-	_syslog("Saving to "..path)
-
 	local config = Util.readTable(path) or {}
 	Util.each(self.storages, function(dev, name)
-		if self.typeGrid.values[dev.type] and self.typeGrid.values[dev.type].checked then
+		if self.typeGrid.values[dev.type] and self.typeGrid.values[dev.type].checked and not config[name] then
 			config[name] = {
 				name = name,
 				category = 'storage',
@@ -103,12 +95,13 @@ function page:saveConfig(path)
 		end
 	end)
 	Util.writeTable(path, config)
+
 	self.notification:success("Config saved to "..path)
 end
 
 function page:enable()
-	self:scan()
 	UI.Page.enable(self)
+	self:scan()
 end
 
 function page.typeGrid:getRowTextColor(row, selected)
@@ -116,7 +109,6 @@ function page.typeGrid:getRowTextColor(row, selected)
 end
 
 function page:eventHandler(event)
-	_syslog(event)
 	if event.type == "rescan" then
 		self:scan()
 
