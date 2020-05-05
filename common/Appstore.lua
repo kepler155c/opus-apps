@@ -27,9 +27,6 @@ local function unregisterApp(key)
 	end
 end
 
-local sandboxEnv = Util.shallowCopy(_ENV)
-setmetatable(sandboxEnv, { __index = _G })
-
 multishell.setTitle(multishell.getCurrent(), 'App Store')
 UI:configure('Appstore', ...)
 
@@ -60,7 +57,7 @@ local function downloadApp(app)
 end
 
 local function runApp(app, checkExists, ...)
-
+	local env = shell.makeEnv()
 	local path, fn
 	local args = { ... }
 
@@ -81,14 +78,14 @@ local function runApp(app, checkExists, ...)
 				error('Failed to download')
 			end
 
-			_G.setfenv(fn, sandboxEnv)
+			_G.setfenv(fn, env)
 			fn(table.unpack(args))
 		end
 	end
 
 	multishell.openTab({
 		title = app.name,
-		env = sandboxEnv,
+		env = env,
 		path = path,
 		fn = fn,
 		focused = true,

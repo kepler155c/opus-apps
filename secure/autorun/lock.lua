@@ -17,9 +17,6 @@ local config = Config.load('secure', {
 
 local timer = config.enabled and os.startTimer(config.timeout)
 
-local sandboxEnv = Util.shallowCopy(_ENV)
-setmetatable(sandboxEnv, { __index = _G })
-
 local function buildLockScreen()
     _G.requireInjector(_ENV)
 
@@ -81,7 +78,6 @@ local function showLockScreen()
         pinned = true,
         focused = true,
         title = 'Lock',
-        env = sandboxEnv,
     })
 end
 

@@ -12,7 +12,7 @@ local kernel     = _G.kernel
 local multishell = _ENV.multishell
 local shell      = _ENV.shell
 
-local sandbox = Util.shallowCopy(_ENV)
+local config = Config.load('nwm', { session = { } })
 
 -- TODO: figure out how to better define scaling
 local scale = .5
@@ -24,8 +24,6 @@ local events = {
 	glasses_drag = 'mouse_drag',
 	glasses_scroll = 'mouse_scroll',
 }
-
-local hookEvents = { 'glasses_click', 'glasses_up', 'glasses_drag', 'glasses_scroll' }
 
 local function hook(e, eventData)
 	local currentTab = kernel.getFocused()
@@ -61,19 +59,15 @@ local function hook(e, eventData)
 	return true
 end
 
-local config = Config.load('nwm', { session = { } })
+local hookEvents = Util.keys(events)
+kernel.hook(hookEvents, hook)
 
 local function run(args)
-	local window = Glasses.create('glasses', args.x, args.y, args.w, args.h)
-
-	local env = Util.shallowCopy(sandbox)
-	_G.requireInjector(env)
+	local window = Glasses.create(args)
 
 	multishell.openTab({
 		path = args.path,
 		args = args.args,
-		env = env,
-		focused = false,
 		hidden = true,
 		onDestroy = function()
 			Util.removeByValue(config.session, args)
@@ -84,66 +78,63 @@ local function run(args)
 	})
 end
 
-kernel.hook(hookEvents, hook)
-
 UI:setPage(UI.Page {
 	form = UI.Form {
 		values = {
-			x = 1, y = 25, w = 51, h = 19,
+			x = 1, y = 25, width = 51, height = 19,
+			opacity = 255,
 		},
-		path = UI.TextEntry {
-			y = 5,
-			formKey = 'path', formLabel = 'Run', required = true,
+		UI.TextEntry {
+			formKey = 'run', formLabel = 'Run', required = true,
 		},
-		args = UI.TextEntry {
-			y = 7,
-			formKey = 'args', formLabel = 'Args',
+		UI.Slider {
+			min = 0, max = 255,
+			formLabel = 'Opacity', formKey = 'opacity', formIndex = 3,
 		},
 		UI.Text {
-			x = 7, y = 5,
+			x = 10, y = 5,
 			textColor = 'yellow',
 			value = ' x       y'
 		},
-		wx = UI.TextEntry {
-			x = 7, y = 6, width = 7, limit = 3,
+		UI.TextEntry {
+			x = 10, y = 6, width = 7, limit = 3,
 			transform = 'number',
 			formKey = 'x', required = true,
 		},
-		wy = UI.TextEntry {
-			x = 15, y = 6, width = 7, limit = 4,
+		UI.TextEntry {
+			x = 18, y = 6, width = 7, limit = 4,
 			transform = 'number',
 			formKey = 'y', required = true,
 		},
 		UI.Text {
-			x = 7, y = 8,
+			x = 10, y = 8,
 			textColor = 'yellow',
 			value = ' width   height'
 		},
-		ww = UI.TextEntry {
-			x = 7, y = 9, width = 7, limit = 4,
+		UI.TextEntry {
+			x = 10, y = 9, width = 7, limit = 4,
 			transform = 'number',
-			formKey = 'w', required = true,
+			formKey = 'width', required = true,
 		},
-		wh = UI.TextEntry {
-			x = 15, y = 9, width = 7, limit = 4,
+		UI.TextEntry {
+			x = 18, y = 9, width = 7, limit = 4,
 			transform = 'number',
-			formKey = 'h', required = true,
+			formKey = 'height', required = true,
 		},
 	},
 	notification = UI.Notification { },
 	eventHandler = function(self, event)
 		if event.type == 'form_complete' then
-			local args = Util.shallowCopy(event.values)
-			args.path = shell.resolveProgram(args.path)
-			if not args.path then
+			local opts = Util.shallowCopy(event.values)
+			local words = Util.split(opts.run, '(.-) ')
+			opts.path = shell.resolveProgram(table.remove(words, 1))
+			if not opts.path then
 				self.notification:error('Invalid program')
 			else
-				if args.args then
-					args.args = Util.split(args.args, '(.-) ')
-				end
-				table.insert(config.session, args)
+				opts.args = #words > 0 and words
+				table.insert(config.session, opts)
 				Config.update('nwm', config)
-				run(args)
+				run(opts)
 				self.notification:success('Started program')
 			end
 		end
