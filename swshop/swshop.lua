@@ -45,7 +45,7 @@ local function getItemDetails(item)
 		t = textutils.unserialize(t)
 		for key, v in pairs(t) do
 			if v.name == item then
-				return key, tonumber(v.price)
+				return key, v
 			end
 		end
 	end
@@ -89,7 +89,9 @@ local function handleTransaction(transaction)
 		logTransaction(t, { refund = amount, reason = reason })
 	end
 
-	t.itemId, t.price = getItemDetails(metadata.name)
+	local id, item = getItemDetails(metadata.name)
+	t.itemId, t.price = id, tonumber(item.price)
+
 	if not t.itemId or not t.price then
 		print('invalid item')
 		logTransaction(t, { reason = 'invalid item' })
@@ -102,6 +104,15 @@ local function handleTransaction(transaction)
 	if value < t.price then
 		print('value too low')
 		return refundTransaction(value, "error=Please pay the price listed on-screen.")
+	end
+
+	if item.shares then
+		local amount = t.value - (t.value % t.price)
+		for _, share in pairs(item.shares) do
+			local cut = math.floor(amount * share.rate) -- Don't include fractional Krist
+			print("Sent shares of "..cut.." to "..share.address)
+			await(k.makeTransaction, privatekey, share.address, cut, share.meta)
+		end
 	end
 
 	local count = math.floor(value / t.price)
@@ -151,6 +162,12 @@ local function connect()
 		local transaction = data.transaction
 		handleTransaction(transaction)
 	end)
+
+	await(ws.subscribe, "keepalive", function(data)
+		local state = rs.getOutput(rsSide)
+		rs.setOutput(rsSide, not state)
+	end)
+
 	assert(success, "Failed to subscribe to event")
 end
 
