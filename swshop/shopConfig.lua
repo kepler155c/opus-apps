@@ -37,7 +37,6 @@ local wizardPage = UI.WizardPage {
 		[5] = UI.Chooser {
 			formLabel = 'RS Signal', formKey = 'rsSide', formIndex = 6,
 			width = 10,
-			nochoice = 'Top',
 			choices = {
 				{name = 'Bottom', value = 'bottom'},
 				{name = 'Top', value = 'top'},

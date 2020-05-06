@@ -155,7 +155,7 @@ local function createPage(node)
 		self.grid.values = { }
 		for k,v in pairs(config) do
 			local item = list[k] or itemDB:get(k)
-			if item and (node.showOutOfStock or item.count > 0) then
+			if item and (node.showOutOfStock or item.count or 0 > 0) then
 				table.insert(self.grid.values, {
 					displayName = item.displayName,
 					count = item.count or 0,
