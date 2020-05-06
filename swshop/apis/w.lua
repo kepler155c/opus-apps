@@ -31,8 +31,8 @@ end
 
 local function findID(url)
 	local found = gfind(url, idPatt)
-	local id = tonumber(found[#found]:sub(found[#found]:find("%d+")))
-	return id
+	if not found then return nil end
+	return tonumber(found[#found]:sub(found[#found]:find("%d+")))
 end
 
 local function newID()
@@ -71,57 +71,57 @@ function init(jua)
 	jua = jua
 	if async then
 		jua.on("websocket_success", function(event, url, handle)
-			local success, id = pcall(findID,url)
-			if success and id and callbackRegistry[id] and callbackRegistry[id].success then
+			local id = findID(url)
+			if id and callbackRegistry[id].success then
 				callbackRegistry[id].success(id, handle)
 			end
 		end)
 
 		jua.on("websocket_failure", function(event, url)
-			local success, id = pcall(findID,url)
-			if success and id and callbackRegistry[id] and callbackRegistry[id].failure then
+			local id = findID(url)
+			if id and callbackRegistry[id].failure then
 				callbackRegistry[id].failure(id)
 			end
 			table.remove(callbackRegistry, id)
 		end)
 
 		jua.on("websocket_message", function(event, url, data)
-			local success, id = pcall(findID,url)
-			if success and id and callbackRegistry[id] and callbackRegistry[id].message then
+			local id = findID(url)
+			if id and callbackRegistry[id].message then
 				callbackRegistry[id].message(id, data)
 			end
 		end)
 
 		jua.on("websocket_closed", function(event, url)
-			local success, id = pcall(findID,url)
-			if success and id and callbackRegistry[id] and callbackRegistry[id].closed then
+			local id = findID(url)
+			if id and callbackRegistry[id].closed then
 				callbackRegistry[id].closed(id)
 			end
 			table.remove(callbackRegistry, id)
 		end)
 	else
 		jua.on("socket_connect", function(event, id)
-			if id and callbackRegistry[id] and callbackRegistry[id].success then
+			if id and callbackRegistry[id].success then
 				callbackRegistry[id].success(id, wsRegistry[id])
 			end
 		end)
 
 		jua.on("socket_error", function(event, id, msg)
-			if id and callbackRegistry[id] and callbackRegistry[id].failure then
+			if id and callbackRegistry[id].failure then
 				callbackRegistry[id].failure(id, msg)
 			end
 			table.remove(callbackRegistry, id)
 		end)
 
 		jua.on("socket_message", function(event, id)
-			if id and callbackRegistry[id] and callbackRegistry[id].message then
+			if id and callbackRegistry[id].message then
 				local data = wsRegistry[id].read()
 				callbackRegistry[id].message(id, data)
 			end
 		end)
 
 		jua.on("socket_closed", function(event, id)
-			if id and callbackRegistry[id] and callbackRegistry[id].closed then
+			if id and callbackRegistry[id].closed then
 				callbackRegistry[id].closed(id)
 			end
 			table.remove(callbackRegistry, id)
