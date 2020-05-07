@@ -103,8 +103,8 @@ function Process:new(args)
 		uid    = nextUID(),
 		x      = args.x or 1,
 		y      = args.y or 1,
-		width  = args.width + 2,
-		height = args.height + 3,
+		width  = args.width,
+		height = args.height + 1,
 		path   = args.path,
 		args   = args.args  or { },
 		title  = args.title or 'shell',
@@ -117,7 +117,7 @@ function Process:new(args)
 	end
 
 	self.container = Terminal.window(monitor, self.x, self.y, self.width, self.height, true)
-	self.window = window.create(self.container, 2, 3, args.width, args.height, true)
+	self.window = window.create(self.container, 1, 2, args.width, args.height, true)
 	self.terminal = self.window
 
 	self.container.setBackgroundColor(colors.black)
@@ -153,62 +153,35 @@ function Process:new(args)
 	return self
 end
 
-function Process:focus(focused)
-	if focused then
-		self.container.setBackgroundColor(colors.yellow)
-	else
-		self.container.setBackgroundColor(colors.gray)
-	end
-	self.container.setTextColor(colors.black)
-	write(self.container, 2, 2, string.rep(' ', self.width - 2))
-	write(self.container, 3, 2, self.title)
-	write(self.container, self.width - 2, 2, '*')
+function Process:drawTitle(focused)
+	if self.showSizers and focused then
+		local sizers = '\25 \26 \24 \27'
 
-	if focused then
-		self.window.restoreCursor()
-	elseif self.showSizers then
-		self:drawSizers(false)
+		self.container.setBackgroundColor(colors.yellow)
+		self.container.setTextColor(colors.black)
+
+		write(self.container, 1, 1, string.rep(' ', self.width))
+		write(self.container, 2, 1, sizers)
+
+		local str = string.format('%d x %d', self.width, self.height - 1)
+		write(self.container, 10, 1, str)
+	else
+		if focused then
+			self.container.setBackgroundColor(colors.yellow)
+		else
+			self.container.setBackgroundColor(colors.lightGray)
+		end
+		self.container.setTextColor(colors.black)
+		write(self.container, 1, 1, string.rep(' ', self.width))
+		write(self.container, 2, 1, self.title)
 	end
+	write(self.container, self.width - 1, 1, '*')
 end
 
-function Process:drawSizers(showSizers)
-	local sizeChars = {
-		'\135', '\139', '\141', '\142'
-	}
-
-	if Util.getVersion() < 1.8 then
-		sizeChars = {
-			'#', '#', '#', '#'
-		}
-	end
-
-	self.showSizers = showSizers
-
-	self.container.setBackgroundColor(colors.black)
-	self.container.setTextColor(colors.white)
-
-	if self.showSizers then
-		write(self.container, 1, 1, sizeChars[1])
-		write(self.container, self.width, 1, sizeChars[2])
-		write(self.container, 1, self.height, sizeChars[3])
-		write(self.container, self.width, self.height, sizeChars[4])
-
-		self.container.setTextColor(colors.yellow)
-		write(self.container, 1, 3, '+')
-		write(self.container, 1, 5, '-')
-		write(self.container, 3, 1, '+')
-		write(self.container, 5, 1, '-')
-
-		local str = string.format('%d x %d', self.width - 2, self.height - 3)
-		write(self.container, (self.width - #str) / 2, 1, str)
-
-	else
-		write(self.container, 1, 1, string.rep(' ', self.width))
-		write(self.container, self.width, 1, ' ')
-		write(self.container, 1, self.height, ' ')
-		write(self.container, self.width, self.height, ' ')
-		write(self.container, 1, 3, ' ')
-		write(self.container, 1, 5, ' ')
+function Process:focus(focused)
+	self:drawTitle(focused)
+	if focused then
+		self.window.restoreCursor()
 	end
 end
 
@@ -227,48 +200,48 @@ function Process:reposition()
 	self.container.reposition(self.x, self.y, self.width, self.height)
 	self.container.setBackgroundColor(colors.black)
 	self.container.clear()
-	self.window.reposition(2, 3, self.width - 2, self.height - 3)
+	self.window.reposition(1, 2, self.width, self.height - 1)
 	if self.window ~= self.terminal then
-		self.terminal.reposition(1, 1, self.width - 2, self.height - 3)
+		self.terminal.reposition(1, 1, self.width, self.height - 1)
 	end
 	redraw()
 end
 
 function Process:click(x, y)
-	if y == 2 then -- title bar
-		if x == self.width - 2 then
+	if y == 1 then -- title bar
+		if x == self.width - 1 then
 			self:resume('terminate')
+		elseif not self.showSizers then
+			self.showSizers = not self.showSizers
+			self:drawTitle(true)
 		else
-			self:drawSizers(not self.showSizers)
+			self:resizeClick(x, y)
 		end
-
-	elseif x == 1 or y == 1 then -- sizers
-		self:resizeClick(x, y)
-
 	elseif x > 1 and x < self.width then
 		if self.showSizers then
-			self:drawSizers(false)
+			self.showSizers = false
+			self:drawTitle(true)
 		end
-		self:resume('mouse_click', 1, x - 1, y - 2)
-		self:resume('mouse_up',    1, x - 1, y - 2)
+		self:resume('mouse_click', 1, x, y - 1)
+		self:resume('mouse_up',    1, x, y - 1)
 	end
 end
 
-function Process:resizeClick(x, y)
-	if x == 1 and y == 3 then
+function Process:resizeClick(x)
+	if x == 2 then
 		self.height = self.height + 1
-	elseif x == 1 and y == 5 then
+	elseif x == 6 then
 		self.height = self.height - 1
-	elseif x == 3 and y == 1 then
+	elseif x == 4 then
 		self.width = self.width + 1
-	elseif x == 5 and y == 1 then
+	elseif x == 8 then
 		self.width = self.width - 1
 	else
 		return
 	end
 	self:reposition()
 	self:resume('term_resize')
-	self:drawSizers(true)
+	self:drawTitle(true)
 	multishell.saveSession(sessionFile)
 end
 
@@ -393,8 +366,8 @@ function multishell.saveSession(filename)
 			table.insert(t, {
 				x = process.x,
 				y = process.y,
-				width = process.width - 2,
-				height = process.height - 3,
+				width = process.width,
+				height = process.height - 1,
 				path = process.path,
 				args = process.args,
 			})
@@ -446,7 +419,7 @@ function multishell.start()
 					process.x = math.floor(x - (process.width) / 2)
 					process.y = y
 					process:reposition()
-					process:drawSizers(true)
+					process:drawTitle(true)
 					multishell.saveSession(sessionFile)
 				end
 			end
@@ -458,7 +431,7 @@ function multishell.start()
 			if not focused.isShell then
 				multishell.setFocus(1) -- shell is always 1
 			else
-				focused:resume(unpack(event))
+				focused:resume(table.unpack(event))
 			end
 
 		elseif event[1] == 'char' or
@@ -468,12 +441,12 @@ function multishell.start()
 
 			local focused = processes[#processes]
 			if focused then
-				focused:resume(unpack(event))
+				focused:resume(table.unpack(event))
 			end
 
 		else
 			for _,process in pairs(Util.shallowCopy(processes)) do
-				process:resume(unpack(event))
+				process:resume(table.unpack(event))
 			end
 		end
 

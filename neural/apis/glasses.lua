@@ -1,5 +1,8 @@
 --[[
 	Create a terminal compatible window for glasses canvas.
+
+	Note that the extended chars on glasses are not consistent with
+	the normal cc font.
 ]]
 
 local Terminal = require('opus.terminal')
@@ -47,9 +50,9 @@ function Glasses.create(args)
 		map[k] = v + opts.opacity
 	end
 
-	-- Position bottom left
 	local pos = { x = opts.x * xs, y = opts.y * ys }
 
+	-- create an entry for every char as the glasses font is not fixed width :(
 	local function init(group)
 		for y = 1, opts.height do
 			lines[y] = {
