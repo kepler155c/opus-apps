@@ -1,6 +1,9 @@
 --[[
 	A simplistic window manager for glasses.
-	TODO: support moving windows via mouse drag.
+
+	TODO:
+	opacity for text/background separately
+	support for specifying scale factor
 ]]
 
 local Config  = require('opus.config')
@@ -8,15 +11,17 @@ local Glasses = require('neural.glasses')
 local UI      = require('opus.ui')
 local Util    = require('opus.util')
 
+local fs         = _G.fs
 local kernel     = _G.kernel
 local multishell = _ENV.multishell
 local shell      = _ENV.shell
 
 local config = Config.load('nwm', { session = { } })
 
--- TODO: figure out how to better define scaling
+-- TODO: figure out how to better support scaling
 local scale = .5
 local xs, ys = 6 * scale, 9 * scale
+local dragging
 
 local events = {
 	glasses_click = 'mouse_click',
@@ -31,16 +36,39 @@ local function hook(e, eventData)
 	local y = math.floor(eventData[3] / ys)
 	local clickedTab
 
+	if dragging then
+		if e == 'glasses_up' then
+			dragging = nil
+		elseif e == 'glasses_drag' then
+			local dx = x - dragging.ax
+			local dy = y - dragging.ay
+			dragging.tab.window.move(dragging.wx + dx, dragging.wy + dy)
+			dragging.tab.titleBar.move(dragging.wx + dx, dragging.wy + dy - 1)
+
+			dragging.tab.wmargs.x = dragging.wx + dx
+			dragging.tab.wmargs.y = dragging.wy + dy
+			Config.update('nwm', config)
+		end
+		return
+	end
+
 	for _,tab in ipairs(kernel.routines) do
 		if tab.window.type == 'glasses' then
 			local wx, wy = tab.window.getPosition()
 			local ww, wh = tab.window.getSize()
 
-			if x >= wx and x <= wx + ww and y >= wy and y <= wy + wh then
+			if x >= wx and x <= wx + ww and y > wy and y < wy + wh then
 				clickedTab = tab
 				x = x - wx
 				y = y - wy
 				break
+			elseif e == 'glasses_click' and x >= wx and x <= wx + ww and y == wy then
+				if x == wx + ww - 1 then
+					multishell.terminate(tab.uid)
+				else
+					dragging = { tab = tab, ax = x, ay = y, wx = wx, wy = wy }
+				end
+				return
 			end
 		end
 	end
@@ -65,6 +93,18 @@ kernel.hook(hookEvents, hook)
 local function run(args)
 	local window = Glasses.create(args)
 
+	local titleBar = Glasses.create({
+		x = args.x,
+		y = args.y - 1,
+		height = 1,
+		width = args.width,
+		opacity = args.opacity,
+	})
+	titleBar.canvas:clear('yellow')
+	titleBar.canvas:write(1, 1, ' ' .. fs.getName(args.path), nil, 'black')
+	titleBar.canvas:write(args.width - 2, 1, ' x ', nil, 'black')
+	titleBar.redraw()
+
 	multishell.openTab({
 		path = args.path,
 		args = args.args,
@@ -73,8 +113,11 @@ local function run(args)
 			Util.removeByValue(config.session, args)
 			Config.update('nwm', config)
 			window.destroy()
+			titleBar.destroy()
 		end,
 		window = window,
+		titleBar = titleBar,
+		wmargs = args,
 	})
 end
 
@@ -90,6 +133,8 @@ UI:setPage(UI.Page {
 		UI.Slider {
 			min = 0, max = 255,
 			formLabel = 'Opacity', formKey = 'opacity', formIndex = 3,
+			labelWidth = 3,
+			transform = math.floor,
 		},
 		UI.Text {
 			x = 10, y = 5,
@@ -137,6 +182,9 @@ UI:setPage(UI.Page {
 				run(opts)
 				self.notification:success('Started program')
 			end
+
+		elseif event.type == 'form_cancel' then
+			UI:quit()
 		end
 		return UI.Page.eventHandler(self, event)
 	end,

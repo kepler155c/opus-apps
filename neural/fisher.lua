@@ -47,7 +47,7 @@ local fsm = machine.create({
 
 		-- state changes
 		onenterwait = function()
-			print('waitng for fishing rod to be selected')
+			print('waiting for fishing rod to be selected')
 			if icon then
 				icon.remove()
 				icon = canvas.addItem({ w - 20, h - 20 }, 'minecraft:fishing_rod' )

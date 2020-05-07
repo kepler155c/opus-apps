@@ -202,7 +202,6 @@ local page = UI.Page {
 		label = 'Find',
 		search = UI.TextEntry {
 			x = 7, ex = -3,
-			limit = 512,
 			accelerators = {
 				[ 'enter' ] = 'accept',
 			},
@@ -232,7 +231,6 @@ local page = UI.Page {
 		label = 'Save',
 		filename = UI.TextEntry {
 			x = 7, ex = -3,
-			limit = 512,
 			accelerators = {
 				[ 'enter' ] = 'accept',
 			},
@@ -339,7 +337,6 @@ local page = UI.Page {
 	quick_open = UI.SlideOut {
 		filter_entry = UI.TextEntry {
 			x = 2, y = 2, ex = -2,
-			limit = 256,
 			shadowText = 'File name',
 			accelerators = {
 				[ 'enter' ] = 'accept',

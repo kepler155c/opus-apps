@@ -6,12 +6,16 @@ local peripheral = _G.peripheral
 local term       = _G.term
 
 local args = { ... }
-local mon = args[1] and device[args[1]] or peripheral.wrap(args[1]) or
+local mon = not args[1] and term.current() or
+	device[args[1]] or
+	peripheral.wrap(args[1]) or
 	peripheral.find('monitor') or
 	error('Syntax: debug <monitor>')
 
 mon.clear()
-mon.setTextScale(.5)
+if mon.setTextScale then
+	mon.setTextScale(.5)
+end
 mon.setCursorPos(1, 1)
 
 local oldDebug = _G._syslog
@@ -26,7 +30,9 @@ repeat
 	local e, side = os.pullEventRaw('monitor_touch')
 	if e == 'monitor_touch' and side == mon.side then
 		mon.clear()
-		mon.setTextScale(.5)
+		if mon.setTextScale then
+			mon.setTextScale(.5)
+		end
 		mon.setCursorPos(1, 1)
 	end
 until e == 'terminate'

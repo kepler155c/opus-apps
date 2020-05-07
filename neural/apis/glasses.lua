@@ -5,7 +5,6 @@
 local Terminal = require('opus.terminal')
 local Util     = require('opus.util')
 
-local colors     = _G.colors
 local device     = _G.device
 
 local Glasses = { }
@@ -101,6 +100,13 @@ function Glasses.create(args)
 	end
 	function gterm.getTextScale()
 		return opts.scale
+	end
+	function gterm.move(x, y)
+		if opts.x ~= x or opts.y ~= y then
+			opts.x, opts.y = x, y
+			pos = { x = opts.x * xs, y = opts.y * ys }
+			group.setPosition(pos.x, pos.y)
+		end
 	end
 
 	gterm.name = opts.name

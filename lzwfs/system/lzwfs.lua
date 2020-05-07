@@ -29,7 +29,6 @@ local tab = UI.Tab {
 	},
 	entry = UI.TextEntry {
 		x = 3, y = 5 , ex = -3,
-		limit = 256,
 		shadowText = 'enter new path',
 		accelerators = {
 			enter = 'add_path',
