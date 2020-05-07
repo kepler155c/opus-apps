@@ -2,6 +2,10 @@ local GPS  = require('opus.gps')
 local Point = require('opus.point')
 local Util = require('opus.util')
 
+--[[
+	Record your movements for playback on another mob.
+]]
+
 local os         = _G.os
 local parallel   = _G.parallel
 local peripheral = _G.peripheral

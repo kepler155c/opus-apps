@@ -3,6 +3,11 @@ local Util       = require('opus.util')
 local Point      = require('opus.point')
 local Proxy      = require('core.proxy')
 
+--[[
+	Have a mob follow you. The mob's neural must have the
+	neural package installed.
+]]
+
 local os = _G.os
 
 local args = { ... }

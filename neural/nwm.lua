@@ -87,9 +87,6 @@ local function hook(e, eventData)
 	return true
 end
 
-local hookEvents = Util.keys(events)
-kernel.hook(hookEvents, hook)
-
 local function run(args)
 	local window = Glasses.create(args)
 
@@ -189,6 +186,9 @@ UI:setPage(UI.Page {
 		return UI.Page.eventHandler(self, event)
 	end,
 })
+
+local hookEvents = Util.keys(events)
+kernel.hook(hookEvents, hook)
 
 for _,v in pairs(config.session) do
 	run(v)

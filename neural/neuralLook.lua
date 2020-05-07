@@ -2,6 +2,11 @@ local Array   = require('opus.array')
 local neural  = require('neural.interface')
 local Point   = require('opus.point')
 
+--[[
+	Animate an armor stand or mob. Will just look
+	at anything that moves.
+]]
+
 local os = _G.os
 
 neural.assertModules({

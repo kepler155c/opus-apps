@@ -8,26 +8,12 @@
 local Terminal = require('opus.terminal')
 local Util     = require('opus.util')
 
-local device     = _G.device
+local device = _G.device
 
 local Glasses = { }
 
-function Glasses.create(args)
-	local opts = {
-		x = 1, y = 20,
-		width = 51, height = 19,
-		scale = .5,
-		name = 'glasses',
-		opacity = 0xff,
-	}
-	Util.merge(opts, args)
-
-	local xs, ys = 6 * opts.scale, 9 * opts.scale
-	local glasses = device['plethora:glasses']
-	local canvas = glasses.canvas()
-	local _, cy = 1, 1
-	local lines = { }
-	local map = {
+function Glasses.getPalette(opacity)
+	local pal = {
 		['0'] = 0xF0F0F000,
 		['1'] = 0xF2B23300,
 		['2'] = 0xE57FD800,
@@ -45,10 +31,30 @@ function Glasses.create(args)
 		['e'] = 0xCC4C4C00,
 		['f'] = 0x19191900,
 	}
-
-	for k,v in pairs(map) do
-		map[k] = v + opts.opacity
+	if opacity then
+		for k,v in pairs(pal) do
+			pal[k] = v + opacity
+		end
 	end
+	return pal
+end
+
+function Glasses.create(args)
+	local opts = {
+		x = 1, y = 20,
+		width = 51, height = 19,
+		scale = .5,
+		name = 'glasses',
+		opacity = 0xff,
+	}
+	Util.merge(opts, args)
+
+	local xs, ys = 6 * opts.scale, 9 * opts.scale
+	local glasses = device['plethora:glasses']
+	local canvas = glasses.canvas()
+	local _, cy = 1, 1
+	local lines = { }
+	local pal = Glasses.getPalette(opts.opacity)
 
 	local pos = { x = opts.x * xs, y = opts.y * ys }
 
@@ -77,8 +83,8 @@ function Glasses.create(args)
 		blit = function(text, fg, bg)
 			for x = 1, #text do
 				local ln = lines[cy]
-				ln.bg[x].setColor(map[bg:sub(x, x)])
-				ln.text[x].setColor(map[fg:sub(x, x)])
+				ln.bg[x].setColor(pal[bg:sub(x, x)])
+				ln.text[x].setColor(pal[fg:sub(x, x)])
 				ln.text[x].setText(text:sub(x, x))
 			end
 		end,
