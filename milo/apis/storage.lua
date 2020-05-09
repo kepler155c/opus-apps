@@ -327,7 +327,7 @@ function Storage:listProviders(throttle)
 			if not res[key] then
 				res[key] = {}
 			end
-			table.insert(res[key], {item = item, device = device[chest], lockedToThis = Util.contains(Util.keys(self.nodes[chest].lock or {}), key) and true or false, slot = slot})
+			table.insert(res[key], {item = item, device = device[chest], lockedToThis = (self.nodes[chest].lock or {})[key] or false, slot = slot})
 		end
 	end
 	return res
