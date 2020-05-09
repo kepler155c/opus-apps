@@ -374,9 +374,9 @@ function Storage:defrag(throttle)
 			-- are ruled out by the condition of the outer while loop
 			for i = 2, #providers do
 				-- Give preference to locked chests
-				if not to.lockedToThis and providers[i].lockedToThis then
+				if not (to and to.lockedToThis or false) and providers[i].lockedToThis then
 					to = providers[i]
-				elseif (to.lockedToThis == providers[i].lockedToThis) and providers[i].item.count < providers[i].item.maxCount then
+				elseif ((to and to.lockedToThis or false) == providers[i].lockedToThis) and providers[i].item.count < providers[i].item.maxCount then
 					to = providers[i]
 				elseif providers[i].item.count == providers[i].item.maxCount then
 					-- As this slot is already at maxCount, all the remaining ones will also be due to sorting
