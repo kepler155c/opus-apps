@@ -9,7 +9,7 @@ local fs         = _G.fs
 local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
-local term       = _G.term
+local term       = _G.term.current()
 local textutils  = _G.textutils
 
 local _format   = string.format
@@ -318,7 +318,7 @@ local page = UI.Page {
 		show = function(self)
 			local t = { }
 			for _,v in pairs(config.recent or { }) do
-				table.insert(t, { name = fs.getName(v), dir = fs.getDir(v), path = v })
+				_insert(t, { name = fs.getName(v), dir = fs.getDir(v), path = v })
 			end
 			self.grid:setValues(t)
 			self.grid:setIndex(1)
@@ -453,10 +453,9 @@ local page = UI.Page {
 			event = 'slide_hide',
 		},
 		show = function(self, values)
-			local m = 12
-			for _, v in pairs(values) do
-				m = #v.text > m and #v.text or m
-			end
+			local m = Util.reduce(values, function(m, v)
+				return #v.text > m and #v.text or m
+			end, 12)
 			m = m + 3
 			m = m > self.parent.width and self.parent.width or m
 			self.ox = -m
@@ -492,7 +491,9 @@ local page = UI.Page {
 			scan = function(self)
 				self.values = { }
 				for k, v in pairs(device) do
-					table.insert(self.values, { name = k, complete = 'peripheral.wrap("' .. v.side .. '")' })
+					if type(v.side) == 'string' then
+						_insert(self.values, { name = k, complete = 'peripheral.wrap("' .. v.side .. '")' })
+					end
 				end
 			end,
 			postInit = function(self)
@@ -519,7 +520,7 @@ local page = UI.Page {
 						for k, v in pairs(dev) do
 							if type(v) == 'function' then
 								local m = docs and docs[k] and docs[k]:match('^function%((.+)%).+')
-								table.insert(t, { method = k, complete = k .. '(' .. (m or '') .. ')' })
+								_insert(t, { method = k, complete = k .. '(' .. (m or '') .. ')' })
 							end
 						end
 					end)
@@ -648,9 +649,9 @@ local function getFileInfo(path)
 		config.recent = config.recent or { }
 
 		Array.removeByValue(config.recent, path)
-		table.insert(config.recent, 1, path)
+		_insert(config.recent, 1, path)
 		while #config.recent > 10 do
-			table.remove(config.recent)
+			_remove(config.recent)
 		end
 
 		Config.update('editor', config)
@@ -763,7 +764,7 @@ actions = {
 		local last = _remove(undo.chain)
 		if last then
 			undo.active = true
-			table.insert(undo.redo, { })
+			_insert(undo.redo, { })
 			for i = #last, 1, -1 do
 				local u = last[i]
 				actions[u.action](_unpack(u.args))
@@ -777,14 +778,14 @@ actions = {
 	undo_add = function(entry)
 		if undo.active then
 			local last = undo.redo[#undo.redo]
-			table.insert(last, entry)
+			_insert(last, entry)
 		else
 			if not undo.redo_active then
 				undo.redo = { }
 			end
 			local last = undo.chain[#undo.chain]
 			if last and undo.continue then
-				table.insert(last, entry)
+				_insert(last, entry)
 			else
 				_insert(undo.chain, { entry })
 			end

@@ -76,7 +76,7 @@ local function hook(e, eventData)
 	if clickedTab then
 		if clickedTab ~= currentTab then
 			clickedTab.window.raise()
-			multishell.setFocus(clickedTab.uid)
+			kernel.raise(clickedTab.uid)
 		end
 
 		kernel.event(events[e], {
@@ -88,8 +88,6 @@ local function hook(e, eventData)
 end
 
 local function run(args)
-	local window = Glasses.create(args)
-
 	local titleBar = Glasses.create({
 		x = args.x,
 		y = args.y - 1,
@@ -102,17 +100,17 @@ local function run(args)
 	titleBar.canvas:write(args.width - 2, 1, ' x ', nil, 'black')
 	titleBar.redraw()
 
-	multishell.openTab({
+	kernel.run({
 		path = args.path,
 		args = args.args,
 		hidden = true,
-		onDestroy = function()
+		onExit = function(self)
 			Util.removeByValue(config.session, args)
 			Config.update('nwm', config)
-			window.destroy()
+			self.window.destroy()
 			titleBar.destroy()
 		end,
-		window = window,
+		window = Glasses.create(args),
 		titleBar = titleBar,
 		wmargs = args,
 	})
