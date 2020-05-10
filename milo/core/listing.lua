@@ -33,6 +33,11 @@ local page = UI.Page {
 						event = 'rescan',
 						help = 'Rescan all inventories'
 					},
+					{
+						text = 'Defragment storage',
+						event = 'defrag',
+						help = 'Defragments the storage'
+					}
 				},
 			},
 		},
@@ -250,6 +255,10 @@ function page:eventHandler(event)
 		self.grid:draw()
 		self:setFocus(self.statusBar.filter)
 
+	elseif event.type == 'defrag' then
+		self:defrag()
+		self:refresh(true)
+
 	elseif event.type == 'toggle_display' then
 		displayMode = (displayMode + 1) % 2
 		Util.merge(event.button, displayModes[displayMode])
@@ -355,6 +364,15 @@ function page:refresh(force)
 	self.allItems = Milo:mergeResources(Milo:listItems(force, throttle))
 	self:applyFilter()
 	self.throttle:disable()
+end
+
+function page:defrag()
+	local throttle = function() self.throttle:update() end
+
+	self.throttle:enable()
+	local saved = context.storage:defrag(throttle)
+	self.throttle:disable()
+	self:notifyInfo(("Saved %d slots"):format(saved))
 end
 
 function page:applyFilter()

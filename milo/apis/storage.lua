@@ -291,6 +291,134 @@ function Storage:listItems(throttle)
 	return self.cache
 end
 
+-- provide a raw list of all the items in all storage chests
+-- it might be beneficial to move this to the adapter class at some point and cache the raw item list in this class at some point
+function Storage:listItemsRaw(throttle)
+	local res = {}
+
+	throttle = throttle or Util.throttle()
+
+	for _, v in pairs(self.nodes) do
+		if v.category == "storage" then
+			local chest = device[v.name]
+			local items = chest.list()
+
+			for slot, item in pairs(items) do
+				items[slot] = itemDB:get(item, function() return chest.getItemMeta(slot) end)
+			end
+
+			res[v.name] = items
+			throttle()
+		end
+	end
+
+	return res
+end
+
+-- provide a list of items and which chests provide them
+function Storage:listProviders(throttle)
+	local res = {}
+
+	local rawItems = self:listItemsRaw(throttle)
+
+	for chest, items in pairs(rawItems) do
+		for slot, item in pairs(items) do
+			local key = table.concat({item.name, item.damage, item.nbtHash}, ":")
+			if not res[key] then
+				res[key] = {}
+			end
+			table.insert(res[key], {item = item, device = device[chest], lockedToThis = (self.nodes[chest].lock or {})[key] or false, slot = slot})
+		end
+	end
+	return res
+end
+
+-- defrags the storage system
+function Storage:defrag(throttle)
+	local items = self:listProviders(throttle)
+	local slotsSaved = 0
+
+	-- This will make sure the table is sorted in the following order:
+	-- Unlocked stacks with less than maxCount items | Locked stacks with less than maxCount items | stacks with more than maxCount items
+	-- This way the locked stacks will be filled first
+	local function sortFunction(a, b)
+		local preferenceA, preferenceB
+		preferenceA = (a.item.count == a.item.maxCount and 3)
+									or (a.lockedToThis and 2)
+									or 1
+		preferenceB = (b.item.count == b.item.maxCount and 3)
+									or (b.lockedToThis and 2)
+									or 1
+
+		if preferenceA < preferenceB then
+			return true
+		elseif preferenceB > preferenceA then
+			return false
+		else
+			return a.item.count < b.item.count
+		end
+	end
+
+	for _, providers in pairs(items) do
+		table.sort(providers, sortFunction)
+
+		-- We're done when we either compressed the stacks so far, that there's only one left (#providers == 1)
+		-- Or when we've compressed so far, that the there's only one stack which has a lower count than the maxCount
+		-- Because of the sorting, we know that this will be the stack in providers[1], so we check if providers[2] is at the maxCount
+		while #providers > 1 and providers[2].item.count ~= providers[2].item.maxCount do
+			local from = providers[1]
+			local to
+
+			-- We're pushing to the highest stack which is still below the maxCount, this way as many slots as possible will be filled
+			-- This loop is guarenteed to assign a value to "to", as the only cases where it wouldn't (#providers == 1 or no provider with less than maxCount)
+			-- are ruled out by the condition of the outer while loop
+			for i = 2, #providers do
+				-- Give preference to locked chests
+				if not (to and to.lockedToThis or false) and providers[i].lockedToThis then
+					to = providers[i]
+				elseif ((to and to.lockedToThis or false) == providers[i].lockedToThis) and providers[i].item.count < providers[i].item.maxCount then
+					to = providers[i]
+				elseif providers[i].item.count == providers[i].item.maxCount then
+					-- As this slot is already at maxCount, all the remaining ones will also be due to sorting
+					-- If any of the remaining providers is locked that doesn't matter. We wouldn't have been able to push there anyways
+					break
+				end
+			end
+
+			local toMove = math.min(to.item.maxCount - to.item.count, from.item.count)
+			local s, m = pcall(function()
+				from.device.pushItems(to.device.name, from.slot, toMove, to.slot)
+			end)
+
+			if not s and m then
+				_G._syslog(m)
+			end
+
+			if s then
+				to.item.count = to.item.count + toMove
+				from.item.count = from.item.count - toMove
+			else
+				-- Do not try to send to the target again after it failed
+				for i = 2, #providers do
+					if to == providers[i] then
+						table.remove(providers, i)
+						break
+					end
+				end
+			end
+
+			if from.item.count <= 0 then
+				table.remove(providers, 1)
+				slotsSaved = slotsSaved + 1
+			end
+
+			table.sort(providers, sortFunction)
+		end
+	end
+
+	return slotsSaved
+end
+
 function Storage:updateCache(adapter, item, count)
 	if not adapter.cache then
 		adapter.dirty = true
