@@ -23,7 +23,7 @@ local colours = _G.colors
 
 local args, options = Util.parse(...)
 
-local oldTerm, showInput, skipLast, lastDelay, curInput = Util.shallowCopy(multishell.term), false, false, 2, ""
+local oldTerm, showInput, skipLast, lastDelay, curInput = Util.shallowCopy(_G.device.terminal), false, false, 2, ""
 local curBlink, oldBlink, tTerm, buffer, colourNum, xPos, yPos, oldXPos, oldYPos, tCol, bCol, xSize, ySize = false, false, {}, {}, {}, 1, 1, 1, 1, colours.white, colours.black, oldTerm.getSize()
 local greys, buttons = {["0"] = true, ["7"] = true, ["8"] = true, ["f"] = true}, {"l", "r", "m"}
 local charW, charH, chars
@@ -60,7 +60,7 @@ if options.help then
 end
 
 if options.daemon then
-	device.keyboard.addHotkey('control-P', function()
+	_G.device.keyboard.addHotkey('control-P', function()
 		multishell.openTab({
 			path = 'sys/apps/shell.lua',
 			args = { arg[0], '--noResize', '--rawOutput', 'recorder.gif' },
@@ -141,7 +141,7 @@ end
 
 -- Build a terminal that records stuff:
 
-local recTerm = multishell.term
+local recTerm = _G.device.terminal
 
 for key, func in pairs(oldTerm) do
 	if type(func) == 'function' then
@@ -153,7 +153,7 @@ for key, func in pairs(oldTerm) do
 			end
 			callCount = callCount + 1
 			curCalls[callCount] = { key, ... }
-			return unpack(result)
+			return table.unpack(result)
 		end
 	end
 end
@@ -196,7 +196,7 @@ end
 _G.device.keyboard.removeHotkey('control-p')
 
 for k,fn in pairs(oldTerm) do
-	multishell.term[k] = fn
+	_G.device.terminal[k] = fn
 end
 
 multishell.unhideTab(tabId)

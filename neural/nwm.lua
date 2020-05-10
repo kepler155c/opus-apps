@@ -31,10 +31,10 @@ local events = {
 }
 
 local function hook(e, eventData)
-	local currentTab = kernel.getFocused()
+	local current = kernel.getFocused()
 	local x = math.floor(eventData[2] / xs)
 	local y = math.floor(eventData[3] / ys)
-	local clickedTab
+	local clicked
 
 	if dragging then
 		if e == 'glasses_up' then
@@ -58,7 +58,7 @@ local function hook(e, eventData)
 			local ww, wh = tab.window.getSize()
 
 			if x >= wx and x <= wx + ww and y > wy and y < wy + wh then
-				clickedTab = tab
+				clicked = tab
 				x = x - wx
 				y = y - wy
 				break
@@ -73,14 +73,14 @@ local function hook(e, eventData)
 		end
 	end
 
-	if clickedTab then
-		if clickedTab ~= currentTab then
-			clickedTab.window.raise()
-			kernel.raise(clickedTab.uid)
+	if clicked then
+		if clicked ~= current then
+			clicked.window.raise()
+			kernel.raise(clicked.uid)
 		end
 
 		kernel.event(events[e], {
-			eventData[1], x, y, clickedTab.window.side,
+			eventData[1], x, y, clicked.window.side,
 		})
 
 	end
@@ -104,6 +104,7 @@ local function run(args)
 		path = args.path,
 		args = args.args,
 		hidden = true,
+		title = fs.getName(args.path),
 		onExit = function(self)
 			Util.removeByValue(config.session, args)
 			Config.update('nwm', config)

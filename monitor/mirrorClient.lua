@@ -2,7 +2,6 @@ local Event    = require('opus.event')
 local Socket   = require('opus.socket')
 local Util     = require('opus.util')
 
-local multishell = _ENV.multishell
 local os         = _G.os
 
 local remoteId
@@ -23,7 +22,7 @@ local function wrapTerm(socket)
 										'setTextColor', 'setTextColour', 'setBackgroundColor',
 										'setBackgroundColour', 'scroll', 'setCursorBlink', }
 
-	socket.term = multishell.term
+	socket.term = _G.device.terminal
 	socket.oldTerm = Util.shallowCopy(socket.term)
 
 	for _,k in pairs(methods) do

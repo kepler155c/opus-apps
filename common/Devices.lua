@@ -132,7 +132,7 @@ end
 function methodsPage:getDocumentation()
 	local method = self.grid:getSelected()
 
-	if method.noext then    -- computercraft docs
+	if not method or method.noext then    -- computercraft docs
 		return 'No documentation'
 	end
 
