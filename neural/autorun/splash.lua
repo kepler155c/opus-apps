@@ -50,7 +50,7 @@ local function update()
 	end
 end
 
-kernel.run({
+kernel.run(_ENV, {
 	hidden = true,
 	fn = update,
 })

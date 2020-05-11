@@ -1,7 +1,4 @@
 local function summon(id)
-
-  _G.requireInjector(_ENV)
-
   local GPS    = require('opus.gps')
   local Point  = require('opus.point')
   local Socket = require('opus.socket')

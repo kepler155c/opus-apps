@@ -31,7 +31,7 @@ local function showScreenSaver()
 
     local w, h = kernel.terminal.getSize()
     local win = window.create(kernel.terminal, 1, 1, w, h, true)
-    saverUid = multishell.openTab({
+    saverUid = multishell.openTab(_ENV, {
         path = saver,
         focused = true,
         title = 'Saver',

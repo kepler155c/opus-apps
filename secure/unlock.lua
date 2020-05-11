@@ -16,15 +16,15 @@ term.setCursorPos(1, 1)
 term.clear()
 
 repeat
-    local s, m = pcall(function()
-        local password = Terminal.readPassword('Enter password: ')
+	local s, m = pcall(function()
+		local password = Terminal.readPassword('Enter password: ')
 
-        if password and Security.verifyPassword(SHA.compute(password)) then
-            return true
-        end
-        error('Invalid password')
-    end)
-    if not s and m then
-        _G.printError(m)
-    end
+		if password and Security.verifyPassword(SHA.compute(password)) then
+			return true
+		end
+		error('Invalid password')
+	end)
+	if not s and m then
+		_G.printError(m)
+	end
 until s

@@ -57,7 +57,7 @@ local function downloadApp(app)
 end
 
 local function runApp(app, checkExists, ...)
-	local env = shell.makeEnv()
+	local env = shell.makeEnv(_ENV)
 	local path, fn
 	local args = { ... }
 
@@ -83,9 +83,8 @@ local function runApp(app, checkExists, ...)
 		end
 	end
 
-	multishell.openTab({
+	multishell.openTab(_ENV, {
 		title = app.name,
-		env = env,
 		path = path,
 		fn = fn,
 		focused = true,

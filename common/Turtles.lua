@@ -223,7 +223,7 @@ page = UI.Page {
 				fn = 'turtle.turnRight',
 			},
 			info = UI.TextArea {
-				x = 15, y = 2,
+				x = 15, y = 1,
 				inactive = true,
 			},
 			showBlocks = function(self)
@@ -240,13 +240,13 @@ page = UI.Page {
 					return string.format('%s\n%s\n%s', bu, bf, bd)
 				]]
 
-				local s, m = self:runFunction(script, true)
+				local s, m = page:runFunction(script, true)
 				self.info:setText(s or m)
 			end,
 			eventHandler = function(self, event)
 				if event.type == 'button_press' then
 					if event.button.fn then
-						self:runFunction(event.button.fn, event.button.nowrap)
+						page:runFunction(event.button.fn, event.button.nowrap)
 						self:showBlocks()
 					end
 					return true

@@ -11,10 +11,11 @@ local Glasses = require('neural.glasses')
 local UI      = require('opus.ui')
 local Util    = require('opus.util')
 
-local fs         = _G.fs
-local kernel     = _G.kernel
-local multishell = _ENV.multishell
-local shell      = _ENV.shell
+local device  = _G.device
+local fs      = _G.fs
+local kernel  = _G.kernel
+local shell   = _ENV.shell
+local window  = _G.window
 
 local config = Config.load('nwm', { session = { } })
 
@@ -22,6 +23,14 @@ local config = Config.load('nwm', { session = { } })
 local scale = .5
 local xs, ys = 6 * scale, 9 * scale
 local dragging
+local canvas = device['plethora:glasses'].canvas()
+local cw, ch = canvas.getSize()
+local opacity = 127
+
+local multishell = Util.shallowCopy(_ENV.multishell)
+_ENV.multishell = multishell
+
+cw, ch = cw / xs, ch / ys
 
 local events = {
 	glasses_click = 'mouse_click',
@@ -42,7 +51,7 @@ local function hook(e, eventData)
 		elseif e == 'glasses_drag' then
 			local dx = x - dragging.ax
 			local dy = y - dragging.ay
-			dragging.tab.window.move(dragging.wx + dx, dragging.wy + dy)
+			dragging.tab.gwindow.move(dragging.wx + dx, dragging.wy + dy)
 			dragging.tab.titleBar.move(dragging.wx + dx, dragging.wy + dy - 1)
 
 			dragging.tab.wmargs.x = dragging.wx + dx
@@ -53,9 +62,9 @@ local function hook(e, eventData)
 	end
 
 	for _,tab in ipairs(kernel.routines) do
-		if tab.window.type == 'glasses' then
-			local wx, wy = tab.window.getPosition()
-			local ww, wh = tab.window.getSize()
+		if tab.gwindow then
+			local wx, wy = tab.gwindow.getPosition()
+			local ww, wh = tab.gwindow.getSize()
 
 			if x >= wx and x <= wx + ww and y > wy and y < wy + wh then
 				clicked = tab
@@ -75,46 +84,90 @@ local function hook(e, eventData)
 
 	if clicked then
 		if clicked ~= current then
-			clicked.window.raise()
+			clicked.gwindow.raise()
 			kernel.raise(clicked.uid)
 		end
 
 		kernel.event(events[e], {
-			eventData[1], x, y, clicked.window.side,
+			eventData[1], x, y, clicked.gwindow.side,
 		})
 
 	end
 	return true
 end
 
-local function run(args)
+function multishell.openTab(env, tab)
+	if not tab.wmargs then
+		tab.wmargs = {
+			x = math.random(1, cw - 51 + 1),
+			y = math.random(1, ch - 19 + 1),
+			width = 51,
+			height = 19,
+			opacity = opacity,
+			path = tab.path,
+			args = tab.args,
+		}
+		table.insert(config.session, tab.wmargs)
+		Config.update('nwm', config)
+	else
+		tab.path = tab.wmargs.path
+		tab.args = tab.wmargs.args
+	end
+
+	if tab.path ~= 'sys/apps/shell.lua' then
+		if tab.args and #tab.args > 0 then
+			tab.args = { tab.path .. ' ' .. table.concat(tab.args or { }, ' ') }
+		else
+			tab.args = { tab.path }
+		end
+		tab.path = 'sys/apps/shell.lua'
+	end
+
+	local wmargs = tab.wmargs
+
 	local titleBar = Glasses.create({
-		x = args.x,
-		y = args.y - 1,
+		x = wmargs.x,
+		y = wmargs.y - 1,
 		height = 1,
-		width = args.width,
-		opacity = args.opacity,
+		width = wmargs.width,
+		opacity = wmargs.opacity,
 	})
 	titleBar.canvas:clear('yellow')
-	titleBar.canvas:write(1, 1, ' ' .. fs.getName(args.path), nil, 'black')
-	titleBar.canvas:write(args.width - 2, 1, ' x ', nil, 'black')
+	titleBar.canvas:write(1, 1, ' ' .. fs.getName(tab.path), nil, 'black')
+	titleBar.canvas:write(wmargs.width - 2, 1, ' x ', nil, 'black')
 	titleBar.redraw()
 
-	kernel.run({
-		path = args.path,
-		args = args.args,
-		hidden = true,
-		title = fs.getName(args.path),
-		onExit = function(self)
-			Util.removeByValue(config.session, args)
-			Config.update('nwm', config)
-			self.window.destroy()
-			titleBar.destroy()
-		end,
-		window = Glasses.create(args),
-		titleBar = titleBar,
-		wmargs = args,
-	})
+	if not tab.title and tab.path then
+		tab.title = fs.getName(tab.path):match('([^%.]+)')
+	end
+	tab.hidden = true
+	tab.title = tab.title or 'untitled'
+
+	local w, h = device.terminal.getSize()
+	tab.window = window.create(device.terminal, 1, 2, w, h - 1, false)
+	tab.gwindow = Glasses.create(wmargs)
+	tab.terminal = tab.gwindow
+	tab.titleBar = titleBar
+	tab.onExit = tab.onExit or function(self)
+		Util.removeByValue(config.session, tab.wmargs)
+		Config.update('nwm', config)
+		self.gwindow.destroy()
+		self.titleBar.destroy()
+	end
+
+	local routine, message = kernel.run(env, tab)
+	return routine and routine.uid, message
+end
+
+function multishell.setTitle(tabId, title)
+	local tab = kernel.find(tabId)
+	if tab then
+		tab.title = title
+		tab.titleBar.canvas:clear('yellow')
+		tab.titleBar.canvas:write(1, 1, ' ' .. title, nil, 'black')
+		tab.titleBar.canvas:write(tab.wmargs.width - 2, 1, ' x ', nil, 'black')
+		tab.titleBar.redraw()
+	end
 end
 
 UI:setPage(UI.Page {
@@ -131,6 +184,12 @@ UI:setPage(UI.Page {
 			formLabel = 'Opacity', formKey = 'opacity', formIndex = 3,
 			labelWidth = 3,
 			transform = math.floor,
+			eventHandler = function(self, event)
+				if event.type == 'slider_update' then
+					opacity = event.value
+				end
+				return UI.Slider.eventHandler(self, event)
+			end,
 		},
 		UI.Text {
 			x = 10, y = 5,
@@ -168,14 +227,15 @@ UI:setPage(UI.Page {
 		if event.type == 'form_complete' then
 			local opts = Util.shallowCopy(event.values)
 			local words = Util.split(opts.run, '(.-) ')
-			opts.path = shell.resolveProgram(table.remove(words, 1))
-			if not opts.path then
+			words[1] = shell.resolveProgram(words[1])
+			if not words[1] then
 				self.notification:error('Invalid program')
 			else
-				opts.args = #words > 0 and words
+				opts.path = 'sys/apps/shell.lua'
+				opts.args = table.concat(words, ' ')
 				table.insert(config.session, opts)
 				Config.update('nwm', config)
-				run(opts)
+				multishell.openTab(_ENV, { wmargs = opts })
 				self.notification:success('Started program')
 			end
 
@@ -190,7 +250,7 @@ local hookEvents = Util.keys(events)
 kernel.hook(hookEvents, hook)
 
 for _,v in pairs(config.session) do
-	run(v)
+	multishell.openTab(_ENV, { wmargs = v })
 end
 
 UI:start()

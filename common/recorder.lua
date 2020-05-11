@@ -61,7 +61,7 @@ end
 
 if options.daemon then
 	_G.device.keyboard.addHotkey('control-P', function()
-		multishell.openTab({
+		multishell.openTab(_ENV, {
 			path = 'sys/apps/shell.lua',
 			args = { arg[0], '--noResize', '--rawOutput', 'recorder.gif' },
 		})

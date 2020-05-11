@@ -188,7 +188,7 @@ function page:eventHandler(event)
 		self:scan()
 
 	elseif event.type == 'grid_select' and event.element == self.detail.grid then
-		multishell.openTab({
+		multishell.openTab(_ENV, {
 			path = 'sys/apps/Lua.lua',
 			args = { event.selected },
 			focused = true,

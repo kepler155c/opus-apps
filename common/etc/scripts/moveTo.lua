@@ -1,8 +1,6 @@
 local turtle = _G.turtle
 
 turtle.run(function()
-    _G.requireInjector(_ENV)
-
     local GPS = require('opus.gps')
 
     if not turtle.enableGPS() then

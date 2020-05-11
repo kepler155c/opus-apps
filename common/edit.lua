@@ -1024,7 +1024,7 @@ actions = {
 		else
 			local fn, msg = load(_concat(tLines, '\n'), fileInfo.path)
 			if fn then
-				multishell.openTab({
+				multishell.openTab(_ENV, {
 					fn = fn,
 					focused = true,
 					title = fs.getName(fileInfo.path),
@@ -1544,5 +1544,5 @@ local s, m = pcall(function() UI:start() end)
 if not s then
 	actions.save('/crash.txt')
 	print('Editor has crashed. File saved as /crash.txt')
-	error(m)
+	error(m, -1)
 end

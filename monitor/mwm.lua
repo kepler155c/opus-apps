@@ -1,3 +1,4 @@
+local Alt      = require('opus.alternate')
 local Terminal = require('opus.terminal')
 local trace    = require('opus.trace')
 local Util     = require('opus.util')
@@ -25,8 +26,7 @@ local monName     = args[1]
 local running
 local parentMon
 
-local defaultEnv = Util.shallowCopy(_ENV)
-defaultEnv.multishell = multishell
+_ENV.multishell = multishell
 if monName then
 	parentMon = peripheral.wrap(monName) or syntax()
 else
@@ -93,8 +93,8 @@ end
 --[[ A runnable process ]]--
 local Process = { }
 
-function Process:new(args)
-	args.env = args.env or Util.shallowCopy(defaultEnv)
+function Process:new(env, args)
+	args.env = shell.makeEnv(env)
 	args.width = args.width or termDim.width
 	args.height = args.height or termDim.height
 
@@ -329,7 +329,7 @@ function multishell.getTabs()
 end
 
 function multishell.launch(env, file, ...)
-	return multishell.openTab({
+	return multishell.openTab(env, {
 		path  = file,
 		env   = env,
 		title = 'shell',
@@ -337,8 +337,8 @@ function multishell.launch(env, file, ...)
 	})
 end
 
-function multishell.openTab(tabInfo)
-	local process = Process:new(tabInfo)
+function multishell.openTab(env, tabInfo)
+	local process = Process:new(env, tabInfo)
 
 	table.insert(processes, 1, process)
 
@@ -380,7 +380,7 @@ function multishell.loadSession(filename)
 	local config = Util.readTable(filename)
 	if config then
 		for k = #config, 1, -1 do
-			multishell.openTab(config[k])
+			multishell.openTab(_ENV, config[k])
 		end
 	end
 end
@@ -497,7 +497,7 @@ local function addShell()
 	process.co = coroutine.create(function()
 		print('To run a program on the monitor, type "fg <program>"')
 		print('To quit, type "exit"')
-		os.run(Util.shallowCopy(defaultEnv), shell.resolveProgram('shell'))
+		os.run(shell.makeEnv(_ENV), Alt.get('shell'))
 		multishell.stop()
 	end)
 

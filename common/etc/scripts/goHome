@@ -1,4 +1,3 @@
-_G.requireInjector(_ENV)
 local config = require('opus.config').load('gps')
 if config.home then
   if turtle.enableGPS() then

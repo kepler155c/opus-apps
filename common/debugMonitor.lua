@@ -24,6 +24,7 @@ _G._syslog = function(...)
 	local oldTerm = term.redirect(mon)
 	Util.print(...)
 	term.redirect(oldTerm)
+	oldDebug(...)
 end
 
 repeat

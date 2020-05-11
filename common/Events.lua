@@ -67,7 +67,7 @@ local page = UI.Page {
 			self.menuBar:draw()
 
 		elseif event.type == 'grid_select' then
-			multishell.openTab({
+			multishell.openTab(_ENV, {
 				path = 'sys/apps/Lua.lua',
 				args = { event.selected },
 				focused = true,
