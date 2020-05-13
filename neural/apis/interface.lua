@@ -17,12 +17,14 @@ function Neural.assertModules(modules)
 
 	for _, m in pairs(modules) do
 		if not Neural.hasModule(m) then
-			print('Required:')
+			local t = { }
+			table.insert(t, 'Required:')
 			for _, v in pairs(modules) do
-				print(' * ' .. (modules[v] or v))
+				table.insert(t, ' * ' .. (modules[v] or v))
 			end
-			print('')
-			error('Missing: ' .. (all[m] or m))
+			table.insert(t, '')
+			table.insert(t, 'Missing: ' .. (all[m] or m))
+			error(table.concat(t, '\n'))
 		end
 	end
 end

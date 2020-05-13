@@ -8,13 +8,14 @@
 
 local Config  = require('opus.config')
 local Glasses = require('neural.glasses')
-local UI      = require('opus.ui')
 local Util    = require('opus.util')
 
+local colors  = _G.colors
 local device  = _G.device
 local fs      = _G.fs
 local kernel  = _G.kernel
 local shell   = _ENV.shell
+local term    = _G.term
 local window  = _G.window
 
 local config = Config.load('nwm', { session = { } })
@@ -22,10 +23,9 @@ local config = Config.load('nwm', { session = { } })
 -- TODO: figure out how to better support scaling
 local scale = .5
 local xs, ys = 6 * scale, 9 * scale
-local dragging
+local dragging, resizing
 local canvas = device['plethora:glasses'].canvas()
 local cw, ch = canvas.getSize()
-local opacity = 127
 
 local multishell = Util.shallowCopy(_ENV.multishell)
 _ENV.multishell = multishell
@@ -40,7 +40,6 @@ local events = {
 }
 
 local function hook(e, eventData)
-	local current = kernel.getFocused()
 	local x = math.floor(eventData[2] / xs)
 	local y = math.floor(eventData[3] / ys)
 	local clicked
@@ -61,37 +60,78 @@ local function hook(e, eventData)
 		return
 	end
 
+	if resizing then
+		if e == 'glasses_up' then
+			resizing.group.remove()
+			if resizing.dx then
+				resizing.tab.wmargs.x = resizing.dx
+				resizing.tab.wmargs.y = resizing.dy
+				resizing.tab.wmargs.width = resizing.dw
+				resizing.tab.wmargs.height = resizing.dh
+				resizing.tab.gwindow.reposition2(resizing.dx, resizing.dy, resizing.dw, resizing.dh)
+				resizing.tab:resume('term_resize')
+
+				resizing.tab.titleBar.reposition2(resizing.dx, resizing.dy - 1, resizing.dw, 1)
+				resizing.tab.titleBar:draw(resizing.tab.title)
+				Config.update('nwm', config)
+			end
+			resizing = nil
+
+		elseif e == 'glasses_drag' then
+			local dx = x - resizing.ax
+			local dy = y - resizing.ay
+
+			resizing.dx = resizing.tab.wmargs.x
+			resizing.dy = math.min(resizing.tab.wmargs.y + dy, resizing.tab.wmargs.y + resizing.tab.wmargs.height - 4)
+			resizing.dw = math.max(resizing.tab.wmargs.width + dx, 8)
+			resizing.dh = math.max(resizing.tab.wmargs.height - dy, 4)
+
+			resizing.group.setPosition((resizing.dx + 1) * xs, resizing.dy * ys)
+			resizing.group.setSize(resizing.dw * xs, (resizing.dh + 1) * ys)
+		end
+		return
+	end
+
 	for _,tab in ipairs(kernel.routines) do
 		if tab.gwindow then
 			local wx, wy = tab.gwindow.getPosition()
 			local ww, wh = tab.gwindow.getSize()
 
-			if x >= wx and x <= wx + ww and y > wy and y < wy + wh then
+			if x >= wx and x <= wx + ww and y > wy and y <= wy + wh then
 				clicked = tab
 				x = x - wx
 				y = y - wy
 				break
-			elseif e == 'glasses_click' and x >= wx and x <= wx + ww and y == wy then
-				if x == wx + ww - 1 then
-					multishell.terminate(tab.uid)
-				else
-					dragging = { tab = tab, ax = x, ay = y, wx = wx, wy = wy }
+			elseif x >= wx and x <= wx + ww and y == wy then
+				if e == 'glasses_click' then
+					if x == wx + ww - 1 then
+						multishell.terminate(tab.uid)
+					elseif x == wx + ww - 3 then
+						local pos = { x = (tab.wmargs.x + 1) * xs, y = tab.wmargs.y * ys }
+						resizing = { tab = tab, ax = x, ay = y }
+						resizing.group = canvas.addRectangle(pos.x, pos.y, tab.wmargs.width * xs, (tab.wmargs.height + 1) * ys, 0xF0F0F04F)
+					else
+						dragging = { tab = tab, ax = x, ay = y, wx = wx, wy = wy }
+					end
+					return
+				elseif e == 'glasses_scroll' then
+					tab.wmargs.opacity = Util.clamp(tab.wmargs.opacity - (eventData[1] * 5), 0, 255)
+					Config.update('nwm', config)
+					tab.gwindow.setOpacity(tab.wmargs.opacity)
 				end
-				return
 			end
 		end
 	end
 
 	if clicked then
+		local current = kernel.getFocused()
 		if clicked ~= current then
 			clicked.gwindow.raise()
+			clicked.titleBar.raise()
 			kernel.raise(clicked.uid)
 		end
 
-		kernel.event(events[e], {
-			eventData[1], x, y, clicked.gwindow.side,
-		})
-
+		clicked:resume(events[e], eventData[1], x, y)
 	end
 	return true
 end
@@ -103,7 +143,7 @@ function multishell.openTab(env, tab)
 			y = math.random(1, ch - 19 + 1),
 			width = 51,
 			height = 19,
-			opacity = opacity,
+			opacity = 192,
 			path = tab.path,
 			args = tab.args,
 		}
@@ -125,23 +165,27 @@ function multishell.openTab(env, tab)
 
 	local wmargs = tab.wmargs
 
-	local titleBar = Glasses.create({
-		x = wmargs.x,
-		y = wmargs.y - 1,
-		height = 1,
-		width = wmargs.width,
-		opacity = wmargs.opacity,
-	})
-	titleBar.canvas:clear('yellow')
-	titleBar.canvas:write(1, 1, ' ' .. fs.getName(tab.path), nil, 'black')
-	titleBar.canvas:write(wmargs.width - 2, 1, ' x ', nil, 'black')
-	titleBar.redraw()
-
 	if not tab.title and tab.path then
 		tab.title = fs.getName(tab.path):match('([^%.]+)')
 	end
 	tab.hidden = true
 	tab.title = tab.title or 'untitled'
+
+	local titleBar = Glasses.create({
+		x = wmargs.x,
+		y = wmargs.y - 1,
+		height = 1,
+		width = wmargs.width,
+		opacity = 160,
+	})
+	titleBar.routine = tab
+	function titleBar:draw(title)
+		titleBar.canvas:clear('yellow')
+		titleBar.canvas:write(1, 1, ' ' .. title, nil, 'black')
+		titleBar.canvas:write(self.routine.wmargs.width - 4, 1, ' + x ', nil, 'black')
+		titleBar.redraw()
+	end
+	titleBar:draw(tab.title)
 
 	local w, h = device.terminal.getSize()
 	tab.window = window.create(device.terminal, 1, 2, w, h - 1, false)
@@ -163,88 +207,9 @@ function multishell.setTitle(tabId, title)
 	local tab = kernel.find(tabId)
 	if tab then
 		tab.title = title
-		tab.titleBar.canvas:clear('yellow')
-		tab.titleBar.canvas:write(1, 1, ' ' .. title, nil, 'black')
-		tab.titleBar.canvas:write(tab.wmargs.width - 2, 1, ' x ', nil, 'black')
-		tab.titleBar.redraw()
+		tab.titleBar:draw(title)
 	end
 end
-
-UI:setPage(UI.Page {
-	form = UI.Form {
-		values = {
-			x = 1, y = 25, width = 51, height = 19,
-			opacity = 255,
-		},
-		UI.TextEntry {
-			formKey = 'run', formLabel = 'Run', required = true,
-		},
-		UI.Slider {
-			min = 0, max = 255,
-			formLabel = 'Opacity', formKey = 'opacity', formIndex = 3,
-			labelWidth = 3,
-			transform = math.floor,
-			eventHandler = function(self, event)
-				if event.type == 'slider_update' then
-					opacity = event.value
-				end
-				return UI.Slider.eventHandler(self, event)
-			end,
-		},
-		UI.Text {
-			x = 10, y = 5,
-			textColor = 'yellow',
-			value = ' x       y'
-		},
-		UI.TextEntry {
-			x = 10, y = 6, width = 7, limit = 3,
-			transform = 'number',
-			formKey = 'x', required = true,
-		},
-		UI.TextEntry {
-			x = 18, y = 6, width = 7, limit = 4,
-			transform = 'number',
-			formKey = 'y', required = true,
-		},
-		UI.Text {
-			x = 10, y = 8,
-			textColor = 'yellow',
-			value = ' width   height'
-		},
-		UI.TextEntry {
-			x = 10, y = 9, width = 7, limit = 4,
-			transform = 'number',
-			formKey = 'width', required = true,
-		},
-		UI.TextEntry {
-			x = 18, y = 9, width = 7, limit = 4,
-			transform = 'number',
-			formKey = 'height', required = true,
-		},
-	},
-	notification = UI.Notification { },
-	eventHandler = function(self, event)
-		if event.type == 'form_complete' then
-			local opts = Util.shallowCopy(event.values)
-			local words = Util.split(opts.run, '(.-) ')
-			words[1] = shell.resolveProgram(words[1])
-			if not words[1] then
-				self.notification:error('Invalid program')
-			else
-				opts.path = 'sys/apps/shell.lua'
-				opts.args = table.concat(words, ' ')
-				table.insert(config.session, opts)
-				Config.update('nwm', config)
-				multishell.openTab(_ENV, { wmargs = opts })
-				self.notification:success('Started program')
-			end
-
-		elseif event.type == 'form_cancel' then
-			UI:quit()
-		end
-		return UI.Page.eventHandler(self, event)
-	end,
-})
 
 local hookEvents = Util.keys(events)
 kernel.hook(hookEvents, hook)
@@ -253,6 +218,22 @@ for _,v in pairs(config.session) do
 	multishell.openTab(_ENV, { wmargs = v })
 end
 
-UI:start()
+term.setBackgroundColor(colors.black)
+term.setTextColor(colors.white)
+term.clear()
+print('Scroll on a titlebar adjusts opacity\n')
+print('Run a program')
+pcall(function()
+	while true do
+		_G.write('> ')
+		local p = _G.read(nil, nil, shell.complete)
+		if p and #Util.trim(p) > 0 then
+			multishell.openTab(_ENV, {
+				path = 'sys/apps/shell.lua',
+				args = { p },
+			})
+		end
+	end
+end)
 
 kernel.unhook(hookEvents, hook)

@@ -12,8 +12,7 @@ local term       = _G.term
 local window     = _G.window
 
 local function syntax()
-	printError('Syntax:')
-	error('mwm [--config=filename] [monitor]')
+	error('Syntax:\nmwm [--config=filename] [monitor]')
 end
 
 local args        = Util.parse(...)
