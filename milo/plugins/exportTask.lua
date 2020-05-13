@@ -69,8 +69,8 @@ function ExportTask:cycle(context)
 					for key in pairs(entry.filter) do
 						local items = Milo:getMatches(itemDB:splitKey(key), entry)
 						for _,item in pairs(items) do
-							if context.storage:export(node, nil, item.count, item) == 0 then
-								-- TODO: really shouldn't break here as there may be room in other slots
+							if node.adapter.size() ~= Util.size(node.adapter.list()) and context.storage:export(node, nil, item.count, item) == 0 then
+								-- TODO: really shouldn't break here as there may be room in other slots (probably not)
 								-- leaving for now for performance reasons
 								break
 							end
