@@ -1,5 +1,5 @@
 -- (Super)MultiFurnace Controller (did I mention, it's SUPER!?)
--- This app is designed to wrap up to 4 of kepler155c's MultiFurnace (multiFurni) arrays and divide up workload,
+-- This app is designed to wrap up to 4 of kepler155c's furni.lua (multiFurni) arrays and divide up workload,
 -- it functions as a straight drop-in for furni.lua and no other adjustments are required to make it work.
 -- Additionally, you get the ability to target any one multiFurni array for smelting when creating the machine recipe in Milo
 -- Further uses for this direct targeting can be limited-scope auto-smelting, using anywhere from 1/2 to 1/4 of your total
@@ -11,18 +11,19 @@
 -- 1: Master Furnace Input
 -- 2: Master Furnace Fuel Input
 -- 3: Master Furnace Output
--- 4: Optional (Options: "fuel"/"input"/"output"/"" (Default: "" [ignore]))
--- 5-8: Furnace Inputs for up to 4 MultiFurnace arrays
--- 9-12: Furnace Fuels for up to 4 MultiFurnace arrays
--- 13-16: Furnace Outputs for up to 4 MultiFurnace arrays
+-- 4: Optional (Options: "fuel"/"input"/"output"/nil (Default: nil [ignore]))
+-- 5-8: Furnace Inputs for 2 to 4 furni.lua arrays (slots mapped in order ascending, T1_Input=4, T2_Input=5, etc)
+-- 9-12: Furnace Fuels for 2 to 4 furni.lua arrays
+-- 13-16: Furnace Outputs for 2 to 4 furni.lua arrays
 
--- Only option, slot 4, what to use it for? (Extra) fuel, input, output, [default, ignore]
-useSlot4="" -- default:"" [unused, ignore] (REMEMBER: Map this slot accordingly in Milo!)
+-- Only user option, slot 4, what to use it for?
+local useSlot4=nil
 
---Find modem with -only- turtles attached (these are our furni.lua arrays)
-devModem=""
+-- Begin main program code
+-- Find modem with -only- turtles attached (these should be our furni/furniController arrays)
+local devModem=""
 for nDev,modem in ipairs({peripheral.find("modem")}) do
-  if #modem.getNamesRemote() > 0 then
+  if #modem.getNamesRemote() > 1 then -- We're only looking for 2 or more devices on a network segment, ignore anything less
     nTurtles=0
     for nDev,dev in ipairs(modem.getNamesRemote()) do
       if modem.getTypeRemote(dev) == "turtle" then nTurtles=nTurtles+1 end
@@ -35,8 +36,11 @@ for nDev,modem in ipairs({peripheral.find("modem")}) do
 end
 if devModem ~= "" then
   print("Found turtle-only modem, detected",#devModem.getNamesRemote(),"turtles",(#devModem.getNamesRemote() > 4 and "(Max 4 will be mapped)" or "(All will be mapped)"))
+else
+  print("Did not find a modem with only turtles connected. Please check your networking cables/modems and devices, then try again.")
+  return -- We don't have a modem, halt
 end
-devTurtles={}
+local devTurtles={}
 for nDev,dev in ipairs(devModem.getNamesRemote()) do
   if #devTurtles >= 4 then break end
   devTurtles[#devTurtles+1]=peripheral.wrap(dev)
@@ -53,20 +57,7 @@ for nDev,dev in ipairs(devModem.getNamesRemote()) do
   end
 end
 
-function manageFuel()
-  if turtle.getItemCount(2) > 0 then -- Fuel
-    --print("Fuel found")
-    splitNum=turtle.getItemCount(2)/#devTurtles
-    for nDev,dev in ipairs(devTurtles) do
-      if turtle.select(2) and turtle.getSelectedSlot() == 2 then
-        turtle.transferTo(dev.fuelSlot,splitNum)
-        dev.pullItems(devModem.getNameLocal(),dev.fuelSlot,64,2)
-      end
-    end
-  end
-end
-
-turtle.list = function ()
+local turtle.list = function () -- Supplement a local .list()-like function
   local tList={}
   for i=1,16 do
     local slotData=turtle.getItemDetail(i) -- DWGFJTLR
@@ -173,9 +164,8 @@ end
 
 local lastList={}
 while true do -- Main Loop
-  --manageFuel()
   local turtleList=turtle.list()
-  if turtleList[1]~=nil or turtleList[13]~=nil or turtleList[14]~=nil or turtleList[15]~=nil or turtleList[16]~=nil then
+  if turtleList[1]~=nil or turtleList[13]~=nil or turtleList[14]~=nil or turtleList[15]~=nil or turtleList[16]~=nil or ((useSlot4=="input" or useSlot4=="fuel") and turtleList[4]~=nil) then
     manageLocalResources()
   end
   manageRemoteResources()
