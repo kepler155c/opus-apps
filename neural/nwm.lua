@@ -7,6 +7,7 @@
 ]]
 
 local Config  = require('opus.config')
+local Event   = require('opus.event')
 local Glasses = require('neural.glasses')
 local Util    = require('opus.util')
 
@@ -39,14 +40,26 @@ local events = {
 	glasses_scroll = 'mouse_scroll',
 }
 
-local function hook(e, eventData)
-	local x = math.floor(eventData[2] / xs)
-	local y = math.floor(eventData[3] / ys)
-	local clicked
+local timer
+local function writeConfig()
+	if timer then
+		Event.off(timer)
+	end
+	timer = Event.onTimeout(5, function()
+		_syslog('writing config')
+		Config.update('nwm', config)
+		timer = nil
+	end)
+end
+
+Event.on(Util.keys(events), function(e, button, x, y)
+	x = math.floor(x / xs)
+	y = math.floor((y - 1) / ys)
 
 	if dragging then
 		if e == 'glasses_up' then
 			dragging = nil
+
 		elseif e == 'glasses_drag' then
 			local dx = x - dragging.ax
 			local dy = y - dragging.ay
@@ -55,7 +68,7 @@ local function hook(e, eventData)
 
 			dragging.tab.wmargs.x = dragging.wx + dx
 			dragging.tab.wmargs.y = dragging.wy + dy
-			Config.update('nwm', config)
+			writeConfig()
 		end
 		return
 	end
@@ -73,7 +86,7 @@ local function hook(e, eventData)
 
 				resizing.tab.titleBar.reposition2(resizing.dx, resizing.dy - 1, resizing.dw, 1)
 				resizing.tab.titleBar:draw(resizing.tab.title)
-				Config.update('nwm', config)
+				writeConfig()
 			end
 			resizing = nil
 
@@ -92,6 +105,8 @@ local function hook(e, eventData)
 		return
 	end
 
+	local clicked
+
 	for _,tab in ipairs(kernel.routines) do
 		if tab.gwindow then
 			local wx, wy = tab.gwindow.getPosition()
@@ -102,6 +117,7 @@ local function hook(e, eventData)
 				x = x - wx
 				y = y - wy
 				break
+
 			elseif x >= wx and x <= wx + ww and y == wy then
 				if e == 'glasses_click' then
 					if x == wx + ww - 1 then
@@ -113,12 +129,14 @@ local function hook(e, eventData)
 					else
 						dragging = { tab = tab, ax = x, ay = y, wx = wx, wy = wy }
 					end
-					return
+
 				elseif e == 'glasses_scroll' then
-					tab.wmargs.opacity = Util.clamp(tab.wmargs.opacity - (eventData[1] * 5), 0, 255)
-					Config.update('nwm', config)
+					tab.wmargs.opacity = Util.clamp(tab.wmargs.opacity - (button * 5), 0, 255)
+					writeConfig()
 					tab.gwindow.setOpacity(tab.wmargs.opacity)
 				end
+
+				return
 			end
 		end
 	end
@@ -131,10 +149,10 @@ local function hook(e, eventData)
 			kernel.raise(clicked.uid)
 		end
 
-		clicked:resume(events[e], eventData[1], x, y)
+		clicked:resume(events[e], button, x, y)
 	end
 	return true
-end
+end)
 
 function multishell.openTab(env, tab)
 	if not tab.wmargs then
@@ -148,7 +166,7 @@ function multishell.openTab(env, tab)
 			args = tab.args,
 		}
 		table.insert(config.session, tab.wmargs)
-		Config.update('nwm', config)
+		writeConfig()
 	else
 		tab.path = tab.wmargs.path
 		tab.args = tab.wmargs.args
@@ -194,7 +212,7 @@ function multishell.openTab(env, tab)
 	tab.titleBar = titleBar
 	tab.onExit = tab.onExit or function(self)
 		Util.removeByValue(config.session, tab.wmargs)
-		Config.update('nwm', config)
+		writeConfig()
 		self.gwindow.destroy()
 		self.titleBar.destroy()
 	end
@@ -211,29 +229,29 @@ function multishell.setTitle(tabId, title)
 	end
 end
 
-local hookEvents = Util.keys(events)
-kernel.hook(hookEvents, hook)
+Event.addRoutine(function()
+	term.setBackgroundColor(colors.black)
+	term.setTextColor(colors.white)
+	term.clear()
+	print('Scroll on a titlebar adjusts opacity\n')
+	print('Run a program')
+	pcall(function()
+		while true do
+			_G.write('> ')
+			local p = _G.read(nil, nil, shell.complete)
+			if p and #Util.trim(p) > 0 then
+				multishell.openTab(_ENV, {
+					path = 'sys/apps/shell.lua',
+					args = { p },
+				})
+			end
+		end
+	end)
+	Event.exitPullEvents()
+end)
 
 for _,v in pairs(config.session) do
 	multishell.openTab(_ENV, { wmargs = v })
 end
 
-term.setBackgroundColor(colors.black)
-term.setTextColor(colors.white)
-term.clear()
-print('Scroll on a titlebar adjusts opacity\n')
-print('Run a program')
-pcall(function()
-	while true do
-		_G.write('> ')
-		local p = _G.read(nil, nil, shell.complete)
-		if p and #Util.trim(p) > 0 then
-			multishell.openTab(_ENV, {
-				path = 'sys/apps/shell.lua',
-				args = { p },
-			})
-		end
-	end
-end)
-
-kernel.unhook(hookEvents, hook)
+Event.pullEvents()

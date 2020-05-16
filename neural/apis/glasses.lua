@@ -99,7 +99,6 @@ function Glasses.create(args)
 
 	function gterm.setTextScale() end
 	function gterm.getPosition() return opts.x, opts.y end
-	function gterm.setVisible() end
 	function gterm.raise()
 		local g = canvas.addGroup(pos)
 		init(g)
@@ -138,10 +137,6 @@ function Glasses.create(args)
 		gterm.reposition(1, 1, w, h)
 		gterm.redraw()
 	end
-
-	--gterm.name = opts.name
-	--gterm.side = opts.name
-	--gterm.type = 'glasses'
 
 	return gterm
 end

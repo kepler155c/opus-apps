@@ -520,6 +520,8 @@ local function rawExport(source, target, item, qty, slot)
 					if amount > 0 then
 						source.lastUpdate = os.clock()
 						target.lastUpdate = os.clock()
+					else
+						break
 					end
 				end
 				qty = qty - amount
@@ -551,6 +553,7 @@ function Storage:export(target, slot, count, item)
 
 		if amount ~= pcount then
 			-- this *should* only happen if cache is out of sync
+			-- out the target is full
 			self:updateCache(adapter, item, pcount - amount)
 		end
 
@@ -561,27 +564,42 @@ function Storage:export(target, slot, count, item)
 		end
 		count = count - amount
 		total = total + amount
+
+		return amount
 	end
 
 	-- request from adapters with this item
 	for _, adapter in self:onlineAdapters() do
 		local cache = adapter.cache and adapter.cache[key]
 		if cache then
-			provide(adapter, math.min(count, cache.count))
+			local request = math.min(count, cache.count)
+
+			local amount = provide(adapter, request)
+
+			-- couldn't provide the amount that was requested
+			-- either the target must be full - or the cache is invalid
+			if amount ~= request then
+				break
+			end
 			if count <= 0 then
 				return total
 			end
 		end
 	end
 
-	_G._syslog('STORAGE warning: %s(%d): %s%s %s failed to export',
-		item.displayName or item.name, count, self:_sn(target.name),
-		slot and string.format('[%d]', slot) or '[*]', key)
+	if slot then -- ignore warning when exporting to all slots
+		_G._syslog('STORAGE warning: %s(%d): %s%s %s failed to export',
+			item.displayName or item.name, count, self:_sn(target.name),
+			slot and string.format('[%d]', slot) or '[*]', key)
+	end
 
 -- TODO: If there are misses when a slot is specified than something is wrong...
 -- The caller should confirm the quantity beforehand
 -- If no slot and full amount is not exported, then no need to check rest of adapters
 -- ... so should not reach here
+
+-- but... there is the case where exporting to all slots of the target
+-- this is valid
 
 	return total
 end
