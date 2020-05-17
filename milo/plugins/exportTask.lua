@@ -69,10 +69,25 @@ function ExportTask:cycle(context)
 					for key in pairs(entry.filter) do
 						local items = Milo:getMatches(itemDB:splitKey(key), entry)
 						for _,item in pairs(items) do
-							if node.adapter.size() ~= Util.size(node.adapter.list()) and context.storage:export(node, nil, item.count, item) == 0 then
-								-- TODO: really shouldn't break here as there may be room in other slots (probably not)
-								-- leaving for now for performance reasons
-								break
+							node.cacheList = node.adapter.list()
+							if node.adapter.size() ~= Util.size(node.cacheList) then
+								-- Here we have a storage which has at least 1 unpopulated slot, we can fire'n'forget into this
+								if context.storage:export(node, nil, item.count, item) == 0 then
+									-- TODO: really shouldn't break here as there may be room in other slots
+									-- leaving for now for performance reasons
+									break
+								end
+							else
+								-- Here we have a storage with all slots occupied, sort through and find open spaces
+								for iNum,_ in ipairs(node.cacheList) do
+									local slot = node.adapter.getItemMeta(iNum)
+									if (slot.name == filterItem.name and slot.count ~= slot.maxCount and
+									(entry.ignoreDamage or slot.damage == filterItem.damage) and
+									(entry.ignoreNbtHash or slot.nbtHash == filterItem.nbtHash)) then
+										-- We found a slot that matches, and is not full, let's export to it!
+										context.storage:export(node, iNum, slot.maxCount - slot.count, item)
+									end
+								end
 							end
 						end
 					end
