@@ -66,10 +66,10 @@ function ExportTask:cycle(context)
 				end
 
 				local function exportItems()
+					node.cacheList = node.adapter.list()
 					for key in pairs(entry.filter) do
 						local items = Milo:getMatches(itemDB:splitKey(key), entry)
 						for _,item in pairs(items) do
-							node.cacheList = node.adapter.list()
 							if node.adapter.size() ~= Util.size(node.cacheList) then
 								-- Here we have a storage which has at least 1 unpopulated slot, we can fire'n'forget into this
 								if context.storage:export(node, nil, item.count, item) == 0 then
@@ -91,6 +91,7 @@ function ExportTask:cycle(context)
 							end
 						end
 					end
+					node.cacheList=nil
 				end
 				if type(entry.slot) == 'number' then
 					exportSingleSlot()
