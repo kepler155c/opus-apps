@@ -66,32 +66,38 @@ function ExportTask:cycle(context)
 				end
 
 				local function exportItems()
+					local debugLog="exportItems()"
 					node.cacheList = node.adapter.list()
 					for key in pairs(entry.filter) do
 						local items = Milo:getMatches(itemDB:splitKey(key), entry)
 						for _,item in pairs(items) do
 							if node.adapter.size() ~= Util.size(node.cacheList) then
+								debugLog=debugLog.." empty slot found"
 								-- Here we have a storage which has at least 1 unpopulated slot, we can fire'n'forget into this
 								if context.storage:export(node, nil, item.count, item) == 0 then
+									debugLog=debugLog.." failed to export, break"
 									-- TODO: really shouldn't break here as there may be room in other slots
 									-- leaving for now for performance reasons
 									break
 								end
 							else
 								-- Here we have a storage with all slots occupied, sort through and find open spaces
+								debugLog=debugLog.." no empty slots found, cycling slots"
 								for iNum,_ in ipairs(node.cacheList) do
 									local slot = node.adapter.getItemMeta(iNum)
 									if (slot.name == filterItem.name and slot.count ~= slot.maxCount and
 									(entry.ignoreDamage or slot.damage == filterItem.damage) and
 									(entry.ignoreNbtHash or slot.nbtHash == filterItem.nbtHash)) then
+										debugLog=debugLog.." found matching slot, exporting"
 										-- We found a slot that matches, and is not full, let's export to it!
-										context.storage:export(node, iNum, slot.maxCount - slot.count, item)
+										context.storage:export(node, iNum, math.min(slot.maxCount-slot.count,item.count), item)
 									end
 								end
 							end
 						end
 					end
 					node.cacheList=nil
+					_G._syslog(debugLog)
 				end
 				if type(entry.slot) == 'number' then
 					exportSingleSlot()
