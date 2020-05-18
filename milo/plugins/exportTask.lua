@@ -1,6 +1,7 @@
 local itemDB = require('core.itemDB')
 local Milo   = require('milo')
-local Tasks = require('milo.taskRunner')
+local Tasks  = require('milo.taskRunner')
+local Util   = require('opus.util')
 
 local ExportTask = {
 	name = 'exporter',
@@ -19,7 +20,6 @@ function ExportTask:cycle(context)
 	for node in context.storage:filterActive('machine', filter) do
 		tasks:add(function()
 			for _, entry in pairs(node.exports) do
-
 				if not entry.filter then
 					-- exports must have a filter
 					-- TODO: validate in exportView
