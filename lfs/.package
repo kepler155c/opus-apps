@@ -1,0 +1,11 @@
+{
+	title = 'LuaFileSystem',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/lfs',
+	description = [[LuaFileSystem port for computercraft
+See: https://github.com/keplerproject/luafilesystem
+
+LuaFileSystem is a Lua library developed to complement the set of functions related to file systems offered by the standard Lua distribution.
+
+LuaFileSystem offers a portable way to access the underlying directory structure and file attributes. LuaFileSystem is free software and uses the same license as Lua 5.x (MIT).]],
+	license = 'MIT',
+}

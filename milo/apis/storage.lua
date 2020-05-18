@@ -553,7 +553,7 @@ function Storage:export(target, slot, count, item)
 
 		if amount ~= pcount then
 			-- this *should* only happen if cache is out of sync
-			-- out the target is full
+			-- or... the target is full
 			self:updateCache(adapter, item, pcount - amount)
 		end
 

@@ -6,6 +6,7 @@ local Util   = require('opus.util')
 
 local device     = _G.device
 local fs         = _G.fs
+local keys       = _G.keys
 local multishell = _ENV.multishell
 local os         = _G.os
 local shell      = _ENV.shell
@@ -905,7 +906,7 @@ actions = {
 		if not force and undo.chain[#undo.chain] ~= lastSave then
 			page.unsaved:show('file_new')
 		else
-			actions.open('/untitled.txt')
+			actions.open('/untitled.lua')
 		end
 	end,
 
@@ -1028,6 +1029,21 @@ actions = {
 					fn = fn,
 					focused = true,
 					title = fs.getName(fileInfo.path),
+					chainExit = function(_, result)
+						-- display results of process before
+						-- closing window
+						if result then -- clean exit
+							-- any errors will be picked up by multishells
+							-- error handling
+							print('Press enter to exit')
+							while true do
+								local e, code = os.pullEventRaw('key')
+								if e == 'terminate' or e == 'key' and code == keys.enter then
+									break
+								end
+							end
+						end
+					end,
 				})
 			else
 				local ln = msg:match(':(%d+):')
@@ -1535,7 +1551,7 @@ actions = {
 
 local args = { ... }
 local filename = args[1] and shell.resolve(args[1])
-if not (actions.load(filename) or actions.load(config.filename) or actions.load('untitled.txt')) then
+if not (actions.load(filename) or actions.load(config.filename) or actions.load('untitled.lua')) then
 	error('Error opening file')
 end
 
