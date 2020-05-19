@@ -362,29 +362,21 @@ local page = UI.Page {
 			event = 'slide_hide',
 		},
 		apply_filter = function(self, filter)
-			local t = { }
 			if filter then
 				filter = filter:lower()
 				self.grid.sortColumn = 'score'
-				self.grid.inverseSort = true
 
-				for _,v in pairs(self.listing) do
-					v.score = fuzzy(v.lname, filter)
-					if v.score then
-						_insert(t, v)
-					end
+				for _,v in pairs(self.grid.values) do
+					v.score = -fuzzy(v.lname, filter)
 				end
 			else
 				self.grid.sortColumn = 'lname'
-				self.grid.inverseSort = false
-				t = self.listing
 			end
 
-			self.grid:setValues(t)
+			self.grid:update()
 			self.grid:setIndex(1)
 		end,
 		show = function(self)
-			local listing = { }
 			local function recurse(dir)
 				local files = fs.list(dir)
 				for _,f in ipairs(files) do
@@ -392,7 +384,7 @@ local page = UI.Page {
 					if fs.native.isDir(fullName) then -- skip virtual dirs
 						if f ~= '.git' then recurse(fullName) end
 					else
-						_insert(listing, {
+						_insert(self.grid.values, {
 							name = f,
 							dir = dir,
 							lname = f:lower(),
@@ -402,7 +394,6 @@ local page = UI.Page {
 				end
 			end
 			recurse('')
-			self.listing = listing
 			self:apply_filter()
 			self.filter_entry:reset()
 			UI.SlideOut.show(self)
@@ -1015,44 +1006,40 @@ actions = {
 			actions.error('open available with multishell')
 			return
 		end
+		local routine = {
+			focused = true,
+			title = fs.getName(fileInfo.path),
+			chainExit = function(_, result)
+				-- display results of process before closing window
+				if result then -- clean exit
+					-- any errors will be picked up by multishells
+					-- error handling
+					print('Press enter to exit')
+					while true do
+						local e, code = os.pullEventRaw('key')
+						if e == 'terminate' or e == 'key' and code == keys.enter then
+							break
+						end
+					end
+				end
+			end,
+		}
 		if undo.chain[#undo.chain] == lastSave then
-			local nTask = shell.openTab(fileInfo.path)
-			if nTask then
-				shell.switchTab(nTask)
-			else
-				actions.error("error starting Task")
-			end
+			routine.path = 'sys/apps/shell.lua'
+			routine.args = { fileInfo.path }
 		else
 			local fn, msg = load(_concat(tLines, '\n'), fileInfo.path)
-			if fn then
-				multishell.openTab(_ENV, {
-					fn = fn,
-					focused = true,
-					title = fs.getName(fileInfo.path),
-					chainExit = function(_, result)
-						-- display results of process before
-						-- closing window
-						if result then -- clean exit
-							-- any errors will be picked up by multishells
-							-- error handling
-							print('Press enter to exit')
-							while true do
-								local e, code = os.pullEventRaw('key')
-								if e == 'terminate' or e == 'key' and code == keys.enter then
-									break
-								end
-							end
-						end
-					end,
-				})
-			else
+			if not fn then
 				local ln = msg:match(':(%d+):')
 				if ln and tonumber(ln) then
 					actions.go_to(1, tonumber(ln))
 				end
 				actions.error(msg)
+				return
 			end
+			routine.fn = fn
 		end
+		multishell.openTab(_ENV, routine)
 	end,
 
 	status = function()

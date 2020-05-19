@@ -1,1 +1,1 @@
-rom/modules/main/lfs.lua linkfs /packages/lfs/lfs.lua
+packages/lfs/tests/test.lua urlfs https://raw.githubusercontent.com/keplerproject/luafilesystem/master/tests/test.lua

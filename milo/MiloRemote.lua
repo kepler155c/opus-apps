@@ -318,7 +318,7 @@ function page:applyFilter()
 				v.score = fuzzy(v.lname, filter)
 				if v.score then
 					if v.count > 0 then
-						v.score = v.score + 1
+						v.score = v.score + .2
 					end
 					table.insert(r, v)
 				end

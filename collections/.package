@@ -1,0 +1,9 @@
+{
+	title = 'Collections',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/collections',
+	description = [[Collections (rework)
+See: https://github.com/imliam/Lua-Collections
+
+Collections are like tables on steroids. They are designed to act as a fluent wrapper when working with structured data, offering the developer convenience for common tasks.]],
+	license = 'MIT',
+}
