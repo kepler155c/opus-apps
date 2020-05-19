@@ -1,7 +1,6 @@
 local itemDB = require('core.itemDB')
 local Milo   = require('milo')
-local Tasks  = require('milo.taskRunner')
-local Util   = require('opus.util')
+local Tasks = require('milo.taskRunner')
 
 local ExportTask = {
 	name = 'exporter',
@@ -19,7 +18,11 @@ function ExportTask:cycle(context)
 
 	for node in context.storage:filterActive('machine', filter) do
 		tasks:add(function()
+
+			local slots
+
 			for _, entry in pairs(node.exports) do
+
 				if not entry.filter then
 					-- exports must have a filter
 					-- TODO: validate in exportView
@@ -66,31 +69,41 @@ function ExportTask:cycle(context)
 				end
 
 				local function exportItems()
-					local cache,size={node.adapter.list(),node.adapter.size()} -- Make single calls, not repeat
-					local cacheSize=Util.size(cache) -- Same, though this call doesn't hurt as bad
+					local function isPossible(key)
+						local filterItem = itemDB:get(key)
+
+						if not node.adapter.__size then
+							node.adapter.__size = node.adapter.size()
+						end
+
+						-- note that this does not guarantee a match - as
+						-- we don't have full meta of item in slot
+						for i = 1, node.adapter.__size do
+							local slot = slots[i]
+							if (not slot or slot.name == filterItem.name and
+								(entry.ignoreDamage or slot.damage == filterItem.damage) and
+								slot.count < filterItem.maxCount) then
+
+								return true
+							end
+						end
+					end
+
 					for key in pairs(entry.filter) do
-						local items = Milo:getMatches(itemDB:splitKey(key), entry)
-						for _,item in pairs(items) do
-							if size ~= cacheSize then
-								-- Here we have a storage which has at least 1 unpopulated slot, we can fire'n'forget into this
+						if not slots then
+							slots = node.adapter.list()
+						end
+						if isPossible(key) then
+							local items = Milo:getMatches(itemDB:splitKey(key), entry)
+							for _,item in pairs(items) do
 								if context.storage:export(node, nil, item.count, item) == 0 then
 									-- TODO: really shouldn't break here as there may be room in other slots
 									-- leaving for now for performance reasons
+
 									break
-								end
-							else
-								-- Here we have a storage with all slots occupied, sort through and find open spaces
-								for iNum=1,size do
-									local slot = cache[i]
-									if slot then
-										if (slot.name == item.name and slot.count ~= item.maxCount and
-										(entry.ignoreDamage or slot.damage == item.damage) and
-										(entry.ignoreNbtHash or slot.nbtHash == item.nbtHash)) then
-											-- We found a slot that matches, and is not full, let's export to it!
-											-- Reworked to use item's .maxCount against the existing .list()[slot].count instead of repeat .getItemMeta calls
-											context.storage:export(node, iNum, math.min(item.maxCount-slot.count,item.count), item)
-										end
-									end
+								else
+									-- refresh the slots
+									slots = nil
 								end
 							end
 						end
