@@ -521,7 +521,7 @@ local function rawExport(source, target, item, qty, slot)
 						source.lastUpdate = os.clock()
 						target.lastUpdate = os.clock()
 					else
-						break
+						-- break -- this should work ?? is cache out of sync ?
 					end
 				end
 				qty = qty - amount
