@@ -74,6 +74,10 @@ function ExportTask:cycle(context)
 							node.adapter.__size = node.adapter.size()
 						end
 
+						if not slots then
+							slots = node.adapter.list()
+						end
+
 						for i = 1, node.adapter.__size do
 							local slot = slots[i]
 							if (not slot or slot.name == item.name and
@@ -87,9 +91,6 @@ function ExportTask:cycle(context)
 					end
 
 					for key in pairs(entry.filter) do
-						if not slots then
-							slots = node.adapter.list()
-						end
 						local items = Milo:getMatches(itemDB:splitKey(key), entry)
 						for _,item in pairs(items) do
 							if canExport(item) then
