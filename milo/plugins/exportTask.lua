@@ -69,20 +69,17 @@ function ExportTask:cycle(context)
 				end
 
 				local function exportItems()
-					local function isPossible(key)
-						local filterItem = itemDB:get(key)
-
+					local function canExport(item)
 						if not node.adapter.__size then
 							node.adapter.__size = node.adapter.size()
 						end
 
-						-- note that this does not guarantee a match - as
-						-- we don't have full meta of item in slot
 						for i = 1, node.adapter.__size do
 							local slot = slots[i]
-							if (not slot or slot.name == filterItem.name and
-								(entry.ignoreDamage or slot.damage == filterItem.damage) and
-								slot.count < filterItem.maxCount) then
+							if (not slot or slot.name == item.name and
+								(entry.ignoreDamage or slot.damage == item.damage) and
+								(entry.ignoreNbtHash or slot.nbtHash == item.nbtHash) and
+								slot.count < item.maxCount) then
 
 								return true
 							end
@@ -93,18 +90,14 @@ function ExportTask:cycle(context)
 						if not slots then
 							slots = node.adapter.list()
 						end
-						if isPossible(key) then
-							local items = Milo:getMatches(itemDB:splitKey(key), entry)
-							for _,item in pairs(items) do
+						local items = Milo:getMatches(itemDB:splitKey(key), entry)
+						for _,item in pairs(items) do
+							if canExport(item) then
 								if context.storage:export(node, nil, item.count, item) == 0 then
-									-- TODO: really shouldn't break here as there may be room in other slots
-									-- leaving for now for performance reasons
-
 									break
-								else
-									-- refresh the slots
-									slots = nil
 								end
+								-- refresh the slots
+								slots = nil
 							end
 						end
 					end
