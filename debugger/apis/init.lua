@@ -9,7 +9,7 @@ local dbg = { }
 local function hookBreakpoint(info)
 	if dbg.breakpoints then
 		for _,v in pairs(dbg.breakpoints) do
-			if v.line == info.currentline and v.file == info.short_src then
+			if v.line == info.currentline and v.file == info.short_src and not v.disabled then
 				return true
 			end
 		end
@@ -24,8 +24,8 @@ end
 
 local function hookStep()
 	local co = coroutine.running()
-	return function()
-		return co == coroutine.running()
+	return function(info)
+		return co == coroutine.running() or hookBreakpoint(info)
 	end
 end
 
@@ -39,12 +39,13 @@ local function hookStepStacksize(n)
 		end
 		i = i + 1
 	end
-	return function()
+	return function(info)
 		if co == coroutine.running() then
 			if not debug.getinfo(i - n) then
 				return true
 			end
 		end
+		return hookBreakpoint(info)
 	end
 end
 
@@ -63,13 +64,13 @@ local hookEval = function() end
 local function local_bindings(offset, stack_inspect_offset)
 	offset = offset + 1 + stack_inspect_offset -- add this function to the offset
 	local func = debug.getinfo(offset).func
-	local bindings = {}
+	local bindings = { }
 
 	-- Retrieve the upvalues
 	do local i = 1; while true do
 		local name, value = debug.getupvalue(func, i)
 		if not name then break end
-		bindings[name] = value
+		bindings[name] = { type = 'U', raw = value }
 		i = i + 1
 	end end
 
@@ -77,21 +78,32 @@ local function local_bindings(offset, stack_inspect_offset)
 	do local i = 1; while true do
 		local name, value = debug.getlocal(offset, i)
 		if not name then break end
-		bindings[name] = value
+		bindings[name] = { type = 'L', raw = value }
 		i = i + 1
 	end end
 
 	-- Retrieve the varargs (works in Lua 5.2 and LuaJIT)
-	local varargs = {}
+	local varargs = { }
 	do local i = 1; while true do
 		local name, value = debug.getlocal(offset, -i)
 		if not name then break end
 		varargs[i] = value
 		i = i + 1
 	end end
-	if #varargs > 0 then bindings["..."] = varargs end
+	if #varargs > 0 then
+		bindings["..."] = { type = 'V', value = varargs }
+	end
 
-	return bindings
+	local t = { }
+	for k,v in pairs(bindings) do
+		if v.raw ~= nil then
+			v.name = k
+			v.value = tostring(v.raw)
+			table.insert(t, v)
+		end
+	end
+
+	return t
 end
 
 local function get_trace(offset, stack_inspect_offset)
@@ -170,6 +182,17 @@ local function hook()
 
 		inHook = false
 	end
+end
+
+local cocreate = coroutine.create
+_ENV.coroutine = { }
+for k,v in pairs(_G.coroutine) do
+	_ENV.coroutine[k] = v
+end
+_ENV.coroutine.create = function(f, ...)
+	local co = cocreate(f, ...)
+	debug.sethook(co, dbg.hook, "l")
+	return co
 end
 
 debug.sethook(hook, 'l')

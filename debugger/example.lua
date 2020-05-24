@@ -12,8 +12,7 @@ local function method(times)
 end
 
 print('before')
--- breakpoint
---dbg()
+term.current().clear()
 print('after')
 
 local i = 2

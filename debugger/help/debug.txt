@@ -1,0 +1,6 @@
+An interactive debugger for lua
+
+debug must be enabled!
+
+Run from a shell prompt
+> debug FILE [ARGS]

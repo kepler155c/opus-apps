@@ -16,12 +16,14 @@ if not filename then
 	error('file not found')
 end
 
+UI:disableEffects()
+
 local config = Config.load('debugger')
-if not config.filename then
-	config.filename = { }
+if not config[filename] then
+	config[filename] = { }
 end
 
-local breakpoints = config.filename
+local breakpoints = config[filename]
 local currentFile
 local debugFile, debugLine
 
@@ -37,14 +39,10 @@ local function startClient()
 		args = args,
 		fn = function(...)
 			local dbg = require('debugger')
-			local fn = loadfile(filename, env)
+			local fn, msg = loadfile(filename, env)
 
-			local cocreate = coroutine.create
-			env.coroutine = require('opus.util').shallowCopy(coroutine)
-			env.coroutine.create = function(f, ...)
-				local co = cocreate(f, ...)
-				debug.sethook(co, dbg.hook, "l")
-				return co
+			if not fn then
+				error(msg, -1)
 			end
 
 			dbg.debugger = debugger
@@ -56,10 +54,32 @@ local function startClient()
 	client = kernel.find(clientId)
 end
 
+local romFiles = {
+	load = function(self)
+		local function recurse(dir)
+			local files = fs.list(dir)
+			for _,f in ipairs(files) do
+				local fullName = fs.combine(dir, f)
+				if fs.isDir(fullName) then
+					recurse(fullName)
+				else
+					self.files[f] = fullName
+				end
+			end
+		end
+		recurse('rom/apis')
+	end,
+	get = function(self, file)
+		return self.files[file]
+	end,
+	files = { },
+}
+romFiles:load()
+
 local function loadSource(file)
-	currentFile = file:match('@?(.*)')
+	currentFile = romFiles:get(file) or file:match('@?(.*)')
 	local src = { }
-	local lines = Util.readLines(file:match('@?(.*)'))
+	local lines = Util.readLines(currentFile)
 
 	if lines then
 		for i = 1, #lines do
@@ -77,11 +97,11 @@ end
 local page = UI.Page {
 	menuBar = UI.MenuBar {
 		buttons = {
-			{ text = 'Continue',  event = 'cmd', cmd = 'c'  },
-			{ text = 'Step',      event = 'cmd', cmd = 's' },
-			{ text = 'Step Over', event = 'cmd', cmd = 'n' },
-			{ text = 'Step Out',  event = 'cmd', cmd = 'f' },
-			{ text = 'Restart',   event = 'restart', width = 9, ex = -1 },
+			{ text = 'Continue', event = 'cmd', cmd = 'c'  },
+			{ text = 'Step',     event = 'cmd', cmd = 's' },
+			{ text = 'Over',     event = 'cmd', cmd = 'n' },
+			{ text = 'Out',      event = 'cmd', cmd = 'f' },
+			{ text = 'Restart',  event = 'restart', width = 9, ex = -1 },
 		},
 	},
 
@@ -94,11 +114,15 @@ local page = UI.Page {
 				{ heading = 'Key',   key = 'name' },
 				{ heading = 'Value', key = 'value', textColor = 'yellow' },
 			},
-			--sortColumn = 'name',
 			autospace = true,
 			accelerators = {
 				grid_select = 'show_variable',
 			},
+			getRowTextColor = function(self, row, selected)
+				return row.type == 'U' and 'cyan'
+					or row.type == 'V' and 'lime'
+					or UI.Grid.getRowTextColor(self, row, selected)
+			end,
 		},
 		statusBar = UI.StatusBar {
 			ex = -7, y = -1,
@@ -128,7 +152,7 @@ local page = UI.Page {
 					for _,v in pairs(breakpoints) do
 						if v.file == currentFile and v.line == row.line then
 							return {
-								marker = '!',
+								marker = v.disabled and 'x' or '!',
 								line = row.line,
 								source = row.source,
 							}
@@ -136,6 +160,9 @@ local page = UI.Page {
 					end
 					return row
 				end,
+				accelerators = {
+					t = 'toggle_enabled'
+				},
 				getRowTextColor = function(self, row, selected)
 					return row.line == debugLine and currentFile == debugFile and 'yellow'
 						or UI.Grid.getRowTextColor(self, row, selected)
@@ -147,6 +174,17 @@ local page = UI.Page {
 							file = currentFile,
 							line = event.selected.line,
 						})
+					elseif event.type == 'toggle_enabled' then
+						local line = self:getSelected() and self:getSelected().line
+						if line then
+							for _,v in pairs(breakpoints) do
+								if v.file == currentFile and v.line == line then
+									v.disabled = not v.disabled
+									self:emit({ type = 'update_breakpoints' })
+									break
+								end
+							end
+						end
 					end
 					return UI.Grid.eventHandler(self, event)
 				end,
@@ -157,6 +195,7 @@ local page = UI.Page {
 			title = 'Stack',
 			index = 3,
 			grid = UI.ScrollingGrid {
+				disableHeader = true,
 				columns = {
 					{ key = 'index', width = 2 },
 					{ heading = 'heading', key = 'desc' },
@@ -166,14 +205,14 @@ local page = UI.Page {
 						or UI.Grid.getRowTextColor(self, row, selected)
 				end,
 				sortColumn = 'index',
+				eventHandler = function(self, event)
+					if event.type == 'grid_select' then
+						message('i', event.selected.index)
+					else
+						return UI.Grid.eventHandler(self, event)
+					end
+				end,
 			},
-			eventHandler = function(self, event)
-				if event.type == 'grid_select' then
-					message('r', event.selected.index)
-				else
-					return UI.Grid.eventHandler(self, event)
-				end
-			end,
 		},
 
 		env = UI.Tab {
@@ -371,10 +410,10 @@ Event.on('debugger', function(_, cmd, data)
 		kernel.raise(debugger.uid)
 
 		-- local tab
-		local t = { }
-		for k,v in pairs(data.locals or { }) do
-			table.insert(t, { name = k, value = tostring(v), raw = v })
-		end
+		local t = data.locals
+--		for k,v in pairs(data.locals or { }) do
+--			table.insert(t, { name = k, value = tostring(v), raw = v })
+--		end
 		table.sort(t, function(a, b) return a.name < b.name end)
 		page.container.locals:setValues(t)
 		page.container.locals.orig = Util.shallowCopy(t)
@@ -404,4 +443,6 @@ end)
 UI:setPage(page)
 UI:start()
 
-message('d')
+if kernel.find(client.uid) then
+	client:resume('terminate')
+end
