@@ -1,0 +1,6 @@
+{
+	title = 'Lua Debugger',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/debugger',
+	description = [[Lua interactive debugger]],
+	license = 'MIT',
+}

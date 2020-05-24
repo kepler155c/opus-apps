@@ -335,92 +335,23 @@ local page = UI.Page {
 			return UI.SlideOut.eventHandler(self, event)
 		end,
 	},
-	quick_open = UI.SlideOut {
-		filter_entry = UI.TextEntry {
-			x = 2, y = 2, ex = -2,
-			shadowText = 'File name',
-			accelerators = {
-				[ 'enter' ] = 'accept',
-				[ 'up' ] = 'grid_up',
-				[ 'down' ] = 'grid_down',
-			},
-		},
-		grid = UI.ScrollingGrid {
-			x = 2, y = 3, ex = -2, ey = -4,
-			disableHeader = true,
-			columns = {
-				{ key = 'name' },
-				{ key = 'dir', textColor = 'lightGray' },
-			},
-			accelerators = {
-				grid_select = 'accept',
-			},
-		},
-		cancel = UI.Button {
-			x = -9, y = -2,
-			text = 'Cancel',
-			event = 'slide_hide',
-		},
-		apply_filter = function(self, filter)
-			if filter then
-				filter = filter:lower()
-				self.grid.sortColumn = 'score'
-
-				for _,v in pairs(self.grid.values) do
-					v.score = -fuzzy(v.lname, filter)
-				end
-			else
-				self.grid.sortColumn = 'lname'
-			end
-
-			self.grid:update()
-			self.grid:setIndex(1)
-		end,
+	quick_open = UI.QuickSelect {
+		modal = true,
+		enable = function() end,
 		show = function(self)
-			local function recurse(dir)
-				local files = fs.list(dir)
-				for _,f in ipairs(files) do
-					local fullName = fs.combine(dir, f)
-					if fs.native.isDir(fullName) then -- skip virtual dirs
-						if f ~= '.git' then recurse(fullName) end
-					else
-						_insert(self.grid.values, {
-							name = f,
-							dir = dir,
-							lname = f:lower(),
-							fullName = fullName,
-						})
-					end
-				end
-			end
-			recurse('')
-			self:apply_filter()
-			self.filter_entry:reset()
-			UI.SlideOut.show(self)
+			UI.QuickSelect.enable(self)
+			self:focusFirst()
+			self:draw()
 			self:addTransition('expandUp', { easing = 'outBounce', ticks = 12 })
 		end,
 		eventHandler = function(self, event)
-			if event.type == 'grid_up' then
-				self.grid:emit({ type = 'scroll_up' })
-
-			elseif event.type == 'grid_down' then
-				self.grid:emit({ type = 'scroll_down' })
-
-			elseif event.type == 'accept' then
-				local sel = self.grid:getSelected()
-				if sel then
-					actions.process('open', sel.fullName)
-					self:hide()
-				end
-
-			elseif event.type == 'text_change' then
-				self:apply_filter(event.text)
-				self.grid:draw()
-
-			else
-				return UI.SlideOut.eventHandler(self, event)
+			if event.type == 'select_cancel' then
+				self:disable()
+			elseif event.type == 'select_file' then
+				self:disable()
+				actions.process('open', event.file)
 			end
-			return true
+			return UI.QuickSelect.eventHandler(self, event)
 		end,
 	},
 	completions = UI.SlideOut {

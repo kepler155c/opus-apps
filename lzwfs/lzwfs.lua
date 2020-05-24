@@ -19,9 +19,9 @@ local SIGC = 'LZWC'
 local basedictcompress = {}
 local basedictdecompress = {}
 for i = 0, 255 do
-    local ic, iic = char(i), char(i, 0)
-    basedictcompress[ic] = iic
-    basedictdecompress[iic] = ic
+	local ic, iic = char(i), char(i, 0)
+	basedictcompress[ic] = iic
+	basedictdecompress[iic] = ic
 end
 
 local native = { open = fs.open }
@@ -29,123 +29,123 @@ local enabled = false
 local filters = { }
 
 local function dictAddA(str, dict, a, b)
-    if a >= 256 then
-        a, b = 0, b+1
-        if b >= 256 then
-            dict = {}
-            b = 1
-        end
-    end
-    dict[str] = char(a,b)
-    a = a+1
-    return dict, a, b
+	if a >= 256 then
+		a, b = 0, b+1
+		if b >= 256 then
+			dict = {}
+			b = 1
+		end
+	end
+	dict[str] = char(a,b)
+	a = a+1
+	return dict, a, b
 end
 
 local function compress(input)
-    if type(input) ~= "string" then
-        error ("string expected, got "..type(input))
-    end
-    local len = #input
-    if len <= 1 then
-        return input
-    end
+	if type(input) ~= "string" then
+		error ("string expected, got "..type(input))
+	end
+	local len = #input
+	if len <= 1 then
+		return input
+	end
 
-    local dict = {}
-    local a, b = 0, 1
+	local dict = {}
+	local a, b = 0, 1
 
-    local result = { SIGC }
-    local resultlen = 1
-    local n = 2
-    local word = ""
-    for i = 1, len do
-        local c = sub(input, i, i)
-        local wc = word..c
-        if not (basedictcompress[wc] or dict[wc]) then
-            local write = basedictcompress[word] or dict[word]
-            if not write then
-                error "algorithm error, could not fetch word"
-            end
-            result[n] = write
-            resultlen = resultlen + #write
-            n = n+1
-            if  len <= resultlen then
-                return input
-            end
-            dict, a, b = dictAddA(wc, dict, a, b)
-            word = c
-        else
-            word = wc
-        end
-    end
-    result[n] = basedictcompress[word] or dict[word]
-    resultlen = resultlen+#result[n]
-    if  len <= resultlen then
-        return input
-    end
-    return tconcat(result)
+	local result = { SIGC }
+	local resultlen = 1
+	local n = 2
+	local word = ""
+	for i = 1, len do
+		local c = sub(input, i, i)
+		local wc = word..c
+		if not (basedictcompress[wc] or dict[wc]) then
+			local write = basedictcompress[word] or dict[word]
+			if not write then
+				error "algorithm error, could not fetch word"
+			end
+			result[n] = write
+			resultlen = resultlen + #write
+			n = n+1
+			if  len <= resultlen then
+				return input
+			end
+			dict, a, b = dictAddA(wc, dict, a, b)
+			word = c
+		else
+			word = wc
+		end
+	end
+	result[n] = basedictcompress[word] or dict[word]
+	resultlen = resultlen+#result[n]
+	if  len <= resultlen then
+		return input
+	end
+	return tconcat(result)
 end
 
 local function dictAddB(str, dict, a, b)
-    if a >= 256 then
-        a, b = 0, b+1
-        if b >= 256 then
-            dict = {}
-            b = 1
-        end
-    end
-    dict[char(a,b)] = str
-    a = a+1
-    return dict, a, b
+	if a >= 256 then
+		a, b = 0, b+1
+		if b >= 256 then
+			dict = {}
+			b = 1
+		end
+	end
+	dict[char(a,b)] = str
+	a = a+1
+	return dict, a, b
 end
 
 local function decompress(input)
-    if type(input) ~= "string" then
-        error( "string expected, got "..type(input))
-    end
+	if type(input) ~= "string" then
+		error( "string expected, got "..type(input))
+	end
 
-    if #input <= 1 then
-        return input
-    end
+	if #input <= 1 then
+		return input
+	end
 
-    local control = sub(input, 1, 4)
-    if control ~= SIGC then
-        return input
-    end
-    input = sub(input, 5)
-    local len = #input
+	local control = sub(input, 1, 4)
+	if control ~= SIGC then
+		return input
+	end
+	input = sub(input, 5)
+	local len = #input
 
-    if len < 2 then
-        error("invalid input - not a compressed string")
-    end
+	if len < 2 then
+		error("invalid input - not a compressed string")
+	end
 
-    local dict = {}
-    local a, b = 0, 1
+	local dict = {}
+	local a, b = 0, 1
 
-    local result = {}
-    local n = 1
-    local last = sub(input, 1, 2)
-    result[n] = basedictdecompress[last] or dict[last]
-    n = n+1
-    for i = 3, len, 2 do
-        local code = sub(input, i, i+1)
-        local lastStr = basedictdecompress[last] or dict[last]
-        if not lastStr then
-            error( "could not find last from dict. Invalid input?")
-        end
-        local toAdd = basedictdecompress[code] or dict[code]
-        if toAdd then
-            result[n] = toAdd
-            n = n+1
-            dict, a, b = dictAddB(lastStr..sub(toAdd, 1, 1), dict, a, b)
-        else
-            local tmp = lastStr..sub(lastStr, 1, 1)
-            result[n] = tmp
-            n = n+1
-            dict, a, b = dictAddB(tmp, dict, a, b)
-        end
-        last = code
-    end
-    return tconcat(result)
+	local result = {}
+	local n = 1
+	local last = sub(input, 1, 2)
+	result[n] = basedictdecompress[last] or dict[last]
+	n = n+1
+	for i = 3, len, 2 do
+		local code = sub(input, i, i+1)
+		local lastStr = basedictdecompress[last] or dict[last]
+		if not lastStr then
+			error( "could not find last from dict. Invalid input?")
+		end
+		local toAdd = basedictdecompress[code] or dict[code]
+		if toAdd then
+			result[n] = toAdd
+			n = n+1
+			dict, a, b = dictAddB(lastStr..sub(toAdd, 1, 1), dict, a, b)
+		else
+			local tmp = lastStr..sub(lastStr, 1, 1)
+			result[n] = tmp
+			n = n+1
+			dict, a, b = dictAddB(tmp, dict, a, b)
+		end
+		last = code
+	end
+	return tconcat(result)
 end
 
 local function split(str, pattern)
@@ -157,39 +157,39 @@ local function split(str, pattern)
 end
 
 local function matchesFilter(fname)
-    if not fname:find('lzwfs') then  -- don't compress anything with lzwfs in name (sigh)
-        for _, filter in pairs(filters) do
-            if fname:match(filter) then
-                return true
-            end
-        end
-    end
+	if not fname:find('lzwfs') then  -- don't compress anything with lzwfs in name (sigh)
+		for _, filter in pairs(filters) do
+			if fname:match(filter) then
+				return true
+			end
+		end
+	end
 end
 
 function fs.open(fname, flags)
-    if not enabled then
-        return native.open(fname, flags)
-    end
+	if not enabled then
+		return native.open(fname, flags)
+	end
 
-    if flags == 'r' then
-        local f, err = native.open(fname, 'rb')
-        if not f then
-            return f, err
-        end
+	if flags == 'r' then
+		local f, err = native.open(fname, 'rb')
+		if not f then
+			return f, err
+		end
 
 		local ctr = 0
 		local lines
 		return {
-            read = function()
-                if not lines then
-                    lines = decompress(f.readAll())
-				end
-                ctr = ctr + 1
-                return lines:sub(ctr, ctr)
-            end,
-            readLine = function()
+			read = function()
 				if not lines then
-                    lines = split(decompress(f.readAll()))
+					lines = decompress(f.readAll())
+				end
+				ctr = ctr + 1
+				return lines:sub(ctr, ctr)
+			end,
+			readLine = function()
+				if not lines then
+					lines = split(decompress(f.readAll()))
 				end
 				ctr = ctr + 1
 				return lines[ctr]
@@ -197,61 +197,61 @@ function fs.open(fname, flags)
 			readAll = function()
 				return decompress(f.readAll())
 			end,
-            close = function()
-                f.close()
-			end,
-        }
-    elseif flags == 'w' or flags == 'a' then
-        if not matchesFilter(fs.combine(fname, '')) then
-            return native.open(fname, flags)
-        end
-
-        local c = { }
-
-        if flags == 'a' then
-            local f = fs.open(fname, 'r')
-            if f then
-                tinsert(c, f.readAll())
-                f.close()
-            end
-        end
-
-        local f, err = native.open(fname, 'wb')
-        if not f then
-            return f, err
-        end
-
-        return {
-            write = function(str)
-                tinsert(c, str)
-			end,
-			writeLine = function(str)
-                tinsert(c, str)
-                tinsert(c, '\n')
-			end,
-            flush = function()
-                -- this isn't gonna work...
-                -- f.write(compress(tconcat(c)))
-                f.flush();
-			end,
-            close = function()
-                f.write(compress(tconcat(c)))
-                f.close()
+			close = function()
+				f.close()
 			end,
 		}
-    end
+	elseif flags == 'w' or flags == 'a' then
+		if not matchesFilter(fs.combine(fname, '')) then
+			return native.open(fname, flags)
+		end
 
-    return native.open(fname, flags)
+		local c = { }
+
+		if flags == 'a' then
+			local f = fs.open(fname, 'r')
+			if f then
+				tinsert(c, f.readAll())
+				f.close()
+			end
+		end
+
+		local f, err = native.open(fname, 'wb')
+		if not f then
+			return f, err
+		end
+
+		return {
+			write = function(str)
+				tinsert(c, str)
+			end,
+			writeLine = function(str)
+				tinsert(c, str)
+				tinsert(c, '\n')
+			end,
+			flush = function()
+				-- this isn't gonna work...
+				-- f.write(compress(tconcat(c)))
+				f.flush();
+			end,
+			close = function()
+				f.write(compress(tconcat(c)))
+				f.close()
+			end,
+		}
+	end
+
+	return native.open(fname, flags)
 end
 
 function fs.option(category, action, option)
-    if category == 'compression' then
-        if action == 'enabled' then
-            enabled = option
-        elseif action == 'filters' then
-            filters = option
-        end
-    end
+	if category == 'compression' then
+		if action == 'enabled' then
+			enabled = option
+		elseif action == 'filters' then
+			filters = option
+		end
+	end
 end
 
 print('lzwfs started')

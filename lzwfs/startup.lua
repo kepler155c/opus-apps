@@ -6,11 +6,11 @@ local CONFIG = 'usr/config/lzwfs'
 local config = { }
 
 if fs.exists(CONFIG) then
-    local f = fs.open(CONFIG, 'r')
+	local f = fs.open(CONFIG, 'r')
 	if f then
 		config = textutils.unserialize(f.readAll())
 		f.close()
-    end
+	end
 end
 
 os.run(_ENV, '/packages/lzwfs/lzwfs.lua')
