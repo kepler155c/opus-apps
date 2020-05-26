@@ -32,12 +32,13 @@ local client
 
 local function startClient()
 	local env = kernel.makeEnv(_ENV)
+	currentFile = nil
 
 	local clientId = multishell.openTab(nil, {
 		env = env,
 		title = fs.getName(filename):match('([^%.]+)'),
 		args = args,
-		fn = function(...)
+		fn = function()
 			local dbg = require('debugger')
 			local fn, msg = loadfile(filename, env)
 
@@ -45,10 +46,14 @@ local function startClient()
 				error(msg, -1)
 			end
 
-			dbg.debugger = debugger
+			-- breakpoint table is shared across processes
 			dbg.breakpoints = breakpoints
+			dbg.debugger = debugger
 			dbg.stopIn(fn)
-			fn(...)
+			local s, m = dbg.call(fn, table.unpack(args))
+			if not s then
+				error(m, -1)
+			end
 		end,
 	})
 	client = kernel.find(clientId)
@@ -79,7 +84,7 @@ romFiles:load()
 local function loadSource(file)
 	currentFile = romFiles:get(file) or file:match('@?(.*)')
 	local src = { }
-	local lines = Util.readLines(currentFile)
+	local lines = Util.readLines(currentFile) or type(file) == 'string' and Util.split(file)
 
 	if lines then
 		for i = 1, #lines do
@@ -95,199 +100,210 @@ local function message(...)
 end
 
 local page = UI.Page {
-	menuBar = UI.MenuBar {
-		buttons = {
-			{ text = 'Continue', event = 'cmd', cmd = 'c'  },
-			{ text = 'Step',     event = 'cmd', cmd = 's' },
-			{ text = 'Over',     event = 'cmd', cmd = 'n' },
-			{ text = 'Out',      event = 'cmd', cmd = 'f' },
-			{ text = 'Restart',  event = 'restart', width = 9, ex = -1 },
-		},
-	},
+	backgroundColor = 'black',
 
 	container = UI.Window {
-		y = 2, ey = '50%',
-		locals = UI.ScrollingGrid {
+		y = 1, ey = '50%',
+		tabs = UI.Tabs {
 			ey = -2,
-			disableHeader = true,
-			columns = {
-				{ heading = 'Key',   key = 'name' },
-				{ heading = 'Value', key = 'value', textColor = 'yellow' },
-			},
-			autospace = true,
-			accelerators = {
-				grid_select = 'show_variable',
-			},
-			getRowTextColor = function(self, row, selected)
-				return row.type == 'U' and 'cyan'
-					or row.type == 'V' and 'lime'
-					or UI.Grid.getRowTextColor(self, row, selected)
-			end,
-		},
-		statusBar = UI.StatusBar {
-			ex = -7, y = -1,
-			backgroundColor = 'primary',
-			textColor = 'white',
-		},
-		UI.Button {
-			y = -1, x = -6,
-			event = 'open',
-			text = 'Open',
-		}
-	},
+			unselectedBackgroundColor = 'black',
 
-	tabs = UI.Tabs {
-		y = '50%',
-		source = UI.Tab {
-			title = 'Source',
-			index = 1,
-			grid = UI.ScrollingGrid {
-				disableHeader = true,
-				columns = {
-					{ key = 'marker', width = 1 },
-					{ key = 'line', textColor = 'cyan', width = 4 },
-					{ heading = 'heading', key = 'source' },
+			locals = UI.Tab {
+				title = 'Locals',
+				index = 1,
+				grid = UI.ScrollingGrid {
+					disableHeader = true,
+					unfocusedBackgroundSelectedColor = 'black',
+					columns = {
+						{ heading = 'Key',   key = 'name' },
+						{ heading = 'Value', key = 'value', textColor = 'yellow' },
+					},
+					autospace = true,
+					accelerators = {
+						grid_select = 'show_variable',
+					},
+					getRowTextColor = function(self, row, selected)
+						return row.type == 'U' and 'cyan'
+							or row.type == 'V' and 'lime'
+							or UI.Grid.getRowTextColor(self, row, selected)
+					end,
 				},
-				getDisplayValues = function(_, row)
-					for _,v in pairs(breakpoints) do
-						if v.file == currentFile and v.line == row.line then
-							return {
-								marker = v.disabled and 'x' or '!',
-								line = row.line,
-								source = row.source,
-							}
+			},
+
+			stack = UI.Tab {
+				title = 'Stack',
+				index = 3,
+				grid = UI.ScrollingGrid {
+					disableHeader = true,
+					sortColumn = 'index',
+					unfocusedBackgroundSelectedColor = 'black',
+					columns = {
+						{ key = 'index', width = 2 },
+						{ heading = 'heading', key = 'desc' },
+					},
+					getRowTextColor = function(self, row, selected)
+						return row.current and 'yellow'
+							or UI.Grid.getRowTextColor(self, row, selected)
+					end,
+					eventHandler = function(self, event)
+						if event.type == 'grid_select' then
+							message('i', event.selected.index)
+						else
+							return UI.Grid.eventHandler(self, event)
 						end
-					end
-					return row
-				end,
-				accelerators = {
-					t = 'toggle_enabled'
+					end,
 				},
-				getRowTextColor = function(self, row, selected)
-					return row.line == debugLine and currentFile == debugFile and 'yellow'
-						or UI.Grid.getRowTextColor(self, row, selected)
-				end,
+			},
+
+			env = UI.Tab {
+				title = 'Env',
+				index = 4,
+				grid = UI.ScrollingGrid {
+					disableHeader = true,
+					autospace = true,
+					unfocusedBackgroundSelectedColor = 'black',
+					columns = {
+						{ heading = 'Key',   key = 'name' },
+						{ heading = 'Value', key = 'value', textColor = 'yellow' },
+					},
+					accelerators = {
+						grid_select = 'show_variable',
+					},
+					sortCompare = function() end,
+				},
+			},
+
+			breaks = UI.Tab {
+				title = 'Breakpoints',
+				index = 2,
+				menuBar = UI.MenuBar {
+					buttons = {
+						{ text = 'Toggle', event = 'toggle' },
+						{ text = 'Remove', event = 'remove' },
+						{ text = 'Clear',  event = 'clear' },
+					},
+				},
+				grid = UI.ScrollingGrid {
+					y = 2,
+					values = breakpoints,
+					autospace = true,
+					columns = {
+						{ heading = 'Line', key = 'line', width = 5 },
+						{ heading = 'Name', key = 'short' },
+						{ heading = 'Path', key = 'path', textColor = 'lightGray' },
+					},
+					getRowTextColor = function(self, row, selected)
+						return row.disabled and 'lightGray'
+							or UI.Grid.getRowTextColor(self, row, selected)
+					end,
+				},
 				eventHandler = function(self, event)
-					if event.type == 'grid_select' then
+					if event.type == 'clear' then
+						Util.clear(self.grid.values)
+						self:emit({ type = 'update_breakpoints' })
+
+					elseif event.type == 'toggle' then
+						local bp = self.grid:getSelected()
+						if bp then
+							bp.disabled = not bp.disabled
+							self:emit({ type = 'update_breakpoints' })
+						end
+
+					elseif event.type == 'grid_select' then
 						self:emit({
-							type = 'toggle_breakpoint',
-							file = currentFile,
+							type = 'open_file',
+							file = event.selected.file,
 							line = event.selected.line,
 						})
-					elseif event.type == 'toggle_enabled' then
-						local line = self:getSelected() and self:getSelected().line
-						if line then
-							for _,v in pairs(breakpoints) do
-								if v.file == currentFile and v.line == line then
-									v.disabled = not v.disabled
-									self:emit({ type = 'update_breakpoints' })
-									break
-								end
-							end
+
+					elseif event.type == 'remove' then
+						local bp = self.grid:getSelected()
+						if bp then
+							Util.removeByValue(self.grid.values, bp)
+							self:emit({ type = 'update_breakpoints' })
+						end
+
+					end
+					return UI.Tab.eventHandler(self, event)
+				end,
+			},
+		},
+
+		menuBar = UI.MenuBar {
+			y = -1,
+			buttons = {
+				{ text = 'Continue', event = 'cmd', cmd = 'c' },
+				{ text = 'Step',     event = 'cmd', cmd = 's' },
+				{ text = 'Over',     event = 'cmd', cmd = 'n' },
+				{ text = 'Out',      event = 'cmd', cmd = 'f' },
+				{ text = 'Restart',  event = 'restart', width = 9, ex = -1 },
+			},
+		},
+	},
+
+	source = UI.ScrollingGrid {
+		y = '50%', ey = -2,
+		disableHeader = true,
+		columns = {
+			{ key = 'marker', width = 1 },
+			{ key = 'line', textColor = 'cyan', width = 4 },
+			{ heading = 'heading', key = 'source' },
+		},
+		accelerators = {
+			t = 'toggle_enabled'
+		},
+		getDisplayValues = function(_, row)
+			for _,v in pairs(breakpoints) do
+				if v.file == currentFile and v.line == row.line then
+					return {
+						marker = v.disabled and 'x' or '!',
+						line = row.line,
+						source = row.source,
+					}
+				end
+			end
+			return row
+		end,
+		getRowTextColor = function(self, row, selected)
+			return row.line == debugLine and currentFile == debugFile and 'yellow'
+				or UI.Grid.getRowTextColor(self, row, selected)
+		end,
+		eventHandler = function(self, event)
+			if event.type == 'grid_select' then
+				self:emit({
+					type = 'toggle_breakpoint',
+					file = currentFile,
+					line = event.selected.line,
+				})
+			elseif event.type == 'toggle_enabled' then
+				local line = self:getSelected() and self:getSelected().line
+				if line then
+					for _,v in pairs(breakpoints) do
+						if v.file == currentFile and v.line == line then
+							v.disabled = not v.disabled
+							self:emit({ type = 'update_breakpoints' })
+							break
 						end
 					end
-					return UI.Grid.eventHandler(self, event)
-				end,
-			},
-		},
-
-		stack = UI.Tab {
-			title = 'Stack',
-			index = 3,
-			grid = UI.ScrollingGrid {
-				disableHeader = true,
-				columns = {
-					{ key = 'index', width = 2 },
-					{ heading = 'heading', key = 'desc' },
-				},
-				getRowTextColor = function(self, row, selected)
-					return row.current and 'yellow'
-						or UI.Grid.getRowTextColor(self, row, selected)
-				end,
-				sortColumn = 'index',
-				eventHandler = function(self, event)
-					if event.type == 'grid_select' then
-						message('i', event.selected.index)
-					else
-						return UI.Grid.eventHandler(self, event)
-					end
-				end,
-			},
-		},
-
-		env = UI.Tab {
-			title = 'Env',
-			index = 4,
-			grid = UI.ScrollingGrid {
-				columns = {
-					{ heading = 'Key',   key = 'name' },
-					{ heading = 'Value', key = 'value', textColor = 'yellow' },
-				},
-				autospace = true,
-				accelerators = {
-					grid_select = 'show_variable',
-				},
-				sortCompare = function() end,
-			},
-		},
-
-		breaks = UI.Tab {
-			title = 'Breakpoints',
-			index = 2,
-			menuBar = UI.MenuBar {
-				buttons = {
-					{ text = 'Toggle', event = 'toggle' },
-					{ text = 'Remove', event = 'remove' },
-					{ text = 'Clear',  event = 'clear' },
-				},
-			},
-			grid = UI.ScrollingGrid {
-				y = 2,
-				columns = {
-					{ heading = 'Line', key = 'line', width = 5 },
-					{ heading = 'Name', key = 'short' },
-					{ heading = 'Path', key = 'path', textColor = 'lightGray' },
-				},
-				values = breakpoints,
-				autospace = true,
-				getRowTextColor = function(self, row, selected)
-					return row.disabled and 'lightGray'
-						or UI.Grid.getRowTextColor(self, row, selected)
-				end,
-			},
-			eventHandler = function(self, event)
-				if event.type == 'clear' then
-					Util.clear(self.grid.values)
-					self:emit({ type = 'update_breakpoints' })
-
-				elseif event.type == 'toggle' then
-					local bp = self.grid:getSelected()
-					if bp then
-						bp.disabled = not bp.disabled
-						self:emit({ type = 'update_breakpoints' })
-					end
-
-				elseif event.type == 'grid_select' then
-					self:emit({
-						type = 'open_file',
-						file = event.selected.file,
-						line = event.selected.line,
-					})
-
-				elseif event.type == 'remove' then
-					local bp = self.grid:getSelected()
-					if bp then
-						Util.removeByValue(self.grid.values, bp)
-						self:emit({ type = 'update_breakpoints' })
-					end
-
 				end
-				return UI.Tab.eventHandler(self, event)
-			end,
-		},
+			end
+			return UI.Grid.eventHandler(self, event)
+		end,
+	},
+	statusBar = UI.StatusBar {
+		ex = -7, y = -1,
+		backgroundColor = 'black',
+		textColor = 'orange',
+	},
+	UI.FlatButton {
+		y = -1, x = -5,
+		textColor = 'orange',
+		event = 'open',
+		text = 'Open',
 	},
 
 	quick_open = UI.QuickSelect {
+		y = '50%',
 		modal = true,
 		enable = function() end,
 		show = function(self)
@@ -310,26 +326,25 @@ local page = UI.Page {
 	openFile = function(self, file, line)
 		if file ~= currentFile then
 			local src = loadSource(file)
-			self.tabs.source.grid:setValues(src)
+			self.source:setValues(src)
 		end
 		if line then
-			self.tabs.source.grid:setIndex(#self.tabs.source.grid.values)
-			self.tabs.source.grid:setIndex(math.max(1, line - 4))
+			self.source:setIndex(#self.source.values)
+			self.source:setIndex(math.max(1, line - 4))
 		end
-		self.tabs.source.grid:setIndex(line or 1)
-		self.tabs:selectTab(self.tabs.source)
+		self.source:setIndex(line or 1)
 
 		if currentFile == debugFile then
-			self.container.statusBar:setStatus(
+			self.statusBar:setStatus(
 				string.format('%s : %d', fs.getName(file), debugLine))
 		else
-			self.container.statusBar:setStatus(fs.getName(file))
+			self.statusBar:setStatus(fs.getName(file))
 		end
 		self:draw()
 	end,
 	eventHandler = function(self, event)
 		if event.type == 'cmd' then
-			self.container.statusBar:setStatus('Running...')
+			self.statusBar:setStatus('Running...')
 			message(event.element.cmd)
 
 		elseif event.type == 'restart' then
@@ -345,10 +360,9 @@ local page = UI.Page {
 			self:openFile(event.file, event.line)
 
 		elseif event.type == 'update_breakpoints' then
-			self.tabs.breaks.grid:update()
-			self.tabs.breaks.grid:draw()
-			self.tabs.source.grid:draw()
-			message('b', breakpoints)
+			self.container.tabs.breaks.grid:update()
+			self.container.tabs.breaks.grid:draw()
+			self.source:draw()
 			Config.update('debugger', config)
 
 		elseif event.type == 'toggle_breakpoint' then
@@ -405,26 +419,22 @@ local page = UI.Page {
 	end,
 }
 
-Event.on('debugger', function(_, cmd, data)
-	if cmd == 'info' then
+Event.on('debuggerX', function(_, uid, data)
+	if uid == debugger.uid then
 		kernel.raise(debugger.uid)
 
 		-- local tab
-		local t = data.locals
---		for k,v in pairs(data.locals or { }) do
---			table.insert(t, { name = k, value = tostring(v), raw = v })
---		end
-		table.sort(t, function(a, b) return a.name < b.name end)
-		page.container.locals:setValues(t)
-		page.container.locals.orig = Util.shallowCopy(t)
+		table.sort(data.locals, function(a, b) return a.name < b.name end)
+		page.container.tabs.locals.grid:setValues(data.locals)
+		page.container.tabs.locals.grid.orig = Util.shallowCopy(data.locals)
 
 		-- env tab
-		t = { }
+		local t = { }
 		for k,v in pairs(getfenv(data.info.func)) do
 			table.insert(t, { name = k, value = tostring(v), raw = v })
 		end
-		page.tabs.env.grid:setValues(t)
-		page.tabs.env.grid.orig = Util.shallowCopy(t)
+		page.container.tabs.env.grid:setValues(t)
+		page.container.tabs.env.grid.orig = Util.shallowCopy(t)
 
 		debugLine = data.info.currentline
 		debugFile = data.info.source:match('@?(.*)')
@@ -433,7 +443,7 @@ Event.on('debugger', function(_, cmd, data)
 		page:openFile(debugFile, debugLine)
 
 		-- stack
-		page.tabs.stack.grid:setValues(data.stack)
+		page.container.tabs.stack.grid:setValues(data.stack)
 
 		page:draw()
 		page:sync()
