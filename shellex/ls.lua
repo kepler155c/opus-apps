@@ -6,6 +6,8 @@ local unicode = require("shellex.unicode")
 local tx = require("shellex.transforms")
 local text = require("shellex.text")
 
+local term = _G.term.current()
+
 local dirsArg, ops = shell.parse(...)
 
 if ops.help then
@@ -50,6 +52,8 @@ local function stat(names, index)
 	info.sort_name = info.name:gsub("^%.","")
 	info.isLink, info.link = fs.isLink(info.full_path)
 	info.size = info.isLink and 0 or fs.size(info.full_path)
+	local attrs = fs.attributes(info.full_path)
+	info.time = attrs and (attrs.modification / 1000) or 0
 	info.ext = info.name:match("(%.[^.]+)$") or ""
 	names[index] = info
 	return info
@@ -166,6 +170,24 @@ local function formatSize(size)
 	return nod(math.floor(size*10)/10)..sizes[unit]
 end
 
+local function pad(txt)
+	txt = tostring(txt)
+	return #txt >= 2 and txt or "0"..txt
+  end
+
+local function formatDate(epochms)
+	--local day_names={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"}
+	local month_names={"January","February","March","April","May","June","July","August","September","October","November","December"}
+	if epochms == 0 then return "" end
+	local d = os.date("*t", epochms)
+	local day, hour, min, sec = nod(d.day), pad(nod(d.hour)), pad(nod(d.min)), pad(nod(d.sec))
+	if ops["full-time"] then
+	  return string.format("%s-%s-%s %s:%s:%s ", d.year, pad(nod(d.month)), pad(day), hour, min, sec)
+	else
+	  return string.format("%s %+2s %+2s:%+2s ", month_names[d.month]:sub(1,3), day, hour, pad(min))
+	end
+  end
+
 local function filter(names)
 	if ops.a then
 		return names
@@ -200,6 +222,9 @@ local function sort(names)
 		table.sort(names, function(a, b)
 			local ast = stat(names, ni(a))
 			local bst = stat(names, ni(b))
+			if ast[key] == bst[key] then
+				return ast.name > bst.name
+			end
 			return ast[key] > bst[key]
 		end)
 	end
@@ -239,9 +264,11 @@ local function display(names)
 	if ops.l then
 		lines.n = #names
 		local max_size_width = 1
+		local max_date_width = 0
 		for i=1,lines.n do
 			local info = stat(names, i)
 			max_size_width = math.max(max_size_width, formatSize(info.size):len())
+			max_date_width = math.max(max_date_width, formatDate(info.time):len())
 		end
 		mt.__index = function(_, index)
 			local info = stat(names, index)
@@ -252,8 +279,9 @@ local function display(names)
 			end)
 			local write_mode = info.fs and info.fs.isReadOnly() and '-' or 'w'
 			local size = formatSize(info.size)
-			local format = "%s-r%s %+"..tostring(max_size_width)..'s '
-			local meta = string.format(format, file_type, write_mode, size)
+			local modDate = formatDate(info.time)
+			local format = "%s-r%s %+"..tostring(max_size_width)..'s %'..tostring(max_date_width).."s"
+			local meta = string.format(format, file_type, write_mode, size, modDate)
 			local item = info.name..link_target
 
 			return {{name = meta}, {color = colorize(info), name = item}}

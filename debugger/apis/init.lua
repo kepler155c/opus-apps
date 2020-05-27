@@ -9,7 +9,6 @@ local function breakpointHook(info)
 	if dbg.breakpoints then
 		for _,v in pairs(dbg.breakpoints) do
 			if v.line == info.currentline and v.file == info.short_src then
-print(v.line, not v.disabled)
 				return not v.disabled
 			end
 		end
@@ -96,6 +95,9 @@ local function local_bindings(offset, stack_inspect_offset)
 		if k ~= '(*temporary)' then
 			v.name = k
 			v.value = tostring(v.raw)
+			--if type(v.raw) == 'table' and not next(v.raw) then
+			--	v.value = 'table: (empty)'
+			--end
 			table.insert(t, v)
 		end
 	end
@@ -180,11 +182,11 @@ local function hook()
 	end
 end
 
-function dbg.call(f, ...)
+function dbg.call(fn, ...)
 	local args = { ... }
 	return xpcall(
 		function()
-			f(table.unpack(args))
+			fn(table.unpack(args))
 		end,
 		function(err)
 			hookEval = stepHook()
@@ -196,9 +198,9 @@ end
 
 _ENV.coroutine = setmetatable({
 
-	create = function(f)
+	create = function(fn)
 		local co = _G.coroutine.create(function(...)
-			local r = { dbg.call(f, ...) }
+			local r = { dbg.call(fn, ...) }
 
 			if not r[1] then
 				error(r[2], -1)

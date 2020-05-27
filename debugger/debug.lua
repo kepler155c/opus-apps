@@ -291,7 +291,7 @@ local page = UI.Page {
 		end,
 	},
 	statusBar = UI.StatusBar {
-		ex = -7, y = -1,
+		ex = -12, y = -1,
 		backgroundColor = 'black',
 		textColor = 'orange',
 	},
@@ -300,6 +300,12 @@ local page = UI.Page {
 		textColor = 'orange',
 		event = 'open',
 		text = 'Open',
+	},
+	UI.FlatButton {
+		y = -1, x = -10,
+		textColor = 'orange',
+		event = 'edit_file',
+		text = 'Edit',
 	},
 
 	quick_open = UI.QuickSelect {
@@ -323,6 +329,18 @@ local page = UI.Page {
 		end,
 	},
 
+	textDisplay = UI.SlideOut {
+		ey = '50%',
+		textArea = UI.TextArea {
+			ey = -2,
+		},
+		UI.Button {
+			x = '50%', y = -1,
+			text = 'Ok',
+			event = 'slide_hide',
+		}
+	},
+
 	openFile = function(self, file, line)
 		if file ~= currentFile then
 			local src = loadSource(file)
@@ -342,6 +360,17 @@ local page = UI.Page {
 		end
 		self:draw()
 	end,
+
+	editFile = function(_, file)
+		if fs.exists(file) then
+			multishell.openTab(_ENV, {
+				path = 'sys/apps/shell.lua',
+				args = { 'edit ' .. file },
+				focused = true,
+			})
+		end
+	end,
+
 	eventHandler = function(self, event)
 		if event.type == 'cmd' then
 			self.statusBar:setStatus('Running...')
@@ -355,6 +384,9 @@ local page = UI.Page {
 
 		elseif event.type == 'open' then
 			self.quick_open:show()
+
+		elseif event.type == 'edit_file' then
+			self:editFile(currentFile)
 
 		elseif event.type == 'open_file' then
 			self:openFile(event.file, event.line)
@@ -409,6 +441,9 @@ local page = UI.Page {
 				insert(event.element.orig)
 				event.element:setValues(t)
 				event.element:draw()
+			else
+				self.textDisplay.textArea:setValue(event.selected.value)
+				self.textDisplay:show()
 			end
 		end
 		return UI.Page.eventHandler(self, event)

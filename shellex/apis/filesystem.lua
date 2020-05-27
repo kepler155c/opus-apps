@@ -65,4 +65,10 @@ return {
 	realPath = function(...) return ... end,
 	remove = function(a) fs.delete(a) return true end,
 	size = fs.getSize,
+	attributes = function(f)
+		local s, m = pcall(fs.attributes, f)
+		if s then
+			return m
+		end
+	end
 }
