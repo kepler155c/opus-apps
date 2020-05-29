@@ -10,6 +10,28 @@ local function method(times)
     return m2(a)
 end
 
+local Event = require('opus.event')
+
+Event.on('event1', function()
+    print('event1')
+end)
+
+Event.on('event2', function()
+    print('event2')
+end)
+
+Event.onTimeout(10, function()
+    Event.exitPullEvents()
+end)
+
+local function xx()
+    os.queueEvent('event1')
+    os.queueEvent('event2')
+
+    Event.pullEvents()
+end
+xx()
+
 local chunk = load([[
     local j = 5
     for i = 1, 5 do

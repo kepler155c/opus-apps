@@ -3,7 +3,13 @@
 
 local fs = _G.fs
 
-local dbg = { }
+local dbg = {
+	hooks = { },
+	waits = { },
+	debugger = nil,
+	breakpoints = nil,
+}
+_G._dbg = dbg -- for testing purposes
 
 local function breakpointHook(info)
 	if dbg.breakpoints then
@@ -22,15 +28,12 @@ local function functionHook(fn)
 end
 
 local function stepHook()
-	local co = coroutine.running()
-	return function(info)
-		return co == coroutine.running()
-			or breakpointHook(info)
+	return function()
+		return true
 	end
 end
 
 local function stackSizeHook(n)
-	local co = coroutine.running()
 	local i = 2
 	while true do
 		local info = debug.getinfo(i)
@@ -40,8 +43,7 @@ local function stackSizeHook(n)
 		i = i + 1
 	end
 	return function(info)
-		return co == coroutine.running()
-			and not debug.getinfo(i - n)
+		return not debug.getinfo(i - n)
 			or breakpointHook(info)
 	end
 end
@@ -53,8 +55,6 @@ end
 local function stepOverHook()
 	return stackSizeHook(0)
 end
-
-local hookEval = function() end
 
 -- Create a table of all the locally accessible variables.
 local function local_bindings(offset, stack_inspect_offset)
@@ -133,14 +133,12 @@ local function get_trace(offset, stack_inspect_offset)
 	return t
 end
 
-local inHook = false
-
 local function hook()
 	local info = debug.getinfo(2)
 
-	if not inHook and hookEval(info) then
-		inHook = true
+	local h = dbg.hooks[coroutine.running()]
 
+	if h and h.eval(info) then
 		local inspectOffset = 0
 
 		repeat
@@ -153,6 +151,10 @@ local function hook()
 			}
 			inspectOffset = 0 -- reset
 
+			table.insert(dbg.waits, h)
+			while dbg.waits[1] ~= h do
+				os.sleep(.1)
+			end
 			os.queueEvent('debuggerX', dbg.debugger.uid, snapshot)
 
 			local e, cmd, param
@@ -160,25 +162,24 @@ local function hook()
 				e, cmd, param = os.pullEvent('debugger')
 			until e == 'debugger'
 
+			table.remove(dbg.waits, 1)
+
 			if cmd == 's' then
-				hookEval = stepHook()
+				h.eval = stepHook()
 			elseif cmd == 'n' then
-				hookEval = stepOverHook()
+				h.eval = stepOverHook()
 			elseif cmd == 'f' then
-				hookEval = stepOutHook()
+				h.eval = stepOutHook()
 			elseif cmd == 'c' then
-				hookEval = breakpointHook
+				h.eval = breakpointHook
 			elseif cmd == 'i' then
 				-- get snapshot of stack at this offset
 				inspectOffset = param
 				done = false
 			else
-				os.sleep(1)
 				done = false
 			end
 		until done
-
-		inHook = false
 	end
 end
 
@@ -189,19 +190,23 @@ function dbg.call(fn, ...)
 			fn(table.unpack(args))
 		end,
 		function(err)
-			hookEval = stepHook()
+			dbg.hooks[coroutine.running()].eval = stepHook()
 
 			-- An error has occurred
 			return err
 		end)
 end
 
-_ENV.coroutine = setmetatable({
+dbg.stopIn = function(fn)
+	dbg.hooks[coroutine.running()].eval = functionHook(fn)
+end
 
+_ENV.coroutine = setmetatable({
 	create = function(fn)
 		local co = _G.coroutine.create(function(...)
 			local r = { dbg.call(fn, ...) }
 
+			dbg.hooks[coroutine.running()] = nil
 			if not r[1] then
 				error(r[2], -1)
 			end
@@ -209,24 +214,19 @@ _ENV.coroutine = setmetatable({
 			return table.unpack(r, 2)
 		end)
 
+		dbg.hooks[co] = {
+			co = co,
+			eval = breakpointHook,
+		}
 		debug.sethook(co, hook, 'l')
 		return co
 	end
-	--[[
-	create = function(f)
-		local co = _G.coroutine.create(f)
-		debug.sethook(co, hook, 'l')
-		return co
-	end
-	]]
 }, { __index = coroutine })
 
+dbg.hooks[coroutine.running()] = {
+	co = coroutine.running(),
+	eval = function() return false end,
+}
+
 debug.sethook(hook, 'l')
-
--- Expose the debugger's functions
-dbg.stopIn = function(fn)
-	hookEval = functionHook(fn)
-end
-dbg.debugger = nil
-
 return dbg
