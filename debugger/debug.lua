@@ -46,6 +46,18 @@ local function startClient()
 				error(msg, -1)
 			end
 
+			dbg.read = function(snapshot)
+				os.sleep(0) -- not sure why, but we need a sleep before :resume
+				-- directly resuming debugger routine to prevent
+				-- serialization of the snapshot
+				dbg.debugger:resume('debuggerX', dbg.debugger.uid, snapshot)
+				local e, cmd, param
+				repeat
+					e, cmd, param = os.pullEvent('debugger')
+				until e == 'debugger'
+				return cmd, param
+			end
+
 			-- breakpoint table is shared across processes
 			dbg.breakpoints = breakpoints
 			dbg.debugger = debugger
@@ -106,8 +118,6 @@ local page = UI.Page {
 		y = 1, ey = '50%',
 		tabs = UI.Tabs {
 			ey = -2,
-			unselectedBackgroundColor = 'black',
-
 			locals = UI.Tab {
 				title = 'Locals',
 				index = 1,
@@ -361,11 +371,12 @@ local page = UI.Page {
 		self:draw()
 	end,
 
-	editFile = function(_, file)
+	editFile = function(self, file)
 		if fs.exists(file) then
+			local line = self.source:getSelected().line
 			multishell.openTab(_ENV, {
 				path = 'sys/apps/shell.lua',
-				args = { 'edit ' .. file },
+				args = { ('edit --line=%d %s'):format(line , file) },
 				focused = true,
 			})
 		end
@@ -424,8 +435,12 @@ local page = UI.Page {
 					local t = event.selected.raw
 					for k,v in pairs(t) do
 						local depth = event.selected.depth or 0
-						table.insert(event.selected.children,
-							{ name = (' '):rep(depth + 2) .. k, value = tostring(v), raw = v, depth = depth + 2 })
+						table.insert(event.selected.children, {
+							name = (' '):rep(depth + 2) .. tostring(k),
+							value = tostring(v),
+							raw = v,
+							depth = depth + 2
+						})
 					end
 					table.sort(event.selected.children, function(a, b) return a.name < b.name end)
 				end
@@ -468,6 +483,7 @@ Event.on('debuggerX', function(_, uid, data)
 		for k,v in pairs(getfenv(data.info.func)) do
 			table.insert(t, { name = k, value = tostring(v), raw = v })
 		end
+		table.sort(t, function(a, b) return a.name < b.name end)
 		page.container.tabs.env.grid:setValues(t)
 		page.container.tabs.env.grid.orig = Util.shallowCopy(t)
 

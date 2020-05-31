@@ -1,3 +1,14 @@
+--[[
+    -- a very simple debugger implementation
+    local dbg = require('debugger')
+    dbg.read = function(snapshot)
+        print(('%s: %d'):format(snapshot.info.source, snapshot.info.currentline))
+        write('> ')
+        return read()
+    end
+    dbg.stopIn(debug.getinfo(1).func)
+]]
+
 local function m2(a)
     return a
 end
@@ -43,7 +54,6 @@ local chunk = load([[
 local j = chunk()
 print(j)
 
-require('opus.util').print(coroutine)
 local co = coroutine.create(function(args)
     print('in coroutine')
     return 'hi'

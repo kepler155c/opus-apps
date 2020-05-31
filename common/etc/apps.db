@@ -78,4 +78,9 @@
 		category = "Apps",
 		run = "write",
 	},
+	[ "c543ece81605c7d202121c62080a0db4020fc2c75bfac35d101d7f3e93c93949" ] = {
+		category = "Apps",
+		run = "ascii",
+		title = "Ascii",
+	},
 }

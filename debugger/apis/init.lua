@@ -6,10 +6,8 @@ local fs = _G.fs
 local dbg = {
 	hooks = { },
 	waits = { },
-	debugger = nil,
 	breakpoints = nil,
 }
-_G._dbg = dbg -- for testing purposes
 
 local function breakpointHook(info)
 	if dbg.breakpoints then
@@ -155,12 +153,7 @@ local function hook()
 			while dbg.waits[1] ~= h do
 				os.sleep(.1)
 			end
-			os.queueEvent('debuggerX', dbg.debugger.uid, snapshot)
-
-			local e, cmd, param
-			repeat
-				e, cmd, param = os.pullEvent('debugger')
-			until e == 'debugger'
+			local cmd, param = dbg.read(snapshot)
 
 			table.remove(dbg.waits, 1)
 
@@ -187,7 +180,7 @@ function dbg.call(fn, ...)
 	local args = { ... }
 	return xpcall(
 		function()
-			fn(table.unpack(args))
+			return fn(table.unpack(args))
 		end,
 		function(err)
 			dbg.hooks[coroutine.running()].eval = stepHook()

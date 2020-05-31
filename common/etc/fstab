@@ -4,4 +4,3 @@ packages/common/colors.lua urlfs https://raw.githubusercontent.com/kepler155c/op
 packages/common/cowsay.lua urlfs https://pastebin.com/raw/n00VQJsw
 packages/common/calc.lua urlfs https://pastebin.com/raw/nAinUn1h
 packages/common/write.lua urlfs https://pastebin.com/raw/RSyhCjqv
-packages/common/apis/debugger.lua urlfs https://raw.githubusercontent.com/slembcke/debugger.lua/master/debugger.lua

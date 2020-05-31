@@ -1,6 +1,5 @@
 local Array  = require('opus.array')
 local Config = require('opus.config')
-local fuzzy  = require('opus.fuzzy')
 local UI     = require('opus.ui')
 local Util   = require('opus.util')
 
@@ -492,7 +491,7 @@ local page = UI.Page {
 			UI.Window.resize(self)
 
 			w, h = self.width, self.height
-			actions.set_cursor(x, y)
+			actions.set_cursor()
 			actions.dirty_all()
 			actions.redraw()
 		end,
@@ -940,7 +939,7 @@ actions = {
 		local routine = {
 			focused = true,
 			title = fs.getName(fileInfo.path),
-			chainExit = function(_, result)
+			onExit = function(_, result)
 				-- display results of process before closing window
 				if result then -- clean exit
 					-- any errors will be picked up by multishells
@@ -1467,10 +1466,17 @@ actions = {
 	end,
 }
 
-local args = { ... }
+local args, options = Util.parse( ... )
 local filename = args[1] and shell.resolve(args[1])
 if not (actions.load(filename) or actions.load(config.filename) or actions.load('untitled.lua')) then
 	error('Error opening file')
+end
+
+if tonumber(options.line) then
+	scrollY = math.max(0, tonumber(options.line) - math.floor(h / 2))
+	actions.go_to(1, tonumber(options.line))
+	actions.set_cursor()
+	actions.dirty_all()
 end
 
 UI:setPage(page)
