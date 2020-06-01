@@ -901,11 +901,7 @@ actions = {
 		if fs.isReadOnly(filename) then
 			actions.error("access denied")
 		else
-			local s, m = pcall(function()
-				if not Util.writeLines(filename, tLines) then
-					error("Failed to open " .. filename)
-				end
-			end)
+			local s, m = pcall(Util.writeFile, filename, table.concat(tLines, '\n'))
 
 			if s then
 				lastSave = undo.chain[#undo.chain]

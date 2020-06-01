@@ -1,0 +1,6 @@
+{
+	title = 'Compress',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/compress',
+	description = [[untar / gunzip]],
+	license = 'MIT',
+}

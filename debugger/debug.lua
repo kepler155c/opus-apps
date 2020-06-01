@@ -376,7 +376,7 @@ local page = UI.Page {
 			local line = self.source:getSelected().line
 			multishell.openTab(_ENV, {
 				path = 'sys/apps/shell.lua',
-				args = { ('edit --line=%d %s'):format(line , file) },
+				args = { ('edit --line=%d %s'):format(line , '/' .. file) },
 				focused = true,
 			})
 		end
