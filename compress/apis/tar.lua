@@ -1,8 +1,7 @@
 
 -- see: https://github.com/luarocks/luarocks/blob/master/src/luarocks/tools/tar.lua
 -- A pure-Lua implementation of untar (unpacking .tar archives)
-
-local tar = { }
+local Util = require('opus.util')
 
 local fs = _G.fs
 
@@ -54,7 +53,6 @@ local function checksum_header(block)
 end
 
 local function nullterm(s)
-_G._zz = s
 	return s:match("^[^%z]*")
 end
 
@@ -82,7 +80,7 @@ local function read_header_block(block)
 	return header
 end
 
-function tar.untar(filename, destdir, verbose)
+local function untar(filename, destdir, verbose)
 	assert(type(filename) == "string")
 	assert(type(destdir) == "string")
 
@@ -165,7 +163,7 @@ function tar.untar(filename, destdir, verbose)
 end
 
 local function create_header_block(filename, abspath)
-	local block = ('\0'):rep(512)
+	local block = ('\0'):rep(blocksize)
 
 	local function number_to_octal(n)
 		return ('%o'):format(n)
@@ -185,7 +183,7 @@ local function create_header_block(filename, abspath)
 end
 
 -- the bare minimum for this program to untar
-function tar.tar(filename, root, files)
+local function tar(filename, root, files)
 	assert(type(filename) == "string")
 	assert(type(root) == "string")
 	assert(type(files) == "table")
@@ -197,15 +195,18 @@ function tar.tar(filename, root, files)
 		local abs = fs.combine(root, file)
 		local block = create_header_block(file, abs)
 		tar_handle:write(block)
-		local f = require('opus.util').readFile(abs, 'rb')
+		local f = Util.readFile(abs, 'rb')
 		tar_handle:write(f)
-		local padding = #f % 512
+		local padding = #f % blocksize
 		if padding > 0 then
-			tar_handle:write(('\0'):rep(512 - padding))
+			tar_handle:write(('\0'):rep(blocksize - padding))
 		end
 	end
 	tar_handle:close()
 	return true
 end
 
-return tar
+return {
+	tar = tar,
+	untar = untar,
+}

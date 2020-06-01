@@ -58,6 +58,8 @@ local function startClient()
 				return cmd, param
 			end
 
+			_ENV.arg = { table.unpack(args) }
+			_ENV.arg[0] = filename
 			-- breakpoint table is shared across processes
 			dbg.breakpoints = breakpoints
 			dbg.debugger = debugger
@@ -111,13 +113,23 @@ local function message(...)
 	client:resume('debugger', ...)
 end
 
+UI.InverseButton = require('opus.class')(UI.Button)
+UI.InverseButton.defaults = {
+	UIElement = 'InverseButton',
+	backgroundColor = 'primary',
+	backgroundFocusColor = 'gray',
+	textFocusColor = 'primary',
+	textColor = 'gray',
+}
+
 local page = UI.Page {
-	backgroundColor = 'black',
+	backgroundColor = 'gray',
 
 	container = UI.Window {
 		y = 1, ey = '50%',
 		tabs = UI.Tabs {
 			ey = -2,
+			barBackgroundColor = 'tertiary',
 			locals = UI.Tab {
 				title = 'Locals',
 				index = 1,
@@ -241,6 +253,8 @@ local page = UI.Page {
 
 		menuBar = UI.MenuBar {
 			y = -1,
+			backgroundColor = 'primary',
+			buttonClass = 'InverseButton',
 			buttons = {
 				{ text = 'Continue', event = 'cmd', cmd = 'c' },
 				{ text = 'Step',     event = 'cmd', cmd = 's' },
@@ -254,6 +268,9 @@ local page = UI.Page {
 	source = UI.ScrollingGrid {
 		y = '50%', ey = -2,
 		disableHeader = true,
+		backgroundColor = 'gray',
+		backgroundSelectedColor = 'lightGray',
+		unfocusedBackgroundSelectedColor = 'lightGray',
 		columns = {
 			{ key = 'marker', width = 1 },
 			{ key = 'line', textColor = 'cyan', width = 4 },
@@ -302,7 +319,7 @@ local page = UI.Page {
 	},
 	statusBar = UI.StatusBar {
 		ex = -12, y = -1,
-		backgroundColor = 'black',
+		backgroundColor = 'gray',
 		textColor = 'orange',
 	},
 	UI.FlatButton {
@@ -385,6 +402,7 @@ local page = UI.Page {
 	eventHandler = function(self, event)
 		if event.type == 'cmd' then
 			self.statusBar:setStatus('Running...')
+			self:sync()
 			message(event.element.cmd)
 
 		elseif event.type == 'restart' then
