@@ -1,0 +1,11 @@
+{
+	title = 'moonscript',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/moonscript',
+	description = [[MoonScript is a programmer friendly language that compiles into Lua. It gives you the power of the fastest scripting language combined with a rich set of features. It runs on Lua 5.1 and above, including alternative runtimes like LuaJIT.
+
+See https://moonscript.org.]],
+	license = 'MIT',
+    required = {
+		'lpeg',
+	},
+}

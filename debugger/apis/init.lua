@@ -9,33 +9,12 @@ local dbg = {
 	breakpoints = nil,
 }
 
-local romFiles = {
-	load = function(self)
-		local function recurse(dir)
-			local files = fs.list(dir)
-			for _,f in ipairs(files) do
-				local fullName = fs.combine(dir, f)
-				if fs.isDir(fullName) then
-					recurse(fullName)
-				else
-					self.files[f] = fullName
-				end
-			end
-		end
-		recurse('rom/apis')
-	end,
-	get = function(self, file)
-		return self.files[file]
-	end,
-	files = { },
-}
-romFiles:load()
-
 local function breakpointHook(info)
 	if dbg.breakpoints then
-		local src = romFiles:get(info.short_src) or info.short_src
+		local src = info.short_src
 		for _,v in pairs(dbg.breakpoints) do
-			if v.line == info.currentline and v.file == src then
+			if v.line == info.currentline
+				and (v.file == src or v.bfile == src) then
 				return not v.disabled
 			end
 		end

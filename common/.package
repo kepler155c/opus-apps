@@ -13,7 +13,7 @@
 * and more...
 	]],
 	license = 'MIT',
-		required = {
+	required = {
 		'core',
 	},
 }

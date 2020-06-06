@@ -50,7 +50,7 @@ local function startClient()
 				os.sleep(0) -- not sure why, but we need a sleep before :resume
 				-- directly resuming debugger routine to prevent
 				-- serialization of the snapshot
-				dbg.debugger:resume('debuggerX', dbg.debugger.uid, snapshot)
+				dbg.debugger:resume('debuggerX', 'break', snapshot)
 				local e, cmd, param
 				repeat
 					e, cmd, param = os.pullEvent('debugger')
@@ -65,8 +65,19 @@ local function startClient()
 			dbg.debugger = debugger
 			dbg.stopIn(fn)
 			local s, m = dbg.call(fn, table.unpack(args))
+
+			dbg.debugger:resume('debuggerX', 'disconnect')
+
 			if not s then
 				error(m, -1)
+			end
+			print('Process ended normally')
+			print('Press enter to exit')
+			while true do
+				local e, code = os.pullEventRaw('key')
+				if e == 'terminate' or e == 'key' and code == _G.keys.enter then
+					break
+				end
 			end
 		end,
 	})
@@ -74,6 +85,7 @@ local function startClient()
 end
 
 local romFiles = {
+	files = { },
 	load = function(self)
 		local function recurse(dir)
 			local files = fs.list(dir)
@@ -87,11 +99,14 @@ local romFiles = {
 			end
 		end
 		recurse('rom/apis')
+		self.reversed = Util.transpose(self.files)
 	end,
 	get = function(self, file)
 		return self.files[file]
 	end,
-	files = { },
+	lookup = function(self, file)
+		return self.reversed[file]
+	end,
 }
 romFiles:load()
 
@@ -137,7 +152,7 @@ local page = UI.Page {
 					disableHeader = true,
 					unfocusedBackgroundSelectedColor = 'black',
 					columns = {
-						{ heading = 'Key',   key = 'name' },
+						{ heading = 'localname', key = 'name' },
 						{ heading = 'Value', key = 'value', textColor = 'yellow' },
 					},
 					autospace = true,
@@ -214,6 +229,13 @@ local page = UI.Page {
 						{ heading = 'Name', key = 'short' },
 						{ heading = 'Path', key = 'path', textColor = 'lightGray' },
 					},
+					getDisplayValues = function(_, row)
+						return {
+							line = row.line,
+							short = fs.getName(row.file),
+							path = fs.getDir(row.file),
+						}
+					end,
 					getRowTextColor = function(self, row, selected)
 						return row.disabled and 'lightGray'
 							or UI.Grid.getRowTextColor(self, row, selected)
@@ -438,8 +460,7 @@ local page = UI.Page {
 			table.insert(breakpoints, {
 				file = event.file,
 				line = event.line,
-				short = fs.getName(event.file),
-				path = fs.getDir(event.file),
+				bfile = romFiles:lookup(event.file),
 			})
 
 			self:emit({ type = 'update_breakpoints' })
@@ -487,8 +508,12 @@ local page = UI.Page {
 	end,
 }
 
-Event.on('debuggerX', function(_, uid, data)
-	if uid == debugger.uid then
+Event.on('debuggerX', function(_, cmd, data)
+	if cmd == 'disconnect' then
+		page.statusBar:setStatus('Finished')
+		page:sync()
+
+	elseif cmd == 'break' then
 		kernel.raise(debugger.uid)
 
 		-- local tab

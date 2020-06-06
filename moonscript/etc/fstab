@@ -1,0 +1,4 @@
+packages/moonscript gitfs leafo/moonscript/master/bin
+rom/modules/main/moonscript gitfs leafo/moonscript/master/moonscript
+rom/modules/main/moon gitfs leafo/moonscript/master/moon
+rom/modules/main/argparse.lua linkfs packages/moonscript/argparse.lua

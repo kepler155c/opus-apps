@@ -1,0 +1,9 @@
+{
+	title = 'LPeg',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/lpeg',
+	description = [[A pure Lua port of LPeg, Roberto Ierusalimschy's Parsing Expression Grammars library.
+
+This version of LuLPeg emulates LPeg v0.12.
+see: https://github.com/pygy/LuLPeg/]],
+	license = 'MIT',
+}
