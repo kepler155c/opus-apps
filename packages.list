@@ -1,5 +1,6 @@
 {
 	[ 'builder'    ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/builder/.package',
+	[ 'busted'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/busted/.package',
 	[ 'cash'       ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/cash/.package',
 	[ 'ccemux'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/ccemux/.package',
 	[ 'common'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/common/.package',
@@ -22,6 +23,7 @@
 	[ 'monitor'    ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/monitor/.package',
 	[ 'moonscript' ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/moonscript/.package',
 	[ 'neural'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/neural/.package',
+	[ 'penlight'   ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/pl/.package',
 --	[ 'pickup'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/pickup/.package',
 	[ 'recipeBook' ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/recipeBook/.package',
 	[ 'screenSaver'] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/screenSaver/.package',
