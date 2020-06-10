@@ -1,5 +1,7 @@
-running the compiler works fine...
-moonc T.moon  <-- OK
+moonscript must be run in compatibility mode:
+> compat moon T.moon
+> compat moonc T.moon
 
-working on getting the moon command to work properly
-moon T.moon <-- NOPE
+moon and moonc were modified to allow relative paths:
+> cd /packages/moonscript
+> compat moonc T.moon

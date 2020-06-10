@@ -1,6 +1,6 @@
 {
-	title = 'Penlight apis',
-	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/penlight',
+	title = 'Penlight',
+	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/pl',
 	description = [[See: https://github.com/Tieske/Penlight
 
 Penlight brings together a set of generally useful pure Lua modules, focusing on input data handling (such as reading configuration files), functional programming (such as map, reduce, placeholder expressions, etc), and OS path management. Much of the functionality is inspired by the Python standard libraries.]],

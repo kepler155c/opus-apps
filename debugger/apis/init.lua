@@ -9,21 +9,25 @@ local dbg = {
 	breakpoints = nil,
 }
 
-local function breakpointHook(info)
+local function breakpointHook(depth, lineNo)
 	if dbg.breakpoints then
-		local src = info.short_src
-		for _,v in pairs(dbg.breakpoints) do
-			if v.line == info.currentline
-				and (v.file == src or v.bfile == src) then
-				return not v.disabled
+		local info
+		for _,v in ipairs(dbg.breakpoints) do
+			if v.line == lineNo then
+				if not info then
+					info = debug.getinfo(depth)
+				end
+				if (v.file == info.short_src or v.bfile == info.short_src) then
+					return not v.disabled
+				end
 			end
 		end
 	end
 end
 
 local function functionHook(fn)
-	return function(info)
-		return info.func == fn
+	return function()
+		return debug.getinfo(3).func == fn
 	end
 end
 
@@ -42,9 +46,9 @@ local function stackSizeHook(n)
 		end
 		i = i + 1
 	end
-	return function(info)
+	return function(depth, lineNo)
 		return not debug.getinfo(i - n)
-			or breakpointHook(info)
+			or breakpointHook(depth + 1, lineNo)
 	end
 end
 
@@ -133,12 +137,10 @@ local function get_trace(offset, stack_inspect_offset)
 	return t
 end
 
-local function hook()
-	local info = debug.getinfo(2)
-
+local function hook(_, lineNo)
 	local h = dbg.hooks[coroutine.running()]
 
-	if h and h.eval(info) then
+	if h and h.eval(3, lineNo) then
 		local inspectOffset = 0
 
 		repeat

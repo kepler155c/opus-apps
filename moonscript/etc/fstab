@@ -1,4 +1,5 @@
-packages/moonscript gitfs leafo/moonscript/master/bin
-rom/modules/main/moonscript gitfs leafo/moonscript/master/moonscript
-rom/modules/main/moon gitfs leafo/moonscript/master/moon
-rom/modules/main/argparse.lua linkfs packages/moonscript/argparse.lua
+packages/moonscript/repo gitfs leafo/moonscript/master
+rom/modules/main/moonscript linkfs packages/moonscript/repo/moonscript
+rom/modules/main/moon linkfs packages/moonscript/repo/moon
+rom/modules/main/moonutil gitfs natnat-mc/moonutil/master/moonutil
+rom/modules/main/argparse urlfs https://raw.githubusercontent.com/mpeterv/argparse/master/src/argparse.lua

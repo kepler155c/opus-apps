@@ -1,3 +1,4 @@
+local class  = require('opus.class')
 local Config = require('opus.config')
 local Event  = require('opus.event')
 local UI     = require('opus.ui')
@@ -128,7 +129,7 @@ local function message(...)
 	client:resume('debugger', ...)
 end
 
-UI.InverseButton = require('opus.class')(UI.Button)
+UI.InverseButton = class(UI.Button)
 UI.InverseButton.defaults = {
 	UIElement = 'InverseButton',
 	backgroundColor = 'primary',

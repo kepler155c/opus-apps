@@ -1,11 +1,13 @@
 local Event = require('opus.event')
 local UI = require('opus.ui')
-local kernel = _G.kernel
-local multishell = _ENV.multishell
+local kernel
+kernel = _G.kernel
+local multishell
+multishell = _ENV.multishell
 local tasks = multishell and multishell.getTabs and multishell.getTabs() or kernel.routines
 UI:configure('Tasks', ...)
 local page = UI.Page({
-  menuBar = UI.MenuBar({
+  UI.MenuBar({
     buttons = {
       {
         text = 'Activate',

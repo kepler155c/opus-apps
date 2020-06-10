@@ -1,14 +1,15 @@
 Event = require('opus.event')
 UI    = require('opus.ui')
 
-kernel     = _G.kernel
-multishell = _ENV.multishell
-tasks      = multishell and multishell.getTabs and multishell.getTabs() or kernel.routines
+import kernel     from _G
+import multishell from _ENV
+
+tasks = multishell and multishell.getTabs and multishell.getTabs! or kernel.routines
 
 UI\configure 'Tasks', ...
 
 page = UI.Page {
-	menuBar: UI.MenuBar {
+	UI.MenuBar {
 		buttons: {
 			{ text: 'Activate',  event: 'activate'  },
 			{ text: 'Terminate', event: 'terminate' },
@@ -43,7 +44,7 @@ page = UI.Page {
 		t: 'terminate',
 	},
 	eventHandler: (event) =>
-		t = self.grid\getSelected!
+		t = @grid\getSelected!
 		switch event.type
 			when 'activate', 'grid_select'
 				multishell.setFocus t.uid if t

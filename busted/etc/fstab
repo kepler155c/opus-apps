@@ -1,0 +1,8 @@
+packages/busted/busted urlfs https://raw.githubusercontent.com/Olivine-Labs/busted/master/bin/busted
+rom/modules/main/busted gitfs Olivine-Labs/busted/master/busted
+rom/modules/main/mediator.lua urlfs https://raw.githubusercontent.com/Olivine-Labs/mediator_lua/master/src/mediator.lua
+rom/modules/main/cliargs gitfs amireh/lua_cliargs/master/src/cliargs
+rom/modules/main/luassert gitfs Olivine-Labs/luassert/master/src
+rom/modules/main/say.lua urlfs https://raw.githubusercontent.com/Olivine-Labs/say/master/src/init.lua
+rom/modules/main/term.lua linkfs packages/busted/depend/term.lua
+rom/modules/main/system.lua linkfs packages/busted/depend/system.lua
