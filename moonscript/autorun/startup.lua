@@ -12,7 +12,7 @@ local function compatEnv(source)
 	local env = Map.shallowCopy(source._G)
 	Map.merge(env, source)
 	env._G = env
-	_G.requireInjector(env, 'packages/moon')
+	_G.requireInjector(env, 'packages/moonscript')
 	return env
 end
 

@@ -32,7 +32,7 @@ local debugger = kernel.getCurrent()
 local client
 
 local function startClient()
-	local env = kernel.makeEnv(_ENV)
+	local env = kernel.makeEnv(_ENV, fs.getDir(filename))
 	currentFile = nil
 
 	local clientId = multishell.openTab(nil, {
