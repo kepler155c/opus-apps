@@ -48,7 +48,7 @@ run = function()
 		require("moonscript.version").print_version()
 		os.exit()
 	end
-	local script_fname = shell.resolve(opts.script)
+	local script_fname = shell.resolveProgram(opts.script)
 	args = {
 		unpack(arg, base + 1)
 	}

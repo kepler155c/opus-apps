@@ -214,7 +214,7 @@ local page = UI.Page {
 			breaks = UI.Tab {
 				title = 'Breakpoints',
 				index = 2,
-				menuBar = UI.MenuBar {
+				UI.MenuBar {
 					buttons = {
 						{ text = 'Toggle', event = 'toggle' },
 						{ text = 'Remove', event = 'remove' },
@@ -274,7 +274,7 @@ local page = UI.Page {
 			},
 		},
 
-		menuBar = UI.MenuBar {
+		UI.MenuBar {
 			y = -1,
 			backgroundColor = 'primary',
 			buttonClass = 'InverseButton',
@@ -362,6 +362,43 @@ local page = UI.Page {
 		y = '50%',
 		modal = true,
 		enable = function() end,
+		getFiles = function()
+			local paths = { }
+			for _,v in pairs(Util.split(client.env.package.path, '(.-);')) do
+				v = v:match('(.+)%?') or ''
+				if v:sub(1, 1) ~= '/' then
+					v = fs.combine(fs.getDir(filename), v)
+				end
+				if fs.exists(v) and fs.isDir(v) then
+					paths[fs.combine(v, '')] = true
+				end
+			end
+
+			local t = { }
+			for k in pairs(paths) do
+				local function recurse(dir)
+					local files = fs.list(dir)
+					for _,f in ipairs(files) do
+						local fullName = fs.combine(dir, f)
+						if fs.isDir(fullName) then
+							-- skip virtual dirs
+							if f ~= '.git' and fs.native.isDir(fullName) then
+								recurse(fullName)
+							end
+						elseif fullName:match('(.+)%.lua$') then
+							table.insert(t, {
+								name = f,
+								dir = dir,
+								lname = f:lower(),
+								fullName = fullName,
+							})
+						end
+					end
+				end
+				recurse(k)
+			end
+			return t
+		end,
 		show = function(self)
 			UI.QuickSelect.enable(self)
 			self:focusFirst()
