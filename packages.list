@@ -23,7 +23,7 @@
 	[ 'monitor'    ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/monitor/.package',
 	[ 'moonscript' ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/moonscript/.package',
 	[ 'neural'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/neural/.package',
-	[ 'penlight'   ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/pl/.package',
+	[ 'pl'         ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/pl/.package',
 --	[ 'pickup'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/pickup/.package',
 	[ 'recipeBook' ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/recipeBook/.package',
 	[ 'screenSaver'] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/screenSaver/.package',
