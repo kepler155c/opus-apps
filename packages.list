@@ -1,6 +1,6 @@
 {
 	[ 'builder'    ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/builder/.package',
-	[ 'busted'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/busted/.package',
+--	[ 'busted'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/busted/.package',
 	[ 'cash'       ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/cash/.package',
 	[ 'ccemux'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/ccemux/.package',
 	[ 'common'     ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/common/.package',
@@ -10,7 +10,6 @@
 	[ 'farms'      ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/farms/.package',
 --	[ 'forestry'   ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/forestry/.package',
 	[ 'games'      ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/games/.package',
---	[ 'glasses'    ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/glasses/.package',
 	[ 'gps'        ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/gps/.package',
 	[ 'lfs'        ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/lfs/.package',
 	[ 'lpeg'       ] = 'https://raw.githubusercontent.com/kepler155c/opus-apps/develop-1.8/lpeg/.package',

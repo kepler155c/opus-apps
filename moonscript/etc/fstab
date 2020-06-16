@@ -4,4 +4,5 @@ packages/moonscript/moonc linkfs packages/moonscript/repo/bin/moonc
 rom/modules/main/moonscript linkfs packages/moonscript/repo/moonscript
 rom/modules/main/moon linkfs packages/moonscript/repo/moon
 #rom/modules/main/moonutil gitfs natnat-mc/moonutil/master/moonutil
-rom/modules/main/argparse urlfs https://raw.githubusercontent.com/mpeterv/argparse/master/src/argparse.lua
+#rom/modules/main/argparse urlfs https://raw.githubusercontent.com/mpeterv/argparse/master/src/argparse.lua
+rom/modules/main/argparse urlfs https://raw.githubusercontent.com/luarocks/argparse/master/src/argparse.lua

@@ -1,5 +1,6 @@
 local Config = require('opus.config')
 local UI     = require('opus.ui')
+local Util   = require('opus.util')
 
 local ccemux = _G.ccemux
 
@@ -62,7 +63,23 @@ function tab:updatePeripherals(config)
 	self.grid:update()
 end
 
+function tab.bootCheck()
+	local startupFile = 'packages/ccemux/bin/emustartup.lua'
+
+	local c = Util.readTable('.startup.boot')
+	if c then
+		for _,v in pairs(c.preload) do
+			if v == startupFile then
+				return
+			end
+		end
+	end
+	table.insert(c.preload, startupFile)
+	Util.writeTable('.startup.boot', c)
+end
+
 function tab:enable()
+	self:bootCheck()
 	local config = Config.load('ccemux')
 
 	local choices = { }

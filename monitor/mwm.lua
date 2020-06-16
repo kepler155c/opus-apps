@@ -1,4 +1,3 @@
-local Alt      = require('opus.alternate')
 local Terminal = require('opus.terminal')
 local trace    = require('opus.trace')
 local Util     = require('opus.util')
@@ -496,7 +495,7 @@ local function addShell()
 	process.co = coroutine.create(function()
 		print('To run a program on the monitor, type "fg <program>"')
 		print('To quit, type "exit"')
-		os.run(shell.makeEnv(_ENV), Alt.get('shell'))
+		os.run(shell.makeEnv(_ENV), shell.resolveProgram('shell'))
 		multishell.stop()
 	end)
 
