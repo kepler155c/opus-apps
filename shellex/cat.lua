@@ -4,7 +4,10 @@ local fs = require("shellex.filesystem")
 local args = shell.parse(...)
 local ec = 0
 if #args == 0 then
-	args = {"-"}
+	while true do
+		local input = read()
+		print(input)
+	end
 end
 
 for i = 1, #args do
