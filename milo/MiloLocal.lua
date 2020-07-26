@@ -219,7 +219,9 @@ local s, m = pcall(function()
 	UI:start()
 end)
 
-turtle.setStatus('idle')
+if turtle.setStatus then
+	turtle.setStatus('idle')
+end
 
 _G._syslog = oldDebug
 if not s then error(m) end

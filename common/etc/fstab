@@ -4,3 +4,5 @@ packages/common/colors.lua urlfs https://raw.githubusercontent.com/kepler155c/op
 packages/common/cowsay.lua urlfs https://pastebin.com/raw/n00VQJsw
 packages/common/calc.lua urlfs https://pastebin.com/raw/nAinUn1h
 packages/common/write.lua urlfs https://pastebin.com/raw/RSyhCjqv
+# pretty output
+rom/modules/main/inpsect.lua urlfs https://raw.githubusercontent.com/kikito/inspect.lua/master/inspect.lua

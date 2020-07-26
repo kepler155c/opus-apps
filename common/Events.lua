@@ -30,15 +30,8 @@ local page = UI.Page {
 		getDisplayValues = function(_, row)
 			row = Util.shallowCopy(row)
 
-			local function tovalue(s)
-				if type(s) == 'table' then
-					return 'table'
-				end
-				return s
-			end
-
 			for k,v in pairs(row) do
-				row[k] = tovalue(v)
+				row[k] = type(v) == 'table' and 'table' or v
 			end
 
 			return row
@@ -95,30 +88,25 @@ local page = UI.Page {
 	end,
 }
 
-local updated = false
 local timerId = os.startTimer(1)
 
 Event.addRoutine(function()
 	while true do
 		local _, id = os.pullEvent('timer')
 		if id == timerId then
-			if updated then
-				while #page.grid.values > 100 do -- page.grid.height do
-					table.remove(page.grid.values, 100) -- #page.grid.values)
-				end
-				updated = false
-				page.grid:update()
-				page.grid:draw()
-				page:sync()
+			while #page.grid.values > 100 do
+				table.remove(page.grid.values)
 			end
-			timerId = os.startTimer(1)
+			timerId = nil
+			page.grid:update()
+			page.grid:draw()
+			page:sync()
 		end
 	end
 end)
 
 local hookFunction = function(event, e)
 	if not page.filtered[event] and not page.paused and not (event == 'timer' and e[1] == timerId) then
-		updated = true
 		table.insert(page.grid.values, 1, {
 			event = event,
 			p1 = e[1],
@@ -127,6 +115,7 @@ local hookFunction = function(event, e)
 			p4 = e[4],
 			p5 = e[5],
 		})
+		timerId = timerId or os.startTimer(.1)
 	end
 end
 
