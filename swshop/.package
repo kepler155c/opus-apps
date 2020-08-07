@@ -2,8 +2,8 @@
 	required = {
 		'milo',
 	},
-	title = 'Switchcraft basic shop',
+	title = 'SwitchCraft basic shop',
 	repository = 'kepler155c/opus-apps/{{OPUS_BRANCH}}/swshop',
-	description = 'Modification of the k store by Lemmmy\nRun installPlugin.lua after install',
+	description = 'Krist-based shop for SwitchCraft\nRun installPlugin.lua after install',
 	license = 'MIT',
 }
