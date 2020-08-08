@@ -100,22 +100,6 @@ function page.txSlide:show(data)
 	UI.SlideOut.show(self)
 end
 
-function page.menuBar:eventHandler(event)
-	if event.type == "purge" then
-		page.grid.values = {}
-		page.grid:update()
-		page.grid:draw()
-		fs.delete(logFile)
-
-	elseif event.type == "set_timezone" then
-		page.tzSlide:show()
-
-	else
-		return UI.MenuBar.eventHandler(self, event)
-	end
-	return true
-end
-
 function page.txSlide:eventHandler(event)
 	if event.type == 'tx_close' then
 		self:hide()
@@ -174,6 +158,15 @@ function page:eventHandler(event)
 		self.notification:success('Logs reloaded!')
 		self.grid:update()
 		self.grid:draw()
+
+	elseif event.type == "purge" then
+		self.grid.values = {}
+		self.grid:update()
+		self.grid:draw()
+		fs.delete(logFile)
+
+	elseif event.type == "set_timezone" then
+		self.tzSlide:show()
 
 	else
 		return UI.Page.eventHandler(self, event)
