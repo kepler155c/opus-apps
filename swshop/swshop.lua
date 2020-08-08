@@ -48,6 +48,7 @@ local function getItemDetails(item)
 				return key, v
 			end
 		end
+		return nil, {}
 	end
 end
 
