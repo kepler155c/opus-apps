@@ -12,8 +12,12 @@ local fs         = _G.fs
 local peripheral = _G.peripheral
 local shell      = _ENV.shell
 
+local configName = ({...})[1]
+local configPath = 'miloRemote' .. (configName and "_"..configName or "")
+
 local context = {
-	state = Config.load('miloRemote', { displayMode = 0, deposit = true }),
+	state = Config.load(configPath, { displayMode = 0, deposit = true }),
+	configPath = configPath,
 	responseHandlers = { },
 }
 
@@ -158,7 +162,7 @@ function page.grid:eventHandler(event)
 	if event.type == 'grid_sort' then
 		context.state.sortColumn = event.sortColumn
 		context.state.inverseSort = event.inverseSort
-		Config.update('miloRemote', context.state)
+		Config.update(configPath, context.state)
 	end
 	return UI.Grid.eventHandler(self, event)
 end
@@ -181,7 +185,7 @@ function page:eventHandler(event)
 		self.statusBar:draw()
 		context:setStatus(depositMode[context.state.deposit].help)
 		context:notifyInfo(depositMode[context.state.deposit].help)
-		Config.update('miloRemote', context.state)
+		Config.update(configPath, context.state)
 
 	elseif event.type == 'focus_change' then
 		context:setStatus(event.focused.help)
@@ -243,7 +247,7 @@ function page:eventHandler(event)
 		context:setStatus(event.button.help)
 		context:notifyInfo(event.button.help)
 		self.grid:draw()
-		Config.update('miloRemote', context.state)
+		Config.update(configPath, context.state)
 
 	elseif event.type == 'text_change' and event.element == self.statusBar.filter then
 		self.filter = event.text or ''
@@ -445,7 +449,7 @@ end
 
 function context:setState(key, value)
 	self.state[key] = value
-	Config.update('miloRemote', self.state)
+	Config.update(configPath, self.state)
 end
 
 context.responseHandlers['received'] = function(response)

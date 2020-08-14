@@ -5,9 +5,9 @@ local Util   = require('opus.util')
 local colors = _G.colors
 local fs     = _G.fs
 
-local STARTUP_FILE = 'usr/autorun/miloRemote.lua'
-
 local context = ({ ... })[1]
+
+local STARTUP_FILE = 'usr/autorun/'..context.configPath..'.lua'
 
 local setup = UI.SlideOut {
 	titleBar = UI.TitleBar {
@@ -59,7 +59,7 @@ function setup:eventHandler(event)
 		self.statusBar:setStatus(event.focused.help)
 
 	elseif event.type == 'form_complete' then
-		Config.update('miloRemote', context.state)
+		Config.update(context.configPath, context.state)
 		self:hide()
 		context.page:refresh('list')
 		context.page.grid:draw()
