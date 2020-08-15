@@ -44,15 +44,20 @@ local canvas = modules.canvas3d().create({
 	-(offset.z % 1) + .5 }
 )
 
+local menuBarButtons = {
+	{ text = 'Scan',  event = 'scan' },
+	{ text = 'Size',  event = 'size' },
+}
+
+if modules.fire then
+	table.insert(menuBarButtons, { text = 'Laser',  event = 'laser' })
+end
+
 local page = UI.Page {
 	notification = UI.Notification {},
 
 	menuBar = UI.MenuBar {
-		buttons = {
-			{ text = 'Scan',  event = 'scan' },
-			{ text = 'Size',  event = 'size' },
-			-- { text = 'Laser',  event = 'laser' }, -- If you dare
-		}
+		buttons = menuBarButtons
 	},
 
 	sizeSlide = UI.MiniSlideOut {
@@ -220,8 +225,21 @@ Event.addRoutine(
 						b.box.addItem({ .25, .25 }, target[1], target[2], 2)
 						--]]
 
-						b.box = canvas.addItem({ x, y, z }, target[1], target[2], page.blockSize)
-						b.box.setDepthTested(false)
+							pcall(function()
+								b.box = canvas.addItem({
+									pos.x - offset.x + b.x + -(pos.x % 1) + .5,
+									pos.y - offset.y + b.y + -(pos.y % 1) + .5,
+									pos.z - offset.z + b.z + -(pos.z % 1) + .5 },
+									target[1], target[2], page.blockSize)
+							end)
+							if not b.box then
+								b.box = canvas.addBox(
+									pos.x - offset.x + b.x + -(pos.x % 1) + .5,
+									pos.y - offset.y + b.y + -(pos.y % 1) + .5,
+									pos.z - offset.z + b.z + -(pos.z % 1) + .5,
+									.5, .5, .5, 0xFFFFFF7F)
+							end
+							b.box.setDepthTested(false)
 					end
 				end
 
