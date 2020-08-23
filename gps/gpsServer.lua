@@ -250,16 +250,15 @@ local function server(mode)
 	end
 
 	Event.on('modem_message', function(_, side, channel, computerId, message, distance)
-		if distance and modems[side] then
+		local modem = modems[side]
+		if distance and modem then
 			if mode == 'gps' and channel == GPS.CHANNEL_GPS and message == "PING" then
-				for _, modem in pairs(modems) do
-					modem.transmit(computerId, GPS.CHANNEL_GPS, { modem.x, modem.y, modem.z })
-				end
-				getPosition(computerId, modems[side], distance)
+				modem.transmit(computerId, GPS.CHANNEL_GPS, { modem.x, modem.y, modem.z })
+				getPosition(computerId, modem, distance)
 			end
 
 			if mode == 'snmp' and channel == 999 then
-				getPosition(computerId, modems[side], distance, message)
+				getPosition(computerId, modem, distance, message)
 			end
 		end
 	end)
