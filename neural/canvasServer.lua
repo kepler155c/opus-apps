@@ -43,14 +43,14 @@ local function update(scanned)
 			-- items are centered at the mid-point of the cube
 			-- boxes are aligned to the top corner - sigh
 			if b.path then
-				box = canvas.addBox(x + .4, y + .4, z + .4, .2, .2, .2, 0xa0902080)
+				box = canvas.addBox(x + .4, y + .4, z + .4, .2, .2, .2, b.color or 0xa0902080)
 			elseif b.name then
 				pcall(function()
-					box = canvas.addItem({ x + .5, y + .5, z + .5 }, b.name, b.damage or b.metadata, .5)
+					box = canvas.addItem({ x + .5, y + .5, z + .5 }, b.name, b.damage or b.metadata, b.size or .5)
 				end)
 			end
 			if not box then
-				box = canvas.addBox(x, y, z, 1, 1, 1, 0x8080ff30)
+				box = canvas.addBox(x, y, z, 1, 1, 1, b.color or 0x8080ff30)
 			end
 			if box then
 				box.setDepthTested(false)
