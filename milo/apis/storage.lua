@@ -9,6 +9,8 @@ local device   = _G.device
 local os       = _G.os
 local parallel = _G.parallel
 
+local SCAN_CHUNK_SIZE = 16
+
 local Storage  = class()
 
 local function loadOld(storage)
@@ -263,7 +265,18 @@ function Storage:listItems(throttle)
 	end
 
 	if #t > 0 then
-		parallel.waitForAll(table.unpack(t))
+		local chunk = {}
+
+		-- Split the work into chunks to avoid spamming too many coroutines.
+		for i = 1, #t do
+			table.insert(chunk, t[i])
+
+			-- When we reach the chunk limit, execute them and start a new chunk
+			if #chunk >= SCAN_CHUNK_SIZE then
+				parallel.waitForAll(table.unpack(chunk))
+				chunk = {}
+			end
+		end
 	end
 
 	for _, adapter in self:onlineAdapters() do
