@@ -277,6 +277,10 @@ function Storage:listItems(throttle)
 				chunk = {}
 			end
 		end
+		
+		if #chunk > 0 then
+			parallel.waitForAll(table.unpack(chunk))
+		end
 	end
 
 	for _, adapter in self:onlineAdapters() do
