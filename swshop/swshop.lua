@@ -79,6 +79,7 @@ local function handleTransaction(transaction)
 		to = transaction.to,
 		from = transaction.from,
 		value = transaction.value,
+		txid = transaction.id,
 		id = metadata.name,
 		time = math.floor(os.epoch('utc')/1000),
 		recipient = recipient,

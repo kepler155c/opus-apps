@@ -798,15 +798,15 @@ function turtle.getSlot(indexOrId, slots)
 	if detail then
 		return {
 			name = detail.name,
-			damage = detail.damage,
+			damage = detail.damage or 0,
 			count = detail.count,
-			key = detail.name .. ':' .. detail.damage,
+			key = detail.name .. ':' .. (detail.damage or 0),
 
 			index = indexOrId,
 
 			-- deprecate
 			qty = detail.count,
-			dmg = detail.damage,
+			dmg = detail.damage or 0,
 			id = detail.name,
 		}
 	end
