@@ -33,7 +33,7 @@ if not modules then
 elseif not modules.canvas then
 	showRequirements('Overlay glasses')
 elseif not modules.scan then
-	showRequirements('Scanner module')
+	showRequirements('Block Scanner module')
 end
 
 local projecting = { }
