@@ -23,9 +23,9 @@ local function showListing(node)
 
 	for k,v in pairs(config) do
 		local item = list[k]
-		if item and item.count > 0 then
+		if item and ((item.count and item.count > 0) or node.showOutOfStock)  then
 			mon.setCursorPos(1, i)
-			mon.write(string.format('%d  %s: %d kst', v.count, v.displayName, v.price))
+			mon.write(string.format('%d  %s: %s kst, %s', item.count, item.displayName, v.price, v.name))
 			mon.setCursorPos(1, i + 1)
 			mon.write(v.info)
 			i = i + 2
@@ -38,7 +38,7 @@ local function startShop(node)
 	if shopTab then
 		multishell.terminate(shopTab)
 	end
-	shopTab = shell.openTab('/packages/swshop/swshop.lua', node.domain, node.password)
+	shopTab = shell.openTab('/packages/swshop/swshop.lua', node.name)
 end
 
 -- node has been reconfigured
