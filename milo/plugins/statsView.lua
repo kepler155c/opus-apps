@@ -151,7 +151,7 @@ local function createPage(node)
 						{ heading = 'Size', key = 'size', width = 5 },
 						{ heading = 'Used', key = 'used', width = 5 },
 						{ heading = 'Perc', key = 'perc', width = 5 },
-						-- TODO: add % to each number
+
 					},
 					sortColumn = 'name',
 				},
@@ -224,7 +224,7 @@ local function createPage(node)
 						name = n.displayName or n.name,
 						size = n.adapter.__size,
 						used = n.adapter.__used,
-						perc = math.floor(n.adapter.__used / n.adapter.__size * 100),
+						perc = tostring(math.floor(n.adapter.__used / n.adapter.__size * 100)) .. "%",
 						updated = updated,
 					})
 					totals.usedSlots = totals.usedSlots + n.adapter.__used
