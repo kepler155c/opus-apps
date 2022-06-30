@@ -86,7 +86,7 @@ end
 function page:saveConfig(path)
 	local config = Util.readTable(path) or {}
 	Util.each(self.storages, function(dev, name)
-		if self.typeGrid.values[dev.type] and self.typeGrid.values[dev.type].checked and not config[name] then
+		if self.typeGrid.values[dev.type] and self.typeGrid.values[dev.type].checked and (not config[name] or config[name].mtype == 'ignore') then
 			config[name] = {
 				name = name,
 				category = 'storage',
