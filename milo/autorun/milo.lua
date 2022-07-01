@@ -6,6 +6,7 @@ fs.delete('packages/milo/Milo.lua')
 fs.delete('packages/milo/plugins/listing.lua')
 fs.delete('packages/milo/apis/milo.lua')
 fs.delete('packages/milo/plugins/manipulator.lua')
+fs.delete('packages/milo/apps')
 
 if peripheral.find('workbench') and shell.openForegroundTab then
 	shell.openForegroundTab('MiloLocal')
