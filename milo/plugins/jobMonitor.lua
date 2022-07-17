@@ -156,9 +156,9 @@ local function createPage(node)
 		if row.requested then
 			row.remaining = math.max(0, row.requested - row.crafted)
 --_syslog('%d %d %d %d', row.remaining, row.requested, row.total, row.crafted)
-			row.status = (row.status or '') ..
 			row.total = row.total or 0
-			string.format(' %d of %d', row.crafted + row.total, row.total + row.requested)
+			row.status = (row.status or '') ..
+				string.format(' %d of %d', row.crafted + row.total, row.total + row.requested)
 		else
 			row.displayName = '  ' .. row.displayName
 			row.status = (row.status or '') .. string.format(' %d of %d', row.count, row.total)
