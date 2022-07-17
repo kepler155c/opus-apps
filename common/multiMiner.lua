@@ -89,7 +89,7 @@ local function hijackTurtle(remoteId)
 	local socket, msg = Socket.connect(remoteId, 188)
 
 	if not socket then
-		error(msg)
+		error(msg, 0)
 	end
 
 	socket:write('turtle')
@@ -101,7 +101,7 @@ local function hijackTurtle(remoteId)
 			socket:write({ method, ... })
 			local resp = socket:read()
 			if not resp then
-				error('timed out: ' .. method)
+				error('T/O: ' .. method, 0)
 			end
 			return table.unpack(resp)
 		end
