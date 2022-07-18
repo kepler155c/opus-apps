@@ -21,15 +21,19 @@ local storage = Config.load('storage')
 
 Util.each(rs.getSides(), function(side) rs.setOutput(side, false) end)
 
-r.init(jua)
-w.init(jua)
-k.init(jua, json, w, r)
+local defaultKristNode = "https://krist.dev"
 
 local node = ({ ... })[1] or error('Node name is required')
 local config = storage[node]
 local privatekey = config.isPrivateKey and config.password or Krist.toKristWalletFormat(config.password)
+local nodeurl = config.syncNode or defaultKristNode
 local address = Krist.makev2address(privatekey)
 local rsSide = config.rsSide or 'top'
+
+r.init(jua)
+w.init(jua)
+k.setNodeUrl(nodeurl:gsub("https?://", ""))
+k.init(jua, json, w, r)
 
 jua.on("terminate", function()
 	rs.setOutput(rsSide, false)

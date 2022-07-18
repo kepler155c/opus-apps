@@ -4,14 +4,20 @@ local jua
 local json
 local await
 
-local endpoint = "krist.ceriat.net"
-local wsEndpoint = "ws://"..endpoint
-local httpEndpoint = "http://"..endpoint
+local endpoint = "krist.dev"
+local wsEndpoint = "wss://"..endpoint
+local httpEndpoint = "https://"..endpoint
 
 local function asserttype(var, name, vartype, optional)
 	if not (type(var) == vartype or optional and type(var) == "nil") then
 		error(name..": expected "..vartype.." got "..type(var), 3)
 	end
+end
+
+function setNodeUrl(url)
+	endpoint = url
+	wsEndpoint = "wss://"..endpoint
+	httpEndpoint = "https://"..endpoint
 end
 
 function init(juai, jsoni, wi, ri)
@@ -53,7 +59,7 @@ local function authorize_websocket(cb, privatekey)
 	asserttype(privatekey, "privatekey", "string", true)
 
 	api_request(function(success, data)
-		cb(success and data and data.ok, data.url and data.url:gsub("wss:", "ws:") or data)
+		cb(success and data and data.ok, data.url and data.url:gsub("ws:", "wss:") or data)
 	end, "/ws/start", {
 		privatekey = privatekey
 	})
@@ -175,7 +181,7 @@ local wsEventNameLookup = {
 	ownNames = "name",
 	ownWebhooks = "webhook",
 	motd = "motd",
-	keepalive = "keepalive",
+	keepalive = "keepalive"
 }
 
 local wsEvents = {}
@@ -367,6 +373,7 @@ function parseMeta(meta)
 end
 
 return {
+	setNodeUrl = setNodeUrl,
 	init = init,
 	address = address,
 	addressTransactions = addressTransactions,

@@ -5,6 +5,8 @@ local colors = _G.colors
 local device = _G.device
 local os     = _G.os
 
+local defaultKristNode = "https://krist.dev"
+
 --[[ Configuration Page ]]--
 local wizardPage = UI.WizardPage {
 	title = 'Store Front',
@@ -13,28 +15,21 @@ local wizardPage = UI.WizardPage {
 		x = 2, ex = -2, y = 1, ey = -2,
 		manualControls = true,
 		[1] = UI.TextEntry {
-			formLabel = 'Domain', formKey = 'domain',
-			help = 'Krist wallet domain (minus .kst)',
-			limit = 64,
-			shadowText = 'example',
-			required = true,
-		},
-		[2] = UI.TextEntry {
 			formLabel = 'Header', formKey = 'header',
 			help = 'Text to show in header',
 			limit = 64,
 			shadowText = "xxxx's shop",
 			required = false,
 		},
-		[3] = UI.Checkbox {
+		[2] = UI.Checkbox {
 			formLabel = 'Single shop', formKey = 'refundInvalid',
 			help = 'Only this shop uses this domain',
 		},
-		[4] = UI.Checkbox {
+		[3] = UI.Checkbox {
 			formLabel = 'Show out of stock', formKey = 'showOutOfStock',
 			help = 'Show out of stock items in red',
 		},
-		[5] = UI.Chooser {
+		[4] = UI.Chooser {
 			formLabel = 'RS Signal', formKey = 'rsSide', formIndex = 6,
 			width = 10,
 			choices = {
@@ -47,7 +42,7 @@ local wizardPage = UI.WizardPage {
 			},
 			required = true,
 		},
-		[6] = UI.Chooser {
+		[5] = UI.Chooser {
 			width = 9,
 			formIndex = 7,
 			formLabel = 'Font Size', formKey = 'textScale',
@@ -88,14 +83,33 @@ function wizardPage:isValidFor(node)
 end
 
 -- [[Password View]] --
-local passwordPage = UI.WizardPage {
+local kristPage = UI.WizardPage {
 	title = 'Krist Settings',
 	index = 3,
 	form = UI.Form {
 		x = 2, ex = -2, y = 1, ey = -2,
 		manualControls = true,
-		passEntry = UI.TextEntry {
+
+		nodeEntry = UI.TextEntry {
 			formIndex = 1,
+			formLabel = 'Sync Node', formKey = 'syncNode',
+			shadowText = 'http(s)://domain:port',
+			help = 'Sync node the shop will use',
+			limit = 256,
+			required = true,
+		},
+
+		domainEntry = UI.TextEntry {
+			formIndex = 3,
+			formLabel = 'Domain', formKey = 'domain',
+			help = 'Krist wallet domain (minus .kst)',
+			limit = 64,
+			shadowText = 'example',
+			required = true,
+		},
+
+		passEntry = UI.TextEntry {
+			formIndex = 4,
 			formLabel = 'Password', formKey = 'password',
 			shadowText = 'Password',
 			help = 'Krist wallet password',
@@ -103,15 +117,17 @@ local passwordPage = UI.WizardPage {
 			required = true,
 			pass = true,
 		},
+
 		pkeyCheck = UI.Checkbox {
-			formIndex = 2,
-			formLabel = 'Is private key', formKey = 'isPrivateKey',
+			formIndex = 5,
+			formLabel = 'Private key', formKey = 'isPrivateKey',
 			help = 'Password is in private key format',
 			ispkey = true,
 		},
+
 		preview = UI.TextEntry {
-			formIndex = 4,
-			formLabel = 'Using address', formKey = 'address',
+			formIndex = 7,
+			formLabel = 'Address', formKey = 'address',
 			backgroundColor = 'primary',
 			textColor = colors.yellow,
 			inactive = true,
@@ -127,7 +143,7 @@ local function makeAddress(text, isPrivateKey)
 	return Krist.makev2address(privKey)
 end
 
-function passwordPage.form:eventHandler(event)
+function kristPage.form:eventHandler(event)
 	if (event.type == 'text_change' and event.element.pass) or
 		 (event.type == 'checkbox_change' and event.element.ispkey) then
 		self.passEntry.shadowText = self.pkeyCheck.value and 'Private key' or 'Password'
@@ -137,17 +153,43 @@ function passwordPage.form:eventHandler(event)
 	return UI.Form.eventHandler(self, event)
 end
 
-function passwordPage:setNode(node)
+function kristPage:setNode(node)
 	node.address = node.password and makeAddress(node.password, node.isPrivateKey) or ''
+	node.syncNode = node.syncNode or defaultKristNode
 	self.form:setValues(node)
 end
 
-function passwordPage:validate()
-	return self.form:save()
+local function addressHasName(node, address, domain)
+	local res, err = http.get(node .. "/addresses/" .. address .. "/names")
+	if res then
+		local data = textutils.unserializeJSON(res.readAll())
+		if data.ok then
+			for _, name in pairs(data.names) do
+				if name.name == domain then
+					return true
+				end
+			end
+			return false, "This address doesn't own this name"
+		end
+		return false, data.error
+	end
+	return false, "Error while checking names"
 end
 
-function passwordPage:isValidFor(node)
+function kristPage:validate()
+	local ok, err = http.checkURL(self.form.nodeEntry.value or '')
+
+	if ok then
+		ok, err = addressHasName(self.form.nodeEntry.value, self.form.preview.value, self.form.domainEntry.value)
+		if ok then
+			return self.form:save()
+		end
+	end
+	self:emit({ type = 'general_error', message = err })
+end
+
+function kristPage:isValidFor(node)
 	return node.mtype == 'shop'
 end
 
-UI:getPage('nodeWizard').wizard:add({ storeFronta = wizardPage, storeFrontb = passwordPage })
+UI:getPage('nodeWizard').wizard:add({ storeFronta = wizardPage, storeFrontb = kristPage })
