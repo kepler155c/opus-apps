@@ -42,7 +42,7 @@ function recipeTab:setItem(item)
 			})
 		end
 		local key = itemDB:splitKey(self.recipe.result)
-		self.ignoreResultNBT.inactive = not key.nbtHash
+		self.ignoreResultNBT.inactive = not key.nbt
 	end
 	self.grid:setValues(t)
 end
@@ -53,7 +53,7 @@ function recipeTab:eventHandler(event)
 		Milo:updateRecipe(self.recipe.result)
 
 		local item = itemDB:splitKey(self.recipe.result)
-		item.nbtHash = nil
+		item.nbt = nil
 		self.recipe.result = itemDB:makeKey(item)
 
 		-- add updated entry
@@ -64,13 +64,13 @@ function recipeTab:eventHandler(event)
 
 	elseif event.type == 'grid_focus_row' then
 		local key = itemDB:splitKey(event.selected.key)
-		self.ignoreNBT.inactive = not key.nbtHash
+		self.ignoreNBT.inactive = not key.nbt
 		self.ignoreNBT:draw()
 
 	elseif event.type == 'ignore_nbt' then
 		local selected = self.grid:getSelected()
 		local item = itemDB:splitKey(selected.key)
-		item.nbtHash = nil
+		item.nbt = nil
 		selected.key = itemDB:makeKey(item)
 		self.grid:draw()
 

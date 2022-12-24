@@ -94,7 +94,7 @@ local function client(socket)
 			local function deposit()
 				local node = makeNode(data.source or 'inventory')
 				if node then
-					local slot = node.adapter.getItemMeta(data.slot)
+					local slot = node.adapter.getItemDetail(data.slot)
 					if slot then
 						if context.storage:import(node, data.slot, slot.count, slot) > 0 then
 							local item = Milo:getItem(slot)

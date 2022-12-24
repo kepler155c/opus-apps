@@ -20,16 +20,18 @@ function infoTab:draw()
 			Ansi.orange, item.displayName, Ansi.reset,
 			item.name)
 
-	if item.nbtHash then
-		value = value .. item.nbtHash .. '\n'
+	if item.nbt then
+		value = value .. item.nbt .. '\n'
 	end
 
 	value = value .. string.format('\n%sCount:%s %s',
 		Ansi.yellow, Ansi.reset, item.count)
 
-	value = value .. string.format('\n%sDamage:%s %s',
-		Ansi.yellow, Ansi.reset, item.damage)
-
+	if item.durability then
+		value = value .. string.format('\n%Durability:%s %s',
+			Ansi.yellow, Ansi.reset, item.durability)
+	end
+	
 	if item.maxDamage and item.maxDamage > 0 then
 		value = value .. string.format(' (max: %s)', item.maxDamage)
 	end

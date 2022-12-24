@@ -12,7 +12,7 @@ local jua = require("swshop.jua")
 
 local await     = jua.await
 local device    = _G.device
-local json      = _G.json
+local json      = { encode=textutils.serializeJSON, decode = textutils.unserialiseJSON }
 local rs        = _G.rs
 local textutils = _G.textutils
 

@@ -21,13 +21,13 @@ function Adapter:listItems(throttle)
 
 	for k,v in pairs(self.list()) do
 		if v.count > 0 then
-			local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
+			local key = table.concat({ v.name, v.nbt }, ':')
 
 			local entry = cache[key]
 			if entry then
 				entry.count = entry.count + v.count
 			else
-				cache[key] = itemDB:get(v, function() return self.getItemMeta(k) end)
+				cache[key] = itemDB:get(v, function() return self.getItemDetail(k) end)
 			end
 			throttle()
 		end
