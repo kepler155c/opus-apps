@@ -489,8 +489,8 @@ function Storage:_sn(name)
 end
 
 local function isValidTransfer(adapter, target)
-	if string.find(target,":inventory") then
-		return false	
+	if string.find(target,":inventory") or string.find(target,":equipment") then
+		return false
 	end
 	-- lazily cache transfer locations
 	--[[if not adapter.transferLocations then
