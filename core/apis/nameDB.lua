@@ -23,14 +23,10 @@ function nameDB:loadDirectory(directory)
 					error('Unable to read ' .. fs.combine(directory, file))
 				end
 
-				for strId, block in pairs(blocks) do
+				for strId, blockName in pairs(blocks) do
 					strId = string.format('%s:%s', mod, strId)
-					if type(block.name) == 'string' then
-						self.data[strId .. ':0'] = block.name
-					else
-						for nid,name in pairs(block.name) do
-							self.data[strId .. ':' .. (nid-1)] = name
-						end
+					if type(blockName) == 'string' then
+						self.data[strId] = blockName
 					end
 				end
 
