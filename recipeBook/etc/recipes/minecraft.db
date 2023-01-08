@@ -1,7 +1,7 @@
 {
   name = "Minecraft",
   version = "1.19.3",
-  recepies = {
+  recipes = {
     [ "minecraft:sugar" ] = {
       ingredients = {
         [ 1 ] = "minecraft:sugar_cane",
