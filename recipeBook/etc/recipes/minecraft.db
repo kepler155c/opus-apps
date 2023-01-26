@@ -598,24 +598,12 @@
     },
     [ "minecraft:purpur_stairs" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:purpur_block",
-        },
-        [ 9 ] = {
-          item = "minecraft:purpur_block",
-        },
-        [ 5 ] = {
-          item = "minecraft:purpur_block",
-        },
-        [ 10 ] = {
-          item = "minecraft:purpur_block",
-        },
-        [ 11 ] = {
-          item = "minecraft:purpur_block",
-        },
-        [ 6 ] = {
-          item = "minecraft:purpur_block",
-        },
+        [ 1 ] = "minecraft:purpur_block",
+        [ 9 ] = "minecraft:purpur_block",
+        [ 5 ] = "minecraft:purpur_block",
+        [ 10 ] = "minecraft:purpur_block",
+        [ 11 ] = "minecraft:purpur_block",
+        [ 6 ] = "minecraft:purpur_block",
       },
       count = 4,
     },
@@ -1004,15 +992,9 @@
     },
     [ "minecraft:purpur_slab" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:purpur_block",
-        },
-        [ 3 ] = {
-          item = "minecraft:purpur_block",
-        },
-        [ 2 ] = {
-          item = "minecraft:purpur_block",
-        },
+        [ 1 ] = "minecraft:purpur_block",
+        [ 3 ] = "minecraft:purpur_block",
+        [ 2 ] = "minecraft:purpur_block",
       },
       count = 6,
     },
@@ -1345,15 +1327,9 @@
     },
     [ "minecraft:sandstone_slab" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:sandstone",
-        },
-        [ 3 ] = {
-          item = "minecraft:sandstone",
-        },
-        [ 2 ] = {
-          item = "minecraft:sandstone",
-        },
+        [ 1 ] = "minecraft:sandstone",
+        [ 3 ] = "minecraft:sandstone",
+        [ 2 ] = "minecraft:sandstone",
       },
       count = 6,
     },
@@ -1596,9 +1572,7 @@
       ingredients = {
         [ 5 ] = "minecraft:stick",
         [ 9 ] = "minecraft:soul_sand",
-        [ 1 ] = {
-          item = "minecraft:coal",
-        },
+        [ 1 ] = "minecraft:coal",
       },
       count = 4,
     },
@@ -1815,24 +1789,12 @@
     },
     [ "minecraft:sandstone_stairs" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:sandstone",
-        },
-        [ 9 ] = {
-          item = "minecraft:sandstone",
-        },
-        [ 5 ] = {
-          item = "minecraft:sandstone",
-        },
-        [ 10 ] = {
-          item = "minecraft:sandstone",
-        },
-        [ 11 ] = {
-          item = "minecraft:sandstone",
-        },
-        [ 6 ] = {
-          item = "minecraft:sandstone",
-        },
+        [ 1 ] = "minecraft:sandstone",
+        [ 9 ] = "minecraft:sandstone",
+        [ 5 ] = "minecraft:sandstone",
+        [ 10 ] = "minecraft:sandstone",
+        [ 11 ] = "minecraft:sandstone",
+        [ 6 ] = "minecraft:sandstone",
       },
       count = 4,
     },
@@ -4066,9 +4028,7 @@
     },
     [ "minecraft:torch" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:coal",
-        },
+        [ 1 ] = "minecraft:coal",
         [ 5 ] = "minecraft:stick",
       },
       count = 4,
@@ -4853,15 +4813,9 @@
     },
     [ "minecraft:red_sandstone_slab" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:red_sandstone",
-        },
-        [ 3 ] = {
-          item = "minecraft:red_sandstone",
-        },
-        [ 2 ] = {
-          item = "minecraft:red_sandstone",
-        },
+        [ 1 ] = "minecraft:red_sandstone",
+        [ 3 ] = "minecraft:red_sandstone",
+        [ 2 ] = "minecraft:red_sandstone",
       },
       count = 6,
     },
@@ -5138,24 +5092,12 @@
     },
     [ "minecraft:quartz_stairs" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
-        [ 9 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
-        [ 5 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
-        [ 10 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
-        [ 11 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
-        [ 6 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
+        [ 1 ] = "minecraft:chiseled_quartz_block",
+        [ 9 ] = "minecraft:chiseled_quartz_block",
+        [ 5 ] = "minecraft:chiseled_quartz_block",
+        [ 10 ] = "minecraft:chiseled_quartz_block",
+        [ 11 ] = "minecraft:chiseled_quartz_block",
+        [ 6 ] = "minecraft:chiseled_quartz_block",
       },
       count = 4,
     },
@@ -5745,21 +5687,13 @@
       ingredients = {
         [ 1 ] = "minecraft:gunpowder",
         [ 3 ] = "minecraft:gunpowder",
-        [ 2 ] = {
-          item = "minecraft:sand",
-        },
-        [ 5 ] = {
-          item = "minecraft:sand",
-        },
-        [ 7 ] = {
-          item = "minecraft:sand",
-        },
+        [ 2 ] = "minecraft:sand",
+        [ 5 ] = "minecraft:sand",
+        [ 7 ] = "minecraft:sand",
         [ 6 ] = "minecraft:gunpowder",
         [ 9 ] = "minecraft:gunpowder",
         [ 11 ] = "minecraft:gunpowder",
-        [ 10 ] = {
-          item = "minecraft:sand",
-        },
+        [ 10 ] = "minecraft:sand",
       },
       count = 1,
     },
@@ -5911,15 +5845,9 @@
     },
     [ "minecraft:quartz_slab" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
-        [ 3 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
-        [ 2 ] = {
-          item = "minecraft:chiseled_quartz_block",
-        },
+        [ 1 ] = "minecraft:chiseled_quartz_block",
+        [ 3 ] = "minecraft:chiseled_quartz_block",
+        [ 2 ] = "minecraft:chiseled_quartz_block",
       },
       count = 6,
     },
@@ -6069,24 +5997,12 @@
     },
     [ "minecraft:red_sandstone_stairs" ] = {
       ingredients = {
-        [ 1 ] = {
-          item = "minecraft:red_sandstone",
-        },
-        [ 9 ] = {
-          item = "minecraft:red_sandstone",
-        },
-        [ 5 ] = {
-          item = "minecraft:red_sandstone",
-        },
-        [ 10 ] = {
-          item = "minecraft:red_sandstone",
-        },
-        [ 11 ] = {
-          item = "minecraft:red_sandstone",
-        },
-        [ 6 ] = {
-          item = "minecraft:red_sandstone",
-        },
+        [ 1 ] = "minecraft:red_sandstone",
+        [ 9 ] = "minecraft:red_sandstone",
+        [ 5 ] = "minecraft:red_sandstone",
+        [ 10 ] = "minecraft:red_sandstone",
+        [ 11 ] = "minecraft:red_sandstone",
+        [ 6 ] = "minecraft:red_sandstone",
       },
       count = 4,
     },
