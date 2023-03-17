@@ -43,6 +43,7 @@ function itemDB:splitKey(key, item)
 
 	if t[3] then
 		item.nbt = t[3]
+		t[3] = nil
 	end
 
 	item.name = table.concat(t, ':')
