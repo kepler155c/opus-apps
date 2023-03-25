@@ -299,7 +299,6 @@ function page:expandList(list)
 		item.count = tonumber(item.count) or 0
 		item.lname = item.displayName:lower()
 		item.has_recipe = item.has_recipe == '1'
-		item.name = k
 		t[k] = item
 	end
 	return t
