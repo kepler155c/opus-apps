@@ -53,7 +53,7 @@ function page:updateInventoryList()
 
 	for slot, item in pairs(inv) do
 		if (context.state.depositAll.includeHotbar or slot > 9) and item.name ~= 'plethora:neuralconnector' then
-			item = itemDB:get(item, function() return ni.getInventory().getItemMeta(slot) end)
+			item = itemDB:get(item, function() return ni.getInventory().getItemDetail(slot) end)
 			local key = makeKey(item)
 			if not list[key] then
 				item.displayName = item.displayName:match('(.+) %(damage:.+%)') or item.displayName
@@ -89,7 +89,7 @@ function page:depositAll()
 	local inv = ni.getInventory().list()
 
 	for slot, item in pairs(inv) do
-		item = itemDB:get(item, function() return ni.getInventory().getItemMeta(slot) end)
+		item = itemDB:get(item, function() return ni.getInventory().getItemDetail(slot) end)
 		local key = makeKey(item)
 		if not context.state.depositAll.retain[key] then
 			if (context.state.depositAll.includeHotbar or slot > 9) and item.name ~= 'plethora:neuralconnector' then

@@ -33,7 +33,7 @@ function page:enable()
 	local list = { }
 
 	for k, item in pairs(inv) do
-		item = itemDB:get(item, function() return ni.getInventory().getItemMeta(k) end)
+		item = itemDB:get(item, function() return ni.getInventory().getItemDetail(k) end)
 		local key = itemDB:makeKey(item)
 		if not list[key] then
 			item.key = key
