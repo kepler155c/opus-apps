@@ -670,6 +670,8 @@ function Storage:import(source, slot, count, item)
 	item = entry
 
 	local function insert(adapter)
+		if adapter.__used and adapter.__size and adapter.__used == adapter.__size then return 0 end
+		
 		local amount = rawInsert(adapter, source.adapter, slot, count)
 
 		if amount > 0 then
