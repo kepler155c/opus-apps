@@ -1,8 +1,8 @@
 {
 	{
-		url = "https://raw.githubusercontent.com/kepler155c/opus-recipes/master/switchcraft",
-		version = "MC 1.12",
-		localName = "switchcraft",
-		name = "Switchcraft Server",
+		url = "https://raw.githubusercontent.com/iuzx0/opus-recipes/main/sc-goodies",
+		version = "MC 1.19.4",
+		localName = "sc-goodies",
+		name = "SwitchCraft Goodies mod",
 	},
 }
