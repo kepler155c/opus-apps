@@ -83,9 +83,8 @@ function itemDB:_get(key)
 
 	for k,item in pairs(self.data) do
 		if key.name == item.name and
-			 key.nbt == key.nbt then
+			 key.nbt == item.nbt then
 			item = Util.shallowCopy(item)
-			item.nbt = key.nbt
 			return item
 		end
 	end
