@@ -58,7 +58,7 @@ function page.tabs.inventory:enable()
 	local list = { }
 
 	for k, item in pairs(inv) do
-		item = itemDB:get(item, function() return ni.getInventory().getItemMeta(k) end)
+		item = itemDB:get(item, function() return ni.getInventory().getItemDetail(k) end)
 		local key = makeKey(item)
 		if not list[key] then
 			item.key = key
@@ -129,7 +129,7 @@ Event.onInterval(5, function()
 
 		pcall(function() -- prevent errors from some mod items
 			for slot,v in pairs(ni.getInventory().list()) do
-				local item = itemDB:get(v, function() ni.getInventory().getItemMeta(slot) end)
+				local item = itemDB:get(v, function() ni.getInventory().getItemDetail(slot) end)
 				if item then
 					if context.state.autostore[makeKey(item)] then
 						context:sendRequest({

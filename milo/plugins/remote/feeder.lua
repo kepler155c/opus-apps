@@ -33,7 +33,7 @@ function page:enable()
 	local list = { }
 
 	for k, item in pairs(inv) do
-		item = itemDB:get(item, function() return ni.getInventory().getItemMeta(k) end)
+		item = itemDB:get(item, function() return ni.getInventory().getItemDetail(k) end)
 		local key = itemDB:makeKey(item)
 		if not list[key] then
 			item.key = key
@@ -58,9 +58,9 @@ local function getFood(food)
 	for slot,v in pairs(ni.getInventory().list()) do
 		local key = itemDB:makeKey(v)
 		if key == food then
-			local item = ni.getInventory().getItem(slot)
-			if item and item.consume then
-				return item
+			local item = ni.getInventory().getItemDetail(slot)
+			if item and item.saturation then
+				return slot
 			end
 			break
 		end
@@ -87,7 +87,7 @@ Event.onInterval(5, function()
 		if context.state.food and ni.getMetaOwner().food.hungry then
 			local item = getFood(context.state.food)
 			if item then
-				item.consume()
+				ni.getInventory().consume(item)
 			end
 		end
 	end)
