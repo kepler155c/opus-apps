@@ -2,7 +2,7 @@ local Craft  = require('milo.craft2')
 local itemDB = require('core.itemDB')
 local Milo   = require('milo')
 
-local BLAZE_POWDER = "minecraft:blaze_powder:0"
+local BLAZE_POWDER = "minecraft:blaze_powder"
 
 local PotionImportTask = {
 	name = 'potions',
