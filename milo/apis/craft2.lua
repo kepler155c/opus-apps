@@ -23,6 +23,7 @@ local function splitKey(key)
 
 	if t[3] then
 		item.nbt = t[3]
+		t[3] = nil
 	end
 
 	item.name = table.concat(t, ':')
