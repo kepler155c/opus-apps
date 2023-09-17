@@ -15,14 +15,13 @@ function ReplenishTask:cycle(context)
 			local _, count = Milo:getMatches(item, res)
 
 			if count < res.low then
-				local nbtHash
-				if not res.ignoreNbtHash then
-					nbtHash = item.nbtHash
+				local nbt
+				if not res.ignoreNbt then
+					nbt = item.nbt
 				end
 				Milo:requestCrafting({
 					name = item.name,
-					damage = res.ignoreDamage and 0 or item.damage,
-					nbtHash = nbtHash,
+					nbt = nbt,
 					requested = res.low - count,
 					count = count,
 					replenish = true,

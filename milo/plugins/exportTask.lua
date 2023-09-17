@@ -30,7 +30,7 @@ function ExportTask:cycle(context)
 				end
 
 				local function exportSingleSlot()
-					local slot = node.adapter.getItemMeta(entry.slot)
+					local slot = node.adapter.getItemDetail(entry.slot)
 
 					if slot and slot.count == slot.maxCount then
 						return
@@ -41,8 +41,7 @@ function ExportTask:cycle(context)
 						for key in pairs(entry.filter) do
 							local filterItem = itemDB:splitKey(key)
 							if (slot.name == filterItem.name and
-									(entry.ignoreDamage or slot.damage == filterItem.damage) and
-									(entry.ignoreNbtHash or slot.nbtHash == filterItem.nbtHash)) then
+									(entry.ignoreNbt or slot.nbt == filterItem.nbt)) then
 
 								local items = Milo:getMatches(filterItem, entry)
 								local _, item = next(items)
@@ -81,8 +80,7 @@ function ExportTask:cycle(context)
 						for i = 1, node.adapter.__size do
 							local slot = slots[i]
 							if (not slot or slot.name == item.name and
-								(entry.ignoreDamage or slot.damage == item.damage) and
-								(entry.ignoreNbtHash or slot.nbtHash == item.nbtHash) and
+								(entry.ignoreNbt or slot.nbt == item.nbt) and
 								slot.count < item.maxCount) then
 
 								return true

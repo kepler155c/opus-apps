@@ -2,6 +2,7 @@ local Event      = require('opus.event')
 local Milo       = require('milo')
 local Sound      = require('opus.sound')
 local Storage    = require('milo.storage')
+local TurtleInv  = require('milo.turtleInv')
 local UI         = require('opus.ui')
 local Util       = require('opus.util')
 
@@ -18,7 +19,6 @@ multishell.setTitle(multishell.getCurrent(), 'Milo')
 local function Syntax(msg)
 	print([[
 Turtle must be provided with:
-	* Introspection module (never bound)
 	* Workbench
 
 Turtle must be connected to:
@@ -46,10 +46,6 @@ if not modem.getNameLocal() then
 	Syntax('Wired modem is not active')
 end
 
-local introspection = device['plethora:introspection'] or
-	turtle.equip('left', 'plethora:module:0') and device['plethora:introspection'] or
-	Syntax('Introspection module missing')
-
 if not device.workbench then
 	turtle.equip('right', 'minecraft:crafting_table:0')
 	if not device.workbench then
@@ -58,6 +54,7 @@ if not device.workbench then
 end
 
 local localName = modem.getNameLocal()
+TurtleInv.setLocalName(localName)
 
 local context = {
 	resources = Util.readTable(Milo.RESOURCE_FILE) or { },
@@ -76,7 +73,7 @@ local context = {
 	turtleInventory = {
 		name = localName,
 		mtype = 'hidden',
-		adapter = introspection.getInventory(),
+		adapter = TurtleInv,
 	}
 }
 

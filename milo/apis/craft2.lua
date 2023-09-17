@@ -20,10 +20,12 @@ local Craft = {
 local function splitKey(key)
 	local t = Util.split(key, '(.-):')
 	local item = { }
-	if #t[#t] > 8 then
-		item.nbtHash = table.remove(t)
+
+	if t[3] then
+		item.nbt = t[3]
+		t[3] = nil
 	end
-	item.damage = tonumber(table.remove(t))
+
 	item.name = table.concat(t, ':')
 	return item
 end
@@ -32,7 +34,7 @@ local function makeRecipeKey(item)
 	if type(item) == 'string' then
 		item = splitKey(item)
 	end
-	return table.concat({ item.name, item.damage or 0, item.nbtHash }, ':')
+	return table.concat({ item.name, item.nbt }, ':')
 end
 
 local function convert(ingredient)
@@ -47,8 +49,7 @@ local function getCraftingTool(storage, item)
 
 	for _,v in pairs(items) do
 		if item.name == v.name and
-			(not item.damage or item.damage == v.damage) and
-			(not item.nbtHash or item.nbtHash == v.nbtHash) then
+			(not item.nbt or item.nbt == v.nbt) then
 			return v
 		end
 	end
@@ -93,11 +94,7 @@ function Craft.getItemCount(items, item)
 	local count = 0
 	for _,v in pairs(items) do
 		if v.name == item.name and
-			 (not item.damage or v.damage == item.damage) and
-			 v.nbtHash == item.nbtHash then
-			if item.damage then
-				return v.count
-			end
+			 v.nbt == item.nbt then
 			count = count + v.count
 		end
 	end
@@ -387,18 +384,7 @@ function Craft.findRecipe(key)
 	end
 
 	local item = itemDB:splitKey(key)
-	if item.damage then
-		return Craft.recipes[makeRecipeKey(item)]
-	end
-
-	-- handle cases where the request is like : IC2:reactorVent:*
-	for rkey,recipe in pairs(Craft.recipes) do
-		local r = itemDB:splitKey(rkey)
-		if item.name == r.name and
-			 (not item.nbtHash or r.nbtHash == item.nbtHash) then
-			 return recipe
-		end
-	end
+	return Craft.recipes[makeRecipeKey(item)]
 end
 
 -- determine the full list of ingredients needed to craft

@@ -321,7 +321,7 @@ function Storage:listItemsRaw(throttle)
 			local items = chest.list()
 
 			for slot, item in pairs(items) do
-				items[slot] = itemDB:get(item, function() return chest.getItemMeta(slot) end)
+				items[slot] = itemDB:get(item, function() return chest.getItemDetail(slot) end)
 			end
 
 			res[v.name] = items
@@ -340,7 +340,7 @@ function Storage:listProviders(throttle)
 
 	for chest, items in pairs(rawItems) do
 		for slot, item in pairs(items) do
-			local key = table.concat({item.name, item.damage, item.nbtHash}, ":")
+			local key = table.concat({item.name, item.nbt}, ":")
 			if not res[key] then
 				res[key] = {}
 			end
@@ -443,7 +443,7 @@ function Storage:updateCache(adapter, item, count)
 		return
 	end
 
-	local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
+	local key = item.key or table.concat({ item.name, item.nbt }, ':')
 	local entry = adapter.cache[key]
 
 	if not entry then
@@ -489,15 +489,18 @@ function Storage:_sn(name)
 end
 
 local function isValidTransfer(adapter, target)
+	if string.find(target,":inventory") or string.find(target,":equipment") then
+		return false
+	end
 	-- lazily cache transfer locations
-	if not adapter.transferLocations then
+	--[[if not adapter.transferLocations then
 		adapter.transferLocations = adapter.getTransferLocations()
 	end
-	for _,v in pairs(adapter.transferLocations) do
-		if v == target then
+	for _,v in pairs(adapter.transferLocations) do]]
+	--	if v == target then
 			return true
-		end
-	end
+	--	end
+	--end
 end
 
 local function rawExport(source, target, item, qty, slot)
@@ -529,8 +532,7 @@ local function rawExport(source, target, item, qty, slot)
 		local stacks = source.list()
 		for key,stack in Util.rpairs(stacks) do
 			if stack.name == item.name and
-				 stack.damage == item.damage and
-				 stack.nbtHash == item.nbtHash then
+				 stack.nbt == item.nbt then
 				local amount = math.min(qty, stack.count)
 				if amount > 0 then
 					amount = transfer(key, amount, slot)
@@ -560,7 +562,7 @@ end
 function Storage:export(target, slot, count, item)
 	local timer = Util.timer()
 	local total = 0
-	local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
+	local key = item.key or table.concat({ item.name, item.nbt }, ':')
 
 	local function provide(adapter, pcount)
 		-- update cache before export to allow for simultaneous calls
@@ -651,7 +653,7 @@ function Storage:import(source, slot, count, item)
 
 	local timer = Util.timer()
 	local total = 0
-	local key = item.key or table.concat({ item.name, item.damage, item.nbtHash }, ':')
+	local key = item.key or table.concat({ item.name, item.nbt }, ':')
 
 	if not self.cache then
 		self:listItems()
@@ -664,13 +666,15 @@ function Storage:import(source, slot, count, item)
 			entry = itemDB:add(item)
 		else
 			 -- get the metadata from the device and add to db
-			entry = itemDB:add(source.adapter.getItemMeta(slot))
+			entry = itemDB:add(source.adapter.getItemDetail(slot))
 		end
 		itemDB:flush()
 	end
 	item = entry
 
 	local function insert(adapter)
+		if adapter.__used and adapter.__size and adapter.__used == adapter.__size then return 0 end
+		
 		local amount = rawInsert(adapter, source.adapter, slot, count)
 
 		if amount > 0 then

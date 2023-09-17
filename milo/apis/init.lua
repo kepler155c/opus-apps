@@ -93,7 +93,7 @@ function Milo:getMatches(item, flags)
 	local count = 0
 	local items = self:listItems()
 
-	if not flags.ignoreDamage and not flags.ignoreNbtHash then
+	if not flags.ignoreNbt then
 		local key = item.key or itemDB:makeKey(item)
 		local v = items[key]
 		if v then
@@ -104,8 +104,7 @@ function Milo:getMatches(item, flags)
 	else
 		for key,v in pairs(items) do
 			if item.name == v.name and
-				(flags.ignoreDamage or item.damage == v.damage) and
-				(flags.ignoreNbtHash or item.nbtHash == v.nbtHash) then
+				(flags.ignoreNbt or item.nbt == v.nbt) then
 
 				t[key] = Util.shallowCopy(v)
 				count = count + v.count
@@ -125,7 +124,7 @@ function Milo:getTurtleInventory()
 
 	for i, v in pairs(self.context.turtleInventory.adapter.list()) do
 		list[i] = itemDB:get(v, function()
-			return self.context.turtleInventory.adapter.getItemMeta(i)
+			return self.context.turtleInventory.adapter.getItemDetail(i)
 		end)
 	end
 
@@ -277,22 +276,15 @@ function Milo:learnRecipe()
 		for _,v1 in pairs(results) do
 			for _,v2 in pairs(ingredients) do
 				if v1.name == v2.name and
-					v1.nbtHash == v2.nbtHash and
-					(v1.damage == v2.damage or
-						(v1.maxDamage > 0 and v2.maxDamage > 0 and
-						 v1.damage ~= v2.damage)) then
+					v1.nbt == v2.nbt then
 					if not newRecipe.crafingTools then
 						newRecipe.craftingTools = { }
 					end
 					local tool = Util.shallowCopy(v2)
-					if tool.maxDamage > 0 then
-						tool.damage = '*'
-						v2.damage = '*'
-					end
 
 					--[[
 					Turtles can only craft one item at a time using a tool :(
-					]]--
+					]] -- Todo: check if this still applies
 					maxCount = 1
 
 					newRecipe.craftingTools[itemDB:makeKey(tool)] = true

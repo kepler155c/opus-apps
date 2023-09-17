@@ -21,7 +21,7 @@ function ImportTask:cycle(context)
 			for _, entry in pairs(node.imports) do
 
 				local function itemMatchesFilter(item)
-					if not entry.ignoreDamage and not entry.ignoreNbtHash then
+					if not entry.ignoreNbt then
 						local key = itemDB:makeKey(item)
 						return entry.filter[key]
 					end
@@ -29,8 +29,7 @@ function ImportTask:cycle(context)
 					for key in pairs(entry.filter) do
 						local v = itemDB:splitKey(key)
 						if item.name == v.name and
-							(entry.ignoreDamage or item.damage == v.damage) and
-							(entry.ignoreNbtHash or item.nbtHash == v.nbtHash) then
+							(entry.ignoreNbt or item.nbt == v.nbt) then
 							return true
 						end
 					end
@@ -52,7 +51,7 @@ function ImportTask:cycle(context)
 
 				local function importSlot(slotNo)
 					local item = itemDB:get(list[slotNo], function()
-						return node.adapter.getItemMeta(slotNo)
+						return node.adapter.getItemDetail(slotNo)
 					end)
 					if item and matchesFilter(item) then
 						if context.storage:import(node, slotNo, item.count, item) ~= item.count then

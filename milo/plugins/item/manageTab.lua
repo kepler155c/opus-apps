@@ -29,11 +29,7 @@ local manageTab = UI.Tab {
 			transform = 'number',
 		},
 		[4] = UI.Checkbox {
-			formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
-			help = 'Ignore damage of item',
-		},
-		[5] = UI.Checkbox {
-			formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
+			formLabel = 'Ignore NBT', formKey = 'ignoreNbt',
 			help = 'Ignore NBT of item',
 		},
 	},
@@ -44,8 +40,6 @@ function manageTab:setItem(item)
 	self.res = Util.shallowCopy(context.resources[item.key] or { })
 	self.res.displayName = self.item.displayName
 	self.form:setValues(self.res)
-
-	-- TODO: ignore damage should not be active if there is not a maxDamage value
 end
 
 function manageTab:eventHandler(event)
@@ -76,8 +70,7 @@ function manageTab:eventHandler(event)
 
 			local newKey = {
 				name = self.item.name,
-				damage = self.res.ignoreDamage and 0 or self.item.damage,
-				nbtHash = not self.res.ignoreNbtHash and self.item.nbtHash or nil,
+				nbt = not self.res.ignoreNbt and self.item.nbt or nil,
 			}
 
 			context.resources[self.item.key] = nil

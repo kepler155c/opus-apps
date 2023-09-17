@@ -19,15 +19,17 @@ function Adapter:listItems(throttle)
 	local cache = { }
 	throttle = throttle or Util.throttle()
 
-	for k,v in pairs(self.list()) do
+	local list = self.list()
+
+	for k,v in pairs(list) do
 		if v.count > 0 then
-			local key = table.concat({ v.name, v.damage, v.nbtHash }, ':')
+			local key = table.concat({ v.name, v.nbt }, ':')
 
 			local entry = cache[key]
 			if entry then
 				entry.count = entry.count + v.count
 			else
-				cache[key] = itemDB:get(v, function() return self.getItemMeta(k) end)
+				cache[key] = itemDB:get(v, function() return self.getItemDetail(k) end)
 			end
 			throttle()
 		end
@@ -36,6 +38,10 @@ function Adapter:listItems(throttle)
 	-- TODO: cache number of slots, free slots, used slots
 	-- useful for when inserting into chests
 	-- ie. insert only if chest does not have item and has free slots
+
+	-- bodge to make statsView not delay
+	-- todo: handle this better properly
+	self.__used = Util.size(list)
 
 	self.cache = cache
 end

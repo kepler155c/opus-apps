@@ -281,11 +281,12 @@ end
 
 local function splitKey(key)
 	local t = Util.split(key, '(.-):')
+
 	local item = { }
-	if #t[#t] > 8 then
-		item.nbtHash = table.remove(t)
+	if t[3] then
+		item.nbt = t[3]
 	end
-	item.damage = tonumber(table.remove(t))
+	t[3] = nil
 	item.name = table.concat(t, ':')
 	return item
 end

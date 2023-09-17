@@ -312,14 +312,10 @@ The settings will take effect immediately!]],
 			margin = 1,
 			manualControls = true,
 			[1] = UI.Checkbox {
-				formLabel = 'Ignore Dmg', formKey = 'ignoreDamage',
-				help = 'Ignore damage of item',
-			},
-			[2] = UI.Checkbox {
-				formLabel = 'Ignore NBT', formKey = 'ignoreNbtHash',
+				formLabel = 'Ignore NBT', formKey = 'ignoreNbt',
 				help = 'Ignore NBT of item',
 			},
-			[3] = UI.Chooser {
+			[2] = UI.Chooser {
 				width = 13,
 				formLabel = 'Mode', formKey = 'blacklist',
 				nochoice = 'whitelist',
@@ -327,7 +323,7 @@ The settings will take effect immediately!]],
 					{ name = 'whitelist', value = false },
 					{ name = 'blacklist', value = true },
 				},
-				help = 'Ignore damage of item'
+				help = 'Accept item by default or deny by default'
 			},
 			scan = UI.Button {
 				x = -11, y = 1,
@@ -349,7 +345,7 @@ The settings will take effect immediately!]],
 			self.form:setValues(entry)
 			self:resetGrid()
 
-			self.form[3].inactive = whitelistOnly
+			self.form[2].inactive = whitelistOnly
 
 			UI.SlideOut.show(self)
 			self:setFocus(self.form.scan)
